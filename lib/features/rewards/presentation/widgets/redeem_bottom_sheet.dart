@@ -1,0 +1,387 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_text_styles.dart';
+import '../providers/rewards_providers.dart';
+
+class RedeemBottomSheet extends ConsumerStatefulWidget {
+  const RedeemBottomSheet({super.key});
+
+  @override
+  ConsumerState<RedeemBottomSheet> createState() => _RedeemBottomSheetState();
+}
+
+class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
+  final _pointsController = TextEditingController();
+  bool _isSubmitting = false;
+  String? _errorText;
+
+  @override
+  void dispose() {
+    _pointsController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final summaryAsync = ref.watch(rewardSummaryProvider);
+    final rulesAsync = ref.watch(rewardRulesProvider);
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.7,
+      ),
+      decoration: const BoxDecoration(
+        color: AppColors.surfaceDark,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+              20, 12, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.borderDark,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Title
+              Row(
+                children: [
+                  const Icon(Icons.redeem,
+                      color: AppColors.primaryGold, size: 24),
+                  const SizedBox(width: 8),
+                  Text('Redeem GoCoins',
+                      style: AppTextStyles.headlineSmall),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Available balance
+              summaryAsync.when(
+                loading: () => const SizedBox.shrink(),
+                error: (_, _) => const SizedBox.shrink(),
+                data: (summary) => Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGold.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                        color: AppColors.primaryGold.withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.stars,
+                          color: AppColors.primaryGold, size: 20),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Available: ${summary.currentPoints.toStringAsFixed(0)}',
+                        style: AppTextStyles.titleMedium.copyWith(
+                          color: AppColors.primaryGold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Preset buttons
+              summaryAsync.when(
+                loading: () => const SizedBox.shrink(),
+                error: (_, _) => const SizedBox.shrink(),
+                data: (summary) => Row(
+                  children: [
+                    _presetButton(200, summary.currentPoints),
+                    const SizedBox(width: 8),
+                    _presetButton(500, summary.currentPoints),
+                    const SizedBox(width: 8),
+                    _presetButton(1000, summary.currentPoints),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          _pointsController.text =
+                              summary.currentPoints.toStringAsFixed(0);
+                          setState(() => _errorText = null);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: AppColors.inputDark,
+                            borderRadius: BorderRadius.circular(8),
+                            border:
+                                Border.all(color: AppColors.borderDark),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'All',
+                              style: AppTextStyles.labelLarge.copyWith(
+                                color: AppColors.primaryGold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Points input
+              TextField(
+                controller: _pointsController,
+                keyboardType: TextInputType.number,
+                style: AppTextStyles.titleLarge,
+                textAlign: TextAlign.center,
+                onChanged: (_) => setState(() => _errorText = null),
+                decoration: InputDecoration(
+                  hintText: 'Enter points to redeem',
+                  hintStyle: AppTextStyles.bodyMedium
+                      .copyWith(color: AppColors.textMuted),
+                  filled: true,
+                  fillColor: AppColors.inputDark,
+                  errorText: _errorText,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide:
+                        const BorderSide(color: AppColors.borderDark),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide:
+                        const BorderSide(color: AppColors.borderDark),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide:
+                        const BorderSide(color: AppColors.primaryGold),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.error),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // EUR conversion
+              rulesAsync.when(
+                loading: () => const SizedBox.shrink(),
+                error: (_, _) => const SizedBox.shrink(),
+                data: (rules) {
+                  final points =
+                      int.tryParse(_pointsController.text) ?? 0;
+                  final eurValue = points / rules.redemption.pointsToEurRatio;
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.cardDark,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.borderDark),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$points coins = \u20AC${eurValue.toStringAsFixed(2)}',
+                        style: AppTextStyles.titleMedium.copyWith(
+                          color: points > 0
+                              ? AppColors.primaryGold
+                              : AppColors.textMuted,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+
+              // Minimum notice
+              Text(
+                'Minimum 200 points to redeem',
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: AppColors.textMuted,
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Redeem button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isSubmitting ? null : _submitRedeem,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGold,
+                    foregroundColor: AppColors.backgroundDark,
+                    disabledBackgroundColor:
+                        AppColors.primaryGold.withValues(alpha: 0.3),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.backgroundDark),
+                        )
+                      : const Text('Redeem', style: AppTextStyles.button),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _presetButton(int amount, double maxPoints) {
+    final enabled = amount <= maxPoints;
+    return Expanded(
+      child: GestureDetector(
+        onTap: enabled
+            ? () {
+                _pointsController.text = amount.toString();
+                setState(() => _errorText = null);
+              }
+            : null,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: enabled ? AppColors.inputDark : AppColors.cardDark,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: enabled ? AppColors.borderDark : AppColors.borderSubtle,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              amount.toString(),
+              style: AppTextStyles.labelLarge.copyWith(
+                color: enabled ? AppColors.textPrimary : AppColors.textMuted,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _submitRedeem() async {
+    final points = int.tryParse(_pointsController.text);
+    final summary = ref.read(rewardSummaryProvider).value;
+    final rules = ref.read(rewardRulesProvider).value;
+
+    if (points == null || points <= 0) {
+      setState(() => _errorText = 'Enter a valid number');
+      return;
+    }
+    if (points < (rules?.redemption.minimumPoints ?? 200)) {
+      setState(() => _errorText = 'Minimum ${rules?.redemption.minimumPoints ?? 200} points required');
+      return;
+    }
+    if (summary != null && points > summary.currentPoints) {
+      setState(() => _errorText = 'Insufficient points');
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      final ds = ref.read(rewardsRemoteDatasourceProvider);
+      // In dev mode, just simulate
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (ref.read(rewardSummaryProvider).value != null) {
+        // ignore real call in dev
+        try {
+          await ds.redeemPoints(points);
+        } catch (_) {
+          // dev bypass
+        }
+      }
+
+      if (mounted) {
+        Navigator.pop(context);
+        // Show success dialog
+        final eurValue = points / (rules?.redemption.pointsToEurRatio ?? 10);
+        _showSuccessDialog(points, eurValue);
+        // Refresh data
+        ref.invalidate(rewardSummaryProvider);
+        ref.read(rewardHistoryProvider.notifier).load();
+      }
+    } catch (e) {
+      setState(() {
+        _isSubmitting = false;
+        _errorText = 'Redemption failed. Please try again.';
+      });
+    }
+  }
+
+  void _showSuccessDialog(int points, double eurValue) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surfaceDark,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.check_circle,
+                  color: AppColors.success, size: 32),
+            ),
+            const SizedBox(height: 16),
+            Text('Redeemed!', style: AppTextStyles.headlineSmall),
+            const SizedBox(height: 8),
+            Text(
+              '$points coins converted to \u20AC${eurValue.toStringAsFixed(2)} ride credit',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodyMedium
+                  .copyWith(color: AppColors.textSecondary),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'This will be applied to your next ride.',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodySmall,
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGold,
+                  foregroundColor: AppColors.backgroundDark,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text('Great!'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

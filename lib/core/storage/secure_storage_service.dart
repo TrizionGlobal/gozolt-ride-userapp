@@ -1,0 +1,68 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'storage_keys.dart';
+
+class SecureStorageService {
+  final FlutterSecureStorage _storage;
+
+  SecureStorageService()
+      : _storage = const FlutterSecureStorage(
+          aOptions: AndroidOptions(
+            encryptedSharedPreferences: true,
+          ),
+        );
+
+  // ── Tokens ─────────────────────────────────────────────
+  Future<void> saveTokens({
+    required String accessToken,
+    required String refreshToken,
+  }) async {
+    await Future.wait([
+      _storage.write(key: StorageKeys.accessToken, value: accessToken),
+      _storage.write(key: StorageKeys.refreshToken, value: refreshToken),
+    ]);
+  }
+
+  Future<String?> getAccessToken() =>
+      _storage.read(key: StorageKeys.accessToken);
+
+  Future<String?> getRefreshToken() =>
+      _storage.read(key: StorageKeys.refreshToken);
+
+  Future<void> clearTokens() async {
+    await Future.wait([
+      _storage.delete(key: StorageKeys.accessToken),
+      _storage.delete(key: StorageKeys.refreshToken),
+    ]);
+  }
+
+  Future<bool> hasTokens() async {
+    final token = await getAccessToken();
+    return token != null && token.isNotEmpty;
+  }
+
+  // ── Onboarding ─────────────────────────────────────────
+  Future<void> setOnboardingSeen() =>
+      _storage.write(key: StorageKeys.hasSeenOnboarding, value: 'true');
+
+  Future<bool> hasSeenOnboarding() async {
+    final value = await _storage.read(key: StorageKeys.hasSeenOnboarding);
+    return value == 'true';
+  }
+
+  // ── Theme ──────────────────────────────────────────────
+  Future<void> saveThemeMode(String mode) =>
+      _storage.write(key: StorageKeys.themeMode, value: mode);
+
+  Future<String?> getThemeMode() =>
+      _storage.read(key: StorageKeys.themeMode);
+
+  // ── Language ───────────────────────────────────────────
+  Future<void> saveLanguage(String lang) =>
+      _storage.write(key: StorageKeys.language, value: lang);
+
+  Future<String?> getLanguage() =>
+      _storage.read(key: StorageKeys.language);
+
+  // ── Clear All ──────────────────────────────────────────
+  Future<void> clearAll() => _storage.deleteAll();
+}
