@@ -14,6 +14,13 @@ val keystoreProperties = Properties().apply {
     }
 }
 
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        load(localPropertiesFile.inputStream())
+    }
+}
+
 android {
     namespace = "com.gozolt.gozolt_user_app"
     compileSdk = flutter.compileSdkVersion
@@ -43,7 +50,9 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode()
         versionName = flutter.versionName()
-        manifestPlaceholders += mapOf("MAPS_API_KEY" to ((project.findProperty("MAPS_API_KEY") as? String) ?: "AIzaSyBnJ68oJPHgHrUtemPnfZFcT2bG_pJd7TY"))
+        
+        val mapsApiKey = localProperties.getProperty("MAPS_API_KEY") ?: ""
+        manifestPlaceholders += mapOf("MAPS_API_KEY" to mapsApiKey)
     }
 
     buildTypes {
