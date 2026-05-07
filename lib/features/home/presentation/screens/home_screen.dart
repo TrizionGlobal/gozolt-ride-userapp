@@ -106,18 +106,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                 filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceDark.withValues(alpha: 0.7),
+                    color: AppColors.surfaceDark.withOpacity(0.7),
                     borderRadius: const BorderRadius.vertical(
                       bottom: Radius.circular(20),
                     ),
                     border: Border(
                       bottom: BorderSide(
-                        color: AppColors.primaryGold.withValues(alpha: 0.15),
+                        color: AppColors.primaryGold.withOpacity(0.15),
                       ),
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
+                        color: Colors.black.withOpacity(0.2),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),

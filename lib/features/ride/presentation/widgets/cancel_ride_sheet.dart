@@ -97,10 +97,10 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.1),
+                  color: AppColors.warning.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                      color: AppColors.warning.withValues(alpha: 0.3)),
+                      color: AppColors.warning.withOpacity(0.3)),
                 ),
                 child: Row(
                   children: [
@@ -194,7 +194,7 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
                         backgroundColor: AppColors.error,
                         foregroundColor: Colors.white,
                         disabledBackgroundColor:
-                            AppColors.error.withValues(alpha: 0.3),
+                            AppColors.error.withOpacity(0.3),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
@@ -228,7 +228,7 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.error.withValues(alpha: 0.08)
+              ? AppColors.error.withOpacity(0.08)
               : AppColors.cardDark,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(

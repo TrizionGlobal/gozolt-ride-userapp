@@ -67,7 +67,7 @@ class _ShareRideSheetState extends ConsumerState<ShareRideSheet> {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: AppColors.primaryGold.withValues(alpha: 0.1),
+                  color: AppColors.primaryGold.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.share_location,

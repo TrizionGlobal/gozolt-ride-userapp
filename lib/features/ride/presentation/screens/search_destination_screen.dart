@@ -355,7 +355,7 @@ class _SearchDestinationScreenState
           width: 2,
           height: 20,
           decoration: BoxDecoration(
-            color: AppColors.textMuted.withValues(alpha: 0.3),
+            color: AppColors.textMuted.withOpacity(0.3),
             borderRadius: BorderRadius.circular(1),
           ),
         ),
@@ -641,7 +641,7 @@ class _SearchDestinationScreenState
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: AppColors.primaryGold.withValues(alpha: 0.15),
+                        color: AppColors.primaryGold.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(Icons.map_outlined,

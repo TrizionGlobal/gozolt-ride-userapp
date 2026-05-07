@@ -46,7 +46,7 @@ class RewardsInfoScreen extends ConsumerWidget {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: AppColors.backgroundDark
-                                .withValues(alpha: 0.15),
+                                .withOpacity(0.15),
                           ),
                           child: const Icon(Icons.arrow_back,
                               color: AppColors.backgroundDark, size: 20),
@@ -217,11 +217,11 @@ class RewardsInfoScreen extends ConsumerWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.warning.withValues(alpha: 0.08),
+                        color: AppColors.warning.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                             color:
-                                AppColors.warning.withValues(alpha: 0.2)),
+                                AppColors.warning.withOpacity(0.2)),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -312,7 +312,7 @@ class RewardsInfoScreen extends ConsumerWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: accentColor.withValues(alpha: 0.12),
+              color: accentColor.withOpacity(0.12),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: accentColor, size: 18),
@@ -362,7 +362,7 @@ class RewardsInfoScreen extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: tierColor.withValues(alpha: 0.15),
+                    color: tierColor.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(

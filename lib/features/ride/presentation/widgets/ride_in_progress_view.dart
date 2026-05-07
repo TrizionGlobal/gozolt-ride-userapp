@@ -34,12 +34,12 @@ class RideInProgressView extends StatelessWidget {
               end: Alignment.bottomRight,
               colors: [
                 AppColors.cardDark,
-                AppColors.cardDark.withValues(alpha: 0.8),
+                AppColors.cardDark.withOpacity(0.8),
               ],
             ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: AppColors.primaryGold.withValues(alpha: 0.15),
+              color: AppColors.primaryGold.withOpacity(0.15),
             ),
           ),
           child: Column(
@@ -56,7 +56,7 @@ class RideInProgressView extends StatelessWidget {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.success.withValues(alpha: 0.5),
+                          color: AppColors.success.withOpacity(0.5),
                           blurRadius: 6,
                         ),
                       ],
@@ -75,7 +75,7 @@ class RideInProgressView extends StatelessWidget {
                   const Spacer(),
                   Icon(
                     Icons.navigation_rounded,
-                    color: AppColors.primaryGold.withValues(alpha: 0.6),
+                    color: AppColors.primaryGold.withOpacity(0.6),
                     size: 16,
                   ),
                 ],
@@ -98,7 +98,7 @@ class RideInProgressView extends StatelessWidget {
                   Container(
                     width: 1,
                     height: 48,
-                    color: AppColors.borderDark.withValues(alpha: 0.5),
+                    color: AppColors.borderDark.withOpacity(0.5),
                   ),
                   // Distance remaining
                   Expanded(
@@ -120,7 +120,7 @@ class RideInProgressView extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  color: AppColors.backgroundDark.withValues(alpha: 0.5),
+                  color: AppColors.backgroundDark.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
@@ -219,7 +219,7 @@ class _MetricTile extends StatelessWidget {
               child: Text(
                 unit,
                 style: AppTextStyles.labelSmall.copyWith(
-                  color: AppColors.primaryGold.withValues(alpha: 0.7),
+                  color: AppColors.primaryGold.withOpacity(0.7),
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
                 ),
@@ -263,8 +263,8 @@ class _ActionButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withValues(alpha: 0.3)),
-            color: color.withValues(alpha: 0.06),
+            border: Border.all(color: color.withOpacity(0.3)),
+            color: color.withOpacity(0.06),
           ),
           child: Column(
             children: [

@@ -87,7 +87,7 @@ abstract final class AppTheme {
             borderSide: const BorderSide(color: AppColors.error),
           ),
         ),
-        cardTheme: CardThemeData(
+        cardTheme: CardTheme(
           color: AppColors.cardDark,
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -156,7 +156,7 @@ abstract final class AppTheme {
             ),
           ),
         ),
-        cardTheme: CardThemeData(
+        cardTheme: CardTheme(
           color: AppColors.cardLight,
           elevation: 1,
           shape: RoundedRectangleBorder(

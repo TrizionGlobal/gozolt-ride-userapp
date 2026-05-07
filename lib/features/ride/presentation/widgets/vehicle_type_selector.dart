@@ -30,7 +30,7 @@ class VehicleTypeSelector extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: VehicleType.values.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 10),
+        separatorBuilder: (context, error) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
           final type = VehicleType.values[index];
           final isSelected = type == selected;
@@ -53,7 +53,7 @@ class VehicleTypeSelector extends StatelessWidget {
                         ? AppColors.primaryGold
                         : isAvailable
                             ? AppColors.borderDark
-                            : AppColors.borderDark.withValues(alpha: 0.3),
+                            : AppColors.borderDark.withOpacity(0.3),
                     width: isSelected ? 2 : 0.5,
                   ),
                 ),
@@ -65,7 +65,7 @@ class VehicleTypeSelector extends StatelessWidget {
                       width: 56,
                       height: 36,
                       fit: BoxFit.contain,
-                      errorBuilder: (_, _, _) => Icon(
+                      errorBuilder: (context, error, stackTrace) => Icon(
                         Icons.directions_car,
                         size: 36,
                         color: isSelected
@@ -104,7 +104,7 @@ class VehicleTypeSelector extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textMuted.withValues(alpha: 0.7),
+                          color: AppColors.textMuted.withOpacity(0.7),
                         ),
                       )
                     else ...[

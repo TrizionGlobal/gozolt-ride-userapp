@@ -50,7 +50,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: AppColors.backgroundDark
-                                .withValues(alpha: 0.15),
+                                .withOpacity(0.15),
                           ),
                           child: const Icon(Icons.arrow_back,
                               color: AppColors.backgroundDark, size: 20),
@@ -117,7 +117,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
                         color: AppColors.cardDark,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppColors.primaryGold.withValues(alpha: 0.3),
+                          color: AppColors.primaryGold.withOpacity(0.3),
                         ),
                       ),
                       child: Row(
@@ -141,10 +141,10 @@ class PaymentMethodsScreen extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: AppColors.info.withValues(alpha: 0.08),
+                      color: AppColors.info.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                          color: AppColors.info.withValues(alpha: 0.2)),
+                          color: AppColors.info.withOpacity(0.2)),
                     ),
                     child: Row(
                       children: [
@@ -189,7 +189,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.12),
+              color: iconColor.withOpacity(0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: iconColor, size: 20),
@@ -211,7 +211,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.15),
+                color: AppColors.success.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -237,7 +237,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: pm.isDefault
-              ? AppColors.primaryGold.withValues(alpha: 0.3)
+              ? AppColors.primaryGold.withOpacity(0.3)
               : AppColors.borderDark,
         ),
       ),
@@ -247,7 +247,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: _brandColor(pm.brand).withValues(alpha: 0.12),
+              color: _brandColor(pm.brand).withOpacity(0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
@@ -281,7 +281,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
                   const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               margin: const EdgeInsets.only(right: 8),
               decoration: BoxDecoration(
-                color: AppColors.primaryGold.withValues(alpha: 0.15),
+                color: AppColors.primaryGold.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(

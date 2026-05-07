@@ -68,15 +68,15 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
               // Available balance
               summaryAsync.when(
                 loading: () => const SizedBox.shrink(),
-                error: (_, _) => const SizedBox.shrink(),
+                error: (context, error) => const SizedBox.shrink(),
                 data: (summary) => Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryGold.withValues(alpha: 0.08),
+                    color: AppColors.primaryGold.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                        color: AppColors.primaryGold.withValues(alpha: 0.2)),
+                        color: AppColors.primaryGold.withOpacity(0.2)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -99,7 +99,7 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
               // Preset buttons
               summaryAsync.when(
                 loading: () => const SizedBox.shrink(),
-                error: (_, _) => const SizedBox.shrink(),
+                error: (context, error) => const SizedBox.shrink(),
                 data: (summary) => Row(
                   children: [
                     _presetButton(200, summary.currentPoints),
@@ -179,7 +179,7 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
               // EUR conversion
               rulesAsync.when(
                 loading: () => const SizedBox.shrink(),
-                error: (_, _) => const SizedBox.shrink(),
+                error: (context, error) => const SizedBox.shrink(),
                 data: (rules) {
                   final points =
                       int.tryParse(_pointsController.text) ?? 0;
@@ -225,7 +225,7 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
                     backgroundColor: AppColors.primaryGold,
                     foregroundColor: AppColors.backgroundDark,
                     disabledBackgroundColor:
-                        AppColors.primaryGold.withValues(alpha: 0.3),
+                        AppColors.primaryGold.withOpacity(0.3),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
@@ -344,7 +344,7 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
               width: 56,
               height: 56,
               decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.15),
+                color: AppColors.success.withOpacity(0.15),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.check_circle,

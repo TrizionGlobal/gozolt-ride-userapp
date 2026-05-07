@@ -145,7 +145,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: AppColors.backgroundDark
-                                    .withValues(alpha: 0.15),
+                                    .withOpacity(0.15),
                               ),
                               child: const Icon(Icons.arrow_back,
                                   color: AppColors.backgroundDark, size: 20),
@@ -165,7 +165,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                       Container(
                         decoration: BoxDecoration(
                           color: AppColors.backgroundDark
-                              .withValues(alpha: 0.15),
+                              .withOpacity(0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: TextField(
@@ -179,11 +179,11 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                             hintText: 'Search FAQs...',
                             hintStyle: AppTextStyles.bodyMedium.copyWith(
                               color: AppColors.backgroundDark
-                                  .withValues(alpha: 0.5),
+                                  .withOpacity(0.5),
                             ),
                             prefixIcon: Icon(Icons.search,
                                 color: AppColors.backgroundDark
-                                    .withValues(alpha: 0.6)),
+                                    .withOpacity(0.6)),
                             border: InputBorder.none,
                             contentPadding:
                                 const EdgeInsets.symmetric(vertical: 12),
@@ -279,7 +279,7 @@ class _FaqTileState extends State<_FaqTile> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: _expanded
-                ? AppColors.primaryGold.withValues(alpha: 0.3)
+                ? AppColors.primaryGold.withOpacity(0.3)
                 : AppColors.borderDark,
           ),
         ),

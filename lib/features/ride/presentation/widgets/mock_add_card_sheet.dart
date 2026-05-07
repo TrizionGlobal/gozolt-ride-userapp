@@ -144,7 +144,7 @@ class _MockAddCardSheetState extends State<MockAddCardSheet> {
                     backgroundColor: AppColors.primaryGold,
                     foregroundColor: AppColors.backgroundDark,
                     disabledBackgroundColor:
-                        AppColors.primaryGold.withValues(alpha: 0.3),
+                        AppColors.primaryGold.withOpacity(0.3),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
@@ -175,7 +175,7 @@ class _MockAddCardSheetState extends State<MockAddCardSheet> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primaryGold.withValues(alpha: 0.15)
+              ? AppColors.primaryGold.withOpacity(0.15)
               : AppColors.cardDark,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(

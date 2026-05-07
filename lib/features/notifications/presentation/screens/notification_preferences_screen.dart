@@ -43,7 +43,7 @@ class NotificationPreferencesScreen extends ConsumerWidget {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: AppColors.backgroundDark
-                                .withValues(alpha: 0.15),
+                                .withOpacity(0.15),
                           ),
                           child: const Icon(Icons.arrow_back,
                               color: AppColors.backgroundDark, size: 20),
@@ -161,7 +161,7 @@ class NotificationPreferencesScreen extends ConsumerWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.12),
+              color: iconColor.withOpacity(0.12),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: iconColor, size: 18),
@@ -183,7 +183,7 @@ class NotificationPreferencesScreen extends ConsumerWidget {
             value: value,
             onChanged: onChanged,
             activeTrackColor: AppColors.primaryGold,
-            activeThumbColor: AppColors.backgroundDark,
+            
             inactiveTrackColor: AppColors.borderDark,
           ),
         ],

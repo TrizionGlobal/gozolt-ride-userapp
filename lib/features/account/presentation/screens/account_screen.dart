@@ -99,13 +99,13 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                         ],
                       ),
                     ),
-                    error: (_, _) => const SizedBox(height: 80),
+                    error: (context, error) => const SizedBox(height: 80),
                     data: (profile) => Row(
                       children: [
                         CircleAvatar(
                           radius: 30,
                           backgroundColor:
-                              AppColors.backgroundDark.withValues(alpha: 0.2),
+                              AppColors.backgroundDark.withOpacity(0.2),
                           backgroundImage: profile.avatarUrl != null &&
                                   profile.avatarUrl!.isNotEmpty
                               ? NetworkImage(ApiConstants.fullUrl(profile.avatarUrl!))
@@ -137,7 +137,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                                   profile.phone!,
                                   style: AppTextStyles.bodySmall.copyWith(
                                     color: AppColors.backgroundDark
-                                        .withValues(alpha: 0.7),
+                                        .withOpacity(0.7),
                                   ),
                                 ),
                             ],
@@ -155,7 +155,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: AppColors.backgroundDark
-                                    .withValues(alpha: 0.15),
+                                    .withOpacity(0.15),
                               ),
                               child: const Icon(Icons.edit,
                                   color: AppColors.backgroundDark, size: 18),
@@ -200,7 +200,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryGold.withValues(alpha: 0.15),
+                      color: AppColors.primaryGold.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
@@ -409,7 +409,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 ],
               ),
             ),
-            ?trailing,
+            if (trailing != null) trailing,
             const SizedBox(width: 4),
             Icon(Icons.chevron_right,
                 color: AppColors.textMuted, size: 20),
@@ -456,7 +456,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 onChanged(v);
               },
               activeTrackColor: AppColors.primaryGold,
-              activeThumbColor: AppColors.backgroundDark,
               inactiveTrackColor: AppColors.borderDark,
             ),
           ),
@@ -532,7 +531,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryGold.withValues(alpha: 0.1) : AppColors.cardDark,
+          color: isSelected ? AppColors.primaryGold.withOpacity(0.1) : AppColors.cardDark,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? AppColors.primaryGold : AppColors.borderDark,

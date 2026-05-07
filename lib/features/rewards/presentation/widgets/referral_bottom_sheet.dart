@@ -55,7 +55,7 @@ class ReferralBottomSheet extends ConsumerWidget {
                   child: CircularProgressIndicator(
                       color: AppColors.primaryGold, strokeWidth: 2),
                 ),
-                error: (_, _) => Text(
+                error: (context, error) => Text(
                   'Failed to load referral info',
                   style: AppTextStyles.bodyMedium
                       .copyWith(color: AppColors.error),
@@ -83,7 +83,7 @@ class ReferralBottomSheet extends ConsumerWidget {
                           color: AppColors.cardDark,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: AppColors.primaryGold.withValues(alpha: 0.3),
+                            color: AppColors.primaryGold.withOpacity(0.3),
                             width: 1.5,
                             // No dashed border in Flutter, use solid with gold tint
                           ),
@@ -239,7 +239,7 @@ class ReferralBottomSheet extends ConsumerWidget {
           width: 22,
           height: 22,
           decoration: BoxDecoration(
-            color: AppColors.primaryGold.withValues(alpha: 0.15),
+            color: AppColors.primaryGold.withOpacity(0.15),
             shape: BoxShape.circle,
           ),
           child: Center(

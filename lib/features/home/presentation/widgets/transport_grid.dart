@@ -155,7 +155,7 @@ class _TransportTile extends StatelessWidget {
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isActive
-                  ? AppColors.primaryGold.withValues(alpha: 0.4)
+                  ? AppColors.primaryGold.withOpacity(0.4)
                   : AppColors.borderDark,
               width: 1,
             ),

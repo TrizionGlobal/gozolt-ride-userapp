@@ -318,7 +318,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: AppColors.surfaceDark.withValues(alpha: 0.9),
+                          color: AppColors.surfaceDark.withOpacity(0.9),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.arrow_back,
@@ -337,7 +337,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceDark.withValues(alpha: 0.9),
+                      color: AppColors.surfaceDark.withOpacity(0.9),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Row(
@@ -435,10 +435,10 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 10),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryGold.withValues(alpha: 0.15),
+                          color: AppColors.primaryGold.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                              color: AppColors.primaryGold.withValues(alpha: 0.3)),
+                              color: AppColors.primaryGold.withOpacity(0.3)),
                         ),
                         child: Row(
                           children: [
@@ -510,7 +510,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                         margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryGold.withValues(alpha: 0.1),
+                          color: AppColors.primaryGold.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Row(
@@ -611,7 +611,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                           const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: booking.useCoins
-                            ? AppColors.primaryGold.withValues(alpha: 0.2)
+                            ? AppColors.primaryGold.withOpacity(0.2)
                             : AppColors.cardDark,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
@@ -664,7 +664,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                         backgroundColor: AppColors.primaryGold,
                         foregroundColor: AppColors.backgroundDark,
                         disabledBackgroundColor:
-                            AppColors.primaryGold.withValues(alpha: 0.3),
+                            AppColors.primaryGold.withOpacity(0.3),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -799,7 +799,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
             surface: AppColors.surfaceDark,
             onSurface: AppColors.textPrimary,
           ),
-          dialogTheme: DialogThemeData(
+          dialogTheme: DialogTheme(
             backgroundColor: AppColors.surfaceDark,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
@@ -820,7 +820,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
             surface: AppColors.surfaceDark,
             onSurface: AppColors.textPrimary,
           ),
-          dialogTheme: DialogThemeData(
+          dialogTheme: DialogTheme(
             backgroundColor: AppColors.surfaceDark,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
@@ -1077,7 +1077,7 @@ class _DiscountBottomSheetState extends ConsumerState<_DiscountBottomSheet> {
                           );
                         },
                         loading: () => const SizedBox.shrink(),
-                        error: (_, _) => const SizedBox.shrink(),
+                        error: (context, error) => const SizedBox.shrink(),
                       ),
                     ],
                   ),
@@ -1096,8 +1096,8 @@ class _DiscountBottomSheetState extends ConsumerState<_DiscountBottomSheet> {
                       const SizedBox(width: 10),
                       Switch(
                         value: booking.useCoins,
-                        activeTrackColor: AppColors.primaryGold.withValues(alpha: 0.5),
-                        activeThumbColor: AppColors.primaryGold,
+                        activeTrackColor: AppColors.primaryGold.withOpacity(0.5),
+                        
                         onChanged: (val) {
                           final eurValue = points / 100.0;
                           ref
@@ -1108,7 +1108,7 @@ class _DiscountBottomSheetState extends ConsumerState<_DiscountBottomSheet> {
                     ],
                   ),
                   loading: () => const SizedBox.shrink(),
-                  error: (_, _) => const SizedBox.shrink(),
+                  error: (context, error) => const SizedBox.shrink(),
                 ),
               ],
             ),
@@ -1192,7 +1192,7 @@ class _DiscountBottomSheetState extends ConsumerState<_DiscountBottomSheet> {
                 color: AppColors.cardDark,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                    color: AppColors.success.withValues(alpha: 0.3)),
+                    color: AppColors.success.withOpacity(0.3)),
               ),
               child: Row(
                 children: [

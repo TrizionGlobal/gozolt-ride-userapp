@@ -43,14 +43,14 @@ class NavigationShell extends ConsumerWidget {
           child: Container(
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             decoration: BoxDecoration(
-              color: AppColors.surfaceDark.withValues(alpha: 0.7),
+              color: AppColors.surfaceDark.withOpacity(0.7),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: AppColors.primaryGold.withValues(alpha: 0.15),
+                color: AppColors.primaryGold.withOpacity(0.15),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
+                  color: Colors.black.withOpacity(0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),

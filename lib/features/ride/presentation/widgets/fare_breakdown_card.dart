@@ -37,7 +37,7 @@ class FareBreakdownCard extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: AppColors.primaryGold.withValues(alpha: 0.15),
+                  color: AppColors.primaryGold.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(Icons.access_time,

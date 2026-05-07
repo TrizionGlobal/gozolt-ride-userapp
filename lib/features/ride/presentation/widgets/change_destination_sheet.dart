@@ -365,10 +365,10 @@ class _ChangeDestinationSheetState
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.warning.withValues(alpha: 0.1),
+                    color: AppColors.warning.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                        color: AppColors.warning.withValues(alpha: 0.3)),
+                        color: AppColors.warning.withOpacity(0.3)),
                   ),
                   child: Row(
                     children: [
@@ -439,7 +439,7 @@ class _ChangeDestinationSheetState
                           backgroundColor: AppColors.primaryGold,
                           foregroundColor: AppColors.backgroundDark,
                           disabledBackgroundColor:
-                              AppColors.primaryGold.withValues(alpha: 0.3),
+                              AppColors.primaryGold.withOpacity(0.3),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),

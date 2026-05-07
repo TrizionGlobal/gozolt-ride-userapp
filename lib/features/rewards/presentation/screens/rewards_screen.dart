@@ -41,7 +41,7 @@ class RewardsScreen extends ConsumerWidget {
             SliverToBoxAdapter(
               child: summaryAsync.when(
                 loading: () => _buildHeaderShimmer(),
-                error: (_, _) => _buildHeaderError(ref),
+                error: (context, error) => _buildHeaderError(ref),
                 data: (summary) => _buildGoldHeader(context, ref, summary),
               ),
             ),
@@ -50,7 +50,7 @@ class RewardsScreen extends ConsumerWidget {
             SliverToBoxAdapter(
               child: summaryAsync.when(
                 loading: () => const SizedBox(height: 80),
-                error: (_, _) => const SizedBox.shrink(),
+                error: (context, error) => const SizedBox.shrink(),
                 data: (summary) =>
                     _buildActionButtons(context, ref, summary),
               ),
@@ -60,10 +60,10 @@ class RewardsScreen extends ConsumerWidget {
             SliverToBoxAdapter(
               child: summaryAsync.when(
                 loading: () => const SizedBox.shrink(),
-                error: (_, _) => const SizedBox.shrink(),
+                error: (context, error) => const SizedBox.shrink(),
                 data: (summary) => rulesAsync.when(
                   loading: () => const SizedBox.shrink(),
-                  error: (_, _) => const SizedBox.shrink(),
+                  error: (context, error) => const SizedBox.shrink(),
                   data: (rules) {
                     final currentTier = rules.tierFor(summary.tier);
                     if (currentTier == null ||
@@ -199,7 +199,7 @@ class RewardsScreen extends ConsumerWidget {
                         height: 32,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColors.backgroundDark.withValues(alpha: 0.15),
+                          color: AppColors.backgroundDark.withOpacity(0.15),
                         ),
                         child: const Icon(Icons.info_outline,
                             color: AppColors.backgroundDark, size: 18),
@@ -234,7 +234,7 @@ class RewardsScreen extends ConsumerWidget {
                           'Total Coins ',
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: AppColors.backgroundDark
-                                .withValues(alpha: 0.7),
+                                .withOpacity(0.7),
                           ),
                         ),
                         const Icon(Icons.stars,
@@ -262,13 +262,13 @@ class RewardsScreen extends ConsumerWidget {
                     Text(
                       '${summary.progress.pointsNeeded.toStringAsFixed(0)} pts to ${summary.progress.nextTier ?? ""}',
                       style: AppTextStyles.labelSmall.copyWith(
-                        color: AppColors.backgroundDark.withValues(alpha: 0.7),
+                        color: AppColors.backgroundDark.withOpacity(0.7),
                       ),
                     ),
                     Text(
                       '${summary.progress.progressPercent.toStringAsFixed(0)}%',
                       style: AppTextStyles.labelSmall.copyWith(
-                        color: AppColors.backgroundDark.withValues(alpha: 0.7),
+                        color: AppColors.backgroundDark.withOpacity(0.7),
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -281,7 +281,7 @@ class RewardsScreen extends ConsumerWidget {
                     value: summary.progress.progressPercent / 100,
                     minHeight: 6,
                     backgroundColor:
-                        AppColors.backgroundDark.withValues(alpha: 0.15),
+                        AppColors.backgroundDark.withOpacity(0.15),
                     valueColor: const AlwaysStoppedAnimation<Color>(
                         AppColors.backgroundDark),
                   ),
@@ -292,7 +292,7 @@ class RewardsScreen extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: AppColors.backgroundDark.withValues(alpha: 0.15),
+                      color: AppColors.backgroundDark.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -373,7 +373,7 @@ class RewardsScreen extends ConsumerWidget {
                   Text(
                     'Total Coins ',
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.backgroundDark.withValues(alpha: 0.7),
+                      color: AppColors.backgroundDark.withOpacity(0.7),
                     ),
                   ),
                   const Icon(Icons.stars,
@@ -386,7 +386,7 @@ class RewardsScreen extends ConsumerWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: AppColors.backgroundDark.withValues(alpha: 0.15),
+                    color: AppColors.backgroundDark.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -542,7 +542,7 @@ class RewardsScreen extends ConsumerWidget {
           children: [
             Icon(Icons.receipt_long_outlined,
                 size: 48,
-                color: AppColors.textMuted.withValues(alpha: 0.3)),
+                color: AppColors.textMuted.withOpacity(0.3)),
             const SizedBox(height: 12),
             Text(
               'No Reward History',
@@ -580,7 +580,7 @@ class RewardsScreen extends ConsumerWidget {
 
     return referralAsync.when(
       loading: () => const SizedBox.shrink(),
-      error: (_, _) => const SizedBox.shrink(),
+      error: (context, error) => const SizedBox.shrink(),
       data: (referral) => Padding(
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
         child: Container(
@@ -589,13 +589,13 @@ class RewardsScreen extends ConsumerWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                AppColors.primaryGold.withValues(alpha: 0.12),
-                AppColors.primaryGold.withValues(alpha: 0.04),
+                AppColors.primaryGold.withOpacity(0.12),
+                AppColors.primaryGold.withOpacity(0.04),
               ],
             ),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-                color: AppColors.primaryGold.withValues(alpha: 0.2)),
+                color: AppColors.primaryGold.withOpacity(0.2)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -616,7 +616,7 @@ class RewardsScreen extends ConsumerWidget {
               const SizedBox(height: 8),
               rulesAsync.when(
                 loading: () => const SizedBox.shrink(),
-                error: (_, _) => const SizedBox.shrink(),
+                error: (context, error) => const SizedBox.shrink(),
                 data: (rules) => Text(
                   'Earn ${rules.referral.referrerBonus} GoCoins for every friend who takes their first ride. They get ${rules.referral.newUserBonus} coins!',
                   style: AppTextStyles.bodySmall
@@ -749,7 +749,7 @@ class _ActionButton extends StatelessWidget {
           decoration: BoxDecoration(
             color: enabled
                 ? AppColors.cardDark
-                : AppColors.cardDark.withValues(alpha: 0.5),
+                : AppColors.cardDark.withOpacity(0.5),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: AppColors.borderDark),
           ),
@@ -819,7 +819,7 @@ class _TransactionCard extends StatelessWidget {
                       height: 8,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.error.withValues(alpha: 0.8),
+                        color: AppColors.error.withOpacity(0.8),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -894,7 +894,7 @@ class _TransactionCard extends StatelessWidget {
                 width: 48,
                 height: 32,
                 fit: BoxFit.contain,
-                errorBuilder: (_, _, _) => const Icon(
+                errorBuilder: (context, error, stackTrace) => const Icon(
                   Icons.directions_car,
                   color: AppColors.primaryGold,
                   size: 28,
@@ -959,7 +959,7 @@ class _TransactionCard extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               color: (isPositive ? AppColors.success : AppColors.error)
-                  .withValues(alpha: 0.1),
+                  .withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(

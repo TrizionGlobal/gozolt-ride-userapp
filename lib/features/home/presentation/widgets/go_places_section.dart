@@ -36,7 +36,7 @@ class GoPlacesSection extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20),
             itemCount: _places.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 12),
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final place = _places[index];
               return _PlaceCard(data: place);
@@ -81,7 +81,7 @@ class _PlaceCard extends StatelessWidget {
               Image.asset(
                 data.imagePath,
                 fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => Container(
+                errorBuilder: (context, error, stackTrace) => Container(
                   color: AppColors.cardDark,
                   child: const Center(
                     child: Icon(Icons.place,
@@ -97,7 +97,7 @@ class _PlaceCard extends StatelessWidget {
                     end: Alignment.bottomCenter,
                     colors: [
                       Colors.transparent,
-                      Colors.black.withValues(alpha: 0.7),
+                      Colors.black.withOpacity(0.7),
                     ],
                   ),
                 ),

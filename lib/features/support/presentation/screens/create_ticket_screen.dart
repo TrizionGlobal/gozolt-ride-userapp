@@ -80,7 +80,7 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: AppColors.backgroundDark
-                                .withValues(alpha: 0.15),
+                                .withOpacity(0.15),
                           ),
                           child: const Icon(Icons.arrow_back,
                               color: AppColors.backgroundDark, size: 20),
@@ -130,7 +130,7 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: _selectedCategory != null
-                            ? AppColors.primaryGold.withValues(alpha: 0.3)
+                            ? AppColors.primaryGold.withOpacity(0.3)
                             : AppColors.borderDark,
                       ),
                     ),
@@ -263,7 +263,7 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                       backgroundColor: AppColors.primaryGold,
                       foregroundColor: AppColors.backgroundDark,
                       disabledBackgroundColor:
-                          AppColors.primaryGold.withValues(alpha: 0.3),
+                          AppColors.primaryGold.withOpacity(0.3),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
@@ -412,7 +412,7 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: info.color.withValues(alpha: 0.12),
+        color: info.color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -473,12 +473,12 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                           horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(
                         color: _selectedCategory == cat.value
-                            ? cat.color.withValues(alpha: 0.08)
+                            ? cat.color.withOpacity(0.08)
                             : AppColors.cardDark,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: _selectedCategory == cat.value
-                              ? cat.color.withValues(alpha: 0.3)
+                              ? cat.color.withOpacity(0.3)
                               : AppColors.borderDark,
                         ),
                       ),
@@ -488,7 +488,7 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                             width: 36,
                             height: 36,
                             decoration: BoxDecoration(
-                              color: cat.color.withValues(alpha: 0.12),
+                              color: cat.color.withOpacity(0.12),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(cat.icon,
@@ -572,7 +572,7 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: AppColors.primaryGold.withValues(alpha: 0.15),
+                  color: AppColors.primaryGold.withOpacity(0.15),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.check_circle,

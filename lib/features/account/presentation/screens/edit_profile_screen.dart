@@ -6,7 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/utils/input_validators.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
-import 'dart:io';
+import 'package:universal_io/io.dart';
 import 'package:image_picker/image_picker.dart';
 import '../providers/account_providers.dart';
 import '../../../home/presentation/providers/home_providers.dart';
@@ -81,7 +81,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: AppColors.backgroundDark
-                                .withValues(alpha: 0.15),
+                                .withOpacity(0.15),
                           ),
                           child: const Icon(Icons.arrow_back,
                               color: AppColors.backgroundDark, size: 20),
@@ -112,7 +112,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     loading: () => const ShimmerWrap(
                       child: ShimmerCircle(radius: 44),
                     ),
-                    error: (_, _) => const SizedBox.shrink(),
+                    error: (context, error) => const SizedBox.shrink(),
                     data: (profile) => Stack(
                       children: [
                         _avatarPath != null
@@ -121,19 +121,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                 backgroundImage:
                                     FileImage(File(_avatarPath!)),
                                 backgroundColor: AppColors.primaryGold
-                                    .withValues(alpha: 0.15),
+                                    .withOpacity(0.15),
                               )
                             : (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty)
                                 ? CircleAvatar(
                                     radius: 44,
                                     backgroundImage: NetworkImage(ApiConstants.fullUrl(profile.avatarUrl!)),
                                     backgroundColor: AppColors.primaryGold
-                                        .withValues(alpha: 0.15),
+                                        .withOpacity(0.15),
                                   )
                                 : CircleAvatar(
                                     radius: 44,
                                     backgroundColor: AppColors.primaryGold
-                                        .withValues(alpha: 0.15),
+                                        .withOpacity(0.15),
                                     child: Text(
                                       profile.initials,
                                       style:
@@ -212,13 +212,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 const SizedBox(height: 6),
                 profileAsync.when(
                   loading: () => const SizedBox.shrink(),
-                  error: (_, _) => const SizedBox.shrink(),
+                  error: (context, error) => const SizedBox.shrink(),
                   data: (profile) => Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
-                      color: AppColors.inputDark.withValues(alpha: 0.5),
+                      color: AppColors.inputDark.withOpacity(0.5),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: AppColors.borderDark),
                     ),
@@ -258,7 +258,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                       backgroundColor: AppColors.primaryGold,
                       foregroundColor: AppColors.backgroundDark,
                       disabledBackgroundColor:
-                          AppColors.primaryGold.withValues(alpha: 0.3),
+                          AppColors.primaryGold.withOpacity(0.3),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),

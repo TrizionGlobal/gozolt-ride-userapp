@@ -65,14 +65,14 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                     width: 220,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceDark.withValues(alpha: 0.95),
+                      color: AppColors.surfaceDark.withOpacity(0.95),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: AppColors.primaryGold.withValues(alpha: 0.3),
+                        color: AppColors.primaryGold.withOpacity(0.3),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.4),
+                          color: Colors.black.withOpacity(0.4),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
@@ -128,7 +128,7 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                             Icon(Icons.location_on,
                                 size: 14,
                                 color: AppColors.primaryGold
-                                    .withValues(alpha: 0.8)),
+                                    .withOpacity(0.8)),
                             const SizedBox(width: 4),
                             Flexible(
                               child: Text(
@@ -154,7 +154,7 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                               horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
                             color:
-                                AppColors.primaryGold.withValues(alpha: 0.1),
+                                AppColors.primaryGold.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
@@ -192,7 +192,7 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: AppColors.primaryGold
-                                  .withValues(alpha: 0.2),
+                                  .withOpacity(0.2),
                             ),
                           ),
                           child: Text(
@@ -323,7 +323,7 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                   );
                 },
                 loading: () => const SizedBox.shrink(),
-                error: (_, _) => const SizedBox.shrink(),
+                error: (context, error) => const SizedBox.shrink(),
               ),
             ],
           ),
@@ -370,7 +370,7 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                 radius: 18,
                 backgroundColor: AppColors.cardDark,
               ),
-              error: (_, _) => const CircleAvatar(
+              error: (context, error) => const CircleAvatar(
                 radius: 18,
                 backgroundColor: AppColors.cardDark,
                 child:

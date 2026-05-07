@@ -17,7 +17,7 @@ val keystoreProperties = Properties().apply {
 android {
     namespace = "com.gozolt.gozolt_user_app"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "25.1.8937393"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -41,9 +41,9 @@ android {
         applicationId = "com.gozolt.gozolt_user_app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
-        manifestPlaceholders["MAPS_API_KEY"] = project.findProperty("MAPS_API_KEY") ?: "AIzaSyAJ-WXNgyWkKtAzSQuiwnCoSiFQ4tNK_j0"
+        versionCode = flutter.versionCode()
+        versionName = flutter.versionName()
+        manifestPlaceholders += mapOf("MAPS_API_KEY" to ((project.findProperty("MAPS_API_KEY") as? String) ?: "AIzaSyBnJ68oJPHgHrUtemPnfZFcT2bG_pJd7TY"))
     }
 
     buildTypes {

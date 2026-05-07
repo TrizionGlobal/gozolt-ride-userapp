@@ -25,8 +25,8 @@ class RewardsHomeBanner extends ConsumerWidget {
           border: Border.all(color: AppColors.primaryGold, width: 1.5),
           gradient: LinearGradient(
             colors: [
-              AppColors.primaryGold.withValues(alpha: 0.1),
-              AppColors.primaryGold.withValues(alpha: 0.05),
+              AppColors.primaryGold.withOpacity(0.1),
+              AppColors.primaryGold.withOpacity(0.05),
             ],
           ),
         ),

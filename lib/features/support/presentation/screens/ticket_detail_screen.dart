@@ -49,7 +49,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
     final replies = ref.watch(ticketRepliesProvider(widget.ticketId));
 
     // Auto-scroll when replies change
-    ref.listen(ticketRepliesProvider(widget.ticketId), (_, _) {
+    ref.listen(ticketRepliesProvider(widget.ticketId), (context, error) {
       _scrollToBottom();
     });
 
@@ -129,7 +129,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: AppColors.backgroundDark
-                                    .withValues(alpha: 0.15),
+                                    .withOpacity(0.15),
                               ),
                               child: const Icon(Icons.arrow_back,
                                   color: AppColors.backgroundDark, size: 20),
@@ -293,7 +293,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
                 width: 28,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: cat.color.withValues(alpha: 0.12),
+                  color: cat.color.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(cat.icon, color: cat.color, size: 14),
@@ -344,7 +344,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: AppColors.info.withValues(alpha: 0.12),
+                color: AppColors.info.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Icon(Icons.directions_car,
@@ -389,9 +389,9 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
+        color: color.withOpacity(0.08),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        border: Border.all(color: color.withOpacity(0.2)),
       ),
       child: Row(
         children: [
@@ -433,7 +433,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
                   width: 20,
                   height: 20,
                   decoration: BoxDecoration(
-                    color: AppColors.primaryGold.withValues(alpha: 0.15),
+                    color: AppColors.primaryGold.withOpacity(0.15),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.support_agent,
@@ -472,7 +472,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: isUser
-                  ? AppColors.primaryGold.withValues(alpha: 0.08)
+                  ? AppColors.primaryGold.withOpacity(0.08)
                   : AppColors.cardDark,
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(12),
@@ -482,7 +482,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
               ),
               border: Border.all(
                 color: isUser
-                    ? AppColors.primaryGold.withValues(alpha: 0.15)
+                    ? AppColors.primaryGold.withOpacity(0.15)
                     : AppColors.borderDark,
               ),
             ),
@@ -584,7 +584,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
                   decoration: BoxDecoration(
                     color: _replyController.text.trim().isNotEmpty
                         ? AppColors.primaryGold
-                        : AppColors.primaryGold.withValues(alpha: 0.3),
+                        : AppColors.primaryGold.withOpacity(0.3),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.send,
@@ -616,9 +616,9 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDark.withValues(alpha: 0.15),
+        color: AppColors.backgroundDark.withOpacity(0.15),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: borderColor.withValues(alpha: 0.5)),
+        border: Border.all(color: borderColor.withOpacity(0.5)),
       ),
       child: Text(
         label,

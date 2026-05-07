@@ -56,7 +56,7 @@ class RideHistoryCard extends StatelessWidget {
                           color: AppColors.success,
                           shape: BoxShape.circle,
                           border: Border.all(
-                              color: AppColors.success.withValues(alpha: 0.3),
+                              color: AppColors.success.withOpacity(0.3),
                               width: 2),
                         ),
                       ),
@@ -71,7 +71,7 @@ class RideHistoryCard extends StatelessWidget {
                           color: AppColors.error,
                           shape: BoxShape.circle,
                           border: Border.all(
-                              color: AppColors.error.withValues(alpha: 0.3),
+                              color: AppColors.error.withOpacity(0.3),
                               width: 2),
                         ),
                       ),
@@ -241,31 +241,31 @@ class _StatusBadge extends StatelessWidget {
     switch (status) {
       case 'COMPLETED':
         return (
-          AppColors.success.withValues(alpha: 0.15),
+          AppColors.success.withOpacity(0.15),
           AppColors.success,
           'Completed',
         );
       case 'CANCELLED':
         return (
-          AppColors.error.withValues(alpha: 0.15),
+          AppColors.error.withOpacity(0.15),
           AppColors.error,
           'Cancelled',
         );
       case 'SCHEDULED':
         return (
-          AppColors.info.withValues(alpha: 0.15),
+          AppColors.info.withOpacity(0.15),
           AppColors.info,
           'Scheduled',
         );
       case 'IN_PROGRESS':
         return (
-          AppColors.primaryGold.withValues(alpha: 0.15),
+          AppColors.primaryGold.withOpacity(0.15),
           AppColors.primaryGold,
           'In Progress',
         );
       default:
         return (
-          AppColors.textMuted.withValues(alpha: 0.15),
+          AppColors.textMuted.withOpacity(0.15),
           AppColors.textMuted,
           status,
         );

@@ -256,7 +256,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
       const Offset(size / 2, size / 2),
       16,
       Paint()
-        ..color = Colors.black.withValues(alpha: 0.2)
+        ..color = Colors.black.withOpacity(0.2)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
     );
 
@@ -311,7 +311,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
       const Offset(size / 2, size / 2),
       size / 2 - 2,
       Paint()
-        ..color = AppColors.primaryGold.withValues(alpha: 0.15)
+        ..color = AppColors.primaryGold.withOpacity(0.15)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
     );
 
@@ -552,11 +552,11 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 10),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryGold.withValues(alpha: 0.1),
+                            color: AppColors.primaryGold.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                                 color:
-                                    AppColors.primaryGold.withValues(alpha: 0.3)),
+                                    AppColors.primaryGold.withOpacity(0.3)),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -654,7 +654,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: AppColors.surfaceDark.withValues(alpha: 0.9),
+            color: AppColors.surfaceDark.withOpacity(0.9),
             shape: BoxShape.circle,
             border: Border.all(color: AppColors.borderDark),
           ),

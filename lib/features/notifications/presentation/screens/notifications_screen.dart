@@ -67,7 +67,7 @@ class NotificationsScreen extends ConsumerWidget {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: AppColors.backgroundDark
-                                    .withValues(alpha: 0.15),
+                                    .withOpacity(0.15),
                               ),
                               child: const Icon(Icons.arrow_back,
                                   color: AppColors.backgroundDark, size: 20),
@@ -98,7 +98,7 @@ class NotificationsScreen extends ConsumerWidget {
                                     horizontal: 10, vertical: 6),
                                 decoration: BoxDecoration(
                                   color: AppColors.backgroundDark
-                                      .withValues(alpha: 0.15),
+                                      .withOpacity(0.15),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
@@ -280,7 +280,7 @@ class NotificationsScreen extends ConsumerWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.textMuted.withValues(alpha: 0.3),
+                  color: AppColors.textMuted.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

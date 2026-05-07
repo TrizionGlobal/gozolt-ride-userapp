@@ -75,7 +75,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               height: 36,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.primaryGold.withValues(alpha: 0.15),
+                color: AppColors.primaryGold.withOpacity(0.15),
               ),
               child: Center(
                 child: Text(
@@ -133,7 +133,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       children: [
                         Icon(Icons.chat_bubble_outline,
                             size: 48,
-                            color: AppColors.textMuted.withValues(alpha: 0.3)),
+                            color: AppColors.textMuted.withOpacity(0.3)),
                         const SizedBox(height: 12),
                         Text(
                           'No messages yet',
@@ -180,7 +180,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
                                   color: AppColors.primaryGold
-                                      .withValues(alpha: 0.3),
+                                      .withOpacity(0.3),
                                 ),
                               ),
                               child: Text(
@@ -334,7 +334,7 @@ class _ChatBubble extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 10,
                           color: isUser
-                              ? AppColors.backgroundDark.withValues(alpha: 0.6)
+                              ? AppColors.backgroundDark.withOpacity(0.6)
                               : AppColors.textMuted,
                         ),
                       ),
@@ -346,7 +346,7 @@ class _ChatBubble extends StatelessWidget {
                           child: CircularProgressIndicator(
                             strokeWidth: 1.5,
                             color: isUser
-                                ? AppColors.backgroundDark.withValues(alpha: 0.6)
+                                ? AppColors.backgroundDark.withOpacity(0.6)
                                 : AppColors.textMuted,
                           ),
                         ),

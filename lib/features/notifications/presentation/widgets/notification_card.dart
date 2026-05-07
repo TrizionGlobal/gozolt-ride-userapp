@@ -25,7 +25,7 @@ class NotificationCard extends StatelessWidget {
           border: Border.all(
             color: notification.read
                 ? AppColors.borderDark
-                : AppColors.primaryGold.withValues(alpha: 0.3),
+                : AppColors.primaryGold.withOpacity(0.3),
           ),
         ),
         child: IntrinsicHeight(
@@ -59,7 +59,7 @@ class NotificationCard extends StatelessWidget {
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: _typeColor.withValues(alpha: 0.12),
+                          color: _typeColor.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(_typeIcon, color: _typeColor, size: 18),

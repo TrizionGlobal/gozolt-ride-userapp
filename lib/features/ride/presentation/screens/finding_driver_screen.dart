@@ -240,7 +240,7 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
-          color: AppColors.primaryGold.withValues(alpha: opacity),
+          color: AppColors.primaryGold.withOpacity(opacity),
           width: 2,
         ),
       ),
@@ -257,14 +257,14 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
           width: 180,
           height: 140,
           fit: BoxFit.contain,
-          errorBuilder: (_, _, _) => AnimatedBuilder(
+          errorBuilder: (context, error, stackTrace) => AnimatedBuilder(
             animation: _pulseController,
             builder: (context, _) {
               return Icon(
                 Icons.local_taxi,
                 size: 80,
                 color: AppColors.primaryGold
-                    .withValues(alpha: 0.5 + _pulseController.value * 0.5),
+                    .withOpacity(0.5 + _pulseController.value * 0.5),
               );
             },
           ),

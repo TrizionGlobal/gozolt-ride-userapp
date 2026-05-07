@@ -51,11 +51,11 @@ class ActiveRideBanner extends ConsumerWidget {
           ),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: statusColor.withValues(alpha: 0.4),
+            color: statusColor.withOpacity(0.4),
           ),
           boxShadow: [
             BoxShadow(
-              color: statusColor.withValues(alpha: 0.15),
+              color: statusColor.withOpacity(0.15),
               blurRadius: 12,
               spreadRadius: 1,
             ),
@@ -72,7 +72,7 @@ class ActiveRideBanner extends ConsumerWidget {
                   height: 36,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: statusColor.withValues(alpha: 0.15),
+                    color: statusColor.withOpacity(0.15),
                   ),
                   child: Icon(statusIcon, color: statusColor, size: 18),
                 ),

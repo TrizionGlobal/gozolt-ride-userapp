@@ -76,9 +76,9 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                   height: 80,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.success.withValues(alpha: 0.15),
+                    color: AppColors.success.withOpacity(0.15),
                     border: Border.all(
-                        color: AppColors.success.withValues(alpha: 0.3),
+                        color: AppColors.success.withOpacity(0.3),
                         width: 2),
                   ),
                   child: const Icon(Icons.check,
@@ -143,13 +143,13 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppColors.primaryGold.withValues(alpha: 0.15),
-                      AppColors.primaryGold.withValues(alpha: 0.05),
+                      AppColors.primaryGold.withOpacity(0.15),
+                      AppColors.primaryGold.withOpacity(0.05),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color: AppColors.primaryGold.withValues(alpha: 0.2)),
+                      color: AppColors.primaryGold.withOpacity(0.2)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -159,7 +159,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                       height: 32,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.primaryGold.withValues(alpha: 0.2),
+                        color: AppColors.primaryGold.withOpacity(0.2),
                       ),
                       child: Image.asset(AssetPaths.iconGoCoin,
                           width: 20, height: 20),
@@ -340,7 +340,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                   padding:
                       const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.1),
+                    color: AppColors.success.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -368,10 +368,10 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                   padding: const EdgeInsets.symmetric(
                       vertical: 12, horizontal: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.1),
+                    color: AppColors.success.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                        color: AppColors.success.withValues(alpha: 0.2)),
+                        color: AppColors.success.withOpacity(0.2)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,

@@ -34,9 +34,9 @@ class DriverInfoCard extends StatelessWidget {
               height: 48,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.primaryGold.withValues(alpha: 0.15),
+                color: AppColors.primaryGold.withOpacity(0.15),
                 border: Border.all(
-                    color: AppColors.primaryGold.withValues(alpha: 0.3)),
+                    color: AppColors.primaryGold.withOpacity(0.3)),
               ),
               child: Center(
                 child: Text(
@@ -131,11 +131,11 @@ class DriverInfoCard extends StatelessWidget {
         height: 40,
         decoration: BoxDecoration(
           color: isGold
-              ? AppColors.primaryGold.withValues(alpha: 0.15)
+              ? AppColors.primaryGold.withOpacity(0.15)
               : AppColors.inputDark,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isGold ? AppColors.primaryGold.withValues(alpha: 0.3) : AppColors.borderDark,
+            color: isGold ? AppColors.primaryGold.withOpacity(0.3) : AppColors.borderDark,
           ),
         ),
         child: Icon(
@@ -176,9 +176,9 @@ class DriverInfoCard extends StatelessWidget {
               height: 72,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.primaryGold.withValues(alpha: 0.15),
+                color: AppColors.primaryGold.withOpacity(0.15),
                 border: Border.all(
-                    color: AppColors.primaryGold.withValues(alpha: 0.3),
+                    color: AppColors.primaryGold.withOpacity(0.3),
                     width: 2),
               ),
               child: Center(

@@ -54,7 +54,7 @@ class SavedPlacesScreen extends ConsumerWidget {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: AppColors.backgroundDark
-                                .withValues(alpha: 0.15),
+                                .withOpacity(0.15),
                           ),
                           child: const Icon(Icons.arrow_back,
                               color: AppColors.backgroundDark, size: 20),
@@ -140,7 +140,7 @@ class SavedPlacesScreen extends ConsumerWidget {
                                 height: 40,
                                 decoration: BoxDecoration(
                                   color: AppColors.primaryGold
-                                      .withValues(alpha: 0.12),
+                                      .withOpacity(0.12),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Icon(
@@ -188,7 +188,7 @@ class SavedPlacesScreen extends ConsumerWidget {
                         color: AppColors.cardDark,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppColors.primaryGold.withValues(alpha: 0.3),
+                          color: AppColors.primaryGold.withOpacity(0.3),
                           style: BorderStyle.solid,
                         ),
                       ),

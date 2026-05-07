@@ -9,6 +9,10 @@ class SecureStorageService {
           aOptions: AndroidOptions(
             encryptedSharedPreferences: true,
           ),
+          webOptions: WebOptions(
+            dbName: 'gozolt_db',
+            publicKey: 'gozolt_key',
+          ),
         );
 
   // ── Tokens ─────────────────────────────────────────────

@@ -100,7 +100,7 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: AppColors.backgroundDark.withValues(alpha: 0.2),
+                color: AppColors.backgroundDark.withOpacity(0.2),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.close,
@@ -122,7 +122,7 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
             itemBuilder: () => const ShimmerListTile(),
             count: 3,
           ),
-          error: (_, _) => _buildContent([]),
+          error: (context, error) => _buildContent([]),
         ),
       ),
       bottomNavigationBar: _buildBottomBar(paymentMethodsAsync),
