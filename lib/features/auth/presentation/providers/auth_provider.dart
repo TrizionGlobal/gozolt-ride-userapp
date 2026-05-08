@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/providers/dio_provider.dart';
@@ -45,12 +46,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _isRegisterFlow = isRegister;
     state = state.copyWith(status: AuthStatus.loading, phone: phone);
 
-    // Dev bypass: skip the real API call
-    if (AppConstants.kDevBypass) {
-      state = state.copyWith(status: AuthStatus.otpSent, phone: phone);
-      return;
-    }
-
     try {
       // Check if phone exists before sending OTP
       final checkResult = await _repo.checkPhone(phone);
@@ -70,7 +65,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         return;
       }
 
-      await _repo.sendOtp(phone);
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      await _repo.sendOtp(phone, fcmToken: fcmToken);
       state = state.copyWith(status: AuthStatus.otpSent, phone: phone);
     } on ApiException catch (e) {
       state = AuthState.error(e);
@@ -156,7 +152,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// Resend OTP without changing auth status (avoids re-navigation to OTP screen).
   Future<void> resendOtp(String phone) async {
     try {
-      await _repo.sendOtp(phone);
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      await _repo.sendOtp(phone, fcmToken: fcmToken);
     } catch (_) {
       // Silently fail — the user can tap resend again
     }

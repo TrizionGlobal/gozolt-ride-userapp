@@ -23,9 +23,15 @@ class AuthRemoteDatasource {
   }
 
   /// Send OTP to the given phone number.
-  Future<void> sendOtp(String phone) async {
+  Future<void> sendOtp(String phone, {String? fcmToken}) async {
     try {
-      await _dio.post(ApiConstants.sendOtp, data: {'phone': phone});
+      await _dio.post(
+        ApiConstants.sendOtp,
+        data: {
+          'phone': phone,
+          if (fcmToken != null) 'fcmToken': fcmToken,
+        },
+      );
     } on DioException catch (e) {
       throw _mapDioError(e);
     }

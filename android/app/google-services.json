@@ -7,6 +7,42 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:411058986195:android:7bc13838056281aab0c826",
+        "android_client_info": {
+          "package_name": "com.gozolt.gozolt_driver"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "411058986195-j2tig3ltu7sjgtaqk6bu7hgj5qshg9cn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKfixj3c-dAXd46WvkVFFvjI9a_fSHq-I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "411058986195-j2tig3ltu7sjgtaqk6bu7hgj5qshg9cn.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "411058986195-fl0vqo7f17v2pjkb6mv2deh74104st2m.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.xoligo.partner"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:411058986195:android:a6a3cc41e0fe3ae2b0c826",
         "android_client_info": {
           "package_name": "com.gozolt.gozolt_user_app"

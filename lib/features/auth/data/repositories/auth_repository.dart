@@ -15,7 +15,7 @@ class AuthRepository {
 
   Future<Map<String, dynamic>> checkPhone(String phone) => _remote.checkPhone(phone);
 
-  Future<void> sendOtp(String phone) => _remote.sendOtp(phone);
+  Future<void> sendOtp(String phone, {String? fcmToken}) => _remote.sendOtp(phone, fcmToken: fcmToken);
 
   Future<AuthResponse> verifyOtp({
     required String phone,

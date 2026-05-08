@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'app.dart';
 import 'core/constants/app_constants.dart';
+import 'core/services/notification_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp();
 
   // Initialize Stripe
   Stripe.publishableKey = AppConstants.stripePublishableKey;
@@ -18,5 +23,13 @@ void main() {
     statusBarBrightness: Brightness.dark,
   ));
 
-  runApp(const ProviderScope(child: GozoltApp()));
+  final container = ProviderContainer();
+  
+  // Initialize Notification Service
+  await container.read(notificationServiceProvider).initialize();
+
+  runApp(UncontrolledProviderScope(
+    container: container,
+    child: const GozoltApp(),
+  ));
 }

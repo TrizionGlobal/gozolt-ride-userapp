@@ -54,11 +54,6 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
     ref.read(phoneNumberProvider.notifier).state = phone;
     ref.read(selectedDialCodeProvider.notifier).state = _selectedCountry.dialCode;
 
-    if (AppConstants.kDevBypass) {
-      context.pushNamed(RouteNames.otp);
-      return;
-    }
-
     final isRegister = ref.read(isRegisterFlowProvider);
     ref.read(authProvider.notifier).sendOtp(phone, isRegister: isRegister);
   }
