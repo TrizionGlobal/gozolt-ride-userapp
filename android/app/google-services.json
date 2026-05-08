@@ -1,76 +1,32 @@
 {
   "project_info": {
-    "project_number": "411058986195",
-    "project_id": "gozolt-testing",
-    "storage_bucket": "gozolt-testing.firebasestorage.app"
+    "project_number": "102163105283",
+    "project_id": "gozoltmaps",
+    "storage_bucket": "gozoltmaps.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:411058986195:android:7bc13838056281aab0c826",
-        "android_client_info": {
-          "package_name": "com.gozolt.gozolt_driver"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "411058986195-j2tig3ltu7sjgtaqk6bu7hgj5qshg9cn.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyAKfixj3c-dAXd46WvkVFFvjI9a_fSHq-I"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "411058986195-j2tig3ltu7sjgtaqk6bu7hgj5qshg9cn.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "411058986195-fl0vqo7f17v2pjkb6mv2deh74104st2m.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.xoligo.partner"
-              }
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:411058986195:android:a6a3cc41e0fe3ae2b0c826",
+        "mobilesdk_app_id": "1:102163105283:android:0417e0ae94bf638c11b036",
         "android_client_info": {
           "package_name": "com.gozolt.gozolt_user_app"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "411058986195-j2tig3ltu7sjgtaqk6bu7hgj5qshg9cn.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAKfixj3c-dAXd46WvkVFFvjI9a_fSHq-I"
+          "current_key": "AIzaSyCf82s1nUnYKI65GDDhi12tX6vLVNPjmEk"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "411058986195-j2tig3ltu7sjgtaqk6bu7hgj5qshg9cn.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "411058986195-fl0vqo7f17v2pjkb6mv2deh74104st2m.apps.googleusercontent.com",
+              "client_id": "102163105283-tmklml2pra6os2jhs7ktsg0sh0v3f91k.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.xoligo.partner"
+                "bundle_id": "com.Primoo.partner",
+                "app_store_id": "6752519763"
               }
             }
           ]
