@@ -67,6 +67,30 @@ class SecureStorageService {
   Future<String?> getLanguage() =>
       _storage.read(key: StorageKeys.language);
 
+  // ── OTP Session ─────────────────────────────────────────
+  Future<void> saveOtpSession({
+    required String verificationId,
+    required String phone,
+  }) async {
+    await Future.wait([
+      _storage.write(key: StorageKeys.verificationId, value: verificationId),
+      _storage.write(key: StorageKeys.pendingPhone, value: phone),
+    ]);
+  }
+
+  Future<String?> getVerificationId() =>
+      _storage.read(key: StorageKeys.verificationId);
+
+  Future<String?> getPendingPhone() =>
+      _storage.read(key: StorageKeys.pendingPhone);
+
+  Future<void> clearOtpSession() async {
+    await Future.wait([
+      _storage.delete(key: StorageKeys.verificationId),
+      _storage.delete(key: StorageKeys.pendingPhone),
+    ]);
+  }
+
   // ── Clear All ──────────────────────────────────────────
   Future<void> clearAll() => _storage.deleteAll();
 }

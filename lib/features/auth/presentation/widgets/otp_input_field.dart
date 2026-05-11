@@ -167,10 +167,10 @@ class OtpInputFieldState extends State<OtpInputField>
                     SystemChannels.textInput.invokeMethod('TextInput.show');
                   },
                   child: Container(
-                    width: 60,
-                    height: 60,
+                    width: 48,
+                    height: 54,
                     margin: EdgeInsets.only(
-                      right: index < widget.length - 1 ? 14 : 0,
+                      right: index < widget.length - 1 ? 8 : 0,
                     ),
                     decoration: BoxDecoration(
                       color: AppColors.inputDark,

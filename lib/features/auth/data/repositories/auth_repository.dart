@@ -14,6 +14,15 @@ class AuthRepository {
         _storage = storage;
 
   Future<Map<String, dynamic>> checkPhone(String phone) => _remote.checkPhone(phone);
+  
+  Future<void> saveOtpSession({required String verificationId, required String phone}) =>
+      _storage.saveOtpSession(verificationId: verificationId, phone: phone);
+
+  Future<String?> getVerificationId() => _storage.getVerificationId();
+
+  Future<String?> getPendingPhone() => _storage.getPendingPhone();
+
+  Future<void> clearOtpSession() => _storage.clearOtpSession();
 
   Future<void> sendOtp(String phone, {String? fcmToken}) => _remote.sendOtp(phone, fcmToken: fcmToken);
 

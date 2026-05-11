@@ -14,13 +14,13 @@ abstract final class AppConstants {
   static const int onboardingPageCount = 3;
 
   // ── OTP ────────────────────────────────────────────────
-  static const int otpLength = 4;
+  static const int otpLength = 6;
   static const int otpResendSeconds = 30;
 
   // ── Stripe ────────────────────────────────────────────
   static const String stripePublishableKey = String.fromEnvironment(
     'STRIPE_PK',
-    defaultValue: 'pk_test_51RYXLLPM5zo65HVyj5vNSB4z2awbPt8oemY8tgJQ7Kepb6SaR1XVd0a5tmbJuqhGgTYH0wnewoSqIcEJXzwhQQht00hpMFVH1g',
+    defaultValue: 'pk_test_51RYXLLPM5zo65HVyj5vNSB4z2awbPt8oemY8tgJQ7Kepb6SaR1XVd0a5tmbJuqhGgTYH0wnewoSqlcEJXzwhQQht00hpMFVH1g',
   );
 
   // ── Location Config ───────────────────────────────────
@@ -36,8 +36,8 @@ abstract final class AppConstants {
   static const String defaultCountryCode = '+356';
   static const String defaultCountry = 'MT';
   static const String defaultLanguage = 'en';
-  static const String defaultCurrency = 'EUR';
-  static const String currencySymbol = '€';
+  static const String defaultCurrency = 'INR';
+  static const String currencySymbol = '₹';
 
   // ── Timeouts ───────────────────────────────────────────
   static const Duration connectTimeout = Duration(seconds: 15);

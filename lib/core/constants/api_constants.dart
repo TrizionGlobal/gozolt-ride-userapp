@@ -6,11 +6,11 @@ abstract final class ApiConstants {
   
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.1.7:3000/v1',
+    defaultValue: 'http://192.168.1.5:3000/v1',
   );
   static const String wsUrl = String.fromEnvironment(
     'WS_URL',
-    defaultValue: 'ws://192.168.1.7:3000',
+    defaultValue: 'ws://192.168.1.5:3000',
   );
 
   // ── Auth ───────────────────────────────────────────────

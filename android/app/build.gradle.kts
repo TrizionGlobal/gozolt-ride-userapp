@@ -23,7 +23,7 @@ val localProperties = Properties().apply {
 }
 
 android {
-    namespace = "com.gozolt.gozolt_user_app"
+    namespace = "com.gozolt.gozolt_app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "25.1.8937393"
 
@@ -46,7 +46,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.gozolt.gozolt_user_app"
+        applicationId = "com.gozolt.gozolt_app"
         minSdk = 23
         targetSdk = 34
         versionCode = flutter.versionCode()
@@ -76,4 +76,7 @@ flutter {
 dependencies {
     implementation(platform("com.google.firebase:firebase-bom:33.10.0"))
     implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-appcheck-playintegrity")
+    implementation("com.google.firebase:firebase-appcheck-debug")
 }
