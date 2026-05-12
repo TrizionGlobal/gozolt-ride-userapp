@@ -24,6 +24,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   DateTime? _lastRateAppTap;
 
   void _showPremiumSnackBar(String message, {IconData icon = Icons.info_outline}) {
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -449,14 +450,17 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
           Semantics(
             label: 'Dark mode toggle',
             toggled: value,
-            child: Switch.adaptive(
-              value: value,
-              onChanged: (v) {
-                HapticFeedback.selectionClick();
-                onChanged(v);
-              },
-              activeTrackColor: AppColors.primaryGold,
-              inactiveTrackColor: AppColors.borderDark,
+            child: Transform.scale(
+              scale: 0.7,
+              child: Switch.adaptive(
+                value: value,
+                onChanged: (v) {
+                  HapticFeedback.selectionClick();
+                  onChanged(v);
+                },
+                activeTrackColor: AppColors.primaryGold,
+                inactiveTrackColor: AppColors.borderDark,
+              ),
             ),
           ),
         ],
@@ -596,26 +600,30 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               .copyWith(color: AppColors.textSecondary),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel',
-                style: TextStyle(color: AppColors.textMuted)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _showPremiumSnackBar(
-                'Data export requested. You\'ll receive it via email.',
-                icon: Icons.download_done_outlined,
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryGold,
-              foregroundColor: AppColors.backgroundDark,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-            child: const Text('Request Export'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Cancel',
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _showPremiumSnackBar(
+                    'Data export requested. You\'ll receive it via email.',
+                    icon: Icons.download_done_outlined,
+                  );
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primaryGold,
+                ),
+                child: const Text('Request Export',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+            ],
           ),
         ],
       ),
@@ -636,32 +644,36 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               .copyWith(color: AppColors.textSecondary),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel',
-                style: TextStyle(color: AppColors.textMuted)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final storage = ref.read(secureStorageProvider);
-              await storage.clearTokens();
-              // Clear stale cached data from the old session
-              ref.invalidate(userProfileProvider);
-              ref.invalidate(savedAddressesProvider);
-              ref.invalidate(unreadNotificationCountProvider);
-              ref.invalidate(rewardSummaryProvider);
-              if (context.mounted) {
-                context.goNamed(RouteNames.welcome);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-            child: const Text('Log Out'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Cancel',
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  final storage = ref.read(secureStorageProvider);
+                  await storage.clearTokens();
+                  // Clear stale cached data from the old session
+                  ref.invalidate(userProfileProvider);
+                  ref.invalidate(savedAddressesProvider);
+                  ref.invalidate(unreadNotificationCountProvider);
+                  ref.invalidate(rewardSummaryProvider);
+                  if (context.mounted) {
+                    context.goNamed(RouteNames.welcome);
+                  }
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.error,
+                ),
+                child: const Text('Log Out',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+            ],
           ),
         ],
       ),

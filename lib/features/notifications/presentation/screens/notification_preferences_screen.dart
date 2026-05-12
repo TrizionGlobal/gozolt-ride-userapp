@@ -108,17 +108,7 @@ class NotificationPreferencesScreen extends ConsumerWidget {
                       .read(notificationPreferencesProvider.notifier)
                       .update(prefs.copyWith(promotions: v)),
                 ),
-                _toggleTile(
-                  ref: ref,
-                  icon: Icons.description,
-                  iconColor: AppColors.warning,
-                  title: 'Document Expiry',
-                  subtitle: 'Reminders for expiring documents',
-                  value: prefs.documentExpiry,
-                  onChanged: (v) => ref
-                      .read(notificationPreferencesProvider.notifier)
-                      .update(prefs.copyWith(documentExpiry: v)),
-                ),
+
                 _toggleTile(
                   ref: ref,
                   icon: Icons.settings,
@@ -179,12 +169,14 @@ class NotificationPreferencesScreen extends ConsumerWidget {
               ],
             ),
           ),
-          Switch.adaptive(
-            value: value,
-            onChanged: onChanged,
-            activeTrackColor: AppColors.primaryGold,
-            
-            inactiveTrackColor: AppColors.borderDark,
+          Transform.scale(
+            scale: 0.7,
+            child: Switch.adaptive(
+              value: value,
+              onChanged: onChanged,
+              activeTrackColor: AppColors.primaryGold,
+              inactiveTrackColor: AppColors.borderDark,
+            ),
           ),
         ],
       ),

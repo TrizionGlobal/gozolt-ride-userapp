@@ -288,20 +288,24 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
               .copyWith(color: AppColors.textSecondary),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child:
-                Text('Go Back', style: TextStyle(color: AppColors.textMuted)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-            child: const Text('Yes, Delete'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text('Go Back',
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.error,
+                ),
+                child: const Text('Yes, Delete',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+            ],
           ),
         ],
       ),

@@ -115,7 +115,30 @@ class AccountAddressesNotifier extends StateNotifier<AccountAddressesState> {
     load();
   }
 
+  Future<void> updateAddress(String id, Map<String, dynamic> data) async {
+    if (AppConstants.kDevBypass) {
+      state = state.copyWith(
+        addresses: state.addresses.map((a) {
+          if (a.id == id) {
+            return UserAddress(
+              id: a.id,
+              label: data['label'] as String? ?? a.label,
+              address: data['address'] as String? ?? a.address,
+              latitude: data['latitude'] as double? ?? a.latitude,
+              longitude: data['longitude'] as double? ?? a.longitude,
+            );
+          }
+          return a;
+        }).toList(),
+      );
+      return;
+    }
+    await _ds.updateAddress(id, data);
+    load();
+  }
+
   Future<void> deleteAddress(String id) async {
+
     if (AppConstants.kDevBypass) {
       state = state.copyWith(
           addresses: state.addresses.where((a) => a.id != id).toList());

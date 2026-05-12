@@ -444,6 +444,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
       }
       // Show error messages (e.g. destination change rejected by driver)
       if (next.errorMessage != null && next.errorMessage != prev?.errorMessage) {
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.errorMessage!),
@@ -721,6 +722,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
   Future<void> _callDriver() async {
     final driver = ref.read(activeRideProvider).driverInfo;
     if (driver == null || driver.phone.isEmpty) {
+      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Driver phone number not available')),
       );
@@ -796,32 +798,34 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel',
-                style: AppTextStyles.labelLarge
-                    .copyWith(color: AppColors.textSecondary)),
-          ),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ref.read(activeRideProvider.notifier).triggerSos(AppConstants.defaultLat, AppConstants.defaultLng);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('SOS alert sent. Calling 112...'),
-                  backgroundColor: AppColors.error,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Cancel',
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  ref.read(activeRideProvider.notifier).triggerSos(AppConstants.defaultLat, AppConstants.defaultLng);
+                  ScaffoldMessenger.of(context).clearSnackBars();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('SOS alert sent. Calling 112...'),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.error,
                 ),
-              );
-              // In production: url_launcher to tel:112
-            },
-            icon: const Icon(Icons.phone, size: 18),
-            label: const Text('Call 112'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
+                child: const Text('Call 112',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+            ],
           ),
         ],
       ),
@@ -861,42 +865,32 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
         ),
         actionsAlignment: MainAxisAlignment.center,
         actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                ref.read(activeRideProvider.notifier).reset();
-                context.goNamed(RouteNames.home);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryGold,
-                foregroundColor: AppColors.backgroundDark,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  ref.read(activeRideProvider.notifier).reset();
+                  context.goNamed(RouteNames.home);
+                },
+                child: const Text('Go to Home',
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
               ),
-              child: const Text('Go to Home', style: AppTextStyles.button),
-            ),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                ref.read(activeRideProvider.notifier).reset();
-                context.goNamed(RouteNames.searchDestination);
-              },
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.textPrimary,
-                side: const BorderSide(color: AppColors.borderDark),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+              const SizedBox(width: 12),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  ref.read(activeRideProvider.notifier).reset();
+                  context.goNamed(RouteNames.searchDestination);
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primaryGold,
+                ),
+                child: const Text('Book Another',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               ),
-              child: const Text('Book Another Ride'),
-            ),
+            ],
           ),
         ],
       ),

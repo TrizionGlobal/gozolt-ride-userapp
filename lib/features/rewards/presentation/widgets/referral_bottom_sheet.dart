@@ -69,6 +69,7 @@ class ReferralBottomSheet extends ConsumerWidget {
                       onTap: () {
                         Clipboard.setData(
                             ClipboardData(text: referral.referralCode));
+                        ScaffoldMessenger.of(context).clearSnackBars();
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Copied!'),

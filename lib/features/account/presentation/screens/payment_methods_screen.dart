@@ -107,10 +107,30 @@ class PaymentMethodsScreen extends ConsumerWidget {
                         ),
                       )),
 
+                  // UPI Option
+                  _paymentTile(
+                    icon: Icons.account_balance_wallet_outlined,
+                    iconColor: AppColors.info,
+                    title: 'UPI',
+                    subtitle: 'Pay via GPay, PhonePe, or BHIM',
+                    isDefault: false,
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('UPI will be available during ride booking'),
+                          backgroundColor: AppColors.surfaceDark,
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
+
                   // Add new card
                   const SizedBox(height: 8),
                   GestureDetector(
                     onTap: () => _addCard(context, ref),
+
                     child: Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
@@ -175,16 +195,20 @@ class PaymentMethodsScreen extends ConsumerWidget {
     required String title,
     required String subtitle,
     bool isDefault = false,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.cardDark,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderDark),
-      ),
-      child: Row(
-        children: [
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.cardDark,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.borderDark),
+        ),
+        child: Row(
+          children: [
+
           Container(
             width: 40,
             height: 40,
@@ -225,8 +249,10 @@ class PaymentMethodsScreen extends ConsumerWidget {
             ),
         ],
       ),
+    ),
     );
   }
+
 
   Widget _cardTile(
       BuildContext context, WidgetRef ref, SavedPaymentMethod pm) {

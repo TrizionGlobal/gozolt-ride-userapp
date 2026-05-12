@@ -1,9 +1,10 @@
 abstract final class ApiConstants {
   // ── Base URL ───────────────────────────────────────────
   // For local development:
-  // static const String baseUrl = 'http://10.0.2.2:3000/v1'; // Android Emulator
-  // static const String wsUrl = 'ws://10.0.2.2:3000';
+  static const String baseUrl = 'https://gozolt-new-ride-backend-production.up.railway.app/v1';
+  static const String wsUrl = 'wss://gozolt-new-ride-backend-production.up.railway.app';
   
+  /*
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: 'https://gozolt-new-ride-backend-production.up.railway.app/v1',
@@ -12,6 +13,7 @@ abstract final class ApiConstants {
     'WS_URL',
     defaultValue: 'wss://gozolt-new-ride-backend-production.up.railway.app',
   );
+  */
 
   // ── Auth ───────────────────────────────────────────────
   static const String checkPhone = '/auth/user/check-phone';

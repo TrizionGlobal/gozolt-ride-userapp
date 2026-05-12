@@ -730,6 +730,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
 
       // Show brief confirmation snackbar
       if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -757,6 +758,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
     if (updatedBooking.status == BookingStatus.error) {
       // Show error instead of navigating
       if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(updatedBooking.errorMessage ?? 'Failed to book ride'),
@@ -836,6 +838,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
     );
 
     if (scheduledAt.isBefore(minDate)) {
+      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Schedule must be at least 30 minutes from now'),
@@ -873,30 +876,24 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(ctx).pop(true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGold,
-                  foregroundColor: AppColors.backgroundDark,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  child: Text('Cancel',
+                      style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
                 ),
-                child: const Text('Confirm'),
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.textPrimary,
-                  side: const BorderSide(color: AppColors.borderDark),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                const SizedBox(width: 8),
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primaryGold,
+                  ),
+                  child: const Text('Confirm',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 ),
-                child: const Text('Cancel'),
-              ),
+              ],
             ),
           ],
         ),
@@ -907,6 +904,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
       HapticFeedback.mediumImpact();
       ref.read(rideBookingProvider.notifier).setScheduled(true, scheduledAt: scheduledAt);
       // Stay on fare estimate — show scheduled confirmation
+      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -1094,16 +1092,19 @@ class _DiscountBottomSheetState extends ConsumerState<_DiscountBottomSheet> {
                       Image.asset(AssetPaths.iconGoCoin,
                           width: 18, height: 18),
                       const SizedBox(width: 10),
-                      Switch(
-                        value: booking.useCoins,
-                        activeTrackColor: AppColors.primaryGold.withOpacity(0.5),
-                        
-                        onChanged: (val) {
-                          final eurValue = points / 100.0;
-                          ref
-                              .read(rideBookingProvider.notifier)
-                              .toggleUseCoins(val, discount: val ? eurValue : 0);
-                        },
+                      Transform.scale(
+                        scale: 0.7,
+                        child: Switch(
+                          value: booking.useCoins,
+                          activeTrackColor: AppColors.primaryGold.withOpacity(0.5),
+                          
+                          onChanged: (val) {
+                            final eurValue = points / 100.0;
+                            ref
+                                .read(rideBookingProvider.notifier)
+                                .toggleUseCoins(val, discount: val ? eurValue : 0);
+                          },
+                        ),
                       ),
                     ],
                   ),

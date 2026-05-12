@@ -146,7 +146,7 @@ class RewardsScreen extends ConsumerWidget {
 
             // Bottom padding
             const SliverToBoxAdapter(
-              child: SizedBox(height: 32),
+              child: SizedBox(height: 100),
             ),
           ],
         ),
@@ -556,15 +556,18 @@ class RewardsScreen extends ConsumerWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            OutlinedButton(
-              onPressed: () => context.pushNamed(RouteNames.searchDestination),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primaryGold,
-                side: const BorderSide(color: AppColors.primaryGold),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+            SizedBox(
+              width: 150,
+              child: OutlinedButton(
+                onPressed: () => context.pushNamed(RouteNames.searchDestination),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primaryGold,
+                  side: const BorderSide(color: AppColors.primaryGold),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text('Book a Ride'),
               ),
-              child: const Text('Book a Ride'),
             ),
           ],
         ),
@@ -651,25 +654,27 @@ class RewardsScreen extends ConsumerWidget {
               const SizedBox(height: 12),
 
               // Share button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (_) => const ReferralBottomSheet(),
-                    );
-                  },
-                  icon: const Icon(Icons.share, size: 16),
-                  label: const Text('Share'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGold,
-                    foregroundColor: AppColors.backgroundDark,
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+              Center(
+                child: SizedBox(
+                  width: 150,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => const ReferralBottomSheet(),
+                      );
+                    },
+                    icon: const Icon(Icons.share, size: 16),
+                    label: const Text('Share'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGold,
+                      foregroundColor: AppColors.backgroundDark,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
                   ),
                 ),
               ),

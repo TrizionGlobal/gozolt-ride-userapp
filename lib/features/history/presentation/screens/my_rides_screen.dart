@@ -85,12 +85,12 @@ class MyRidesScreen extends ConsumerWidget {
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
+                                horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
                               color: isSelected
                                   ? AppColors.primaryGold
                                   : AppColors.cardDark,
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(14),
                               border: Border.all(
                                 color: isSelected
                                     ? AppColors.primaryGold
@@ -103,10 +103,11 @@ class MyRidesScreen extends ConsumerWidget {
                                 color: isSelected
                                     ? AppColors.backgroundDark
                                     : AppColors.textSecondary,
-                                fontSize: 13,
+                                fontSize: 11,
                               ),
                             ),
                           ),
+
                         ),
                       );
                     }).toList(),
@@ -173,17 +174,30 @@ class MyRidesScreen extends ConsumerWidget {
                         style: AppTextStyles.bodySmall,
                       ),
                       const SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: () =>
-                            context.pushNamed(RouteNames.searchDestination),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryGold,
-                          foregroundColor: AppColors.backgroundDark,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                      SizedBox(
+                        height: 32,
+                        width: 150,
+                        child: ElevatedButton(
+                          onPressed: () =>
+                              context.pushNamed(RouteNames.searchDestination),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryGold,
+                            foregroundColor: AppColors.backgroundDark,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                          ),
+                          child: Text(
+                            'Book a Ride',
+                            style: AppTextStyles.labelLarge.copyWith(
+                              fontSize: 12,
+                              color: AppColors.backgroundDark,
+                            ),
+                          ),
                         ),
-                        child: const Text('Book a Ride'),
                       ),
+
                     ],
                   ),
                 ),

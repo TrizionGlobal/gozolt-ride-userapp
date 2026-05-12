@@ -321,40 +321,30 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                  context.goNamed(RouteNames.searchDestination);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGold,
-                  foregroundColor: AppColors.backgroundDark,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    context.goNamed(RouteNames.home);
+                  },
+                  child: const Text('Go to Home',
+                      style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
                 ),
-                child: const Text('Book New Ride'),
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                  context.goNamed(RouteNames.home);
-                },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.textPrimary,
-                  side: const BorderSide(color: AppColors.borderDark),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                const SizedBox(width: 12),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    context.goNamed(RouteNames.searchDestination);
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primaryGold,
                   ),
+                  child: const Text('Book New Ride',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 ),
-                child: const Text('Go to Home'),
-              ),
+              ],
             ),
           ],
         ),

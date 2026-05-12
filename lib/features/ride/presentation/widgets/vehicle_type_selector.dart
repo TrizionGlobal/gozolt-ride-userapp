@@ -41,7 +41,7 @@ class VehicleTypeSelector extends StatelessWidget {
           return GestureDetector(
             onTap: () => onSelect(type),
             child: Opacity(
-              opacity: isAvailable ? 1.0 : 0.45,
+              opacity: (isAvailable || isSelected) ? 1.0 : 0.5,
               child: Container(
                 width: 110,
                 padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
@@ -104,7 +104,9 @@ class VehicleTypeSelector extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textMuted.withOpacity(0.7),
+                          color: isSelected 
+                              ? AppColors.textSecondary 
+                              : AppColors.textMuted.withOpacity(0.7),
                         ),
                       )
                     else ...[
