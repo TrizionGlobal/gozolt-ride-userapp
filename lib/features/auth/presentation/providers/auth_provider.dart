@@ -43,7 +43,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   bool get isRegisterFlow => _isRegisterFlow;
 
-  Future<void> sendOtp(String phone, {bool isRegister = false}) async {
+  Future<void> sendOtp(String phoneInput, {bool isRegister = false}) async {
+    final phone = phoneInput.replaceAll(' ', '');
     _isRegisterFlow = isRegister;
     state = state.copyWith(status: AuthStatus.loading, phone: phone);
 
@@ -81,9 +82,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> verifyOtp({
-    required String phone,
+    required String phoneInput,
     required String otp,
   }) async {
+    final phone = phoneInput.replaceAll(' ', '');
     state = state.copyWith(status: AuthStatus.loading);
     try {
       final response = await _repo.verifyOtp(
@@ -197,7 +199,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Resend OTP without changing auth status (avoids re-navigation to OTP screen).
-  Future<void> resendOtp(String phone) async {
+  Future<void> resendOtp(String phoneInput) async {
+    final phone = phoneInput.replaceAll(' ', '');
     try {
       final fcmToken = await FirebaseMessaging.instance.getToken();
       await _repo.sendOtp(phone, fcmToken: fcmToken);

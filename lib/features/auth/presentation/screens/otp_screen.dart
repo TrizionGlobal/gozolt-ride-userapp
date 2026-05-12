@@ -110,7 +110,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     }
 
     ref.read(authProvider.notifier).verifyOtp(
-          phone: phone,
+          phoneInput: phone,
           otp: _currentOtp,
         );
   }
@@ -308,7 +308,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                       const SizedBox(height: 12),
                       AnimatedSwitcher(
                         duration: const Duration(milliseconds: 300),
-                        child: _canResend
+                        child: _validitySeconds <= 0
                             ? TextButton.icon(
                                 key: const ValueKey('resend_btn'),
                                 onPressed: _resendOtp,
@@ -319,30 +319,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                                   textStyle: AppTextStyles.titleSmall,
                                 ),
                               )
-                            : Row(
-                                key: const ValueKey('resend_timer'),
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  SizedBox(
-                                    width: 14,
-                                    height: 14,
-                                    child: CircularProgressIndicator(
-                                      value: _resendSeconds / AppConstants.otpResendSeconds,
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        AppColors.primaryGold.withOpacity(0.5),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    'Resend enabled after: ${_formatTime(_resendSeconds)}',
-                                    style: AppTextStyles.bodySmall.copyWith(
-                                      color: AppColors.textSecondary.withOpacity(0.6),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            : const SizedBox.shrink(key: ValueKey('empty_space')),
                       ),
                     ],
                   ),
