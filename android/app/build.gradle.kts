@@ -79,4 +79,5 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-appcheck-playintegrity")
     implementation("com.google.firebase:firebase-appcheck-debug")
+    implementation("androidx.appcompat:appcompat:1.6.1")
 }

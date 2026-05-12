@@ -163,6 +163,75 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
 
           const SizedBox(height: 12),
 
+          // Stripe / Card option (Always visible to promote usage)
+          _PaymentOption(
+            leading: Container(
+              width: 40,
+              height: 28,
+              decoration: BoxDecoration(
+                color: AppColors.cardDark,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Icon(Icons.credit_card_outlined,
+                  color: AppColors.primaryGold, size: 18),
+            ),
+            title: 'Credit / Debit Card',
+            subtitle: methods.isEmpty ? 'Powered by Stripe' : '${methods.length} saved cards',
+            isSelected: _selectedType == PaymentMethodType.card && _selectedCardId == null,
+            onTap: () {
+              if (methods.isEmpty) {
+                _addNewPaymentMethod();
+              } else {
+                setState(() {
+                  _selectedType = PaymentMethodType.card;
+                  _selectedCardId = methods.firstWhere((m) => m.isDefault, orElse: () => methods.first).id;
+                });
+              }
+            },
+          ),
+
+          const SizedBox(height: 12),
+
+          // UPI Option
+          _PaymentOption(
+            leading: Container(
+              width: 40,
+              height: 28,
+              decoration: BoxDecoration(
+                color: AppColors.cardDark,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Icon(Icons.account_balance_wallet_outlined,
+                  color: AppColors.primaryGold, size: 18),
+            ),
+            title: 'UPI',
+            subtitle: 'Pay via Google Pay, PhonePe, etc.',
+            isSelected: _selectedType == PaymentMethodType.upi,
+            onTap: () {
+              setState(() {
+                _selectedType = PaymentMethodType.upi;
+                _selectedCardId = null;
+              });
+            },
+          ),
+
+          const SizedBox(height: 20),
+          
+          if (methods.isNotEmpty) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'SAVED CARDS',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textMuted,
+                  letterSpacing: 1.2,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+
           // Card options
           if (methods.isNotEmpty)
             ...methods.map((method) => Padding(
@@ -241,14 +310,7 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
                   ),
                 )),
 
-          if (methods.isEmpty) ...[
-            const SizedBox(height: 60),
-            Text(
-              'No Payment Method Available',
-              style: AppTextStyles.bodyMedium
-                  .copyWith(color: AppColors.textMuted),
-            ),
-          ],
+          const SizedBox(height: 12),
         ],
       ),
     );

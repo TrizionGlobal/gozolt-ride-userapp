@@ -453,6 +453,27 @@ class _SearchDestinationScreenState
     );
   }
 
+  Future<void> _addHomeAddress() async {
+    final result = await context.pushNamed<LocationData>(RouteNames.mapPinSelection);
+    if (result != null && mounted) {
+      await ref.read(accountAddressesProvider.notifier).addAddress({
+        'label': 'Home',
+        'address': result.address,
+        'latitude': result.latitude,
+        'longitude': result.longitude,
+        'isDefault': true,
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Home address saved!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final booking = ref.watch(rideBookingProvider);
@@ -497,7 +518,7 @@ class _SearchDestinationScreenState
                 _LocationField(
                   controller: _pickupController,
                   hint: 'Pickup location',
-                  dotColor: AppColors.primaryGold,
+                  dotColor: AppColors.success,
                   trailing: GestureDetector(
                     onTap: () async {
                       try {
@@ -698,43 +719,47 @@ class _SearchDestinationScreenState
                       return const SizedBox.shrink();
                     }
                     final addresses = accountAddrs.addresses;
-                    if (addresses.isEmpty) {
-                      return _SavedPlaceTile(
-                        icon: Icons.add_home_rounded,
-                        title: 'Add Home Address',
-                        subtitle: 'Set your home for quick booking',
-                        onTap: () {},
-                      );
-                    }
+                    final hasHome = addresses.any((a) => a.label.toLowerCase() == 'home');
+
                     return Column(
-                      children: addresses.map((addr) {
-                        final isHome =
-                            addr.label.toLowerCase() == 'home';
-                        final isWork =
-                            addr.label.toLowerCase() == 'work';
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: _SavedPlaceTile(
-                            icon: isHome
-                                ? Icons.home_rounded
-                                : isWork
-                                    ? Icons.work_rounded
-                                    : Icons.location_on_rounded,
-                            title: addr.label,
-                            subtitle: addr.address,
-                            onTap: () {
-                              _applyLocation(
-                                'dropoff',
-                                LocationData(
-                                  address: addr.address,
-                                  latitude: addr.latitude ?? 0,
-                                  longitude: addr.longitude ?? 0,
-                                ),
-                              );
-                            },
+                      children: [
+                        if (!hasHome)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _SavedPlaceTile(
+                              icon: Icons.add_home_rounded,
+                              title: 'Add Home Address',
+                              subtitle: 'Set your home for quick booking',
+                              onTap: _addHomeAddress,
+                            ),
                           ),
-                        );
-                      }).toList(),
+                        ...addresses.map((addr) {
+                          final isHome = addr.label.toLowerCase() == 'home';
+                          final isWork = addr.label.toLowerCase() == 'work';
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _SavedPlaceTile(
+                              icon: isHome
+                                  ? Icons.home_rounded
+                                  : isWork
+                                      ? Icons.work_rounded
+                                      : Icons.location_on_rounded,
+                              title: addr.label,
+                              subtitle: addr.address,
+                              onTap: () {
+                                _applyLocation(
+                                  'dropoff',
+                                  LocationData(
+                                    address: addr.address,
+                                    latitude: addr.latitude ?? 0,
+                                    longitude: addr.longitude ?? 0,
+                                  ),
+                                );
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ],
                     );
                   }),
 

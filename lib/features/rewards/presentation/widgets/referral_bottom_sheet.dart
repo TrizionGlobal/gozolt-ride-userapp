@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../../core/constants/app_colors.dart';
+
 import '../../../../core/constants/app_text_styles.dart';
 import '../providers/rewards_providers.dart';
 
@@ -118,21 +120,18 @@ class ReferralBottomSheet extends ConsumerWidget {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          // In production: Share.share(...)
                           final code = referral.referralCode;
                           final bonus = rulesAsync.value
                                   ?.referral.newUserBonus
                                   .toString() ??
                               '100';
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                  'Share: "Join Gozolt! Use code $code and get $bonus GoCoins! Download: https://gozolt.com/app"'),
-                              backgroundColor: AppColors.surfaceDark,
-                              duration: const Duration(seconds: 3),
-                            ),
+                          
+                          Share.share(
+                            'Join Gozolt! Use my referral code $code and get $bonus GoCoins on your first ride! 🚗✨\n\nDownload the app: https://gozolt.com/app',
+                            subject: 'Join Gozolt and get bonus coins!',
                           );
                         },
+
                         icon: const Icon(Icons.share, size: 18),
                         label: const Text('Share your code'),
                         style: ElevatedButton.styleFrom(

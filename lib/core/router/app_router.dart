@@ -30,12 +30,41 @@ import '../../features/account/presentation/screens/help_center_screen.dart';
 import '../../features/support/presentation/screens/ticket_list_screen.dart';
 import '../../features/support/presentation/screens/create_ticket_screen.dart';
 import '../../features/support/presentation/screens/ticket_detail_screen.dart';
+import '../providers/storage_provider.dart';
 import 'route_names.dart';
+
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
     debugLogDiagnostics: true,
+    redirect: (context, state) async {
+      final storage = ref.read(secureStorageProvider);
+      final hasTokens = await storage.hasTokens();
+      final hasSeenOnboarding = await storage.hasSeenOnboarding();
+
+      final isAuthPath = state.matchedLocation == '/welcome' ||
+          state.matchedLocation == '/login' ||
+          state.matchedLocation == '/phone-entry' ||
+          state.matchedLocation == '/otp' ||
+          state.matchedLocation == '/onboarding' ||
+          state.matchedLocation == '/complete-profile' ||
+          state.matchedLocation == '/';
+
+      if (!hasTokens) {
+        if (!isAuthPath) {
+          return hasSeenOnboarding ? '/welcome' : '/onboarding';
+        }
+        return null;
+      }
+
+      // If logged in and on an auth page, go home (unless it's splash or onboarding)
+      if (hasTokens && isAuthPath && state.matchedLocation != '/' && state.matchedLocation != '/onboarding' && state.matchedLocation != '/complete-profile') {
+        return '/home';
+      }
+
+      return null;
+    },
     routes: [
       // ── Splash ─────────────────────────────────────────
       GoRoute(

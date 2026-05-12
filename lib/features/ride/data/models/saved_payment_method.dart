@@ -21,7 +21,9 @@ enum CardBrand {
 
 enum PaymentMethodType {
   cash,
-  card;
+  card,
+  upi,
+  wallet;
 }
 
 class SavedPaymentMethod {

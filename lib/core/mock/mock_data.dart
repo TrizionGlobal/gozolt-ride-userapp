@@ -15,7 +15,8 @@ abstract final class MockData {
     email: 'dev@gozolt.com',
     city: 'Sliema',
     country: 'MT',
-    referralCode: 'GOZOLT-DEV',
+    referralCode: 'GOZ7X9P2R',
+
   );
 
   // ── Saved Addresses ───────────────────────────────────────────────────

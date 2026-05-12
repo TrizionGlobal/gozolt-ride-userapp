@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+
+
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -57,14 +60,39 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
     }
   }
 
-  void _onCameraIdle() {
-    setState(() {
-      _isMoving = false;
-      _address =
-          '${_center.latitude.toStringAsFixed(4)}, ${_center.longitude.toStringAsFixed(4)}';
-      _subtitle = 'Selected location';
-    });
+  void _onCameraIdle() async {
+    setState(() => _isMoving = false);
+    
+    try {
+      final placemarks = await geocoding.placemarkFromCoordinates(
+        _center.latitude,
+        _center.longitude,
+      );
+      if (placemarks.isNotEmpty && mounted) {
+        final p = placemarks.first;
+        final street = p.street ?? '';
+        final locality = p.locality ?? '';
+        final name = p.name ?? '';
+        
+        setState(() {
+          if (street.isNotEmpty && locality.isNotEmpty) {
+            _address = '$street, $locality';
+          } else {
+            _address = name.isNotEmpty ? name : '${_center.latitude.toStringAsFixed(4)}, ${_center.longitude.toStringAsFixed(4)}';
+          }
+          _subtitle = 'Selected location';
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _address = '${_center.latitude.toStringAsFixed(4)}, ${_center.longitude.toStringAsFixed(4)}';
+          _subtitle = 'Coordinates only';
+        });
+      }
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +128,7 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
                 duration: const Duration(milliseconds: 150),
                 child: const Icon(
                   Icons.location_on,
-                  color: AppColors.primaryGold,
+                  color: AppColors.success,
                   size: 48,
                 ),
               ),
@@ -168,7 +196,7 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
                         width: 10,
                         height: 10,
                         decoration: const BoxDecoration(
-                          color: AppColors.primaryGold,
+                          color: AppColors.success,
                           shape: BoxShape.circle,
                         ),
                       ),

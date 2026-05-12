@@ -30,8 +30,15 @@ class ActiveRideScreen extends ConsumerStatefulWidget {
   ConsumerState<ActiveRideScreen> createState() => _ActiveRideScreenState();
 }
 
-class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
+class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with TickerProviderStateMixin {
   final Completer<GoogleMapController> _mapController = Completer();
+  late AnimationController _posController;
+  late AnimationController _rotController;
+  LatLng? _oldPos;
+  LatLng? _newPos;
+  double _oldRot = 0;
+  double _newRot = 0;
+
   static final _defaultCenter = LatLng(AppConstants.defaultLat, AppConstants.defaultLng);
   BitmapDescriptor? _carIcon;
   BitmapDescriptor? _userIcon;
@@ -63,14 +70,21 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
 
     // Driver marker — white car with heading rotation
     if (rideState.driverLocation != null) {
+      final currentPos = _newPos ?? LatLng(rideState.driverLocation!.latitude, rideState.driverLocation!.longitude);
+      final lerpPos = _oldPos != null
+          ? LatLng(
+              ui.lerpDouble(_oldPos!.latitude, _newPos!.latitude, _posController.value)!,
+              ui.lerpDouble(_oldPos!.longitude, _newPos!.longitude, _posController.value)!,
+            )
+          : currentPos;
+
+      final lerpRot = ui.lerpDouble(_oldRot, _newRot, _rotController.value) ?? _newRot;
+
       markers.add(Marker(
         markerId: const MarkerId('driver'),
-        position: LatLng(
-          rideState.driverLocation!.latitude,
-          rideState.driverLocation!.longitude,
-        ),
+        position: lerpPos,
         icon: _carIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
-        rotation: rideState.driverLocation!.heading ?? 0,
+        rotation: lerpRot,
         anchor: const Offset(0.5, 0.5),
         flat: true,
         infoWindow: InfoWindow(title: rideState.driverInfo?.name ?? 'Driver'),
@@ -81,7 +95,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     markers.add(Marker(
       markerId: const MarkerId('pickup'),
       position: LatLng(ride.pickupLat, ride.pickupLng),
-      icon: _userIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow),
+      icon: _userIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
       anchor: const Offset(0.5, 0.5),
       infoWindow: InfoWindow(title: ride.pickupAddress),
     ));
@@ -90,7 +104,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     markers.add(Marker(
       markerId: const MarkerId('dropoff'),
       position: LatLng(ride.dropoffLat, ride.dropoffLng),
-      icon: _dropoffIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+      icon: _dropoffIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
       anchor: const Offset(0.5, 1.0),
       infoWindow: InfoWindow(title: ride.dropoffAddress),
     ));
@@ -228,6 +242,17 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
   @override
   void initState() {
     super.initState();
+    _posController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+    _rotController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _posController.addListener(() => setState(() {}));
+    _rotController.addListener(() => setState(() {}));
+
     _createCustomMarkers();
     // Initialize the ride with the ride ID passed from finding driver screen
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -236,6 +261,13 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
         ref.read(activeRideProvider.notifier).initializeRide('dev-ride-001');
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _posController.dispose();
+    _rotController.dispose();
+    super.dispose();
   }
 
   Future<void> _createCustomMarkers() async {
@@ -324,7 +356,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
       ..close();
 
     canvas.drawPath(path, Paint()
-      ..color = AppColors.primaryGold
+      ..color = AppColors.success
       ..style = PaintingStyle.fill);
 
     canvas.drawPath(path, Paint()
@@ -344,7 +376,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
 
-    const green = Color(0xFF4CAF50);
+    const dropoffColor = AppColors.error;
 
     // Pin pole
     canvas.drawRRect(
@@ -352,7 +384,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
         Rect.fromCenter(center: const Offset(size / 2, size / 2 + 6), width: 2.5, height: 22),
         const Radius.circular(1),
       ),
-      Paint()..color = green,
+      Paint()..color = dropoffColor,
     );
 
     // Flag
@@ -361,13 +393,13 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
       ..lineTo(size / 2 + 14, 10)
       ..lineTo(size / 2 + 1, 18)
       ..close();
-    canvas.drawPath(flagPath, Paint()..color = green);
+    canvas.drawPath(flagPath, Paint()..color = dropoffColor);
 
     // Small circle at base
     canvas.drawCircle(
       Offset(size / 2, size - 5),
       3,
-      Paint()..color = green,
+      Paint()..color = dropoffColor,
     );
 
     final picture = recorder.endRecording();
@@ -432,6 +464,28 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
           target = LatLng(next.ride!.dropoffLat, next.ride!.dropoffLng);
         }
         _animateToBounds(driver, target);
+      }
+
+      // Smooth marker movement when driver location updates
+      if (next.driverLocation != null &&
+          (prev?.driverLocation?.latitude != next.driverLocation?.latitude ||
+           prev?.driverLocation?.longitude != next.driverLocation?.longitude)) {
+        
+        final nextPos = LatLng(next.driverLocation!.latitude, next.driverLocation!.longitude);
+        final nextRot = next.driverLocation!.heading ?? 0;
+
+        if (_newPos == null) {
+          _newPos = nextPos;
+          _newRot = nextRot;
+        } else {
+          _oldPos = _newPos;
+          _newPos = nextPos;
+          _posController.forward(from: 0);
+
+          _oldRot = _newRot;
+          _newRot = nextRot;
+          _rotController.forward(from: 0);
+        }
       }
     });
 

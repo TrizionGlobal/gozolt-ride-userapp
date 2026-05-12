@@ -139,49 +139,73 @@ class RideHistoryNotifier extends StateNotifier<RideHistoryState> {
       );
       return;
     }
-    // TODO: Replace with real API call - POST /rides/:id/cancel
+
+    try {
+      await _ds.cancelRide(rideId, 'User cancelled scheduled ride');
+      
+      // Update local state immediately for "Rapido-like" feel
+      if (_filter == 'SCHEDULED') {
+        // If we are looking at scheduled rides, just remove it
+        state = state.copyWith(
+          rides: state.rides.where((r) => r.id != rideId).toList(),
+        );
+      } else {
+        // If we are looking at all rides, update status to CANCELLED
+        state = state.copyWith(
+          rides: state.rides.map<RideHistoryItem>((r) {
+            if (r.id == rideId) {
+              return r.copyWith(status: 'CANCELLED');
+            }
+            return r;
+          }).toList(),
+
+        );
+      }
+    } catch (e) {
+      if (kDebugMode) print('[RideHistory] cancelScheduledRide error: $e');
+      // Refresh list to ensure consistency if API call failed but we want to be sure
+      load();
+    }
   }
 
   Future<void> rescheduleRide(String rideId, DateTime newTime) async {
     if (AppConstants.kDevBypass) {
       state = state.copyWith(
-        rides: state.rides.map((r) {
+        rides: state.rides.map<RideHistoryItem>((r) {
           if (r.id == rideId) {
-            return RideHistoryItem(
-              id: r.id,
-              status: r.status,
-              pickupAddress: r.pickupAddress,
-              dropoffAddress: r.dropoffAddress,
-              vehicleType: r.vehicleType,
-              estimatedFare: r.estimatedFare,
-              actualFare: r.actualFare,
-              paymentMethod: r.paymentMethod,
-              createdAt: r.createdAt,
+            return r.copyWith(
               isScheduled: true,
               scheduledAt: newTime.toUtc().toIso8601String(),
-              driverName: r.driverName,
-              driverRating: r.driverRating,
-              driverVehicle: r.driverVehicle,
-              driverPlate: r.driverPlate,
-              distanceKm: r.distanceKm,
-              durationMinutes: r.durationMinutes,
-              rating: r.rating,
-              cancelReason: r.cancelReason,
-              goCoinsEarned: r.goCoinsEarned,
-              otpPin: r.otpPin,
-              pickupLat: r.pickupLat,
-              pickupLng: r.pickupLng,
-              dropoffLat: r.dropoffLat,
-              dropoffLng: r.dropoffLng,
             );
           }
           return r;
         }).toList(),
+
       );
       return;
     }
-    // TODO: Replace with real API call - PATCH /rides/:id/reschedule
+
+    try {
+      await _ds.rescheduleRide(rideId, newTime);
+      
+      // Update local state immediately
+      state = state.copyWith(
+        rides: state.rides.map<RideHistoryItem>((r) {
+          if (r.id == rideId) {
+            return r.copyWith(
+              scheduledAt: newTime.toUtc().toIso8601String(),
+            );
+          }
+          return r;
+        }).toList(),
+
+      );
+    } catch (e) {
+      if (kDebugMode) print('[RideHistory] rescheduleRide error: $e');
+      load();
+    }
   }
+
 }
 
 // ── Dev mock data ─────────────────────────────────────────────

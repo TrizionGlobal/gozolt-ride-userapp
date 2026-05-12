@@ -109,23 +109,24 @@ class _StripeAddCardSheetState extends State<StripeAddCardSheet> {
           const SizedBox(height: 20),
 
           // Stripe CardFormField
-          CardFormField(
-            enablePostalCode: false,
-            style: CardFormStyle(
-              backgroundColor: AppColors.cardDark,
-              textColor: AppColors.textPrimary,
-              placeholderColor: AppColors.textMuted,
-              borderColor: AppColors.borderDark,
-              borderWidth: 1,
-              borderRadius: 12,
-              cursorColor: AppColors.primaryGold,
-              textErrorColor: AppColors.error,
+          SizedBox(
+            height: 190,
+            child: CardFormField(
+              enablePostalCode: false,
+              style: CardFormStyle(
+                backgroundColor: AppColors.cardDark,
+                textColor: AppColors.textPrimary,
+                placeholderColor: AppColors.textMuted,
+                cursorColor: AppColors.primaryGold,
+                textErrorColor: AppColors.error,
+                fontSize: 15,
+              ),
+              onCardChanged: (card) {
+                setState(() {
+                  _cardComplete = card?.complete ?? false;
+                });
+              },
             ),
-            onCardChanged: (card) {
-              setState(() {
-                _cardComplete = card?.complete ?? false;
-              });
-            },
           ),
           const SizedBox(height: 8),
 

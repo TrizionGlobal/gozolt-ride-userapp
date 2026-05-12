@@ -5,6 +5,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/network/socket_service.dart';
 import '../../../ride/presentation/providers/active_ride_provider.dart';
 import '../providers/home_providers.dart';
+
 import '../widgets/greeting_header.dart';
 import '../widgets/promo_banner.dart';
 import '../widgets/book_schedule_buttons.dart';
@@ -57,6 +58,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         children: [
           // ── Scrollable content (full screen, scrolls behind top bar) ──
           RefreshIndicator(
+
             color: AppColors.primaryGold,
             backgroundColor: AppColors.surfaceDark,
             edgeOffset: topPadding + 80,
@@ -90,6 +92,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   const SizedBox(height: 100),
                 ],
               ),
+
+
             ),
           ),
 

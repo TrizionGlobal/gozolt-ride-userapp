@@ -279,14 +279,19 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
           (data['longitude'] as num?)?.toDouble() ?? 0;
       if (kDebugMode) print('[ActiveRide] Driver location from socket: lat=$lat, lng=$lng');
       if (lat == 0 && lng == 0) return; // Skip invalid zero coordinates
+      final newHeading = (data['heading'] as num?)?.toDouble() ?? 0;
+      final newSpeed = (data['speed'] as num?)?.toDouble() ?? 0;
+      
       state = state.copyWith(
         driverLocation: DriverLocation(
           latitude: lat,
           longitude: lng,
-          heading: (data['heading'] as num?)?.toDouble() ?? 0,
-          speed: (data['speed'] as num?)?.toDouble() ?? 0,
+          heading: (newHeading == 0 && state.driverLocation != null) 
+              ? state.driverLocation!.heading : newHeading,
+          speed: newSpeed,
         ),
       );
+
 
       // Recalculate ETA from socket driver location
       if (state.ride != null) {

@@ -50,6 +50,14 @@ class HistoryRemoteDatasource {
     );
   }
 
+  Future<void> rescheduleRide(String rideId, DateTime newTime) async {
+    await _dio.patch(
+      ApiConstants.rideReschedule(rideId),
+      data: {'newScheduledAt': newTime.toUtc().toIso8601String()},
+    );
+  }
+
+
   Future<Map<String, dynamic>> getPaymentDetails(String rideId) async {
     final response = await _dio.get(ApiConstants.paymentByRide(rideId));
     return response.data as Map<String, dynamic>;

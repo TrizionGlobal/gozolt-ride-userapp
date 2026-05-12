@@ -163,7 +163,7 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
                           booking.pickup!.longitude,
                         ),
                         icon: BitmapDescriptor.defaultMarkerWithHue(
-                            BitmapDescriptor.hueOrange),
+                            BitmapDescriptor.hueGreen),
                         infoWindow:
                             InfoWindow(title: booking.pickup!.address),
                       ),
@@ -181,7 +181,6 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
             ),
           ),
 
-          // ── Radar Ripple + Pin ───────────────────────────
           Center(
             child: SizedBox(
               width: 200,
@@ -200,7 +199,7 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
                         scale: 1.0 + (_pulseController.value * 0.1),
                         child: const Icon(
                           Icons.location_on,
-                          color: AppColors.primaryGold,
+                          color: AppColors.success,
                           size: 48,
                         ),
                       ),
