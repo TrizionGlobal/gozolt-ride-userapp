@@ -55,7 +55,7 @@ class FareBreakdownCard extends StatelessWidget {
                   Text(
                     _estimatedArrivalText(),
                     style: AppTextStyles.titleSmall.copyWith(
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).textTheme.titleMedium?.color ?? (Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -64,7 +64,7 @@ class FareBreakdownCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          const Divider(color: AppColors.borderDark, height: 1),
+          Divider(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, height: 1),
           const SizedBox(height: 14),
 
           // Fare lines
@@ -94,7 +94,7 @@ class FareBreakdownCard extends StatelessWidget {
           _FareLine(label: 'Booking Fee', amount: estimate.bookingFee),
 
           const SizedBox(height: 6),
-          const Divider(color: AppColors.borderDark, height: 1),
+          Divider(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, height: 1),
           const SizedBox(height: 10),
 
           // Total
@@ -104,7 +104,7 @@ class FareBreakdownCard extends StatelessWidget {
               Text(
                 'Estimated Total',
                 style: AppTextStyles.titleSmall.copyWith(
-                  color: AppColors.textPrimary,
+                  color: Theme.of(context).textTheme.titleMedium?.color ?? (Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -171,7 +171,7 @@ class _FareLine extends StatelessWidget {
           Text(
             '${isNegative ? '-' : ''}€ ${amount.abs().toStringAsFixed(2)}',
             style: AppTextStyles.bodySmall.copyWith(
-              color: displayColor,
+              color: color ?? (Theme.of(context).textTheme.bodyMedium?.color ?? (Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight)),
               fontWeight: FontWeight.w600,
             ),
           ),

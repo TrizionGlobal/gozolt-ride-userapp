@@ -280,7 +280,7 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
         Text(
           'Finding Your Driver...',
           style: AppTextStyles.headlineSmall.copyWith(
-            color: AppColors.textPrimary,
+            color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
           ),
         ),
         const SizedBox(height: 8),
@@ -290,7 +290,7 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
             booking.searchingMessage ?? 'Searching for luxury rides nearby',
             key: ValueKey(booking.searchingMessage),
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+              color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
             ),
             textAlign: TextAlign.center,
           ),
@@ -304,7 +304,7 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
           child: OutlinedButton(
             onPressed: _cancelRequest,
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.textPrimary,
+              foregroundColor: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
               side: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, width: 1),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -312,8 +312,9 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
             ),
             child: Text(
               'Cancel Request',
-              style: AppTextStyles.button
-                  .copyWith(color: AppColors.textPrimary),
+              style: AppTextStyles.button.copyWith(
+                color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+              ),
             ),
           ),
         ),
@@ -346,13 +347,13 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
             Text(
               'No Drivers Available',
               style: AppTextStyles.headlineSmall
-                  .copyWith(color: AppColors.textPrimary),
+                  .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
             ),
             const SizedBox(height: 8),
             Text(
               errorMessage ?? 'We couldn\'t find a driver near your pickup location. You can retry, change your pickup, or try again later.',
               style: AppTextStyles.bodyMedium
-                  .copyWith(color: AppColors.textSecondary),
+                  .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
@@ -402,8 +403,8 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
                   context.goNamed(RouteNames.home);
                 },
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.textPrimary,
-                  side: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
+                  foregroundColor: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                  side: BorderSide(color: Theme.of(context).dividerTheme.color ?? (Theme.of(context).brightness == Brightness.dark ? AppColors.borderDark : AppColors.borderLight)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -433,13 +434,13 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
             Text(
               'Ride Scheduled!',
               style: AppTextStyles.headlineSmall
-                  .copyWith(color: AppColors.textPrimary),
+                  .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
             ),
             const SizedBox(height: 8),
             Text(
               'Your ride has been scheduled successfully.',
               style: AppTextStyles.bodyMedium
-                  .copyWith(color: AppColors.textSecondary),
+                  .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),

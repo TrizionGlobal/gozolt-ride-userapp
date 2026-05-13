@@ -37,6 +37,7 @@ import 'route_names.dart';
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
+    restorationScopeId: 'router',
     debugLogDiagnostics: true,
     redirect: (context, state) async {
       final storage = ref.read(secureStorageProvider);

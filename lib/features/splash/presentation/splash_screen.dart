@@ -128,7 +128,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       ref.invalidate(userProfileProvider);
       ref.invalidate(savedAddressesProvider);
       ref.invalidate(unreadNotificationCountProvider);
-      context.goNamed(RouteNames.home);
+      // If we are still on the splash screen path, proceed to home.
+      // If GoRouter already restored us to a different page, don't force a redirect.
+      if (GoRouterState.of(context).matchedLocation == '/') {
+        context.goNamed(RouteNames.home);
+      }
     } else if (hasSeenOnboarding) {
       // User has seen onboarding but is logged out → show login/register
       context.goNamed(RouteNames.welcome);

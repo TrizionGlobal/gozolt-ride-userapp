@@ -54,7 +54,9 @@ class OnboardingPageWidget extends StatelessWidget {
           child: Text(
             data.subtitle,
             textAlign: TextAlign.center,
-            style: AppTextStyles.onboardingSubtitle,
+            style: AppTextStyles.onboardingSubtitle.copyWith(
+              color: Theme.of(context).textTheme.bodyMedium?.color,
+            ),
           ),
         ),
 
@@ -113,7 +115,9 @@ class OnboardingPageWidget extends StatelessWidget {
     return RichText(
       textAlign: TextAlign.center,
       text: TextSpan(
-        style: AppTextStyles.onboardingTitle,
+        style: AppTextStyles.onboardingTitle.copyWith(
+          color: Theme.of(context).textTheme.headlineLarge?.color,
+        ),
         children: [
           TextSpan(text: data.title),
           TextSpan(

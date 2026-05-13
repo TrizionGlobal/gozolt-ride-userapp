@@ -327,7 +327,7 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                   );
                 },
                 loading: () => const SizedBox.shrink(),
-                error: (context, error) => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
               ),
             ],
           ),
@@ -374,11 +374,11 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                 radius: 18,
                 backgroundColor: Theme.of(context).cardTheme.color,
               ),
-              error: (context, error) => CircleAvatar(
+              error: (_, __) => CircleAvatar(
                 radius: 18,
-                backgroundColor: Theme.of(context).cardTheme.color,
+                backgroundColor: Theme.of(this.context).cardTheme.color,
                 child:
-                    Icon(Icons.person, color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight, size: 20),
+                    Icon(Icons.person, color: Theme.of(this.context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight, size: 20),
               ),
             ),
           ),

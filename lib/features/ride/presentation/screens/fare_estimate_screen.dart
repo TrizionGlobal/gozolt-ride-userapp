@@ -776,7 +776,9 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Theme.of(context).bottomSheetTheme.backgroundColor ?? AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark 
+          ? AppColors.surfaceDark 
+          : AppColors.surfaceLight,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -1060,8 +1062,15 @@ class _DiscountBottomSheetState extends ConsumerState<_DiscountBottomSheet> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Theme.of(context).cardTheme.color,
+              color: Theme.of(context).brightness == Brightness.dark 
+                  ? AppColors.cardDark 
+                  : AppColors.backgroundLight,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(context).dividerTheme.color ?? 
+                    (Theme.of(context).brightness == Brightness.dark ? AppColors.borderDark : AppColors.borderLight),
+                width: 0.5,
+              ),
             ),
             child: Row(
               children: [
@@ -1085,7 +1094,7 @@ class _DiscountBottomSheetState extends ConsumerState<_DiscountBottomSheet> {
                           );
                         },
                         loading: () => const SizedBox.shrink(),
-                        error: (context, error) => const SizedBox.shrink(),
+                        error: (_, __) => const SizedBox.shrink(),
                       ),
                     ],
                   ),
@@ -1120,7 +1129,7 @@ class _DiscountBottomSheetState extends ConsumerState<_DiscountBottomSheet> {
                     ],
                   ),
                   loading: () => const SizedBox.shrink(),
-                  error: (context, error) => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
                 ),
               ],
             ),
@@ -1148,7 +1157,7 @@ class _DiscountBottomSheetState extends ConsumerState<_DiscountBottomSheet> {
                     hintStyle: AppTextStyles.bodyMedium
                         .copyWith(color: AppColors.textMuted),
                     filled: true,
-                    fillColor: AppColors.inputDark,
+                    fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Color(0xFFF1F3F4),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide.none,

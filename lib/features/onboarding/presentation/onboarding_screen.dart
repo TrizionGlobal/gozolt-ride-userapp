@@ -67,51 +67,59 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final isSmallScreen = screenHeight < 700;
     final bottomPadding = isSmallScreen ? 16.0 : 32.0;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0A0A0A),
-              Color(0xFF051C34),
-            ],
-            stops: [0.0, 1.0],
+            colors: isDark
+                ? [
+                    const Color(0xFF0A0A0A),
+                    const Color(0xFF051C34),
+                  ]
+                : [
+                    AppColors.backgroundLight,
+                    const Color(0xFFE6EBF1),
+                  ],
+            stops: const [0.0, 1.0],
           ),
         ),
         child: SafeArea(
           child: Column(
-          children: [
-            // ── Top Row: Logo + Skip ───────────────────
-            _buildTopBar(),
+            children: [
+              // ── Top Row: Logo + Skip ───────────────────
+              _buildTopBar(isDark),
 
-            // ── Page View ──────────────────────────────
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: AppConstants.onboardingPageCount,
-                onPageChanged: _onPageChanged,
-                physics: const BouncingScrollPhysics(),
-                itemBuilder: (context, index) {
-                  return OnboardingPageWidget(data: onboardingPages[index]);
-                },
+              // ── Page View ──────────────────────────────
+              Expanded(
+                child: PageView.builder(
+                  controller: _pageController,
+                  itemCount: AppConstants.onboardingPageCount,
+                  onPageChanged: _onPageChanged,
+                  physics: const BouncingScrollPhysics(),
+                  itemBuilder: (context, index) {
+                    return OnboardingPageWidget(data: onboardingPages[index]);
+                  },
+                ),
               ),
-            ),
 
-            // ── Bottom Controls ────────────────────────
-            _buildBottomControls(),
+              // ── Bottom Controls ────────────────────────
+              _buildBottomControls(isDark),
 
-            SizedBox(height: bottomPadding),
-          ],
+              SizedBox(height: bottomPadding),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
 
   // ── Top bar with Skip button, then logo below ──────────
-  Widget _buildTopBar() {
+  Widget _buildTopBar(bool isDark) {
     final screenHeight = MediaQuery.of(context).size.height;
     final isSmallScreen = screenHeight < 700;
     final logoSize = isSmallScreen ? 70.0 : 100.0;
@@ -132,7 +140,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 child: Text(
                   'Skip',
                   style: AppTextStyles.titleMedium.copyWith(
-                    color: AppColors.textPrimary,
+                    color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
                   ),
                 ),
               ),
@@ -151,7 +159,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   // ── Bottom: arrows + indicator ────────────────────────
-  Widget _buildBottomControls() {
+  Widget _buildBottomControls(bool isDark) {
     if (_isLastPage) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -165,7 +173,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 onPressed: _completeOnboarding,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGold,
-                  foregroundColor: AppColors.backgroundDark,
+                  foregroundColor: isDark ? AppColors.backgroundDark : Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(28),
                   ),
@@ -174,7 +182,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 child: Text(
                   'Get Started',
                   style: AppTextStyles.titleMedium.copyWith(
-                    color: AppColors.backgroundDark,
+                    color: isDark ? AppColors.backgroundDark : Colors.white,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -190,7 +198,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 dotWidth: 10,
                 dotHeight: 10,
                 spacing: 12,
-                dotColor: AppColors.borderDark,
+                dotColor: isDark ? AppColors.borderDark : AppColors.borderLight,
                 activeDotColor: AppColors.primaryGold,
               ),
             ),
@@ -209,6 +217,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             icon: Icons.chevron_left,
             onTap: _currentPage > 0 ? _goToPrevious : null,
             visible: _currentPage > 0,
+            isDark: isDark,
           ),
 
           // Dot indicator
@@ -219,7 +228,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               dotWidth: 10,
               dotHeight: 10,
               spacing: 12,
-              dotColor: AppColors.borderDark,
+              dotColor: isDark ? AppColors.borderDark : AppColors.borderLight,
               activeDotColor: AppColors.primaryGold,
             ),
           ),
@@ -228,6 +237,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           _buildNavArrow(
             icon: Icons.chevron_right,
             onTap: _goToNext,
+            isDark: isDark,
           ),
         ],
       ),
@@ -238,6 +248,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     required IconData icon,
     VoidCallback? onTap,
     bool visible = true,
+    required bool isDark,
   }) {
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 200),
@@ -249,10 +260,18 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           height: 48,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
+            color: isDark ? Colors.transparent : Colors.white.withOpacity(0.8),
             border: Border.all(
               color: AppColors.primaryGold,
               width: 1.5,
             ),
+            boxShadow: isDark ? null : [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Icon(icon, color: AppColors.primaryGold, size: 28),
         ),
