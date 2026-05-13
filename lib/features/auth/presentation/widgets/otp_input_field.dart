@@ -173,7 +173,7 @@ class OtpInputFieldState extends State<OtpInputField>
                       right: index < widget.length - 1 ? 8 : 0,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.inputDark,
+                      color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: widget.hasError
@@ -182,7 +182,7 @@ class OtpInputFieldState extends State<OtpInputField>
                                 ? AppColors.primaryGold
                                 : isActive
                                     ? AppColors.primaryGold
-                                    : AppColors.borderDark,
+                                    : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                         width: isActive || isFilled ? 2 : 1.5,
                       ),
                     ),
@@ -191,7 +191,7 @@ class OtpInputFieldState extends State<OtpInputField>
                         ? Text(
                             _digits[index],
                             style: AppTextStyles.headlineMedium.copyWith(
-                              color: AppColors.textPrimary,
+                              color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
                               fontWeight: FontWeight.w700,
                             ),
                           )

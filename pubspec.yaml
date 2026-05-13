@@ -72,6 +72,7 @@ dependencies:
   firebase_messaging: ^15.2.10
   firebase_auth: ^5.5.0
   firebase_app_check: ^0.3.2+10
+  flutter_svg: ^2.1.0
 
 dev_dependencies:
   flutter_test:
@@ -86,9 +87,9 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/App_Icone_01.png"
+  image_path: "assets/images/Gozolt_User_Icon.png"
   adaptive_icon_background: "#000000"
-  adaptive_icon_foreground: "assets/images/App_Icone_01.png"
+  adaptive_icon_foreground: "assets/images/Gozolt_User_Icon.png"
   min_sdk_android: 21
   remove_alpha_ios: true
 

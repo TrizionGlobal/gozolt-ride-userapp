@@ -9,9 +9,10 @@ class ShimmerWrap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Shimmer.fromColors(
-      baseColor: AppColors.cardDark,
-      highlightColor: AppColors.borderDark,
+      baseColor: isDark ? AppColors.cardDark : Colors.grey[300]!,
+      highlightColor: isDark ? AppColors.borderDark : Colors.grey[100]!,
       child: child,
     );
   }
@@ -36,7 +37,7 @@ class ShimmerBox extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).brightness == Brightness.dark ? AppColors.cardDark : Colors.grey[300]!,
         borderRadius: BorderRadius.circular(borderRadius),
       ),
     );
@@ -53,8 +54,8 @@ class ShimmerCircle extends StatelessWidget {
     return Container(
       width: radius * 2,
       height: radius * 2,
-      decoration: const BoxDecoration(
-        color: AppColors.cardDark,
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark ? AppColors.cardDark : Colors.grey[300]!,
         shape: BoxShape.circle,
       ),
     );
@@ -74,7 +75,7 @@ class ShimmerText extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).brightness == Brightness.dark ? AppColors.cardDark : Colors.grey[300]!,
         borderRadius: BorderRadius.circular(4),
       ),
     );
@@ -94,9 +95,9 @@ class ShimmerRideCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.cardDark,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.borderDark),
+          border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
         ),
         child: Row(
           children: [
@@ -142,9 +143,9 @@ class ShimmerNotificationCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.cardDark,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.borderDark),
+          border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
         ),
         child: Row(
           children: [
@@ -180,9 +181,9 @@ class ShimmerTicketCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.cardDark,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.borderDark),
+          border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
         ),
         child: Row(
           children: [
@@ -219,9 +220,9 @@ class ShimmerListTile extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
-          color: AppColors.cardDark,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.borderDark),
+          border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
         ),
         child: Row(
           children: [

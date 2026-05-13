@@ -23,10 +23,10 @@ class RewardsScreen extends ConsumerWidget {
     final rulesAsync = ref.watch(rewardRulesProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         color: AppColors.primaryGold,
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         onRefresh: () async {
           ref.invalidate(rewardSummaryProvider);
           ref.read(rewardHistoryProvider.notifier).load();
@@ -471,9 +471,9 @@ class RewardsScreen extends ConsumerWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.cardDark,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.borderDark),
+          border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -547,7 +547,7 @@ class RewardsScreen extends ConsumerWidget {
             Text(
               'No Reward History',
               style: AppTextStyles.titleMedium
-                  .copyWith(color: AppColors.textMuted),
+                  .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight),
             ),
             const SizedBox(height: 8),
             Text(
@@ -623,7 +623,7 @@ class RewardsScreen extends ConsumerWidget {
                 data: (rules) => Text(
                   'Earn ${rules.referral.referrerBonus} GoCoins for every friend who takes their first ride. They get ${rules.referral.newUserBonus} coins!',
                   style: AppTextStyles.bodySmall
-                      .copyWith(color: AppColors.textSecondary),
+                      .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                 ),
               ),
               const SizedBox(height: 12),
@@ -634,9 +634,9 @@ class RewardsScreen extends ConsumerWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: AppColors.cardDark,
+                  color: Theme.of(context).cardTheme.color,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.borderDark),
+                  border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -705,7 +705,9 @@ class RewardsScreen extends ConsumerWidget {
         Text(value,
             style: AppTextStyles.titleSmall
                 .copyWith(color: AppColors.primaryGold)),
-        Text(label, style: AppTextStyles.labelSmall),
+        Text(label, style: AppTextStyles.labelSmall.copyWith(
+          color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+        )),
       ],
     );
   }
@@ -753,10 +755,10 @@ class _ActionButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
             color: enabled
-                ? AppColors.cardDark
-                : AppColors.cardDark.withOpacity(0.5),
+                ? Theme.of(context).cardTheme.color
+                : Theme.of(context).cardTheme.color?.withOpacity(0.5),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.borderDark),
+            border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
           ),
           child: Column(
             children: [
@@ -772,7 +774,7 @@ class _ActionButton extends StatelessWidget {
                 label,
                 style: AppTextStyles.labelSmall.copyWith(
                   color: enabled
-                      ? AppColors.textPrimary
+                      ? (Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight)
                       : AppColors.textMuted,
                   fontWeight: FontWeight.w600,
                 ),
@@ -805,9 +807,9 @@ class _TransactionCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
       ),
       child: Row(
         children: [
@@ -831,8 +833,8 @@ class _TransactionCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         transaction.pickupAddress ?? '',
-                        style: AppTextStyles.bodySmall
-                            .copyWith(color: AppColors.textPrimary),
+                        style: AppTextStyles.bodySmall.copyWith(
+                            color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -855,8 +857,8 @@ class _TransactionCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         transaction.dropoffAddress ?? '',
-                        style: AppTextStyles.bodySmall
-                            .copyWith(color: AppColors.textPrimary),
+                        style: AppTextStyles.bodySmall.copyWith(
+                            color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -868,7 +870,7 @@ class _TransactionCard extends StatelessWidget {
                 Row(
                   children: [
                     Icon(Icons.calendar_today,
-                        size: 12, color: AppColors.textMuted),
+                        size: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight),
                     const SizedBox(width: 4),
                     Text(
                       _formatDate(transaction.createdAt),
@@ -953,9 +955,9 @@ class _TransactionCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
       ),
       child: Row(
         children: [

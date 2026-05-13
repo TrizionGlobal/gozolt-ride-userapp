@@ -49,7 +49,7 @@ class DriverEnRouteView extends StatelessWidget {
                 child: Text(
                   '$etaMinutes min',
                   style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.backgroundDark,
+                    color: Theme.of(context).scaffoldBackgroundColor,
                     fontWeight: FontWeight.w700,
                   ),
                 ),

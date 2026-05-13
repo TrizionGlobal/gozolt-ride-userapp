@@ -94,7 +94,7 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
     final isLoading = authState.status == AuthStatus.loading;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -168,7 +168,7 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
               const SizedBox(height: 32),
 
               // ── "Or sign in with" divider + icon buttons ───
-              _buildSocialIconRow(),
+              _buildSocialIconRow(context),
 
               const SizedBox(height: 24),
             ],
@@ -178,13 +178,13 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
     );
   }
 
-  Widget _buildSocialIconRow() {
+  Widget _buildSocialIconRow(BuildContext context) {
     return Column(
       children: [
         // Divider with "or"
         Row(
           children: [
-            const Expanded(child: Divider(color: AppColors.borderDark)),
+            Expanded(child: Divider(color: Theme.of(context).dividerTheme.color)),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
@@ -194,7 +194,7 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
                 ),
               ),
             ),
-            const Expanded(child: Divider(color: AppColors.borderDark)),
+            Expanded(child: Divider(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark)),
           ],
         ),
 
@@ -224,8 +224,8 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
         height: 56,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: AppColors.surfaceDark,
-          border: Border.all(color: AppColors.borderDark),
+          color: Theme.of(context).cardTheme.color,
+          border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
         ),
         child: Center(
           child: Image.asset(logoPath, width: 26, height: 26),

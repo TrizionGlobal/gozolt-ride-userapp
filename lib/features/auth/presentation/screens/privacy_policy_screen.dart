@@ -13,7 +13,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -22,7 +22,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               decoration: const BoxDecoration(
                 border: Border(
-                  bottom: BorderSide(color: AppColors.borderDark),
+                  bottom: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                 ),
               ),
               child: Row(
@@ -100,9 +100,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.surfaceDark,
+                        color: Theme.of(context).cardTheme.color,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.borderDark),
+                        border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                       ),
                       child: Text(
                         'Note: This is placeholder content. The final legal text will be provided by Gozolt\'s legal team.',
@@ -132,14 +132,14 @@ class PrivacyPolicyScreen extends StatelessWidget {
           Text(
             title,
             style: AppTextStyles.titleMedium.copyWith(
-              color: AppColors.textPrimary,
+              color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             body,
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+              color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
               height: 1.6,
             ),
           ),

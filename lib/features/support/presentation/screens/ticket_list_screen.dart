@@ -17,7 +17,7 @@ class TicketListScreen extends ConsumerWidget {
     final ticketState = ref.watch(supportTicketsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         color: AppColors.primaryGold,
         backgroundColor: AppColors.surfaceDark,

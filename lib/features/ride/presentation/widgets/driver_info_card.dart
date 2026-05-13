@@ -20,9 +20,9 @@ class DriverInfoCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
       ),
       child: Row(
         children: [
@@ -103,11 +103,13 @@ class DriverInfoCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               _buildActionButton(
+                context,
                 icon: Icons.chat_bubble_outline,
                 onTap: onMessage,
               ),
               const SizedBox(width: 8),
               _buildActionButton(
+                context,
                 icon: Icons.phone,
                 onTap: onCall,
                 isGold: true,
@@ -119,7 +121,8 @@ class DriverInfoCard extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton({
+  Widget _buildActionButton(
+      BuildContext context, {
     required IconData icon,
     required VoidCallback onTap,
     bool isGold = false,
@@ -132,10 +135,14 @@ class DriverInfoCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: isGold
               ? AppColors.primaryGold.withOpacity(0.15)
-              : AppColors.inputDark,
+              : Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.inputDark
+                  : Colors.grey[200],
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isGold ? AppColors.primaryGold.withOpacity(0.3) : AppColors.borderDark,
+            color: isGold
+                ? AppColors.primaryGold.withOpacity(0.3)
+                : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
           ),
         ),
         child: Icon(
@@ -153,9 +160,9 @@ class DriverInfoCard extends StatelessWidget {
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
         padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: AppColors.surfaceDark,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardTheme.color,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -164,7 +171,7 @@ class DriverInfoCard extends StatelessWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.borderDark,
+                color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -226,20 +233,20 @@ class DriverInfoCard extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.cardDark,
+                color: Theme.of(context).scaffoldBackgroundColor,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.borderDark),
+                border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
               ),
               child: Column(
                 children: [
                   _profileRow('Vehicle',
                       '${driverInfo.vehicleColor} ${driverInfo.vehicleDescription}'),
-                  const Divider(color: AppColors.borderDark, height: 16),
+                  Divider(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, height: 16),
                   _profileRow('Plate Number', driverInfo.formattedPlate),
-                  const Divider(color: AppColors.borderDark, height: 16),
+                  Divider(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, height: 16),
                   _profileRow('Type', driverInfo.vehicleType),
                   if (driverInfo.memberSince != null) ...[
-                    const Divider(color: AppColors.borderDark, height: 16),
+                    Divider(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, height: 16),
                     _profileRow('Member Since', driverInfo.memberSince!),
                   ],
                 ],

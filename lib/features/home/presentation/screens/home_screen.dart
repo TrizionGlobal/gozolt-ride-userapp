@@ -51,16 +51,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   @override
   Widget build(BuildContext context) {
     final topPadding = MediaQuery.of(context).padding.top;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
-          // ── Scrollable content (full screen, scrolls behind top bar) ──
+          // ── Scrollable content ──
           RefreshIndicator(
-
             color: AppColors.primaryGold,
-            backgroundColor: AppColors.surfaceDark,
+            backgroundColor: Theme.of(context).colorScheme.surface,
             edgeOffset: topPadding + 80,
             onRefresh: () async {
               ref.invalidate(userProfileProvider);
@@ -75,7 +75,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Space for floating top bar
                   SizedBox(height: topPadding + 64),
                   const ActiveRideBanner(),
                   const SizedBox(height: 20),
@@ -88,16 +87,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   const RewardsHomeBanner(),
                   const SizedBox(height: 24),
                   const GoPlacesSection(),
-                  // Extra bottom padding for floating bottom nav
                   const SizedBox(height: 100),
                 ],
               ),
-
-
             ),
           ),
 
-          // ── Floating glass top bar ────────────────────────────
+          // ── Floating top bar ──
           Positioned(
             top: 0,
             left: 0,
@@ -110,7 +106,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                 filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceDark.withOpacity(0.7),
+                    color: Theme.of(context).cardTheme.color?.withOpacity(isDark ? 0.7 : 0.85),
                     borderRadius: const BorderRadius.vertical(
                       bottom: Radius.circular(20),
                     ),
@@ -121,7 +117,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
+                        color: isDark 
+                            ? Colors.black.withOpacity(0.2)
+                            : Colors.black.withOpacity(0.1),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -129,9 +127,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   ),
                   child: SafeArea(
                     bottom: false,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(0, 0, 0, 4),
-                      child: const GreetingHeader(),
+                    child: const Padding(
+                      padding: EdgeInsets.fromLTRB(0, 0, 0, 4),
+                      child: GreetingHeader(),
                     ),
                   ),
                 ),

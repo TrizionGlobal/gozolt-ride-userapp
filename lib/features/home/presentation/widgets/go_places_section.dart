@@ -25,7 +25,7 @@ class GoPlacesSection extends StatelessWidget {
           child: Text(
             'Go Places with GOZOLT',
             style: AppTextStyles.titleMedium.copyWith(
-              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ),
@@ -82,7 +82,7 @@ class _PlaceCard extends StatelessWidget {
                 data.imagePath,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
-                  color: AppColors.cardDark,
+                  color: Theme.of(context).cardTheme.color,
                   child: const Center(
                     child: Icon(Icons.place,
                         color: AppColors.primaryGold, size: 40),
@@ -109,7 +109,7 @@ class _PlaceCard extends StatelessWidget {
                 child: Text(
                   data.name,
                   style: AppTextStyles.titleSmall.copyWith(
-                    color: AppColors.textPrimary,
+                    color: Colors.white,
                     fontWeight: FontWeight.w700,
                   ),
                 ),

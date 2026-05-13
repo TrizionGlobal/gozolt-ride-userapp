@@ -37,6 +37,8 @@ class ActiveRideBanner extends ConsumerWidget {
     }
     final subtitle = subtitleParts.join(' \u2022 ');
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
@@ -46,16 +48,18 @@ class ActiveRideBanner extends ConsumerWidget {
         margin: const EdgeInsets.symmetric(horizontal: 16),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF1C2333), Color(0xFF161B22)],
+          gradient: LinearGradient(
+            colors: isDark 
+                ? [Theme.of(context).cardTheme.color ?? const Color(0xFF1C2333), Theme.of(context).cardTheme.color?.withOpacity(0.8) ?? const Color(0xFF161B22)]
+                : [Colors.white, const Color(0xFFF6F8FA)],
           ),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: statusColor.withOpacity(0.4),
+            color: statusColor.withOpacity(isDark ? 0.4 : 0.2),
           ),
           boxShadow: [
             BoxShadow(
-              color: statusColor.withOpacity(0.15),
+              color: statusColor.withOpacity(isDark ? 0.15 : 0.08),
               blurRadius: 12,
               spreadRadius: 1,
             ),
@@ -92,7 +96,7 @@ class ActiveRideBanner extends ConsumerWidget {
                       Text(
                         subtitle,
                         style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textSecondary,
+                          color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -112,14 +116,14 @@ class ActiveRideBanner extends ConsumerWidget {
                       Text(
                         'View',
                         style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.backgroundDark,
+                          color: Theme.of(context).scaffoldBackgroundColor,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(width: 4),
                       Icon(
                         Icons.arrow_forward_rounded,
-                        color: AppColors.backgroundDark,
+                        color: Theme.of(context).scaffoldBackgroundColor,
                         size: 14,
                       ),
                     ],
@@ -133,7 +137,7 @@ class ActiveRideBanner extends ConsumerWidget {
               Row(
                 children: [
                   const SizedBox(width: 48), // align with text above
-                  Icon(Icons.location_on, color: AppColors.textMuted, size: 14),
+                  Icon(Icons.location_on, color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight, size: 14),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(

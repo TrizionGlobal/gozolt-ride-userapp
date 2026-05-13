@@ -111,7 +111,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
     final categories = faqs.map((f) => f.category).toSet().toList();
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -144,11 +144,10 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                               height: 36,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: AppColors.backgroundDark
-                                    .withOpacity(0.15),
+                                color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.2) : Colors.black.withOpacity(0.05),
                               ),
-                              child: const Icon(Icons.arrow_back,
-                                  color: AppColors.backgroundDark, size: 20),
+                              child: Icon(Icons.arrow_back,
+                                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black, size: 20),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -164,26 +163,30 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                       // Search bar
                       Container(
                         decoration: BoxDecoration(
-                          color: AppColors.backgroundDark
-                              .withOpacity(0.15),
+                          color: Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceDark : Colors.white,
                           borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
                         child: TextField(
                           controller: _searchController,
                           onChanged: (v) =>
                               setState(() => _searchQuery = v),
                           style: AppTextStyles.bodyMedium.copyWith(
-                            color: Colors.white,
+                            color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black,
                           ),
                           decoration: InputDecoration(
                             hintText: 'Search FAQs...',
                             hintStyle: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.backgroundDark
-                                  .withOpacity(0.5),
+                              color: AppColors.textMuted,
                             ),
-                            prefixIcon: Icon(Icons.search,
-                                color: AppColors.backgroundDark
-                                    .withOpacity(0.6)),
+                            prefixIcon: const Icon(Icons.search,
+                                color: AppColors.textMuted),
                             border: InputBorder.none,
                             contentPadding:
                                 const EdgeInsets.symmetric(vertical: 12),
@@ -275,13 +278,13 @@ class _FaqTileState extends State<_FaqTile> {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.cardDark,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: _expanded
-                ? AppColors.primaryGold.withOpacity(0.3)
-                : AppColors.borderDark,
-          ),
+            border: Border.all(
+              color: _expanded
+                  ? AppColors.primaryGold.withOpacity(0.3)
+                  : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
+            ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

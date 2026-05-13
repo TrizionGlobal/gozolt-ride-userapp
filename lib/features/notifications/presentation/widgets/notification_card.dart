@@ -20,11 +20,11 @@ class NotificationCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
-          color: AppColors.cardDark,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: notification.read
-                ? AppColors.borderDark
+                ? (Theme.of(context).dividerTheme.color ?? AppColors.borderDark)
                 : AppColors.primaryGold.withOpacity(0.3),
           ),
         ),
@@ -87,7 +87,7 @@ class NotificationCard extends StatelessWidget {
                                 Text(
                                   _formatTime(notification.createdAt),
                                   style: AppTextStyles.labelSmall.copyWith(
-                                    color: AppColors.textMuted,
+                                    color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight,
                                     fontSize: 10,
                                   ),
                                 ),
@@ -98,8 +98,8 @@ class NotificationCard extends StatelessWidget {
                               notification.body,
                               style: AppTextStyles.bodySmall.copyWith(
                                 color: notification.read
-                                    ? AppColors.textMuted
-                                    : AppColors.textSecondary,
+                                    ? (Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight)
+                                    : (Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -142,7 +142,7 @@ class NotificationCard extends StatelessWidget {
       case 'PAYMENT':
         return AppColors.success;
       case 'SYSTEM':
-        return AppColors.textSecondary;
+        return AppColors.primaryGold; // use gold for system in both themes? or secondary?
       default:
         return AppColors.textMuted;
     }

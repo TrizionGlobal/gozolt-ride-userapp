@@ -40,9 +40,9 @@ class _ShareRideSheetState extends ConsumerState<ShareRideSheet> {
     final driver = rideState.driverInfo;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceDark,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
         top: false,
@@ -56,7 +56,7 @@ class _ShareRideSheetState extends ConsumerState<ShareRideSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.borderDark,
+                  color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -93,9 +93,9 @@ class _ShareRideSheetState extends ConsumerState<ShareRideSheet> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.cardDark,
+                    color: Theme.of(context).scaffoldBackgroundColor,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.borderDark),
+                    border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
                   ),
                   child: Row(
                     children: [
@@ -127,9 +127,9 @@ class _ShareRideSheetState extends ConsumerState<ShareRideSheet> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
-                    color: AppColors.inputDark,
+                    color: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[200],
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.borderDark),
+                    border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
                   ),
                   child: Row(
                     children: [
@@ -155,11 +155,10 @@ class _ShareRideSheetState extends ConsumerState<ShareRideSheet> {
                                   const Icon(Icons.check_circle,
                                       color: AppColors.success, size: 20),
                                   const SizedBox(width: 10),
-                                  const Text('Link copied',
-                                      style: TextStyle(color: AppColors.textPrimary)),
+                                  const Text('Link copied'),
                                 ],
                               ),
-                              backgroundColor: AppColors.surfaceDark,
+                              backgroundColor: Theme.of(context).cardTheme.color,
                               behavior: SnackBarBehavior.floating,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -190,7 +189,7 @@ class _ShareRideSheetState extends ConsumerState<ShareRideSheet> {
                     label: const Text('Share with Contacts'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,
-                      foregroundColor: AppColors.backgroundDark,
+                      foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),

@@ -7,12 +7,14 @@ import '../../data/datasources/payment_remote_datasource.dart';
 
 class StripeAddCardSheet extends StatefulWidget {
   final PaymentRemoteDatasource datasource;
-  final VoidCallback onCardAdded;
+  final void Function(String? paymentMethodId) onCardAdded;
+  final double? amount;
 
   const StripeAddCardSheet({
     super.key,
     required this.datasource,
     required this.onCardAdded,
+    this.amount,
   });
 
   @override
@@ -22,6 +24,7 @@ class StripeAddCardSheet extends StatefulWidget {
 class _StripeAddCardSheetState extends State<StripeAddCardSheet> {
   bool _isLoading = false;
   String? _error;
+  String? _clientSecret;
 
   @override
   void initState() {
@@ -37,31 +40,35 @@ class _StripeAddCardSheetState extends State<StripeAddCardSheet> {
     });
 
     try {
-      // 1. Get SetupIntent client secret
-      final clientSecret = await widget.datasource.createSetupIntent();
-
-      // 2. Initialize Payment Sheet
-      await Stripe.instance.initPaymentSheet(
-        paymentSheetParameters: SetupPaymentSheetParameters(
-          setupIntentClientSecret: clientSecret,
-          merchantDisplayName: 'Gozolt Ride',
-          style: ThemeMode.dark,
-          appearance: const PaymentSheetAppearance(
-            colors: PaymentSheetAppearanceColors(
-              primary: AppColors.primaryGold,
-              background: AppColors.surfaceDark,
-              componentBackground: AppColors.cardDark,
-              componentBorder: AppColors.borderDark,
-              componentDivider: AppColors.borderDark,
-              primaryText: Colors.white,
-              secondaryText: AppColors.textMuted,
-              placeholderText: AppColors.textMuted,
-              icon: AppColors.primaryGold,
-              error: AppColors.error,
-            ),
+      if (widget.amount != null) {
+        // ── BOOKING MODE: PaymentIntent + EphemeralKey ──
+        final data = await widget.datasource.createPaymentSheet(widget.amount!);
+        
+        await Stripe.instance.initPaymentSheet(
+          paymentSheetParameters: SetupPaymentSheetParameters(
+            paymentIntentClientSecret: data['paymentIntent'],
+            customerEphemeralKeySecret: data['ephemeralKey'],
+            customerId: data['customer'],
+            merchantDisplayName: 'Gozolt Ride',
+            style: Theme.of(context).brightness == Brightness.dark ? ThemeMode.dark : ThemeMode.light,
+            appearance: _getAppearance(),
           ),
-        ),
-      );
+        );
+      } else {
+        // ── SETTINGS MODE: SetupIntent ──
+        final data = await widget.datasource.createSetupIntent();
+        _clientSecret = data['clientSecret'];
+        
+        await Stripe.instance.initPaymentSheet(
+          paymentSheetParameters: SetupPaymentSheetParameters(
+            setupIntentClientSecret: _clientSecret,
+            customerId: data['customerId'],
+            merchantDisplayName: 'Gozolt Ride',
+            style: Theme.of(context).brightness == Brightness.dark ? ThemeMode.dark : ThemeMode.light,
+            appearance: _getAppearance(),
+          ),
+        );
+      }
 
       setState(() {
         _isLoading = false;
@@ -75,14 +82,39 @@ class _StripeAddCardSheetState extends State<StripeAddCardSheet> {
     }
   }
 
+  PaymentSheetAppearance _getAppearance() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return PaymentSheetAppearance(
+      colors: PaymentSheetAppearanceColors(
+        primary: AppColors.primaryGold,
+        background: Theme.of(context).cardTheme.color ?? (isDark ? AppColors.surfaceDark : Colors.white),
+        componentBackground: Theme.of(context).scaffoldBackgroundColor,
+        componentBorder: Theme.of(context).dividerTheme.color ?? (isDark ? AppColors.borderDark : Colors.grey[300]!),
+        componentDivider: Theme.of(context).dividerTheme.color ?? (isDark ? AppColors.borderDark : Colors.grey[300]!),
+        primaryText: isDark ? Colors.white : Colors.black,
+        secondaryText: isDark ? AppColors.textSecondary : Colors.grey[600]!,
+        placeholderText: AppColors.textMuted,
+        icon: AppColors.primaryGold,
+        error: AppColors.error,
+      ),
+    );
+  }
+
   Future<void> _presentPaymentSheet() async {
     try {
-      // 3. Show Payment Sheet
       await Stripe.instance.presentPaymentSheet();
-
       // 4. Success — notify parent
       if (mounted) {
-        widget.onCardAdded();
+         if (widget.amount == null && _clientSecret != null) {
+          try {
+            final intent = await Stripe.instance.retrieveSetupIntent(_clientSecret!);
+            widget.onCardAdded(intent.paymentMethodId);
+          } catch (e) {
+            widget.onCardAdded(null);
+          }
+        } else {
+          widget.onCardAdded(null);
+        }
         Navigator.of(context).pop();
       }
     } on StripeException catch (e) {
@@ -104,9 +136,9 @@ class _StripeAddCardSheetState extends State<StripeAddCardSheet> {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceDark,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -115,7 +147,7 @@ class _StripeAddCardSheetState extends State<StripeAddCardSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: AppColors.borderDark,
+              color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -125,12 +157,14 @@ class _StripeAddCardSheetState extends State<StripeAddCardSheet> {
           const SizedBox(height: 16),
           
           Text(
-            'Secure Payment Method',
+            widget.amount != null ? 'Complete Payment' : 'Secure Payment Method',
             style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 8),
           Text(
-            'Add your card or UPI ID for seamless ride booking. Your details are encrypted and securely stored by Stripe.',
+            widget.amount != null 
+              ? 'Pay ₹${widget.amount!.toStringAsFixed(2)} securely via Stripe.'
+              : 'Add your card for seamless ride booking. Your details are encrypted and securely stored by Stripe.',
             textAlign: TextAlign.center,
             style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
           ),
@@ -166,19 +200,19 @@ class _StripeAddCardSheetState extends State<StripeAddCardSheet> {
               onPressed: _isLoading ? null : _presentPaymentSheet,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGold,
-                foregroundColor: AppColors.backgroundDark,
-                disabledBackgroundColor: AppColors.cardDark,
+                foregroundColor: Theme.of(context).scaffoldBackgroundColor,
+                disabledBackgroundColor: Theme.of(context).dividerTheme.color ?? AppColors.cardDark,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 elevation: 0,
               ),
               child: _isLoading
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 24,
                       height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.backgroundDark),
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).scaffoldBackgroundColor),
                     )
                   : Text(
-                      'Open Secure Payment UI',
+                      widget.amount != null ? 'Pay Now' : 'Open Secure Payment UI',
                       style: AppTextStyles.button.copyWith(fontWeight: FontWeight.w700),
                     ),
             ),

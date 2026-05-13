@@ -8,7 +8,7 @@ class RewardsPlaceholderScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -16,7 +16,7 @@ class RewardsPlaceholderScreen extends StatelessWidget {
             const Icon(
               Icons.card_giftcard_rounded,
               size: 64,
-              color: AppColors.textMuted,
+              color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight,
             ),
             const SizedBox(height: 16),
             Text(
@@ -27,7 +27,7 @@ class RewardsPlaceholderScreen extends StatelessWidget {
             Text(
               'Your GoCoins and rewards will appear here',
               style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+                color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
               ),
             ),
           ],

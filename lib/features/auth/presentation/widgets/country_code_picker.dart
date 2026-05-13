@@ -20,7 +20,7 @@ class CountryCodePicker extends StatefulWidget {
   }) {
     return showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).bottomSheetTheme.backgroundColor ?? Theme.of(context).scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -77,7 +77,7 @@ class _CountryCodePickerState extends State<CountryCodePicker> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.borderDark,
+                color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -87,7 +87,7 @@ class _CountryCodePickerState extends State<CountryCodePicker> {
             Text(
               'Select Country',
               style: AppTextStyles.titleLarge.copyWith(
-                color: AppColors.textPrimary,
+                color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
               ),
             ),
             const SizedBox(height: 16),
@@ -99,7 +99,7 @@ class _CountryCodePickerState extends State<CountryCodePicker> {
                 controller: _searchController,
                 onChanged: _onSearch,
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.textPrimary,
+                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
                 ),
                 decoration: InputDecoration(
                   hintText: 'Search country or code...',
@@ -112,14 +112,14 @@ class _CountryCodePickerState extends State<CountryCodePicker> {
                     size: 20,
                   ),
                   filled: true,
-                  fillColor: AppColors.inputDark,
+                  fillColor: Theme.of(context).inputDecorationTheme.fillColor ?? AppColors.inputDark,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 12,
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.borderDark),
+                    borderSide: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -164,7 +164,7 @@ class _CountryCodePickerState extends State<CountryCodePicker> {
                           title: Text(
                             country.name,
                             style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.textPrimary,
+                              color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
                             ),
                           ),
                           trailing: Text(

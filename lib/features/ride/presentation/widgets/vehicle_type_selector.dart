@@ -46,14 +46,14 @@ class VehicleTypeSelector extends StatelessWidget {
                 width: 110,
                 padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.cardDark : AppColors.surfaceDark,
+                  color: isSelected ? Theme.of(context).cardTheme.color : Theme.of(context).cardTheme.color?.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color: isSelected
                         ? AppColors.primaryGold
                         : isAvailable
-                            ? AppColors.borderDark
-                            : AppColors.borderDark.withOpacity(0.3),
+                            ? (Theme.of(context).dividerTheme.color ?? AppColors.borderDark)
+                            : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark).withOpacity(0.3),
                     width: isSelected ? 2 : 0.5,
                   ),
                 ),
@@ -78,7 +78,7 @@ class VehicleTypeSelector extends StatelessWidget {
                       type.displayName,
                       style: AppTextStyles.titleSmall.copyWith(
                         color: isSelected
-                            ? AppColors.textPrimary
+                            ? (Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight)
                             : AppColors.textSecondary,
                         fontSize: 12,
                         fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -141,7 +141,7 @@ class VehicleTypeSelector extends StatelessWidget {
                             Icons.access_time,
                             size: 11,
                             color: isSelected
-                                ? AppColors.textPrimary
+                                ? (Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight)
                                 : AppColors.textMuted,
                           ),
                           const SizedBox(width: 2),
@@ -150,7 +150,7 @@ class VehicleTypeSelector extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 9,
                               color: isSelected
-                                  ? AppColors.textPrimary
+                                  ? (Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight)
                                   : AppColors.textMuted,
                             ),
                           ),

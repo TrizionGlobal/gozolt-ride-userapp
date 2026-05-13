@@ -70,13 +70,14 @@ class _HomeMapBackgroundState extends ConsumerState<HomeMapBackground> {
   @override
   Widget build(BuildContext context) {
     final drivers = ref.watch(nearbyDriversProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GoogleMap(
       initialCameraPosition: CameraPosition(
         target: LatLng(AppConstants.defaultLat, AppConstants.defaultLng),
         zoom: 14.5,
       ),
-      style: _darkMapStyle,
+      style: isDark ? _darkMapStyle : null,
       onMapCreated: (controller) => _mapController.complete(controller),
       markers: drivers.map((d) => Marker(
         markerId: MarkerId(d.latitude.toString() + d.longitude.toString()),

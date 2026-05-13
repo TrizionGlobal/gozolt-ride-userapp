@@ -36,13 +36,13 @@ class _GozoltButtonState extends State<GozoltButton> {
   @override
   Widget build(BuildContext context) {
     final child = widget.isLoading
-        ? const SizedBox(
+        ? SizedBox(
             height: 22,
             width: 22,
             child: CircularProgressIndicator(
               strokeWidth: 2.5,
               valueColor:
-                  AlwaysStoppedAnimation<Color>(AppColors.backgroundDark),
+                  AlwaysStoppedAnimation<Color>(Theme.of(context).scaffoldBackgroundColor),
             ),
           )
         : Text(widget.label);

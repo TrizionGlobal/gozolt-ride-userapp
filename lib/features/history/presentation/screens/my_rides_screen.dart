@@ -27,10 +27,10 @@ class MyRidesScreen extends ConsumerWidget {
     final historyState = ref.watch(rideHistoryProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         color: AppColors.primaryGold,
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         onRefresh: () => ref.read(rideHistoryProvider.notifier).load(),
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(
@@ -89,7 +89,7 @@ class MyRidesScreen extends ConsumerWidget {
                             decoration: BoxDecoration(
                               color: isSelected
                                   ? AppColors.primaryGold
-                                  : AppColors.cardDark,
+                                  : Theme.of(context).cardTheme.color,
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
                                 color: isSelected
@@ -289,7 +289,7 @@ class MyRidesScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Cancel Scheduled Ride',
             style: AppTextStyles.titleMedium

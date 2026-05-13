@@ -29,14 +29,7 @@ class RideInProgressView extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.cardDark,
-                AppColors.cardDark.withOpacity(0.8),
-              ],
-            ),
+            color: Theme.of(context).cardTheme.color,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: AppColors.primaryGold.withOpacity(0.15),
@@ -98,7 +91,7 @@ class RideInProgressView extends StatelessWidget {
                   Container(
                     width: 1,
                     height: 48,
-                    color: AppColors.borderDark.withOpacity(0.5),
+                    color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark.withOpacity(0.5),
                   ),
                   // Distance remaining
                   Expanded(
@@ -120,7 +113,7 @@ class RideInProgressView extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  color: AppColors.backgroundDark.withOpacity(0.5),
+                  color: Theme.of(context).scaffoldBackgroundColor.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(

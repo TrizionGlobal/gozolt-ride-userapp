@@ -19,7 +19,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
     final pmState = ref.watch(accountPaymentMethodsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -49,18 +49,17 @@ class PaymentMethodsScreen extends ConsumerWidget {
                           height: 36,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: AppColors.backgroundDark
-                                .withOpacity(0.15),
+                            color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.2) : Colors.black.withOpacity(0.05),
                           ),
-                          child: const Icon(Icons.arrow_back,
-                              color: AppColors.backgroundDark, size: 20),
+                          child: Icon(Icons.arrow_back,
+                              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black, size: 20),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Text(
                         'Payment Methods',
                         style: AppTextStyles.headlineSmall.copyWith(
-                          color: AppColors.backgroundDark,
+                          color: Theme.of(context).scaffoldBackgroundColor,
                         ),
                       ),
                     ],
@@ -88,6 +87,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
                 delegate: SliverChildListDelegate([
                   // Cash option (always shown)
                   _paymentTile(
+                    context,
                     icon: Icons.money,
                     iconColor: AppColors.success,
                     title: 'Cash',
@@ -109,6 +109,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
 
                   // UPI Option
                   _paymentTile(
+                    context,
                     icon: Icons.account_balance_wallet_outlined,
                     iconColor: AppColors.info,
                     title: 'UPI',
@@ -119,7 +120,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('UPI will be available during ride booking'),
-                          backgroundColor: AppColors.surfaceDark,
+                          backgroundColor: Theme.of(context).cardTheme.color,
                         ),
                       );
                     },
@@ -134,7 +135,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
                     child: Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: AppColors.cardDark,
+                        color: Theme.of(context).cardTheme.color,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: AppColors.primaryGold.withOpacity(0.3),
@@ -189,7 +190,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _paymentTile({
+  Widget _paymentTile(BuildContext context, {
     required IconData icon,
     required Color iconColor,
     required String title,
@@ -202,7 +203,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.cardDark,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.borderDark),
         ),
@@ -223,7 +224,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: AppTextStyles.titleSmall),
+                Text(title, style: AppTextStyles.titleSmall.copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight)),
                 Text(subtitle,
                     style: AppTextStyles.bodySmall
                         .copyWith(color: AppColors.textMuted)),
@@ -259,7 +260,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: pm.isDefault
@@ -293,7 +294,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(pm.displayName, style: AppTextStyles.titleSmall),
+                Text(pm.displayName, style: AppTextStyles.titleSmall.copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight)),
                 Text(
                     'Expires ${pm.expMonth.toString().padLeft(2, '0')}/${pm.expYear.toString().substring(2)}',
                     style: AppTextStyles.bodySmall
@@ -352,9 +353,9 @@ class PaymentMethodsScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Remove Card', style: AppTextStyles.headlineSmall),
+        title: Text('Remove Card', style: AppTextStyles.headlineSmall.copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight)),
         content: Text(
           'Remove ${pm.displayName}?',
           style: AppTextStyles.bodyMedium
@@ -399,7 +400,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('${cardData['brand'].toString().toUpperCase()} ****${cardData['last4']} added'),
-                  backgroundColor: AppColors.surfaceDark,
+                  backgroundColor: Theme.of(context).cardTheme.color,
                 ),
               );
               ref.read(accountPaymentMethodsProvider.notifier).load();
@@ -409,12 +410,16 @@ class PaymentMethodsScreen extends ConsumerWidget {
         final ds = ref.read(paymentRemoteDatasourceProvider);
         return StripeAddCardSheet(
           datasource: ds,
-          onCardAdded: () {
-            ref.read(accountPaymentMethodsProvider.notifier).load();
+          onCardAdded: (paymentMethodId) {
+            if (paymentMethodId != null) {
+              ref.read(accountPaymentMethodsProvider.notifier).confirmSetup(paymentMethodId);
+            } else {
+              ref.read(accountPaymentMethodsProvider.notifier).load();
+            }
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Card added successfully'),
-                backgroundColor: AppColors.surfaceDark,
+                backgroundColor: Theme.of(context).cardTheme.color,
               ),
             );
           },

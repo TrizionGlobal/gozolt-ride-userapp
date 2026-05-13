@@ -87,7 +87,7 @@ class _PromoBannerState extends State<PromoBanner> {
                 borderRadius: BorderRadius.circular(4),
                 color: isActive
                     ? AppColors.primaryGold
-                    : AppColors.borderDark,
+                    : Theme.of(context).dividerTheme.color ?? Colors.grey.withOpacity(0.3),
               ),
             );
           }),

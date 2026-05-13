@@ -65,7 +65,7 @@ class DriverArrivedView extends StatelessWidget {
               height: 64,
               margin: const EdgeInsets.symmetric(horizontal: 6),
               decoration: BoxDecoration(
-                color: AppColors.cardDark,
+                color: Theme.of(context).cardTheme.color,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                     color: AppColors.primaryGold.withOpacity(0.5),

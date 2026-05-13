@@ -32,7 +32,7 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
         maxHeight: MediaQuery.of(context).size.height * 0.7,
       ),
       decoration: const BoxDecoration(
-        color: AppColors.surfaceDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SingleChildScrollView(
@@ -47,7 +47,7 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.borderDark,
+                  color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -118,16 +118,16 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
-                            color: AppColors.inputDark,
+                            color: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[200],
                             borderRadius: BorderRadius.circular(8),
                             border:
-                                Border.all(color: AppColors.borderDark),
+                                Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                           ),
                           child: Center(
                             child: Text(
                               'All',
                               style: AppTextStyles.labelLarge.copyWith(
-                                color: AppColors.primaryGold,
+                                color: Theme.of(context).brightness == Brightness.dark ? AppColors.primaryGold : AppColors.primaryGold,
                               ),
                             ),
                           ),
@@ -148,20 +148,20 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
                 onChanged: (_) => setState(() => _errorText = null),
                 decoration: InputDecoration(
                   hintText: 'Enter points to redeem',
-                  hintStyle: AppTextStyles.bodyMedium
-                      .copyWith(color: AppColors.textMuted),
+                  hintStyle: AppTextStyles.bodyMedium.copyWith(
+                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight),
                   filled: true,
-                  fillColor: AppColors.inputDark,
+                  fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[200],
                   errorText: _errorText,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide:
-                        const BorderSide(color: AppColors.borderDark),
+                        BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide:
-                        const BorderSide(color: AppColors.borderDark),
+                        BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -188,9 +188,9 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.cardDark,
+                      color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.borderDark),
+                      border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                     ),
                     child: Center(
                       child: Text(
@@ -198,7 +198,7 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
                         style: AppTextStyles.titleMedium.copyWith(
                           color: points > 0
                               ? AppColors.primaryGold
-                              : AppColors.textMuted,
+                              : (Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight),
                         ),
                       ),
                     ),
@@ -211,7 +211,7 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
               Text(
                 'Minimum 200 points to redeem',
                 style: AppTextStyles.labelSmall.copyWith(
-                  color: AppColors.textMuted,
+                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight,
                 ),
               ),
               const SizedBox(height: 20),
@@ -262,17 +262,21 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: enabled ? AppColors.inputDark : AppColors.cardDark,
+            color: enabled 
+                ? (Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[200]) 
+                : Theme.of(context).cardTheme.color,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: enabled ? AppColors.borderDark : AppColors.borderSubtle,
+              color: enabled ? (Theme.of(context).dividerTheme.color ?? AppColors.borderDark) : AppColors.borderSubtle,
             ),
           ),
           child: Center(
             child: Text(
               amount.toString(),
               style: AppTextStyles.labelLarge.copyWith(
-                color: enabled ? AppColors.textPrimary : AppColors.textMuted,
+                color: enabled 
+                    ? (Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight) 
+                    : (Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight),
               ),
             ),
           ),
@@ -335,7 +339,7 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -356,8 +360,8 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
             Text(
               '$points coins converted to \u20AC${eurValue.toStringAsFixed(2)} ride credit',
               textAlign: TextAlign.center,
-              style: AppTextStyles.bodyMedium
-                  .copyWith(color: AppColors.textSecondary),
+              style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
             ),
             const SizedBox(height: 4),
             Text(

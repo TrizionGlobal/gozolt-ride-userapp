@@ -28,8 +28,6 @@ final accountPaymentMethodsProvider = StateNotifierProvider<
 /// Language preference.
 final languageProvider = StateProvider<String>((ref) => 'en');
 
-/// Theme mode (dark = default).
-final isDarkModeProvider = StateProvider<bool>((ref) => true);
 
 // ── Addresses State ──────────────────────────────────────
 class AccountAddressesState {
@@ -227,5 +225,15 @@ class AccountPaymentMethodsNotifier
     }
     await _ds.deletePaymentMethod(id);
     load();
+  }
+
+  Future<void> confirmSetup(String paymentMethodId) async {
+    state = state.copyWith(isLoading: true);
+    try {
+      await _ds.confirmSetupIntent(paymentMethodId);
+      await load();
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
   }
 }

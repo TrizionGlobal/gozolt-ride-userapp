@@ -27,10 +27,10 @@ class NotificationsScreen extends ConsumerWidget {
         notifState.notifications.any((n) => !n.read);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         color: AppColors.primaryGold,
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         onRefresh: () => ref.read(notificationsProvider.notifier).load(),
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(
@@ -141,20 +141,20 @@ class NotificationsScreen extends ConsumerWidget {
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? AppColors.primaryGold
-                                : AppColors.cardDark,
+                                : Theme.of(context).cardTheme.color,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: isSelected
                                   ? AppColors.primaryGold
-                                  : AppColors.borderDark,
+                                  : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                             ),
                           ),
                           child: Text(
                             filter.label,
                             style: AppTextStyles.labelLarge.copyWith(
                               color: isSelected
-                                  ? AppColors.backgroundDark
-                                  : AppColors.textSecondary,
+                                  ? Theme.of(context).scaffoldBackgroundColor
+                                  : (Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                               fontSize: 13,
                             ),
                           ),
@@ -180,13 +180,13 @@ class NotificationsScreen extends ConsumerWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.notifications_none,
-                          color: AppColors.textMuted, size: 56),
+                      Icon(Icons.notifications_none,
+                          color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight, size: 56),
                       const SizedBox(height: 16),
                       Text(
                         'No notifications',
                         style: AppTextStyles.titleMedium
-                            .copyWith(color: AppColors.textSecondary),
+                            .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                       ),
                       const SizedBox(height: 6),
                       Text(
@@ -265,7 +265,7 @@ class NotificationsScreen extends ConsumerWidget {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).cardTheme.color,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -280,7 +280,7 @@ class NotificationsScreen extends ConsumerWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.textMuted.withOpacity(0.3),
+                  color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -288,7 +288,7 @@ class NotificationsScreen extends ConsumerWidget {
             const SizedBox(height: 16),
             Text('Scheduled Ride',
                 style: AppTextStyles.headlineSmall
-                    .copyWith(color: Colors.white)),
+                    .copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.textPrimaryLight)),
             const SizedBox(height: 16),
             _detailRow(Icons.location_on, 'Pickup', pickup),
             const SizedBox(height: 10),
@@ -312,7 +312,7 @@ class NotificationsScreen extends ConsumerWidget {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGold,
-                  foregroundColor: AppColors.backgroundDark,
+                  foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
@@ -326,7 +326,7 @@ class NotificationsScreen extends ConsumerWidget {
               child: TextButton(
                 onPressed: () => Navigator.pop(ctx),
                 child: Text('Dismiss',
-                    style: TextStyle(color: AppColors.textSecondary)),
+                    style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight)),
               ),
             ),
           ],
@@ -345,10 +345,10 @@ class NotificationsScreen extends ConsumerWidget {
           children: [
             Text(label,
                 style: AppTextStyles.labelSmall
-                    .copyWith(color: AppColors.textMuted, fontSize: 10)),
+                    .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight, fontSize: 10)),
             Text(value,
                 style: AppTextStyles.bodySmall
-                    .copyWith(color: Colors.white)),
+                    .copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.textPrimaryLight)),
           ],
         ),
       ],

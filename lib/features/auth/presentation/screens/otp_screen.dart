@@ -182,7 +182,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     final isLoading = authState.status == AuthStatus.loading;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -273,10 +273,10 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.cardDark.withOpacity(0.5),
+                    color: Theme.of(context).cardTheme.color?.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: _hasError ? AppColors.error.withOpacity(0.3) : AppColors.cardDark,
+                      color: _hasError ? AppColors.error.withOpacity(0.3) : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                     ),
                   ),
                   child: Column(

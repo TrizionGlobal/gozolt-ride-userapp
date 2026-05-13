@@ -49,7 +49,7 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [

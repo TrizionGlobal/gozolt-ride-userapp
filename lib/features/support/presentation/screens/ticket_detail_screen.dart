@@ -54,7 +54,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
     });
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         color: AppColors.primaryGold,
         backgroundColor: AppColors.surfaceDark,

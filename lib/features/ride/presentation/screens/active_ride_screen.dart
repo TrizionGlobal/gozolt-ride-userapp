@@ -492,7 +492,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
 
     if (rideState.isLoading && rideState.ride == null) {
       return Scaffold(
-        backgroundColor: AppColors.backgroundDark,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: const Center(
           child: CircularProgressIndicator(color: AppColors.primaryGold),
         ),
@@ -500,7 +500,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
     }
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
           // Map area
@@ -518,7 +518,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
                         : _defaultCenter,
                     zoom: 15,
                   ),
-                  style: _darkMapStyle,
+                  style: Theme.of(context).brightness == Brightness.dark ? _darkMapStyle : null,
                   onMapCreated: (controller) {
                     if (!_mapController.isCompleted) {
                       _mapController.complete(controller);
@@ -571,8 +571,8 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
 
           // Bottom panel
           Container(
-            decoration: const BoxDecoration(
-              color: AppColors.surfaceDark,
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardTheme.color,
               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: SafeArea(
@@ -587,7 +587,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: AppColors.borderDark,
+                        color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -709,11 +709,11 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: AppColors.surfaceDark.withOpacity(0.9),
+            color: Theme.of(context).cardTheme.color?.withOpacity(0.9),
             shape: BoxShape.circle,
-            border: Border.all(color: AppColors.borderDark),
+            border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
           ),
-          child: Icon(icon, color: AppColors.textPrimary, size: 20),
+          child: Icon(icon, color: Theme.of(context).iconTheme.color ?? AppColors.textPrimary, size: 20),
         ),
       ),
     );
@@ -780,7 +780,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
@@ -838,7 +838,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Column(
           children: [

@@ -28,12 +28,12 @@ class PhoneInputField extends StatelessWidget {
         Container(
           height: 56,
           decoration: BoxDecoration(
-            color: AppColors.inputDark,
+            color: Theme.of(context).cardTheme.color,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: errorText != null
                   ? AppColors.error
-                  : AppColors.borderDark,
+                  : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
             ),
           ),
           child: Row(
@@ -44,11 +44,11 @@ class PhoneInputField extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14),
                   height: double.infinity,
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      right: BorderSide(color: AppColors.borderDark),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        right: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
+                      ),
                     ),
-                  ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -60,7 +60,7 @@ class PhoneInputField extends StatelessWidget {
                       Text(
                         selectedCountry.dialCode,
                         style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textPrimary,
+                          color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
                         ),
                       ),
                       const SizedBox(width: 4),
@@ -81,7 +81,7 @@ class PhoneInputField extends StatelessWidget {
                   focusNode: focusNode,
                   keyboardType: TextInputType.phone,
                   style: AppTextStyles.bodyLarge.copyWith(
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
                   ),
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,

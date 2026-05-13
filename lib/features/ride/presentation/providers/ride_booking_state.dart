@@ -33,6 +33,7 @@ class RideBookingState {
   final String? errorMessage;
   final String? createdRideId;
   final String? createdRideOtp;
+  final String? searchingMessage;
 
   const RideBookingState({
     this.pickup,
@@ -53,6 +54,7 @@ class RideBookingState {
     this.errorMessage,
     this.createdRideId,
     this.createdRideOtp,
+    this.searchingMessage,
   });
 
   bool get hasLocations => pickup != null && dropoff != null;
@@ -85,6 +87,7 @@ class RideBookingState {
     String? errorMessage,
     String? createdRideId,
     String? createdRideOtp,
+    String? searchingMessage,
     bool clearPromo = false,
     bool clearSchedule = false,
     bool clearCard = false,
@@ -110,6 +113,7 @@ class RideBookingState {
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       createdRideId: clearRideId ? null : (createdRideId ?? this.createdRideId),
       createdRideOtp: clearRideId ? null : (createdRideOtp ?? this.createdRideOtp),
+      searchingMessage: searchingMessage ?? this.searchingMessage,
     );
   }
 }

@@ -11,20 +11,22 @@ class TransportGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surfaceDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderDark, width: 0.5),
+        border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent, width: 0.5),
       ),
       child: Column(
         children: [
           Text(
             'Transport',
             style: AppTextStyles.titleLarge.copyWith(
-              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 20),
@@ -81,12 +83,16 @@ class TransportGrid extends StatelessWidget {
   void _showComingSoon(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Colors.transparent,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (ctx) => Padding(
+      builder: (ctx) => Container(
         padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardTheme.color,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -151,12 +157,12 @@ class _TransportTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 18),
           decoration: BoxDecoration(
-            color: AppColors.cardDark,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isActive
                   ? AppColors.primaryGold.withOpacity(0.4)
-                  : AppColors.borderDark,
+                  : Theme.of(context).dividerTheme.color ?? Colors.transparent,
               width: 1,
             ),
           ),
@@ -167,7 +173,6 @@ class _TransportTile extends StatelessWidget {
               Text(
                 label,
                 style: AppTextStyles.titleSmall.copyWith(
-                  color: AppColors.textPrimary,
                   fontSize: 13,
                 ),
               ),

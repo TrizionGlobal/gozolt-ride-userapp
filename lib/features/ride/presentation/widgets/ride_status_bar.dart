@@ -28,26 +28,31 @@ class RideStatusBar extends StatelessWidget {
         Row(
           children: [
             _buildStep(
+              context,
               label: 'En Route',
               isActive: status == ActiveRideStatus.driverEnRoute,
               isCompleted:
                   status.index > ActiveRideStatus.driverEnRoute.index,
             ),
             _buildConnector(
+              context,
               isCompleted:
                   status.index > ActiveRideStatus.driverEnRoute.index,
             ),
             _buildStep(
+              context,
               label: 'Arrived',
               isActive: status == ActiveRideStatus.driverArrived,
               isCompleted:
                   status.index > ActiveRideStatus.driverArrived.index,
             ),
             _buildConnector(
+              context,
               isCompleted:
                   status.index > ActiveRideStatus.driverArrived.index,
             ),
             _buildStep(
+              context,
               label: 'In Progress',
               isActive: status == ActiveRideStatus.inProgress,
               isCompleted: status == ActiveRideStatus.completed,
@@ -60,21 +65,21 @@ class RideStatusBar extends StatelessWidget {
             stops!.isNotEmpty &&
             status == ActiveRideStatus.inProgress) ...[
           const SizedBox(height: 12),
-          _buildMultiStopIndicator(),
+          _buildMultiStopIndicator(context),
         ],
       ],
     );
   }
 
-  Widget _buildMultiStopIndicator() {
+  Widget _buildMultiStopIndicator(BuildContext context) {
     final allStops = stops!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
       ),
       child: Row(
         children: [
@@ -113,15 +118,15 @@ class RideStatusBar extends StatelessWidget {
                               ),
                             ),
                             child: isCompleted
-                                ? const Icon(Icons.check,
+                                ? Icon(Icons.check,
                                     size: 9,
-                                    color: AppColors.backgroundDark)
+                                    color: Theme.of(context).scaffoldBackgroundColor)
                                 : isCurrent
                                     ? Container(
                                         margin: const EdgeInsets.all(2),
-                                        decoration: const BoxDecoration(
+                                        decoration: BoxDecoration(
                                           shape: BoxShape.circle,
-                                          color: AppColors.backgroundDark,
+                                          color: Theme.of(context).scaffoldBackgroundColor,
                                         ),
                                       )
                                     : null,
@@ -132,7 +137,7 @@ class RideStatusBar extends StatelessWidget {
                                 height: 1.5,
                                 color: isCompleted
                                     ? AppColors.primaryGold
-                                    : AppColors.borderDark,
+                                    : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                               ),
                             ),
                         ],
@@ -157,7 +162,8 @@ class RideStatusBar extends StatelessWidget {
     );
   }
 
-  Widget _buildStep({
+  Widget _buildStep(
+    BuildContext context, {
     required String label,
     required bool isActive,
     required bool isCompleted,
@@ -183,14 +189,14 @@ class RideStatusBar extends StatelessWidget {
               ),
             ),
             child: isCompleted
-                ? const Icon(Icons.check,
-                    size: 14, color: AppColors.backgroundDark)
+                ? Icon(Icons.check,
+                    size: 14, color: Theme.of(context).scaffoldBackgroundColor)
                 : isActive
                     ? Container(
                         margin: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColors.backgroundDark,
+                          color: Theme.of(context).scaffoldBackgroundColor,
                         ),
                       )
                     : null,
@@ -209,12 +215,12 @@ class RideStatusBar extends StatelessWidget {
     );
   }
 
-  Widget _buildConnector({required bool isCompleted}) {
+  Widget _buildConnector(BuildContext context, {required bool isCompleted}) {
     return Expanded(
       child: Container(
         height: 2,
         margin: const EdgeInsets.only(bottom: 20),
-        color: isCompleted ? AppColors.primaryGold : AppColors.borderDark,
+        color: isCompleted ? AppColors.primaryGold : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
       ),
     );
   }

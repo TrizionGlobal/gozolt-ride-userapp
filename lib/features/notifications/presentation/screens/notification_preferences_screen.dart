@@ -12,7 +12,7 @@ class NotificationPreferencesScreen extends ConsumerWidget {
     final prefs = ref.watch(notificationPreferencesProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -141,9 +141,9 @@ class NotificationPreferencesScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
       ),
       child: Row(
         children: [
@@ -175,7 +175,7 @@ class NotificationPreferencesScreen extends ConsumerWidget {
               value: value,
               onChanged: onChanged,
               activeTrackColor: AppColors.primaryGold,
-              inactiveTrackColor: AppColors.borderDark,
+              inactiveTrackColor: Theme.of(context).dividerTheme.color,
             ),
           ),
         ],

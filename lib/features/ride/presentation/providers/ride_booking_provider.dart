@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -11,6 +12,7 @@ import '../../data/models/ride_stop.dart';
 import '../../data/models/saved_payment_method.dart';
 import '../../data/models/vehicle_type.dart';
 import 'ride_booking_state.dart';
+import '../../../../core/network/socket_service.dart';
 
 // Datasource provider defined here to avoid circular imports.
 final rideRemoteDatasourceProvider = Provider<RideRemoteDatasource>((ref) {
@@ -19,8 +21,38 @@ final rideRemoteDatasourceProvider = Provider<RideRemoteDatasource>((ref) {
 
 class RideBookingNotifier extends StateNotifier<RideBookingState> {
   final Ref _ref;
+  StreamSubscription? _progressSub;
+  StreamSubscription? _noDriverSub;
+  bool _isListening = false;
 
-  RideBookingNotifier(this._ref) : super(const RideBookingState());
+  RideBookingNotifier(this._ref) : super(const RideBookingState()) {
+    _ref.onDispose(() {
+      _progressSub?.cancel();
+      _noDriverSub?.cancel();
+    });
+  }
+
+  void _startListening() {
+    if (_isListening) return;
+    _isListening = true;
+
+    final socket = _ref.read(socketServiceProvider);
+    if (state.createdRideId != null) {
+      socket.joinRide(state.createdRideId!);
+    }
+
+    _progressSub = socket.onRideMatchingProgress.listen((data) {
+      if (data['message'] != null) {
+        state = state.copyWith(searchingMessage: data['message'] as String);
+      }
+    });
+
+    _noDriverSub = socket.onRideStatusUpdate.listen((data) {
+       if (data['status'] == 'NO_DRIVER') {
+         state = state.copyWith(status: BookingStatus.error, errorMessage: 'No nearby riders available');
+       }
+    });
+  }
 
   void setPickup(LocationData location) {
     state = state.copyWith(pickup: location, clearError: true);
@@ -156,7 +188,7 @@ class RideBookingNotifier extends StateNotifier<RideBookingState> {
         dropoffLat: state.dropoff!.latitude,
         dropoffLng: state.dropoff!.longitude,
         vehicleType: state.vehicleType.apiValue,
-        paymentMethod: state.paymentMethodType == PaymentMethodType.cash ? 'CASH' : 'CARD',
+        paymentMethod: state.paymentMethodType.name.toUpperCase(),
         paymentMethodId: state.paymentMethodType == PaymentMethodType.card ? state.selectedCardId : null,
         stops: state.stops.isNotEmpty
             ? state.stops
@@ -197,6 +229,8 @@ class RideBookingNotifier extends StateNotifier<RideBookingState> {
       final responseData = response.data as Map<String, dynamic>;
       final rideId = responseData['id'] as String;
       final otp = responseData['otp'] as String?;
+
+      _startListening();
 
       if (state.isScheduled) {
         state = state.copyWith(
@@ -241,7 +275,7 @@ class RideBookingNotifier extends StateNotifier<RideBookingState> {
   }
 
   void reset() {
-    state = const RideBookingState();
+    state = const RideBookingState().copyWith(clearRideId: true);
   }
 
   FareEstimate _mockFareEstimate(VehicleType type) {

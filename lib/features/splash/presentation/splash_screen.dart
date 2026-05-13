@@ -148,7 +148,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           // Main content
@@ -192,7 +192,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   size: MediaQuery.of(context).size,
                   painter: _WaveFadePainter(
                     progress: _waveProgress.value,
-                    color: AppColors.backgroundDark,
+                    color: Theme.of(context).scaffoldBackgroundColor,
                   ),
                 );
               },

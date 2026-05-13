@@ -16,9 +16,9 @@ class ReferralBottomSheet extends ConsumerWidget {
     final rulesAsync = ref.watch(rewardRulesProvider);
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceDark,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
         top: false,
@@ -32,7 +32,7 @@ class ReferralBottomSheet extends ConsumerWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.borderDark,
+                  color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -71,10 +71,10 @@ class ReferralBottomSheet extends ConsumerWidget {
                             ClipboardData(text: referral.referralCode));
                         ScaffoldMessenger.of(context).clearSnackBars();
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Copied!'),
-                            backgroundColor: AppColors.surfaceDark,
-                            duration: Duration(seconds: 1),
+                          SnackBar(
+                            content: const Text('Copied!'),
+                            backgroundColor: Theme.of(context).snackBarTheme.backgroundColor,
+                            duration: const Duration(seconds: 1),
                           ),
                         );
                       },
@@ -83,7 +83,7 @@ class ReferralBottomSheet extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(
                             vertical: 16, horizontal: 20),
                         decoration: BoxDecoration(
-                          color: AppColors.cardDark,
+                          color: Theme.of(context).scaffoldBackgroundColor,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: AppColors.primaryGold.withOpacity(0.3),
@@ -107,7 +107,7 @@ class ReferralBottomSheet extends ConsumerWidget {
                             Text(
                               'Tap to copy',
                               style: AppTextStyles.labelSmall.copyWith(
-                                color: AppColors.textMuted,
+                                color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight,
                               ),
                             ),
                           ],
@@ -137,7 +137,7 @@ class ReferralBottomSheet extends ConsumerWidget {
                         label: const Text('Share your code'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryGold,
-                          foregroundColor: AppColors.backgroundDark,
+                          foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                           padding:
                               const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
@@ -152,9 +152,9 @@ class ReferralBottomSheet extends ConsumerWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.cardDark,
+                        color: Theme.of(context).scaffoldBackgroundColor,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.borderDark),
+                        border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -164,13 +164,13 @@ class ReferralBottomSheet extends ConsumerWidget {
                           Container(
                               width: 1,
                               height: 36,
-                              color: AppColors.borderDark),
+                              color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                           _statColumn('Completed\nfirst ride',
                               referral.completedReferrals.toString()),
                           Container(
                               width: 1,
                               height: 36,
-                              color: AppColors.borderDark),
+                              color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                           _statColumn('Total\nearned',
                               '${referral.earnedPoints} pts'),
                         ],
@@ -183,9 +183,9 @@ class ReferralBottomSheet extends ConsumerWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.cardDark,
+                        color: Theme.of(context).scaffoldBackgroundColor,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.borderDark),
+                        border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -224,7 +224,10 @@ class ReferralBottomSheet extends ConsumerWidget {
         const SizedBox(height: 4),
         Text(
           label,
-          style: AppTextStyles.labelSmall.copyWith(fontSize: 10),
+          style: AppTextStyles.labelSmall.copyWith(
+            color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight,
+            fontSize: 10,
+          ),
           textAlign: TextAlign.center,
         ),
       ],
@@ -258,7 +261,7 @@ class ReferralBottomSheet extends ConsumerWidget {
           child: Text(
             text,
             style: AppTextStyles.bodyMedium
-                .copyWith(color: AppColors.textSecondary),
+                .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
           ),
         ),
       ],

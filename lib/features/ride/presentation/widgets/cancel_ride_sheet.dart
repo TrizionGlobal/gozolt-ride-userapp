@@ -43,9 +43,9 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.7,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceDark,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -57,7 +57,7 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.borderDark,
+                color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -140,16 +140,16 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
                         hintStyle: AppTextStyles.bodyMedium
                             .copyWith(color: AppColors.textMuted),
                         filled: true,
-                        fillColor: AppColors.inputDark,
+                        fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[200],
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide:
-                              const BorderSide(color: AppColors.borderDark),
+                              BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide:
-                              const BorderSide(color: AppColors.borderDark),
+                              BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -176,7 +176,7 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
                       onPressed: () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.textPrimary,
-                        side: const BorderSide(color: AppColors.borderDark),
+                        side: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
@@ -229,10 +229,10 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.error.withOpacity(0.08)
-              : AppColors.cardDark,
+              : Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? AppColors.error : AppColors.borderDark,
+            color: isSelected ? AppColors.error : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
           ),
         ),
         child: Row(
@@ -301,7 +301,7 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         content: Column(
           mainAxisSize: MainAxisSize.min,

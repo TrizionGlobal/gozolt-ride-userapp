@@ -97,7 +97,7 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           // ── Google Map ─────────────────────────────────
@@ -106,7 +106,7 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
               target: _center,
               zoom: 15,
             ),
-            style: _darkMapStyle,
+            style: Theme.of(context).brightness == Brightness.dark ? _darkMapStyle : null,
             onMapCreated: (controller) {
               _mapController.complete(controller);
             },
@@ -145,9 +145,9 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceDark,
+                  color: Theme.of(context).cardTheme.color,
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.borderDark),
+                  border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                 ),
                 child: const Icon(Icons.arrow_back,
                     color: AppColors.primaryGold, size: 20),
@@ -165,9 +165,9 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceDark,
+                  color: Theme.of(context).cardTheme.color,
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.borderDark),
+                  border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                 ),
                 child: const Icon(Icons.my_location,
                     color: AppColors.primaryGold, size: 20),
@@ -182,9 +182,9 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
             bottom: 0,
             child: Container(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-              decoration: const BoxDecoration(
-                color: AppColors.surfaceDark,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -240,7 +240,7 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
                       )),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryGold,
-                        foregroundColor: AppColors.backgroundDark,
+                        foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -248,7 +248,7 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
                       child: Text(
                         'Confirm Location',
                         style: AppTextStyles.button.copyWith(
-                          color: AppColors.backgroundDark,
+                          color: Theme.of(context).scaffoldBackgroundColor,
                         ),
                       ),
                     ),

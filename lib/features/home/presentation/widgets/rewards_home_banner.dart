@@ -38,7 +38,7 @@ class RewardsHomeBanner extends ConsumerWidget {
               child: RichText(
                 text: TextSpan(
                   style: AppTextStyles.titleSmall.copyWith(
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).textTheme.titleSmall?.color,
                   ),
                   children: [
                     const TextSpan(text: 'Explore our '),

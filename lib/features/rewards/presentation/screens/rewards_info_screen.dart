@@ -15,7 +15,7 @@ class RewardsInfoScreen extends ConsumerWidget {
     final summaryAsync = ref.watch(rewardSummaryProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -151,9 +151,9 @@ class RewardsInfoScreen extends ConsumerWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.cardDark,
+                        color: Theme.of(context).cardTheme.color,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.borderDark),
+                        border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -193,9 +193,9 @@ class RewardsInfoScreen extends ConsumerWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.cardDark,
+                        color: Theme.of(context).cardTheme.color,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.borderDark),
+                        border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -275,9 +275,9 @@ class RewardsInfoScreen extends ConsumerWidget {
             width: 6,
             height: 6,
             margin: const EdgeInsets.only(top: 6),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.textSecondary,
+              color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
             ),
           ),
           const SizedBox(width: 10),
@@ -285,7 +285,7 @@ class RewardsInfoScreen extends ConsumerWidget {
             child: Text(
               text,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+                color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
                 height: 1.4,
               ),
             ),
@@ -302,9 +302,9 @@ class RewardsInfoScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
       ),
       child: Row(
         children: [
@@ -325,7 +325,7 @@ class RewardsInfoScreen extends ConsumerWidget {
                 Text(title, style: AppTextStyles.titleSmall),
                 Text(value,
                     style: AppTextStyles.bodySmall
-                        .copyWith(color: AppColors.textSecondary)),
+                        .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight)),
               ],
             ),
           ),
@@ -342,10 +342,10 @@ class RewardsInfoScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isCurrent ? tierColor : AppColors.borderDark,
+          color: isCurrent ? tierColor : (Theme.of(context).dividerTheme.color ?? Colors.transparent),
           width: isCurrent ? 1.5 : 1,
         ),
       ),
@@ -399,7 +399,7 @@ class RewardsInfoScreen extends ConsumerWidget {
                       child: Text(
                         b,
                         style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textSecondary,
+                          color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
                         ),
                       ),
                     ),
@@ -421,7 +421,7 @@ class RewardsInfoScreen extends ConsumerWidget {
         children: [
           Text(label,
               style: AppTextStyles.bodySmall
-                  .copyWith(color: AppColors.textMuted)),
+                  .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight)),
           Text(value,
               style: AppTextStyles.bodySmall
                   .copyWith(fontWeight: FontWeight.w600)),

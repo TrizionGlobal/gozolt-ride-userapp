@@ -16,7 +16,7 @@ class WelcomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -36,9 +36,8 @@ class WelcomeScreen extends ConsumerWidget {
               // ── Tagline ────────────────────────────────────
               Text(
                 'Together shaping the future of convenience',
-                textAlign: TextAlign.center,
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: Colors.white,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                 ),
               ),
 
@@ -59,8 +58,8 @@ class WelcomeScreen extends ConsumerWidget {
               // ── "or" divider ─────────────────────────────────
               Row(
                 children: [
-                  const Expanded(
-                    child: Divider(color: AppColors.borderDark, thickness: 0.5),
+                  Expanded(
+                    child: Divider(color: Theme.of(context).dividerTheme.color, thickness: 0.5),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -71,8 +70,8 @@ class WelcomeScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  const Expanded(
-                    child: Divider(color: AppColors.borderDark, thickness: 0.5),
+                  Expanded(
+                    child: Divider(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, thickness: 0.5),
                   ),
                 ],
               ),
@@ -122,7 +121,7 @@ class WelcomeScreen extends ConsumerWidget {
                     TextSpan(
                       text: 'All rights reserved \u00a9 ',
                       style: AppTextStyles.bodySmall.copyWith(
-                        color: Colors.white,
+                        color: Theme.of(context).textTheme.bodySmall?.color,
                         fontSize: 11,
                       ),
                     ),

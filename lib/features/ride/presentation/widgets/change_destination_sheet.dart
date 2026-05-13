@@ -164,9 +164,9 @@ class _ChangeDestinationSheetState
     final rideState = ref.watch(activeRideProvider);
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceDark,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
         top: false,
@@ -185,7 +185,7 @@ class _ChangeDestinationSheetState
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.borderDark,
+                  color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -213,9 +213,9 @@ class _ChangeDestinationSheetState
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.cardDark,
+                  color: Theme.of(context).scaffoldBackgroundColor,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.borderDark),
+                  border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
                 ),
                 child: Row(
                   children: [
@@ -284,21 +284,20 @@ class _ChangeDestinationSheetState
                             )
                           : null,
                   filled: true,
-                  fillColor: AppColors.inputDark,
+                  fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[200],
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: AppColors.borderDark),
+                    borderSide: BorderSide(
+                        color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: AppColors.borderDark),
+                    borderSide: BorderSide(
+                        color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        const BorderSide(color: AppColors.primaryGold),
+                    borderSide: const BorderSide(color: AppColors.primaryGold),
                   ),
                 ),
               ),
@@ -417,12 +416,12 @@ class _ChangeDestinationSheetState
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton(
+                        child: OutlinedButton(
                         onPressed: () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.textPrimary,
-                          side:
-                              const BorderSide(color: AppColors.borderDark),
+                          side: BorderSide(
+                              color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
@@ -437,7 +436,7 @@ class _ChangeDestinationSheetState
                             _isSubmitting ? null : _submitDestinationChange,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryGold,
-                          foregroundColor: AppColors.backgroundDark,
+                          foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                           disabledBackgroundColor:
                               AppColors.primaryGold.withOpacity(0.3),
                           padding: const EdgeInsets.symmetric(vertical: 14),
@@ -445,12 +444,12 @@ class _ChangeDestinationSheetState
                               borderRadius: BorderRadius.circular(12)),
                         ),
                         child: _isSubmitting
-                            ? const SizedBox(
+                            ? SizedBox(
                                 width: 20,
                                 height: 20,
                                 child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    color: AppColors.backgroundDark),
+                                    color: Theme.of(context).scaffoldBackgroundColor),
                               )
                             : const Text('Request Change',
                                 style: AppTextStyles.button),

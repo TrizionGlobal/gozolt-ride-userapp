@@ -10,6 +10,8 @@ import 'app.dart';
 import 'firebase_options.dart';
 import 'core/constants/app_constants.dart';
 import 'core/services/notification_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'core/providers/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,11 +30,18 @@ void main() async {
   // Force dark status bar style for splash
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
-    statusBarBrightness: Brightness.dark,
+    statusBarIconBrightness: Brightness.dark,
+    statusBarBrightness: Brightness.light,
   ));
 
-  final container = ProviderContainer();
+  // Initialize SharedPreferences
+  final sharedPrefs = await SharedPreferences.getInstance();
+
+  final container = ProviderContainer(
+    overrides: [
+      sharedPrefsProvider.overrideWithValue(sharedPrefs),
+    ],
+  );
   
   // Initialize Notification Service
   await container.read(notificationServiceProvider).initialize();

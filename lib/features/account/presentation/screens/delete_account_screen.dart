@@ -22,7 +22,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -113,9 +113,9 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.cardDark,
+                    color: Theme.of(context).cardTheme.color,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.borderDark),
+                    border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -187,7 +187,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                             border: Border.all(
                               color: _confirmChecked
                                   ? AppColors.error
-                                  : AppColors.borderDark,
+                                  : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                             ),
                           ),
                           child: _confirmChecked
@@ -279,7 +279,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Final Confirmation', style: AppTextStyles.headlineSmall),
         content: Text(

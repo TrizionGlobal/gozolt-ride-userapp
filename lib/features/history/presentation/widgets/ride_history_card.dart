@@ -19,9 +19,9 @@ class RideHistoryCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.cardDark,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.borderDark),
+          border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,7 +63,7 @@ class RideHistoryCard extends StatelessWidget {
                       Container(
                           width: 1.5,
                           height: 20,
-                          color: AppColors.borderDark),
+                          color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                       Container(
                         width: 10,
                         height: 10,
@@ -107,7 +107,7 @@ class RideHistoryCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.surfaceDark,
+                color: Theme.of(context).scaffoldBackgroundColor,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(

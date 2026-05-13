@@ -15,10 +15,10 @@ class SavedPlacesScreen extends ConsumerWidget {
     final addressState = ref.watch(accountAddressesProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         color: AppColors.primaryGold,
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         onRefresh: () async {
           ref.read(accountAddressesProvider.notifier).load();
           await Future.delayed(const Duration(milliseconds: 300));
@@ -97,7 +97,7 @@ class SavedPlacesScreen extends ConsumerWidget {
                     const SizedBox(height: 16),
                     Text('No saved places',
                         style: AppTextStyles.titleMedium
-                            .copyWith(color: AppColors.textSecondary)),
+                            .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight)),
                     const SizedBox(height: 6),
                     Text('Add your frequently visited places',
                         style: AppTextStyles.bodySmall),
@@ -110,7 +110,7 @@ class SavedPlacesScreen extends ConsumerWidget {
                         label: const Text('Add Place'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryGold,
-                          foregroundColor: AppColors.backgroundDark,
+                          foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
                         ),
@@ -133,9 +133,9 @@ class SavedPlacesScreen extends ConsumerWidget {
                           margin: const EdgeInsets.only(bottom: 10),
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: AppColors.cardDark,
+                            color: Theme.of(context).cardTheme.color,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.borderDark),
+                            border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
                           ),
                           child: Row(
                             children: [
@@ -201,7 +201,7 @@ class SavedPlacesScreen extends ConsumerWidget {
                           child: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppColors.cardDark,
+                              color: Theme.of(context).cardTheme.color,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: AppColors.primaryGold.withOpacity(0.3),
@@ -251,13 +251,13 @@ class SavedPlacesScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Delete Place', style: AppTextStyles.headlineSmall),
         content: Text(
           'Are you sure you want to remove this saved place?',
           style: AppTextStyles.bodyMedium
-              .copyWith(color: AppColors.textSecondary),
+              .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
         ),
         actions: [
           Row(
@@ -266,7 +266,7 @@ class SavedPlacesScreen extends ConsumerWidget {
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
                 child: Text('Cancel',
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                    style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight, fontSize: 13)),
               ),
               const SizedBox(width: 8),
               TextButton(
@@ -297,7 +297,7 @@ class SavedPlacesScreen extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).cardTheme.color,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -311,7 +311,7 @@ class SavedPlacesScreen extends ConsumerWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.borderDark,
+                color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -327,14 +327,14 @@ class SavedPlacesScreen extends ConsumerWidget {
                 hintStyle: AppTextStyles.bodyMedium
                     .copyWith(color: AppColors.textMuted),
                 filled: true,
-                fillColor: AppColors.inputDark,
+                fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[200],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.borderDark),
+                  borderSide: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.borderDark),
+                  borderSide: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -351,14 +351,14 @@ class SavedPlacesScreen extends ConsumerWidget {
                 hintStyle: AppTextStyles.bodyMedium
                     .copyWith(color: AppColors.textMuted),
                 filled: true,
-                fillColor: AppColors.inputDark,
+                fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[200],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.borderDark),
+                  borderSide: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.borderDark),
+                  borderSide: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -392,7 +392,7 @@ class SavedPlacesScreen extends ConsumerWidget {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGold,
-                  foregroundColor: AppColors.backgroundDark,
+                  foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),

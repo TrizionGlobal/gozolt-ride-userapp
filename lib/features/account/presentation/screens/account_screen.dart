@@ -11,6 +11,7 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/providers/storage_provider.dart';
 import '../../../home/presentation/providers/home_providers.dart';
 import '../providers/account_providers.dart';
+import '../../../../core/providers/theme_provider.dart';
 import '../../../rewards/presentation/providers/rewards_providers.dart';
 
 class AccountScreen extends ConsumerStatefulWidget {
@@ -24,6 +25,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   DateTime? _lastRateAppTap;
 
   void _showPremiumSnackBar(String message, {IconData icon = Icons.info_outline}) {
+    final isDark = ref.read(isDarkModeProvider);
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -34,12 +36,14 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
             Expanded(
               child: Text(
                 message,
-                style: AppTextStyles.bodySmall.copyWith(color: AppColors.textPrimary),
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                ),
               ),
             ),
           ],
         ),
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -53,10 +57,10 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     final isDark = ref.watch(isDarkModeProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         color: AppColors.primaryGold,
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         onRefresh: () async {
           ref.invalidate(userProfileProvider);
           await Future.delayed(const Duration(milliseconds: 300));
@@ -245,11 +249,9 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                   icon: Icons.dark_mode_outlined,
                   label: 'Dark Mode',
                   value: isDark,
-                  onChanged: (_) {
-                    _showPremiumSnackBar(
-                      'Light theme is coming soon!',
-                      icon: Icons.palette_outlined,
-                    );
+                  onChanged: (v) {
+                    ref.read(themeModeProvider.notifier).state = 
+                        v ? ThemeMode.dark : ThemeMode.light;
                   },
                 ),
 
@@ -381,14 +383,14 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         margin: const EdgeInsets.only(bottom: 4),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
-          color: AppColors.cardDark,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.borderDark),
+          border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
         ),
         child: Row(
           children: [
             Icon(icon,
-                color: textColor ?? AppColors.textSecondary, size: 22),
+                color: textColor ?? (Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight), size: 22),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -397,7 +399,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                   Text(
                     label,
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: textColor ?? AppColors.textPrimary,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -431,13 +432,13 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
       margin: const EdgeInsets.only(bottom: 4),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
       ),
       child: Row(
         children: [
-          Icon(icon, color: AppColors.textSecondary, size: 22),
+          Icon(icon, color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight, size: 22),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -459,7 +460,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                   onChanged(v);
                 },
                 activeTrackColor: AppColors.primaryGold,
-                inactiveTrackColor: AppColors.borderDark,
+                inactiveTrackColor: Theme.of(context).dividerTheme.color,
               ),
             ),
           ),
@@ -470,9 +471,10 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
 
   void _showLanguageSheet() {
     final current = ref.read(languageProvider);
+    final isDark = ref.read(isDarkModeProvider);
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -487,7 +489,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.borderDark,
+                  color: Theme.of(context).dividerTheme.color,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -535,10 +537,14 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryGold.withOpacity(0.1) : AppColors.cardDark,
+          color: isSelected 
+              ? AppColors.primaryGold.withOpacity(0.1) 
+              : Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primaryGold : AppColors.borderDark,
+            color: isSelected 
+                ? AppColors.primaryGold 
+                : (Theme.of(context).dividerTheme.color ?? Colors.transparent),
           ),
         ),
         child: Row(
@@ -591,7 +597,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(ctx).colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Download My Data', style: AppTextStyles.headlineSmall),
         content: Text(
@@ -635,7 +641,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(ctx).colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Log Out', style: AppTextStyles.headlineSmall),
         content: Text(
