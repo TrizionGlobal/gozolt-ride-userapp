@@ -3,21 +3,23 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>411058986195-ti489tku8cud6seqfv0efg33v2u97bdb.apps.googleusercontent.com</string>
+	<string>715853709143-3h3srudfsknjpf43ii5t7r6jfbgcih77.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.411058986195-ti489tku8cud6seqfv0efg33v2u97bdb</string>
+	<string>com.googleusercontent.apps.715853709143-3h3srudfsknjpf43ii5t7r6jfbgcih77</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>715853709143-gagc0550bigp6lbv82mcrje4jdj3sla5.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
-	<string>AIzaSyBik2aEeli6Ra18bEluM795jfrxqP25-dY</string>
+	<string>AIzaSyAa722axSSj5ggXMJ-wi8UG29VbwxmppVA</string>
 	<key>GCM_SENDER_ID</key>
-	<string>411058986195</string>
+	<string>715853709143</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>com.gozolt.gozoltUserApp</string>
 	<key>PROJECT_ID</key>
-	<string>gozolt-testing</string>
+	<string>numbers-9f9f6</string>
 	<key>STORAGE_BUCKET</key>
-	<string>gozolt-testing.firebasestorage.app</string>
+	<string>numbers-9f9f6.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -29,6 +31,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:411058986195:ios:29303f78b46ea97bb0c826</string>
+	<string>1:715853709143:ios:c9e1c6c3558b4655494812</string>
 </dict>
 </plist>

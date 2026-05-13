@@ -254,6 +254,7 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
 
   Future<void> _handleGoogleSignIn() async {
     final GoogleSignIn googleSignIn = GoogleSignIn(
+      serverClientId: '715853709143-003i867cfpfbnn49j38fk08mrvgodd1u.apps.googleusercontent.com',
       scopes: ['email', 'profile'],
     );
 
