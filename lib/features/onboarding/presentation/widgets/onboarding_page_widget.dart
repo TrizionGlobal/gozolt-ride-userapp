@@ -43,7 +43,7 @@ class OnboardingPageWidget extends StatelessWidget {
         // ── Title ────────────────────────────────────
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: _buildTitle(),
+          child: _buildTitle(context),
         ),
 
         SizedBox(height: subtitleGap),
@@ -101,7 +101,7 @@ class OnboardingPageWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildTitle() {
+  Widget _buildTitle(BuildContext context) {
     if (data.titleAllGold) {
       return Text(
         '${data.title}${data.highlightedWord}',
