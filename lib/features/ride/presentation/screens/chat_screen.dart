@@ -59,9 +59,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     });
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
@@ -75,7 +75,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               height: 36,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.primaryGold.withValues(alpha: 0.15),
+                color: AppColors.primaryGold.withOpacity(0.15),
               ),
               child: Center(
                 child: Text(
@@ -115,7 +115,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Calling ${driver?.name ?? "driver"}...'),
-                  backgroundColor: AppColors.surfaceDark,
+                  backgroundColor: Theme.of(context).cardTheme.color,
                 ),
               );
             },
@@ -133,7 +133,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       children: [
                         Icon(Icons.chat_bubble_outline,
                             size: 48,
-                            color: AppColors.textMuted.withValues(alpha: 0.3)),
+                            color: AppColors.textMuted.withOpacity(0.3)),
                         const SizedBox(height: 12),
                         Text(
                           'No messages yet',
@@ -176,11 +176,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 14, vertical: 8),
                               decoration: BoxDecoration(
-                                color: AppColors.cardDark,
+                                color: Theme.of(context).cardTheme.color,
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
                                   color: AppColors.primaryGold
-                                      .withValues(alpha: 0.3),
+                                      .withOpacity(0.3),
                                 ),
                               ),
                               child: Text(
@@ -201,10 +201,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           // Input bar
           Container(
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-            decoration: const BoxDecoration(
-              color: AppColors.surfaceDark,
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardTheme.color,
               border: Border(
-                top: BorderSide(color: AppColors.borderDark),
+                top: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
               ),
             ),
             child: SafeArea(
@@ -225,7 +225,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         hintStyle: AppTextStyles.bodyMedium
                             .copyWith(color: AppColors.textMuted),
                         filled: true,
-                        fillColor: AppColors.inputDark,
+                        fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[100],
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 10),
                         border: OutlineInputBorder(
@@ -245,9 +245,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         color: AppColors.primaryGold,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.send,
-                        color: AppColors.backgroundDark,
+                        color: Theme.of(context).scaffoldBackgroundColor,
                         size: 20,
                       ),
                     ),
@@ -296,7 +296,7 @@ class _ChatBubble extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: AppColors.cardDark,
-                border: Border.all(color: AppColors.borderDark),
+                border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
               ),
               child: const Icon(Icons.person, size: 16, color: AppColors.textMuted),
             ),
@@ -306,7 +306,7 @@ class _ChatBubble extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: isUser ? AppColors.primaryGold : AppColors.cardDark,
+                color: isUser ? AppColors.primaryGold : Theme.of(context).cardTheme.color,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(16),
                   topRight: const Radius.circular(16),
@@ -321,7 +321,7 @@ class _ChatBubble extends StatelessWidget {
                     message.message,
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: isUser
-                          ? AppColors.backgroundDark
+                          ? Theme.of(context).scaffoldBackgroundColor
                           : AppColors.textPrimary,
                     ),
                   ),
@@ -334,7 +334,7 @@ class _ChatBubble extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 10,
                           color: isUser
-                              ? AppColors.backgroundDark.withValues(alpha: 0.6)
+                              ? Theme.of(context).scaffoldBackgroundColor.withOpacity(0.6)
                               : AppColors.textMuted,
                         ),
                       ),
@@ -346,7 +346,7 @@ class _ChatBubble extends StatelessWidget {
                           child: CircularProgressIndicator(
                             strokeWidth: 1.5,
                             color: isUser
-                                ? AppColors.backgroundDark.withValues(alpha: 0.6)
+                                ? Theme.of(context).scaffoldBackgroundColor.withOpacity(0.6)
                                 : AppColors.textMuted,
                           ),
                         ),

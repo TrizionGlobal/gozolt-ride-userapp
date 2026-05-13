@@ -60,7 +60,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
     final fare = ride?.actualFare ?? ride?.estimatedFare ?? 19.80;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -76,9 +76,9 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                   height: 80,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.success.withValues(alpha: 0.15),
+                    color: AppColors.success.withOpacity(0.15),
                     border: Border.all(
-                        color: AppColors.success.withValues(alpha: 0.3),
+                        color: AppColors.success.withOpacity(0.3),
                         width: 2),
                   ),
                   child: const Icon(Icons.check,
@@ -102,9 +102,9 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 decoration: BoxDecoration(
-                  color: AppColors.cardDark,
+                  color: Theme.of(context).cardTheme.color,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.borderDark),
+                  border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                 ),
                 child: Column(
                   children: [
@@ -131,6 +131,76 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
               ),
               const SizedBox(height: 12),
 
+              // ── Pay Now Section ──
+              if (!rideState.isPaid)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGold.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.primaryGold.withOpacity(0.2)),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Payment Method', style: AppTextStyles.bodyMedium),
+                          Row(
+                            children: [
+                              Icon(
+                                ride?.paymentMethod == 'CARD' ? Icons.credit_card :
+                                ride?.paymentMethod == 'UPI' ? Icons.account_balance :
+                                ride?.paymentMethod == 'WALLET' ? Icons.account_balance_wallet : Icons.money,
+                                size: 16,
+                                color: AppColors.primaryGold,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(ride?.paymentMethod ?? 'CASH', style: AppTextStyles.titleSmall),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 54,
+                        child: ElevatedButton(
+                          onPressed: rideState.isPaymentLoading ? null : () => ref.read(activeRideProvider.notifier).checkoutRide(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryGold,
+                            foregroundColor: Theme.of(context).scaffoldBackgroundColor,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: rideState.isPaymentLoading
+                            ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                            : Text('Pay \u20AC${fare.toStringAsFixed(2)} Now', style: AppTextStyles.button),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.success.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.check_circle, color: AppColors.success, size: 20),
+                      const SizedBox(width: 10),
+                      Text('Payment Successful', style: AppTextStyles.titleMedium.copyWith(color: AppColors.success)),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 12),
+
               // Fare Breakdown (Change 3)
               _buildFareBreakdown(rideState),
               const SizedBox(height: 16),
@@ -143,13 +213,13 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      AppColors.primaryGold.withValues(alpha: 0.15),
-                      AppColors.primaryGold.withValues(alpha: 0.05),
+                      AppColors.primaryGold.withOpacity(0.15),
+                      AppColors.primaryGold.withOpacity(0.05),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color: AppColors.primaryGold.withValues(alpha: 0.2)),
+                      color: AppColors.primaryGold.withOpacity(0.2)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -159,7 +229,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                       height: 32,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.primaryGold.withValues(alpha: 0.2),
+                        color: AppColors.primaryGold.withOpacity(0.2),
                       ),
                       child: Image.asset(AssetPaths.iconGoCoin,
                           width: 20, height: 20),
@@ -181,9 +251,9 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.cardDark,
+                  color: Theme.of(context).cardTheme.color,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.borderDark),
+                  border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                 ),
                 child: Column(
                   children: [
@@ -218,7 +288,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                             width: 2,
                             height: 5,
                             margin: const EdgeInsets.symmetric(vertical: 1),
-                            color: AppColors.borderDark,
+                            color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
                           ),
                         ),
                       ),
@@ -299,16 +369,14 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                     hintStyle: AppTextStyles.bodyMedium
                         .copyWith(color: AppColors.textMuted),
                     filled: true,
-                    fillColor: AppColors.inputDark,
+                    fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[100],
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: AppColors.borderDark),
+                      borderSide: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: AppColors.borderDark),
+                      borderSide: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -325,7 +393,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                     onPressed: _submitRating,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,
-                      foregroundColor: AppColors.backgroundDark,
+                      foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
@@ -340,7 +408,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                   padding:
                       const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.1),
+                    color: AppColors.success.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -368,10 +436,10 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                   padding: const EdgeInsets.symmetric(
                       vertical: 12, horizontal: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.1),
+                    color: AppColors.success.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                        color: AppColors.success.withValues(alpha: 0.2)),
+                        color: AppColors.success.withOpacity(0.2)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -431,7 +499,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryGold,
-                    foregroundColor: AppColors.backgroundDark,
+                    foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
@@ -450,8 +518,8 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                     context.goNamed(RouteNames.home);
                   },
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textPrimary,
-                    side: const BorderSide(color: AppColors.borderDark),
+                    foregroundColor: Theme.of(context).textTheme.bodyLarge?.color ?? AppColors.textPrimary,
+                    side: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
@@ -481,9 +549,9 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -561,12 +629,12 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppColors.primaryGold
-                        : AppColors.cardDark,
+                        : Theme.of(context).cardTheme.color,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isSelected
                           ? AppColors.primaryGold
-                          : AppColors.borderDark,
+                          : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                     ),
                   ),
                   child: Center(
@@ -574,7 +642,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                       '\u20AC${amount.toStringAsFixed(0)}',
                       style: AppTextStyles.titleSmall.copyWith(
                         color: isSelected
-                            ? AppColors.backgroundDark
+                            ? Theme.of(context).scaffoldBackgroundColor
                             : AppColors.textSecondary,
                         fontWeight:
                             isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -605,12 +673,12 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                 decoration: BoxDecoration(
                   color: _showCustomTip
                       ? AppColors.primaryGold
-                      : AppColors.cardDark,
+                      : Theme.of(context).cardTheme.color,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: _showCustomTip
                         ? AppColors.primaryGold
-                        : AppColors.borderDark,
+                        : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                   ),
                 ),
                 child: Center(
@@ -618,7 +686,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                     'Custom',
                     style: AppTextStyles.labelSmall.copyWith(
                       color: _showCustomTip
-                          ? AppColors.backgroundDark
+                          ? Theme.of(context).scaffoldBackgroundColor
                           : AppColors.textSecondary,
                       fontWeight:
                           _showCustomTip ? FontWeight.w700 : FontWeight.w500,
@@ -655,18 +723,18 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                 hintStyle: AppTextStyles.titleMedium
                     .copyWith(color: AppColors.textMuted),
                 filled: true,
-                fillColor: AppColors.cardDark,
+                fillColor: Theme.of(context).cardTheme.color,
                 contentPadding: const EdgeInsets.symmetric(
                     horizontal: 14, vertical: 10),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide:
-                      const BorderSide(color: AppColors.borderDark),
+                      BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide:
-                      const BorderSide(color: AppColors.borderDark),
+                      BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -691,7 +759,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
               onPressed: _sendTip,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGold,
-                foregroundColor: AppColors.backgroundDark,
+                foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),

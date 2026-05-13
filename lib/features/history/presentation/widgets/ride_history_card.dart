@@ -19,9 +19,9 @@ class RideHistoryCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.cardDark,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.borderDark),
+          border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,14 +56,14 @@ class RideHistoryCard extends StatelessWidget {
                           color: AppColors.success,
                           shape: BoxShape.circle,
                           border: Border.all(
-                              color: AppColors.success.withValues(alpha: 0.3),
+                              color: AppColors.success.withOpacity(0.3),
                               width: 2),
                         ),
                       ),
                       Container(
                           width: 1.5,
                           height: 20,
-                          color: AppColors.borderDark),
+                          color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                       Container(
                         width: 10,
                         height: 10,
@@ -71,7 +71,7 @@ class RideHistoryCard extends StatelessWidget {
                           color: AppColors.error,
                           shape: BoxShape.circle,
                           border: Border.all(
-                              color: AppColors.error.withValues(alpha: 0.3),
+                              color: AppColors.error.withOpacity(0.3),
                               width: 2),
                         ),
                       ),
@@ -107,7 +107,7 @@ class RideHistoryCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
-                color: AppColors.surfaceDark,
+                color: Theme.of(context).scaffoldBackgroundColor,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -241,31 +241,31 @@ class _StatusBadge extends StatelessWidget {
     switch (status) {
       case 'COMPLETED':
         return (
-          AppColors.success.withValues(alpha: 0.15),
+          AppColors.success.withOpacity(0.15),
           AppColors.success,
           'Completed',
         );
       case 'CANCELLED':
         return (
-          AppColors.error.withValues(alpha: 0.15),
+          AppColors.error.withOpacity(0.15),
           AppColors.error,
           'Cancelled',
         );
       case 'SCHEDULED':
         return (
-          AppColors.info.withValues(alpha: 0.15),
+          AppColors.info.withOpacity(0.15),
           AppColors.info,
           'Scheduled',
         );
       case 'IN_PROGRESS':
         return (
-          AppColors.primaryGold.withValues(alpha: 0.15),
+          AppColors.primaryGold.withOpacity(0.15),
           AppColors.primaryGold,
           'In Progress',
         );
       default:
         return (
-          AppColors.textMuted.withValues(alpha: 0.15),
+          AppColors.textMuted.withOpacity(0.15),
           AppColors.textMuted,
           status,
         );

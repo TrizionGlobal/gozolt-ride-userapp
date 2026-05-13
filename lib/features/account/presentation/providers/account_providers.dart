@@ -28,8 +28,6 @@ final accountPaymentMethodsProvider = StateNotifierProvider<
 /// Language preference.
 final languageProvider = StateProvider<String>((ref) => 'en');
 
-/// Theme mode (dark = default).
-final isDarkModeProvider = StateProvider<bool>((ref) => true);
 
 // ── Addresses State ──────────────────────────────────────
 class AccountAddressesState {
@@ -115,7 +113,30 @@ class AccountAddressesNotifier extends StateNotifier<AccountAddressesState> {
     load();
   }
 
+  Future<void> updateAddress(String id, Map<String, dynamic> data) async {
+    if (AppConstants.kDevBypass) {
+      state = state.copyWith(
+        addresses: state.addresses.map((a) {
+          if (a.id == id) {
+            return UserAddress(
+              id: a.id,
+              label: data['label'] as String? ?? a.label,
+              address: data['address'] as String? ?? a.address,
+              latitude: data['latitude'] as double? ?? a.latitude,
+              longitude: data['longitude'] as double? ?? a.longitude,
+            );
+          }
+          return a;
+        }).toList(),
+      );
+      return;
+    }
+    await _ds.updateAddress(id, data);
+    load();
+  }
+
   Future<void> deleteAddress(String id) async {
+
     if (AppConstants.kDevBypass) {
       state = state.copyWith(
           addresses: state.addresses.where((a) => a.id != id).toList());
@@ -204,5 +225,15 @@ class AccountPaymentMethodsNotifier
     }
     await _ds.deletePaymentMethod(id);
     load();
+  }
+
+  Future<void> confirmSetup(String paymentMethodId) async {
+    state = state.copyWith(isLoading: true);
+    try {
+      await _ds.confirmSetupIntent(paymentMethodId);
+      await load();
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
   }
 }

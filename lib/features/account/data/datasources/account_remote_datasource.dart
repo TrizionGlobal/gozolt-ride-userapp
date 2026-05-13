@@ -75,8 +75,23 @@ class AccountRemoteDatasource {
     return response.data as Map<String, dynamic>;
   }
 
+  Future<Map<String, dynamic>> createPaymentSheet(double amount) async {
+    final response = await _dio.post(
+      ApiConstants.paymentPaymentSheet,
+      data: {'amount': amount},
+    );
+    return response.data as Map<String, dynamic>;
+  }
+
   Future<void> deletePaymentMethod(String id) async {
     await _dio.delete('${ApiConstants.paymentMethods}/$id');
+  }
+
+  Future<void> confirmSetupIntent(String paymentMethodId) async {
+    await _dio.post(
+      ApiConstants.paymentConfirmSetup,
+      data: {'paymentMethodId': paymentMethodId},
+    );
   }
 
   // ── Preferences ─────────────────────────────────────

@@ -9,7 +9,7 @@ abstract final class AppTextStyles {
     fontFamily: _fontFamily,
     fontSize: 57,
     fontWeight: FontWeight.w900,
-    color: AppColors.textPrimary,
+    color: null,
   );
 
   // ── Headlines ──────────────────────────────────────────
@@ -17,21 +17,21 @@ abstract final class AppTextStyles {
     fontFamily: _fontFamily,
     fontSize: 32,
     fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
+    color: null,
   );
 
   static const TextStyle headlineMedium = TextStyle(
     fontFamily: _fontFamily,
     fontSize: 24,
     fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
+    color: null,
   );
 
   static const TextStyle headlineSmall = TextStyle(
     fontFamily: _fontFamily,
     fontSize: 20,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
+    color: null,
   );
 
   // ── Titles ─────────────────────────────────────────────
@@ -39,21 +39,21 @@ abstract final class AppTextStyles {
     fontFamily: _fontFamily,
     fontSize: 18,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
+    color: null,
   );
 
   static const TextStyle titleMedium = TextStyle(
     fontFamily: _fontFamily,
     fontSize: 16,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
+    color: null,
   );
 
   static const TextStyle titleSmall = TextStyle(
     fontFamily: _fontFamily,
     fontSize: 14,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
+    color: null,
   );
 
   // ── Body ───────────────────────────────────────────────
@@ -61,21 +61,21 @@ abstract final class AppTextStyles {
     fontFamily: _fontFamily,
     fontSize: 16,
     fontWeight: FontWeight.w400,
-    color: AppColors.textPrimary,
+    color: null,
   );
 
   static const TextStyle bodyMedium = TextStyle(
     fontFamily: _fontFamily,
     fontSize: 14,
     fontWeight: FontWeight.w400,
-    color: AppColors.textPrimary,
+    color: null,
   );
 
   static const TextStyle bodySmall = TextStyle(
     fontFamily: _fontFamily,
     fontSize: 12,
     fontWeight: FontWeight.w400,
-    color: AppColors.textSecondary,
+    color: null,
   );
 
   // ── Labels ─────────────────────────────────────────────
@@ -83,7 +83,7 @@ abstract final class AppTextStyles {
     fontFamily: _fontFamily,
     fontSize: 14,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
+    color: null,
     letterSpacing: 0.5,
   );
 
@@ -91,7 +91,7 @@ abstract final class AppTextStyles {
     fontFamily: _fontFamily,
     fontSize: 11,
     fontWeight: FontWeight.w500,
-    color: AppColors.textSecondary,
+    color: null,
     letterSpacing: 0.5,
   );
 
@@ -108,7 +108,7 @@ abstract final class AppTextStyles {
     fontFamily: _fontFamily,
     fontSize: 42,
     fontWeight: FontWeight.w900,
-    color: AppColors.textPrimary,
+    color: null,
     letterSpacing: 2,
   );
 
@@ -125,7 +125,7 @@ abstract final class AppTextStyles {
     fontFamily: _fontFamily,
     fontSize: 24,
     fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
+    color: null,
     height: 1.3,
   );
 
@@ -133,7 +133,7 @@ abstract final class AppTextStyles {
     fontFamily: _fontFamily,
     fontSize: 14,
     fontWeight: FontWeight.w400,
-    color: AppColors.textSecondary,
+    color: null,
     height: 1.6,
   );
 

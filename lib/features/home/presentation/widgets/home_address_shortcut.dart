@@ -42,7 +42,7 @@ class HomeAddressShortcut extends ConsumerWidget {
           );
         },
         loading: () => _buildShimmerCard(),
-        error: (_, _) => const SizedBox.shrink(),
+        error: (context, error) => const SizedBox.shrink(),
       ),
     );
   }
@@ -69,7 +69,7 @@ class HomeAddressShortcut extends ConsumerWidget {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: AppColors.primaryGold.withValues(alpha: 0.15),
+                color: AppColors.primaryGold.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: iconColor, size: 22),

@@ -78,7 +78,7 @@ class TripSummaryScreen extends ConsumerWidget {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: AppColors.backgroundDark
-                                  .withValues(alpha: 0.15),
+                                  .withOpacity(0.15),
                             ),
                             child: const Icon(Icons.arrow_back,
                                 color: AppColors.backgroundDark, size: 20),
@@ -113,7 +113,7 @@ class TripSummaryScreen extends ConsumerWidget {
                                 horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
                               color:
-                                  AppColors.backgroundDark.withValues(alpha: 0.15),
+                                  AppColors.backgroundDark.withOpacity(0.15),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
@@ -145,10 +145,10 @@ class TripSummaryScreen extends ConsumerWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryGold.withValues(alpha: 0.1),
+                    color: AppColors.primaryGold.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                        color: AppColors.primaryGold.withValues(alpha: 0.2)),
+                        color: AppColors.primaryGold.withOpacity(0.2)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -308,7 +308,7 @@ class TripSummaryScreen extends ConsumerWidget {
                     color: AppColors.success,
                     shape: BoxShape.circle,
                     border: Border.all(
-                        color: AppColors.success.withValues(alpha: 0.3),
+                        color: AppColors.success.withOpacity(0.3),
                         width: 2),
                   ),
                 ),
@@ -321,7 +321,7 @@ class TripSummaryScreen extends ConsumerWidget {
                     color: AppColors.error,
                     shape: BoxShape.circle,
                     border: Border.all(
-                        color: AppColors.error.withValues(alpha: 0.3),
+                        color: AppColors.error.withOpacity(0.3),
                         width: 2),
                   ),
                 ),
@@ -386,7 +386,7 @@ class TripSummaryScreen extends ConsumerWidget {
         children: [
           CircleAvatar(
             radius: 22,
-            backgroundColor: AppColors.primaryGold.withValues(alpha: 0.15),
+            backgroundColor: AppColors.primaryGold.withOpacity(0.15),
             child: Text(
               ride.driverName?.substring(0, 1) ?? 'D',
               style: AppTextStyles.titleMedium
@@ -424,10 +424,10 @@ class TripSummaryScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.primaryGold.withValues(alpha: 0.1),
+                color: AppColors.primaryGold.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
-                    color: AppColors.primaryGold.withValues(alpha: 0.3)),
+                    color: AppColors.primaryGold.withOpacity(0.3)),
               ),
               child: Text(
                 ride.driverPlate!,
@@ -492,9 +492,9 @@ class TripSummaryScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.08),
+        color: AppColors.error.withOpacity(0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
+        border: Border.all(color: AppColors.error.withOpacity(0.2)),
       ),
       child: Row(
         children: [

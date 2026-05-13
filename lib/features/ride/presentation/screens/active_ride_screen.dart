@@ -30,8 +30,15 @@ class ActiveRideScreen extends ConsumerStatefulWidget {
   ConsumerState<ActiveRideScreen> createState() => _ActiveRideScreenState();
 }
 
-class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
+class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with TickerProviderStateMixin {
   final Completer<GoogleMapController> _mapController = Completer();
+  late AnimationController _posController;
+  late AnimationController _rotController;
+  LatLng? _oldPos;
+  LatLng? _newPos;
+  double _oldRot = 0;
+  double _newRot = 0;
+
   static final _defaultCenter = LatLng(AppConstants.defaultLat, AppConstants.defaultLng);
   BitmapDescriptor? _carIcon;
   BitmapDescriptor? _userIcon;
@@ -63,14 +70,21 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
 
     // Driver marker — white car with heading rotation
     if (rideState.driverLocation != null) {
+      final currentPos = _newPos ?? LatLng(rideState.driverLocation!.latitude, rideState.driverLocation!.longitude);
+      final lerpPos = _oldPos != null
+          ? LatLng(
+              ui.lerpDouble(_oldPos!.latitude, _newPos!.latitude, _posController.value)!,
+              ui.lerpDouble(_oldPos!.longitude, _newPos!.longitude, _posController.value)!,
+            )
+          : currentPos;
+
+      final lerpRot = ui.lerpDouble(_oldRot, _newRot, _rotController.value) ?? _newRot;
+
       markers.add(Marker(
         markerId: const MarkerId('driver'),
-        position: LatLng(
-          rideState.driverLocation!.latitude,
-          rideState.driverLocation!.longitude,
-        ),
+        position: lerpPos,
         icon: _carIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
-        rotation: rideState.driverLocation!.heading ?? 0,
+        rotation: lerpRot,
         anchor: const Offset(0.5, 0.5),
         flat: true,
         infoWindow: InfoWindow(title: rideState.driverInfo?.name ?? 'Driver'),
@@ -81,7 +95,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     markers.add(Marker(
       markerId: const MarkerId('pickup'),
       position: LatLng(ride.pickupLat, ride.pickupLng),
-      icon: _userIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow),
+      icon: _userIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
       anchor: const Offset(0.5, 0.5),
       infoWindow: InfoWindow(title: ride.pickupAddress),
     ));
@@ -90,7 +104,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     markers.add(Marker(
       markerId: const MarkerId('dropoff'),
       position: LatLng(ride.dropoffLat, ride.dropoffLng),
-      icon: _dropoffIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+      icon: _dropoffIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
       anchor: const Offset(0.5, 1.0),
       infoWindow: InfoWindow(title: ride.dropoffAddress),
     ));
@@ -228,6 +242,17 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
   @override
   void initState() {
     super.initState();
+    _posController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+    _rotController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _posController.addListener(() => setState(() {}));
+    _rotController.addListener(() => setState(() {}));
+
     _createCustomMarkers();
     // Initialize the ride with the ride ID passed from finding driver screen
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -236,6 +261,13 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
         ref.read(activeRideProvider.notifier).initializeRide('dev-ride-001');
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _posController.dispose();
+    _rotController.dispose();
+    super.dispose();
   }
 
   Future<void> _createCustomMarkers() async {
@@ -256,7 +288,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
       const Offset(size / 2, size / 2),
       16,
       Paint()
-        ..color = Colors.black.withValues(alpha: 0.2)
+        ..color = Colors.black.withOpacity(0.2)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
     );
 
@@ -311,7 +343,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
       const Offset(size / 2, size / 2),
       size / 2 - 2,
       Paint()
-        ..color = AppColors.primaryGold.withValues(alpha: 0.15)
+        ..color = AppColors.primaryGold.withOpacity(0.15)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
     );
 
@@ -324,7 +356,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
       ..close();
 
     canvas.drawPath(path, Paint()
-      ..color = AppColors.primaryGold
+      ..color = AppColors.success
       ..style = PaintingStyle.fill);
 
     canvas.drawPath(path, Paint()
@@ -344,7 +376,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
 
-    const green = Color(0xFF4CAF50);
+    const dropoffColor = AppColors.error;
 
     // Pin pole
     canvas.drawRRect(
@@ -352,7 +384,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
         Rect.fromCenter(center: const Offset(size / 2, size / 2 + 6), width: 2.5, height: 22),
         const Radius.circular(1),
       ),
-      Paint()..color = green,
+      Paint()..color = dropoffColor,
     );
 
     // Flag
@@ -361,13 +393,13 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
       ..lineTo(size / 2 + 14, 10)
       ..lineTo(size / 2 + 1, 18)
       ..close();
-    canvas.drawPath(flagPath, Paint()..color = green);
+    canvas.drawPath(flagPath, Paint()..color = dropoffColor);
 
     // Small circle at base
     canvas.drawCircle(
       Offset(size / 2, size - 5),
       3,
-      Paint()..color = green,
+      Paint()..color = dropoffColor,
     );
 
     final picture = recorder.endRecording();
@@ -412,6 +444,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
       }
       // Show error messages (e.g. destination change rejected by driver)
       if (next.errorMessage != null && next.errorMessage != prev?.errorMessage) {
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(next.errorMessage!),
@@ -433,11 +466,33 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
         }
         _animateToBounds(driver, target);
       }
+
+      // Smooth marker movement when driver location updates
+      if (next.driverLocation != null &&
+          (prev?.driverLocation?.latitude != next.driverLocation?.latitude ||
+           prev?.driverLocation?.longitude != next.driverLocation?.longitude)) {
+        
+        final nextPos = LatLng(next.driverLocation!.latitude, next.driverLocation!.longitude);
+        final nextRot = next.driverLocation!.heading ?? 0;
+
+        if (_newPos == null) {
+          _newPos = nextPos;
+          _newRot = nextRot;
+        } else {
+          _oldPos = _newPos;
+          _newPos = nextPos;
+          _posController.forward(from: 0);
+
+          _oldRot = _newRot;
+          _newRot = nextRot;
+          _rotController.forward(from: 0);
+        }
+      }
     });
 
     if (rideState.isLoading && rideState.ride == null) {
       return Scaffold(
-        backgroundColor: AppColors.backgroundDark,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: const Center(
           child: CircularProgressIndicator(color: AppColors.primaryGold),
         ),
@@ -445,7 +500,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
           // Map area
@@ -463,7 +518,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                         : _defaultCenter,
                     zoom: 15,
                   ),
-                  style: _darkMapStyle,
+                  style: Theme.of(context).brightness == Brightness.dark ? _darkMapStyle : null,
                   onMapCreated: (controller) {
                     if (!_mapController.isCompleted) {
                       _mapController.complete(controller);
@@ -516,8 +571,8 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
 
           // Bottom panel
           Container(
-            decoration: const BoxDecoration(
-              color: AppColors.surfaceDark,
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardTheme.color,
               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: SafeArea(
@@ -532,7 +587,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: AppColors.borderDark,
+                        color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -552,11 +607,11 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 10),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryGold.withValues(alpha: 0.1),
+                            color: AppColors.primaryGold.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                                 color:
-                                    AppColors.primaryGold.withValues(alpha: 0.3)),
+                                    AppColors.primaryGold.withOpacity(0.3)),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -654,11 +709,11 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: AppColors.surfaceDark.withValues(alpha: 0.9),
+            color: Theme.of(context).cardTheme.color?.withOpacity(0.9),
             shape: BoxShape.circle,
-            border: Border.all(color: AppColors.borderDark),
+            border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
           ),
-          child: Icon(icon, color: AppColors.textPrimary, size: 20),
+          child: Icon(icon, color: Theme.of(context).iconTheme.color ?? AppColors.textPrimary, size: 20),
         ),
       ),
     );
@@ -667,6 +722,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
   Future<void> _callDriver() async {
     final driver = ref.read(activeRideProvider).driverInfo;
     if (driver == null || driver.phone.isEmpty) {
+      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Driver phone number not available')),
       );
@@ -724,7 +780,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
@@ -742,32 +798,34 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel',
-                style: AppTextStyles.labelLarge
-                    .copyWith(color: AppColors.textSecondary)),
-          ),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.pop(ctx);
-              ref.read(activeRideProvider.notifier).triggerSos(AppConstants.defaultLat, AppConstants.defaultLng);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('SOS alert sent. Calling 112...'),
-                  backgroundColor: AppColors.error,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Cancel',
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  ref.read(activeRideProvider.notifier).triggerSos(AppConstants.defaultLat, AppConstants.defaultLng);
+                  ScaffoldMessenger.of(context).clearSnackBars();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('SOS alert sent. Calling 112...'),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.error,
                 ),
-              );
-              // In production: url_launcher to tel:112
-            },
-            icon: const Icon(Icons.phone, size: 18),
-            label: const Text('Call 112'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
+                child: const Text('Call 112',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+            ],
           ),
         ],
       ),
@@ -780,7 +838,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Column(
           children: [
@@ -807,42 +865,32 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
         ),
         actionsAlignment: MainAxisAlignment.center,
         actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                ref.read(activeRideProvider.notifier).reset();
-                context.goNamed(RouteNames.home);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryGold,
-                foregroundColor: AppColors.backgroundDark,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  ref.read(activeRideProvider.notifier).reset();
+                  context.goNamed(RouteNames.home);
+                },
+                child: const Text('Go to Home',
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
               ),
-              child: const Text('Go to Home', style: AppTextStyles.button),
-            ),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                ref.read(activeRideProvider.notifier).reset();
-                context.goNamed(RouteNames.searchDestination);
-              },
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.textPrimary,
-                side: const BorderSide(color: AppColors.borderDark),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+              const SizedBox(width: 12),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  ref.read(activeRideProvider.notifier).reset();
+                  context.goNamed(RouteNames.searchDestination);
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primaryGold,
+                ),
+                child: const Text('Book Another',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               ),
-              child: const Text('Book Another Ride'),
-            ),
+            ],
           ),
         ],
       ),

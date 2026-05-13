@@ -128,7 +128,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       ref.invalidate(userProfileProvider);
       ref.invalidate(savedAddressesProvider);
       ref.invalidate(unreadNotificationCountProvider);
-      context.goNamed(RouteNames.home);
+      // If we are still on the splash screen path, proceed to home.
+      // If GoRouter already restored us to a different page, don't force a redirect.
+      if (GoRouterState.of(context).matchedLocation == '/') {
+        context.goNamed(RouteNames.home);
+      }
     } else if (hasSeenOnboarding) {
       // User has seen onboarding but is logged out → show login/register
       context.goNamed(RouteNames.welcome);
@@ -148,7 +152,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           // Main content
@@ -192,7 +196,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   size: MediaQuery.of(context).size,
                   painter: _WaveFadePainter(
                     progress: _waveProgress.value,
-                    color: AppColors.backgroundDark,
+                    color: Theme.of(context).scaffoldBackgroundColor,
                   ),
                 );
               },

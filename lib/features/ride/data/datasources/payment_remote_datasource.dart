@@ -15,9 +15,38 @@ class PaymentRemoteDatasource {
         .toList();
   }
 
-  Future<String> createSetupIntent() async {
+  Future<Map<String, dynamic>> createSetupIntent() async {
     final response = await _dio.post(ApiConstants.paymentSetupIntent);
-    return (response.data as Map<String, dynamic>)['clientSecret'] as String;
+    return response.data as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> createPaymentSheet(double amount) async {
+    final response = await _dio.post(
+      ApiConstants.paymentPaymentSheet,
+      data: {'amount': amount},
+    );
+    return response.data as Map<String, dynamic>;
+  }
+
+  Future<void> confirmSetupIntent(String paymentMethodId) async {
+    await _dio.post(
+      ApiConstants.paymentConfirmSetup,
+      data: {'paymentMethodId': paymentMethodId},
+    );
+  }
+
+  Future<void> checkoutRide({
+    required String rideId,
+    required String paymentMethod,
+    String? paymentMethodId,
+  }) async {
+    await _dio.post(
+      ApiConstants.paymentCheckout(rideId),
+      data: {
+        'paymentMethod': paymentMethod,
+        'paymentMethodId': paymentMethodId,
+      },
+    );
   }
 
   Future<void> deletePaymentMethod(String id) async {

@@ -17,7 +17,7 @@ class TicketListScreen extends ConsumerWidget {
     final ticketState = ref.watch(supportTicketsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         color: AppColors.primaryGold,
         backgroundColor: AppColors.surfaceDark,
@@ -53,7 +53,7 @@ class TicketListScreen extends ConsumerWidget {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: AppColors.backgroundDark
-                                  .withValues(alpha: 0.15),
+                                  .withOpacity(0.15),
                             ),
                             child: const Icon(Icons.arrow_back,
                                 color: AppColors.backgroundDark, size: 20),
@@ -204,7 +204,7 @@ class _TicketCard extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: cat.color.withValues(alpha: 0.12),
+                color: cat.color.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(cat.icon, color: cat.color, size: 20),

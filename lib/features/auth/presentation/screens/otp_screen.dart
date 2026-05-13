@@ -24,6 +24,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   final _otpKey = GlobalKey<OtpInputFieldState>();
   Timer? _resendTimer;
   int _resendSeconds = AppConstants.otpResendSeconds;
+  int _validitySeconds = 300; // 5 minutes
   bool _canResend = false;
   bool _hasError = false;
   String? _errorText;
@@ -32,19 +33,29 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   @override
   void initState() {
     super.initState();
-    _startResendTimer();
+    _startTimers();
   }
 
-  void _startResendTimer() {
+  void _startTimers() {
     _resendSeconds = AppConstants.otpResendSeconds;
+    _validitySeconds = 300;
     _canResend = false;
     _resendTimer?.cancel();
     _resendTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
       setState(() {
         if (_resendSeconds > 0) {
           _resendSeconds--;
         } else {
           _canResend = true;
+        }
+
+        if (_validitySeconds > 0) {
+          _validitySeconds--;
+        } else {
+          // OTP Expired
+          _hasError = true;
+          _errorText = 'OTP has expired. Please resend.';
           timer.cancel();
         }
       });
@@ -75,6 +86,13 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   }
 
   void _verify() {
+    if (_validitySeconds <= 0) {
+      setState(() {
+        _hasError = true;
+        _errorText = 'OTP has expired. Please resend.';
+      });
+      return;
+    }
     if (_currentOtp.length != AppConstants.otpLength) return;
     HapticFeedback.mediumImpact();
 
@@ -92,7 +110,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     }
 
     ref.read(authProvider.notifier).verifyOtp(
-          phone: phone,
+          phoneInput: phone,
           otp: _currentOtp,
         );
   }
@@ -111,12 +129,12 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
       _hasError = false;
       _errorText = null;
     });
-    _startResendTimer();
+    _startTimers();
   }
 
-  String get _formattedTimer {
-    final mins = (_resendSeconds ~/ 60).toString().padLeft(2, '0');
-    final secs = (_resendSeconds % 60).toString().padLeft(2, '0');
+  String _formatTime(int seconds) {
+    final mins = (seconds ~/ 60).toString().padLeft(2, '0');
+    final secs = (seconds % 60).toString().padLeft(2, '0');
     return '$mins:$secs';
   }
 
@@ -164,7 +182,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     final isLoading = authState.status == AuthStatus.loading;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -194,19 +212,20 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                   alignment: WrapAlignment.center,
                   children: [
                     Text(
-                      "We've sent a code to ",
+                      "We've sent a code to",
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
                       ),
                     ),
+                    const SizedBox(width: 5),
                     Text(
                       _maskedPhone,
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     GestureDetector(
                       onTap: () => context.pop(),
                       child: Text(
@@ -247,23 +266,64 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
               const SizedBox(height: 24),
 
               // ── Resend timer ───────────────────────────────
+              const SizedBox(height: 40),
+
+              // ── Timers Section ─────────────────────────────
               Center(
-                child: _canResend
-                    ? GestureDetector(
-                        onTap: _resendOtp,
-                        child: Text(
-                          'Resend Code',
-                          style: AppTextStyles.titleSmall.copyWith(
-                            color: AppColors.primaryGold,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardTheme.color?.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: _hasError ? AppColors.error.withOpacity(0.3) : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.timer_outlined,
+                            size: 16,
+                            color: _validitySeconds < 60 ? AppColors.error : AppColors.textSecondary,
                           ),
-                        ),
-                      )
-                    : Text(
-                        'Resend in $_formattedTimer',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'OTP expires in: ',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          Text(
+                            _formatTime(_validitySeconds),
+                            style: AppTextStyles.titleSmall.copyWith(
+                              color: _validitySeconds < 60 ? AppColors.error : AppColors.primaryGold,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ),
+                      const SizedBox(height: 12),
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        child: _validitySeconds <= 0
+                            ? TextButton.icon(
+                                key: const ValueKey('resend_btn'),
+                                onPressed: _resendOtp,
+                                icon: const Icon(Icons.refresh, size: 18),
+                                label: const Text('Resend Code'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: AppColors.primaryGold,
+                                  textStyle: AppTextStyles.titleSmall,
+                                ),
+                              )
+                            : const SizedBox.shrink(key: ValueKey('empty_space')),
+                      ),
+                    ],
+                  ),
+                ),
               ),
 
               const Spacer(),
@@ -273,7 +333,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                 label: 'Verify',
                 width: double.infinity,
                 isLoading: isLoading,
-                onPressed: (_currentOtp.length == AppConstants.otpLength && !isLoading)
+                onPressed: (_currentOtp.length == AppConstants.otpLength && !isLoading && _validitySeconds > 0)
                     ? _verify
                     : null,
               ),

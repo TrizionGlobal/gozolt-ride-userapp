@@ -14,9 +14,9 @@ class RideDetailsSheet extends ConsumerWidget {
     final driver = rideState.driverInfo;
 
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceDark,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
         top: false,
@@ -32,7 +32,7 @@ class RideDetailsSheet extends ConsumerWidget {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.borderDark,
+                    color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -47,9 +47,9 @@ class RideDetailsSheet extends ConsumerWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.cardDark,
+                  color: Theme.of(context).scaffoldBackgroundColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.borderDark),
+                  border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
                 ),
                 child: Column(
                   children: [
@@ -95,7 +95,7 @@ class RideDetailsSheet extends ConsumerWidget {
                             width: 2,
                             height: 6,
                             margin: const EdgeInsets.symmetric(vertical: 2),
-                            color: AppColors.borderDark,
+                            color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
                           ),
                         ),
                       ),
@@ -142,25 +142,25 @@ class RideDetailsSheet extends ConsumerWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.cardDark,
+                  color: Theme.of(context).scaffoldBackgroundColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.borderDark),
+                  border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
                 ),
                 child: Column(
                   children: [
                     _detailRow('Estimated Fare',
                         '\u20AC${ride?.estimatedFare?.toStringAsFixed(2) ?? '0.00'}',
                         valueColor: AppColors.primaryGold),
-                    const Divider(color: AppColors.borderDark, height: 20),
+                    Divider(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, height: 20),
                     _detailRow(
                         'Vehicle Type', ride?.vehicleType ?? 'Standard'),
-                    const Divider(color: AppColors.borderDark, height: 20),
+                    Divider(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, height: 20),
                     _detailRow(
                         'Payment', ride?.paymentMethod ?? 'Cash'),
                     if (driver != null) ...[
-                      const Divider(color: AppColors.borderDark, height: 20),
+                      Divider(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, height: 20),
                       _detailRow('Driver', driver.name),
-                      const Divider(color: AppColors.borderDark, height: 20),
+                      Divider(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, height: 20),
                       _detailRow('Plate', driver.formattedPlate),
                     ],
                   ],
@@ -175,7 +175,7 @@ class RideDetailsSheet extends ConsumerWidget {
                   onPressed: () => Navigator.pop(context),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.textPrimary,
-                    side: const BorderSide(color: AppColors.borderDark),
+                    side: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),

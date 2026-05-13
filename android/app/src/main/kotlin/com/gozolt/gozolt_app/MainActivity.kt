@@ -1,4 +1,4 @@
-package com.gozolt.gozolt_user_app
+package com.gozolt.gozolt_app
 
 import io.flutter.embedding.android.FlutterActivity
 

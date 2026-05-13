@@ -11,8 +11,10 @@ import '../../data/models/driver_info.dart';
 import '../../data/models/driver_location.dart';
 import '../../data/models/ride.dart';
 import '../../../notifications/presentation/providers/notification_providers.dart';
-import 'active_ride_state.dart';
-import 'ride_booking_provider.dart';
+import '../../data/models/saved_payment_method.dart';
+import '../providers/active_ride_state.dart';
+import '../providers/ride_providers.dart';
+import '../providers/ride_booking_provider.dart';
 
 // ── Active Ride Provider ──────────────────────────────────
 
@@ -279,14 +281,19 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
           (data['longitude'] as num?)?.toDouble() ?? 0;
       if (kDebugMode) print('[ActiveRide] Driver location from socket: lat=$lat, lng=$lng');
       if (lat == 0 && lng == 0) return; // Skip invalid zero coordinates
+      final newHeading = (data['heading'] as num?)?.toDouble() ?? 0;
+      final newSpeed = (data['speed'] as num?)?.toDouble() ?? 0;
+      
       state = state.copyWith(
         driverLocation: DriverLocation(
           latitude: lat,
           longitude: lng,
-          heading: (data['heading'] as num?)?.toDouble() ?? 0,
-          speed: (data['speed'] as num?)?.toDouble() ?? 0,
+          heading: (newHeading == 0 && state.driverLocation != null) 
+              ? state.driverLocation!.heading : newHeading,
+          speed: newSpeed,
         ),
       );
+
 
       // Recalculate ETA from socket driver location
       if (state.ride != null) {
@@ -636,6 +643,40 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
 
   void clearError() {
     state = state.copyWith(clearError: true);
+  }
+
+  Future<void> checkoutRide() async {
+    if (state.ride == null) return;
+    state = state.copyWith(isPaymentLoading: true, clearError: true);
+
+    try {
+      final rideId = state.ride!.id;
+      // Get selected payment method from booking state (if available) or ride object
+      final bookingState = _ref.read(rideBookingProvider);
+      final method = bookingState.paymentMethodType.name.toUpperCase();
+      final methodId = bookingState.paymentMethodType == PaymentMethodType.card 
+          ? bookingState.selectedCardId : null;
+
+      if (AppConstants.kDevBypass) {
+        await Future.delayed(const Duration(seconds: 2));
+        state = state.copyWith(isPaymentLoading: false, isPaid: true);
+        return;
+      }
+
+      final ds = _ref.read(paymentRemoteDatasourceProvider);
+      await ds.checkoutRide(
+        rideId: rideId,
+        paymentMethod: method,
+        paymentMethodId: methodId,
+      );
+
+      state = state.copyWith(isPaymentLoading: false, isPaid: true);
+    } catch (e) {
+      state = state.copyWith(
+        isPaymentLoading: false,
+        errorMessage: 'Payment failed. Please try again.',
+      );
+    }
   }
 
   /// Check for an active ride on app startup / resume.

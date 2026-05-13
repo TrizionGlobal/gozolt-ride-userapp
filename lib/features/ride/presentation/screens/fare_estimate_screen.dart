@@ -262,7 +262,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
     final isLoading = booking.status == BookingStatus.estimating;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
           // ── Map Placeholder + Trip Summary Bar ──────────
@@ -280,7 +280,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                     _mapController = controller;
                     _fitMapToRoute();
                   },
-                  style: _darkMapStyle,
+                  style: Theme.of(context).brightness == Brightness.dark ? _darkMapStyle : null,
                   markers: _buildMarkers(booking),
                   polylines: _routePoints.isNotEmpty
                       ? {
@@ -318,11 +318,11 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: AppColors.surfaceDark.withValues(alpha: 0.9),
+                          color: Theme.of(context).cardTheme.color?.withOpacity(0.9),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.arrow_back,
-                            color: AppColors.primaryGold, size: 20),
+                        child: Icon(Icons.arrow_back,
+                            color: Theme.of(context).primaryColor, size: 20),
                       ),
                     ),
                   ),
@@ -337,7 +337,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceDark.withValues(alpha: 0.9),
+                      color: Theme.of(context).cardTheme.color?.withOpacity(0.9),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Row(
@@ -360,7 +360,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                                     ? '${_truncate(booking.pickup?.address ?? 'Pickup', 18)} → ${_truncate(booking.dropoff?.address ?? 'Dropoff', 18)}'
                                     : '${_truncate(booking.pickup?.address ?? 'Pickup', 14)} → ${booking.stops.length} stop${booking.stops.length > 1 ? 's' : ''} → ${_truncate(booking.dropoff?.address ?? 'Dropoff', 14)}',
                                 style: AppTextStyles.bodySmall.copyWith(
-                                  color: AppColors.textPrimary,
+                                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
                                   fontSize: 11,
                                 ),
                                 maxLines: 1,
@@ -384,7 +384,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                               child: Text(
                                 'EDIT',
                                 style: AppTextStyles.labelSmall.copyWith(
-                                  color: AppColors.backgroundDark,
+                                  color: Theme.of(context).scaffoldBackgroundColor,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 10,
                                 ),
@@ -404,8 +404,8 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
           Expanded(
             flex: _isBottomExpanded ? 5 : 2,
             child: Container(
-              decoration: const BoxDecoration(
-                color: AppColors.backgroundDark,
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
               child: SingleChildScrollView(
@@ -435,10 +435,10 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 10),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryGold.withValues(alpha: 0.15),
+                          color: AppColors.primaryGold.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                              color: AppColors.primaryGold.withValues(alpha: 0.3)),
+                              color: AppColors.primaryGold.withOpacity(0.3)),
                         ),
                         child: Row(
                           children: [
@@ -510,7 +510,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                         margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryGold.withValues(alpha: 0.1),
+                          color: AppColors.primaryGold.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Row(
@@ -540,10 +540,10 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
       // ── Bottom Bar ─────────────────────────────────────
       bottomNavigationBar: Container(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-        decoration: const BoxDecoration(
-          color: AppColors.surfaceDark,
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardTheme.color,
           border: Border(
-            top: BorderSide(color: AppColors.borderDark, width: 0.5),
+            top: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, width: 0.5),
           ),
         ),
         child: Column(
@@ -562,10 +562,10 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                       padding:
                           const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: AppColors.cardDark,
+                        color: Theme.of(context).cardTheme.color,
                         borderRadius: BorderRadius.circular(8),
                         border:
-                            Border.all(color: AppColors.borderDark, width: 0.5),
+                            Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, width: 0.5),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -574,7 +574,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                             booking.paymentMethodType == PaymentMethodType.cash
                                 ? Icons.payments_outlined
                                 : Icons.credit_card,
-                            color: AppColors.textPrimary,
+                            color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
                             size: 16,
                           ),
                           const SizedBox(width: 6),
@@ -583,7 +583,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                                 ? 'Cash'
                                 : 'Card',
                             style: AppTextStyles.bodySmall.copyWith(
-                              color: AppColors.textPrimary,
+                              color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -611,13 +611,13 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                           const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: booking.useCoins
-                            ? AppColors.primaryGold.withValues(alpha: 0.2)
-                            : AppColors.cardDark,
+                            ? AppColors.primaryGold.withOpacity(0.2)
+                            : Theme.of(context).cardTheme.color,
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: booking.useCoins
                               ? AppColors.primaryGold
-                              : AppColors.borderDark,
+                              : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                           width: 0.5,
                         ),
                       ),
@@ -662,9 +662,9 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                           : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryGold,
-                        foregroundColor: AppColors.backgroundDark,
+                        foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                         disabledBackgroundColor:
-                            AppColors.primaryGold.withValues(alpha: 0.3),
+                            AppColors.primaryGold.withOpacity(0.3),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -672,7 +672,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                       child: Text(
                         'Find my Go partner',
                         style: AppTextStyles.button.copyWith(
-                          color: AppColors.backgroundDark,
+                          color: Theme.of(context).scaffoldBackgroundColor,
                         ),
                       ),
                     ),
@@ -691,10 +691,10 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: AppColors.cardDark,
+                        color: Theme.of(context).cardTheme.color,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                            color: AppColors.borderDark, width: 0.5),
+                            color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, width: 0.5),
                       ),
                       child: const Icon(Icons.calendar_today_outlined,
                           color: AppColors.primaryGold, size: 20),
@@ -730,6 +730,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
 
       // Show brief confirmation snackbar
       if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -757,6 +758,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
     if (updatedBooking.status == BookingStatus.error) {
       // Show error instead of navigating
       if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(updatedBooking.errorMessage ?? 'Failed to book ride'),
@@ -774,7 +776,9 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark 
+          ? AppColors.surfaceDark 
+          : AppColors.surfaceLight,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -794,13 +798,18 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
       lastDate: now.add(const Duration(days: 7)),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.dark(
-            primary: AppColors.primaryGold,
-            surface: AppColors.surfaceDark,
-            onSurface: AppColors.textPrimary,
-          ),
-          dialogTheme: DialogThemeData(
-            backgroundColor: AppColors.surfaceDark,
+          colorScheme: Theme.of(context).brightness == Brightness.dark
+              ? const ColorScheme.dark(
+                  primary: AppColors.primaryGold,
+                  surface: AppColors.surfaceDark,
+                  onSurface: AppColors.textPrimary,
+                )
+              : const ColorScheme.light(
+                  primary: AppColors.primaryGold,
+                  onSurface: AppColors.textPrimaryLight,
+                ),
+          dialogTheme: DialogTheme(
+            backgroundColor: Theme.of(context).dialogBackgroundColor,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
         ),
@@ -815,13 +824,18 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
       initialTime: TimeOfDay(hour: minDate.hour, minute: minDate.minute),
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
-          colorScheme: const ColorScheme.dark(
-            primary: AppColors.primaryGold,
-            surface: AppColors.surfaceDark,
-            onSurface: AppColors.textPrimary,
-          ),
-          dialogTheme: DialogThemeData(
-            backgroundColor: AppColors.surfaceDark,
+          colorScheme: Theme.of(context).brightness == Brightness.dark
+              ? const ColorScheme.dark(
+                  primary: AppColors.primaryGold,
+                  surface: AppColors.surfaceDark,
+                  onSurface: AppColors.textPrimary,
+                )
+              : const ColorScheme.light(
+                  primary: AppColors.primaryGold,
+                  onSurface: AppColors.textPrimaryLight,
+                ),
+          dialogTheme: DialogTheme(
+            backgroundColor: Theme.of(context).dialogBackgroundColor,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
         ),
@@ -836,6 +850,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
     );
 
     if (scheduledAt.isBefore(minDate)) {
+      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Schedule must be at least 30 minutes from now'),
@@ -850,7 +865,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).dialogBackgroundColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -859,7 +874,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
             const SizedBox(height: 16),
             Text(
               'Confirm Schedule',
-              style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary),
+              style: AppTextStyles.headlineSmall.copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
             ),
             const SizedBox(height: 8),
             Text(
@@ -873,30 +888,24 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(ctx).pop(true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGold,
-                  foregroundColor: AppColors.backgroundDark,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  child: Text('Cancel',
+                      style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
                 ),
-                child: const Text('Confirm'),
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () => Navigator.of(ctx).pop(false),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.textPrimary,
-                  side: const BorderSide(color: AppColors.borderDark),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                const SizedBox(width: 8),
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primaryGold,
+                  ),
+                  child: const Text('Confirm',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 ),
-                child: const Text('Cancel'),
-              ),
+              ],
             ),
           ],
         ),
@@ -907,6 +916,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
       HapticFeedback.mediumImpact();
       ref.read(rideBookingProvider.notifier).setScheduled(true, scheduledAt: scheduledAt);
       // Stay on fare estimate — show scheduled confirmation
+      ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -1052,8 +1062,15 @@ class _DiscountBottomSheetState extends ConsumerState<_DiscountBottomSheet> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.cardDark,
+              color: Theme.of(context).brightness == Brightness.dark 
+                  ? AppColors.cardDark 
+                  : AppColors.backgroundLight,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(context).dividerTheme.color ?? 
+                    (Theme.of(context).brightness == Brightness.dark ? AppColors.borderDark : AppColors.borderLight),
+                width: 0.5,
+              ),
             ),
             child: Row(
               children: [
@@ -1064,7 +1081,7 @@ class _DiscountBottomSheetState extends ConsumerState<_DiscountBottomSheet> {
                       Text(
                         'Use GOZOLT Coins',
                         style: AppTextStyles.titleSmall
-                            .copyWith(color: AppColors.textPrimary),
+                            .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                       ),
                       const SizedBox(height: 2),
                       rewardsAsync.when(
@@ -1073,11 +1090,11 @@ class _DiscountBottomSheetState extends ConsumerState<_DiscountBottomSheet> {
                           return Text(
                             'save €${eurValue.toStringAsFixed(2)} on your ride',
                             style: AppTextStyles.bodySmall
-                                .copyWith(color: AppColors.textSecondary),
+                                .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                           );
                         },
                         loading: () => const SizedBox.shrink(),
-                        error: (_, _) => const SizedBox.shrink(),
+                        error: (_, __) => const SizedBox.shrink(),
                       ),
                     ],
                   ),
@@ -1094,21 +1111,25 @@ class _DiscountBottomSheetState extends ConsumerState<_DiscountBottomSheet> {
                       Image.asset(AssetPaths.iconGoCoin,
                           width: 18, height: 18),
                       const SizedBox(width: 10),
-                      Switch(
-                        value: booking.useCoins,
-                        activeTrackColor: AppColors.primaryGold.withValues(alpha: 0.5),
-                        activeThumbColor: AppColors.primaryGold,
-                        onChanged: (val) {
-                          final eurValue = points / 100.0;
-                          ref
-                              .read(rideBookingProvider.notifier)
-                              .toggleUseCoins(val, discount: val ? eurValue : 0);
-                        },
+                      Transform.scale(
+                        scale: 0.7,
+                        child: Switch(
+                          value: booking.useCoins,
+                          activeColor: AppColors.primaryGold,
+                          activeTrackColor: AppColors.primaryGold.withOpacity(0.5),
+                          inactiveTrackColor: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
+                          onChanged: (val) {
+                            final eurValue = points / 100.0;
+                            ref
+                                .read(rideBookingProvider.notifier)
+                                .toggleUseCoins(val, discount: val ? eurValue : 0);
+                          },
+                        ),
                       ),
                     ],
                   ),
                   loading: () => const SizedBox.shrink(),
-                  error: (_, _) => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
                 ),
               ],
             ),
@@ -1120,7 +1141,7 @@ class _DiscountBottomSheetState extends ConsumerState<_DiscountBottomSheet> {
           Text(
             'Apply coupon',
             style: AppTextStyles.titleMedium
-                .copyWith(color: AppColors.textPrimary),
+                .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
           ),
           const SizedBox(height: 10),
 
@@ -1130,13 +1151,13 @@ class _DiscountBottomSheetState extends ConsumerState<_DiscountBottomSheet> {
                 child: TextField(
                   controller: _couponController,
                   style: AppTextStyles.bodyMedium
-                      .copyWith(color: AppColors.textPrimary),
+                      .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                   decoration: InputDecoration(
                     hintText: 'Enter Coupon code',
                     hintStyle: AppTextStyles.bodyMedium
                         .copyWith(color: AppColors.textMuted),
                     filled: true,
-                    fillColor: AppColors.inputDark,
+                    fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Color(0xFFF1F3F4),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                       borderSide: BorderSide.none,
@@ -1189,10 +1210,10 @@ class _DiscountBottomSheetState extends ConsumerState<_DiscountBottomSheet> {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: AppColors.cardDark,
+                color: Theme.of(context).cardTheme.color,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                    color: AppColors.success.withValues(alpha: 0.3)),
+                    color: AppColors.success.withOpacity(0.3)),
               ),
               child: Row(
                 children: [
@@ -1206,7 +1227,7 @@ class _DiscountBottomSheetState extends ConsumerState<_DiscountBottomSheet> {
                         Text(
                           _appliedCoupon!,
                           style: AppTextStyles.titleSmall.copyWith(
-                            color: AppColors.textPrimary,
+                            color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
                             fontWeight: FontWeight.w700,
                           ),
                         ),

@@ -60,14 +60,14 @@ class _SearchDestinationScreenState
         context: context,
         barrierDismissible: false,
         builder: (ctx) => AlertDialog(
-          backgroundColor: AppColors.surfaceDark,
+          backgroundColor: Theme.of(context).cardTheme.color,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Row(
             children: [
               const Icon(Icons.location_off, color: AppColors.warning, size: 28),
               const SizedBox(width: 8),
               Text('GPS Required',
-                  style: AppTextStyles.titleLarge.copyWith(color: AppColors.textPrimary)),
+                  style: AppTextStyles.titleLarge.copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight)),
             ],
           ),
           content: Text(
@@ -87,7 +87,7 @@ class _SearchDestinationScreenState
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGold,
-                foregroundColor: AppColors.backgroundDark,
+                foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               child: const Text('Open Settings'),
@@ -118,10 +118,10 @@ class _SearchDestinationScreenState
       await showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          backgroundColor: AppColors.surfaceDark,
+          backgroundColor: Theme.of(context).cardTheme.color,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text('Permission Required',
-              style: AppTextStyles.titleLarge.copyWith(color: AppColors.textPrimary)),
+              style: AppTextStyles.titleLarge.copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight)),
           content: Text(
             'Location permission is permanently denied. Please enable it in app settings.',
             style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
@@ -139,7 +139,7 @@ class _SearchDestinationScreenState
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGold,
-                foregroundColor: AppColors.backgroundDark,
+                foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               child: const Text('Open Settings'),
@@ -303,7 +303,7 @@ class _SearchDestinationScreenState
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).cardTheme.color,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -355,7 +355,7 @@ class _SearchDestinationScreenState
           width: 2,
           height: 20,
           decoration: BoxDecoration(
-            color: AppColors.textMuted.withValues(alpha: 0.3),
+            color: AppColors.textMuted.withOpacity(0.3),
             borderRadius: BorderRadius.circular(1),
           ),
         ),
@@ -417,7 +417,7 @@ class _SearchDestinationScreenState
             Expanded(child: Text(message)),
           ],
         ),
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -428,22 +428,22 @@ class _SearchDestinationScreenState
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
             const Icon(Icons.location_off_rounded, color: Color(0xFFFACC15), size: 24),
             const SizedBox(width: 10),
-            Expanded(child: Text(title, style: const TextStyle(color: Colors.white, fontSize: 17))),
+            Expanded(child: Text(title, style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.textPrimaryLight, fontSize: 17))),
           ],
         ),
-        content: Text(message, style: const TextStyle(color: Color(0xFF9CA3AF), height: 1.5)),
+        content: Text(message, style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF9CA3AF) : AppColors.textSecondaryLight, height: 1.5)),
         actions: [
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryGold,
-              foregroundColor: AppColors.backgroundDark,
+              foregroundColor: Theme.of(context).scaffoldBackgroundColor,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             child: const Text('OK'),
@@ -453,6 +453,27 @@ class _SearchDestinationScreenState
     );
   }
 
+  Future<void> _addHomeAddress() async {
+    final result = await context.pushNamed<LocationData>(RouteNames.mapPinSelection);
+    if (result != null && mounted) {
+      await ref.read(accountAddressesProvider.notifier).addAddress({
+        'label': 'Home',
+        'address': result.address,
+        'latitude': result.latitude,
+        'longitude': result.longitude,
+        'isDefault': true,
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Home address saved!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final booking = ref.watch(rideBookingProvider);
@@ -460,9 +481,9 @@ class _SearchDestinationScreenState
     final recentSearches = ref.watch(recentSearchesProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.backgroundDark,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.primaryGold),
@@ -476,7 +497,7 @@ class _SearchDestinationScreenState
         ),
         title: Text(
           'Search Destination',
-          style: AppTextStyles.titleLarge.copyWith(color: AppColors.textPrimary),
+          style: AppTextStyles.titleLarge,
         ),
         centerTitle: true,
       ),
@@ -487,7 +508,7 @@ class _SearchDestinationScreenState
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.surfaceDark,
+              color: Theme.of(context).cardTheme.color,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: AppColors.primaryGold, width: 1),
             ),
@@ -497,7 +518,7 @@ class _SearchDestinationScreenState
                 _LocationField(
                   controller: _pickupController,
                   hint: 'Pickup location',
-                  dotColor: AppColors.primaryGold,
+                  dotColor: AppColors.success,
                   trailing: GestureDetector(
                     onTap: () async {
                       try {
@@ -548,8 +569,8 @@ class _SearchDestinationScreenState
                       }
                       setState(() {});
                     },
-                    child: const Icon(Icons.my_location,
-                        color: AppColors.textSecondary, size: 20),
+                    child: Icon(Icons.my_location,
+                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight, size: 20),
                   ),
                   onTap: () => _selectLocation('pickup'),
                 ),
@@ -630,10 +651,10 @@ class _SearchDestinationScreenState
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceDark,
+                  color: Theme.of(context).cardTheme.color,
                   borderRadius: BorderRadius.circular(14),
                   border:
-                      Border.all(color: AppColors.borderDark, width: 0.5),
+                      Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent, width: 0.5),
                 ),
                 child: Row(
                   children: [
@@ -641,7 +662,7 @@ class _SearchDestinationScreenState
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: AppColors.primaryGold.withValues(alpha: 0.15),
+                        color: AppColors.primaryGold.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(Icons.map_outlined,
@@ -651,7 +672,7 @@ class _SearchDestinationScreenState
                     Text(
                       'Choose on Map',
                       style: AppTextStyles.titleSmall.copyWith(
-                        color: AppColors.textPrimary,
+                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
                       ),
                     ),
                     const Spacer(),
@@ -698,43 +719,47 @@ class _SearchDestinationScreenState
                       return const SizedBox.shrink();
                     }
                     final addresses = accountAddrs.addresses;
-                    if (addresses.isEmpty) {
-                      return _SavedPlaceTile(
-                        icon: Icons.add_home_rounded,
-                        title: 'Add Home Address',
-                        subtitle: 'Set your home for quick booking',
-                        onTap: () {},
-                      );
-                    }
+                    final hasHome = addresses.any((a) => a.label.toLowerCase() == 'home');
+
                     return Column(
-                      children: addresses.map((addr) {
-                        final isHome =
-                            addr.label.toLowerCase() == 'home';
-                        final isWork =
-                            addr.label.toLowerCase() == 'work';
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: _SavedPlaceTile(
-                            icon: isHome
-                                ? Icons.home_rounded
-                                : isWork
-                                    ? Icons.work_rounded
-                                    : Icons.location_on_rounded,
-                            title: addr.label,
-                            subtitle: addr.address,
-                            onTap: () {
-                              _applyLocation(
-                                'dropoff',
-                                LocationData(
-                                  address: addr.address,
-                                  latitude: addr.latitude ?? 0,
-                                  longitude: addr.longitude ?? 0,
-                                ),
-                              );
-                            },
+                      children: [
+                        if (!hasHome)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _SavedPlaceTile(
+                              icon: Icons.add_home_rounded,
+                              title: 'Add Home Address',
+                              subtitle: 'Set your home for quick booking',
+                              onTap: _addHomeAddress,
+                            ),
                           ),
-                        );
-                      }).toList(),
+                        ...addresses.map((addr) {
+                          final isHome = addr.label.toLowerCase() == 'home';
+                          final isWork = addr.label.toLowerCase() == 'work';
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: _SavedPlaceTile(
+                              icon: isHome
+                                  ? Icons.home_rounded
+                                  : isWork
+                                      ? Icons.work_rounded
+                                      : Icons.location_on_rounded,
+                              title: addr.label,
+                              subtitle: addr.address,
+                              onTap: () {
+                                _applyLocation(
+                                  'dropoff',
+                                  LocationData(
+                                    address: addr.address,
+                                    latitude: addr.latitude ?? 0,
+                                    longitude: addr.longitude ?? 0,
+                                  ),
+                                );
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ],
                     );
                   }),
 
@@ -805,7 +830,7 @@ class _LocationField extends StatelessWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: AppColors.inputDark,
+                color: Theme.of(context).inputDecorationTheme.fillColor ?? AppColors.inputDark,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -813,7 +838,7 @@ class _LocationField extends StatelessWidget {
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: controller.text.isEmpty
                       ? AppColors.textMuted
-                      : AppColors.textPrimary,
+                      : (Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -852,9 +877,9 @@ class _SavedPlaceTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
-          color: AppColors.surfaceDark,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.borderDark, width: 0.5),
+          border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, width: 0.5),
         ),
         child: Row(
           children: [
@@ -862,7 +887,7 @@ class _SavedPlaceTile extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.cardDark,
+                color: Theme.of(context).cardTheme.color,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: AppColors.primaryGold, size: 20),
@@ -874,13 +899,13 @@ class _SavedPlaceTile extends StatelessWidget {
                 children: [
                   Text(title,
                       style: AppTextStyles.titleSmall
-                          .copyWith(color: AppColors.textPrimary)),
+                          .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight)),
                   if (subtitle.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
                       style: AppTextStyles.bodySmall
-                          .copyWith(color: AppColors.textSecondary),
+                          .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -888,8 +913,8 @@ class _SavedPlaceTile extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right,
-                color: AppColors.textSecondary, size: 20),
+            Icon(Icons.chevron_right,
+                color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight, size: 20),
           ],
         ),
       ),
@@ -928,7 +953,7 @@ class _RecentSearchTile extends StatelessWidget {
                   Text(
                     address,
                     style: AppTextStyles.bodyMedium
-                        .copyWith(color: AppColors.textPrimary),
+                        .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -936,7 +961,7 @@ class _RecentSearchTile extends StatelessWidget {
                     Text(
                       subtitle,
                       style: AppTextStyles.bodySmall
-                          .copyWith(color: AppColors.textSecondary),
+                          .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1166,7 +1191,7 @@ class _LocationSearchSheetState extends State<_LocationSearchSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.borderDark,
+                color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -1177,14 +1202,13 @@ class _LocationSearchSheetState extends State<_LocationSearchSheet> {
                 controller: _searchController,
                 autofocus: true,
                 onChanged: _onSearchChanged,
-                style: AppTextStyles.bodyMedium
-                    .copyWith(color: AppColors.textPrimary),
+                style: AppTextStyles.bodyMedium,
                 decoration: InputDecoration(
                   hintText: 'Search any location...',
                   hintStyle: AppTextStyles.bodyMedium
                       .copyWith(color: AppColors.textMuted),
-                  prefixIcon: const Icon(Icons.search,
-                      color: AppColors.textSecondary),
+                  prefixIcon: Icon(Icons.search,
+                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                   suffixIcon: _isSearching
                       ? const Padding(
                           padding: EdgeInsets.all(14),
@@ -1199,7 +1223,7 @@ class _LocationSearchSheetState extends State<_LocationSearchSheet> {
                         )
                       : null,
                   filled: true,
-                  fillColor: AppColors.inputDark,
+                  fillColor: Theme.of(context).inputDecorationTheme.fillColor,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -1266,14 +1290,13 @@ class _LocationSearchSheetState extends State<_LocationSearchSheet> {
                       ),
                       title: Text(
                         loc.address,
-                        style: AppTextStyles.bodyMedium
-                            .copyWith(color: AppColors.textPrimary),
+                        style: AppTextStyles.bodyMedium,
                       ),
                       subtitle: loc.subtitle != null
                           ? Text(
                               loc.subtitle!,
                               style: AppTextStyles.bodySmall
-                                  .copyWith(color: AppColors.textSecondary),
+                                  .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                             )
                           : null,
                       onTap: () => widget.onSelect(loc),

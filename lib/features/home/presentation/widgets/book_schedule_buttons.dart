@@ -101,7 +101,7 @@ class _PillButton extends StatelessWidget {
                 icon,
                 size: iconSize,
                 color: isSelected
-                    ? AppColors.backgroundDark
+                    ? Theme.of(context).scaffoldBackgroundColor
                     : AppColors.primaryGold,
               ),
               const SizedBox(width: 8),
@@ -109,7 +109,7 @@ class _PillButton extends StatelessWidget {
                 label,
                 style: AppTextStyles.titleSmall.copyWith(
                   color: isSelected
-                      ? AppColors.backgroundDark
+                      ? Theme.of(context).scaffoldBackgroundColor
                       : AppColors.primaryGold,
                   fontWeight: FontWeight.w600,
                 ),

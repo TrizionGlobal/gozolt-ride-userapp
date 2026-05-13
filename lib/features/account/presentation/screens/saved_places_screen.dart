@@ -5,6 +5,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../providers/account_providers.dart';
+import '../../../home/data/models/user_address.dart';
 
 class SavedPlacesScreen extends ConsumerWidget {
   const SavedPlacesScreen({super.key});
@@ -14,10 +15,10 @@ class SavedPlacesScreen extends ConsumerWidget {
     final addressState = ref.watch(accountAddressesProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         color: AppColors.primaryGold,
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         onRefresh: () async {
           ref.read(accountAddressesProvider.notifier).load();
           await Future.delayed(const Duration(milliseconds: 300));
@@ -54,7 +55,7 @@ class SavedPlacesScreen extends ConsumerWidget {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: AppColors.backgroundDark
-                                .withValues(alpha: 0.15),
+                                .withOpacity(0.15),
                           ),
                           child: const Icon(Icons.arrow_back,
                               color: AppColors.backgroundDark, size: 20),
@@ -96,20 +97,23 @@ class SavedPlacesScreen extends ConsumerWidget {
                     const SizedBox(height: 16),
                     Text('No saved places',
                         style: AppTextStyles.titleMedium
-                            .copyWith(color: AppColors.textSecondary)),
+                            .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight)),
                     const SizedBox(height: 6),
                     Text('Add your frequently visited places',
                         style: AppTextStyles.bodySmall),
                     const SizedBox(height: 20),
-                    ElevatedButton.icon(
-                      onPressed: () => _showAddPlaceSheet(context, ref),
-                      icon: const Icon(Icons.add, size: 18),
-                      label: const Text('Add Place'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryGold,
-                        foregroundColor: AppColors.backgroundDark,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                    SizedBox(
+                      width: 150,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _showPlaceSheet(context, ref),
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text('Add Place'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGold,
+                          foregroundColor: Theme.of(context).scaffoldBackgroundColor,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
                       ),
                     ),
                   ],
@@ -129,9 +133,9 @@ class SavedPlacesScreen extends ConsumerWidget {
                           margin: const EdgeInsets.only(bottom: 10),
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: AppColors.cardDark,
+                            color: Theme.of(context).cardTheme.color,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppColors.borderDark),
+                            border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
                           ),
                           child: Row(
                             children: [
@@ -140,7 +144,7 @@ class SavedPlacesScreen extends ConsumerWidget {
                                 height: 40,
                                 decoration: BoxDecoration(
                                   color: AppColors.primaryGold
-                                      .withValues(alpha: 0.12),
+                                      .withOpacity(0.12),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Icon(
@@ -152,7 +156,8 @@ class SavedPlacesScreen extends ConsumerWidget {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
                                   children: [
                                     Text(addr.label,
                                         style: AppTextStyles.titleSmall),
@@ -168,6 +173,13 @@ class SavedPlacesScreen extends ConsumerWidget {
                                 ),
                               ),
                               GestureDetector(
+                                onTap: () => _showPlaceSheet(context, ref,
+                                    address: addr),
+                                child: const Icon(Icons.edit_outlined,
+                                    color: AppColors.textSecondary, size: 20),
+                              ),
+                              const SizedBox(width: 12),
+                              GestureDetector(
                                 onTap: () =>
                                     _confirmDelete(context, ref, addr.id),
                                 child: const Icon(Icons.delete_outline,
@@ -178,39 +190,46 @@ class SavedPlacesScreen extends ConsumerWidget {
                         ),
                       )),
 
-                  // Add button
-                  const SizedBox(height: 12),
-                  GestureDetector(
-                    onTap: () => _showAddPlaceSheet(context, ref),
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: AppColors.cardDark,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColors.primaryGold.withValues(alpha: 0.3),
-                          style: BorderStyle.solid,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.add,
-                              color: AppColors.primaryGold, size: 20),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Add New Place',
-                            style: AppTextStyles.titleSmall.copyWith(
-                              color: AppColors.primaryGold,
+
+                    // Add button
+                    const SizedBox(height: 12),
+                    Center(
+                      child: SizedBox(
+                        width: 200,
+                        child: GestureDetector(
+                          onTap: () => _showPlaceSheet(context, ref),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardTheme.color,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.primaryGold.withOpacity(0.3),
+                                style: BorderStyle.solid,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.add,
+                                    color: AppColors.primaryGold, size: 18),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Add New Place',
+                                  style: AppTextStyles.titleSmall.copyWith(
+                                    color: AppColors.primaryGold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ]),
+                  ]),
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -232,47 +251,53 @@ class SavedPlacesScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Delete Place', style: AppTextStyles.headlineSmall),
         content: Text(
           'Are you sure you want to remove this saved place?',
           style: AppTextStyles.bodyMedium
-              .copyWith(color: AppColors.textSecondary),
+              .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child:
-                Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              HapticFeedback.mediumImpact();
-              Navigator.pop(ctx);
-              ref.read(accountAddressesProvider.notifier).deleteAddress(id);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-            child: const Text('Delete'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Cancel',
+                    style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight, fontSize: 13)),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: () {
+                  HapticFeedback.mediumImpact();
+                  Navigator.pop(ctx);
+                  ref.read(accountAddressesProvider.notifier).deleteAddress(id);
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.error,
+                ),
+                child: const Text('Delete',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  void _showAddPlaceSheet(BuildContext context, WidgetRef ref) {
-    final labelController = TextEditingController();
-    final addressController = TextEditingController();
+  void _showPlaceSheet(BuildContext context, WidgetRef ref,
+      {UserAddress? address}) {
+    final isEdit = address != null;
+    final labelController = TextEditingController(text: address?.label);
+    final addressController = TextEditingController(text: address?.address);
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).cardTheme.color,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -286,12 +311,13 @@ class SavedPlacesScreen extends ConsumerWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.borderDark,
+                color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(height: 16),
-            Text('Add Place', style: AppTextStyles.headlineSmall),
+            Text(isEdit ? 'Edit Place' : 'Add Place',
+                style: AppTextStyles.headlineSmall),
             const SizedBox(height: 16),
             TextField(
               controller: labelController,
@@ -301,14 +327,14 @@ class SavedPlacesScreen extends ConsumerWidget {
                 hintStyle: AppTextStyles.bodyMedium
                     .copyWith(color: AppColors.textMuted),
                 filled: true,
-                fillColor: AppColors.inputDark,
+                fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[200],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.borderDark),
+                  borderSide: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.borderDark),
+                  borderSide: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -325,14 +351,14 @@ class SavedPlacesScreen extends ConsumerWidget {
                 hintStyle: AppTextStyles.bodyMedium
                     .copyWith(color: AppColors.textMuted),
                 filled: true,
-                fillColor: AppColors.inputDark,
+                fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[200],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.borderDark),
+                  borderSide: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.borderDark),
+                  borderSide: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -347,21 +373,31 @@ class SavedPlacesScreen extends ConsumerWidget {
                 onPressed: () {
                   if (labelController.text.isNotEmpty &&
                       addressController.text.isNotEmpty) {
-                    ref.read(accountAddressesProvider.notifier).addAddress({
+                    final data = {
                       'label': labelController.text,
                       'address': addressController.text,
-                    });
+                    };
+
+                    if (isEdit) {
+                      ref
+                          .read(accountAddressesProvider.notifier)
+                          .updateAddress(address.id, data);
+                    } else {
+                      ref
+                          .read(accountAddressesProvider.notifier)
+                          .addAddress(data);
+                    }
                     Navigator.pop(ctx);
                   }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGold,
-                  foregroundColor: AppColors.backgroundDark,
+                  foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Save', style: AppTextStyles.button),
+                child: Text(isEdit ? 'Update' : 'Save', style: AppTextStyles.button),
               ),
             ),
           ],
@@ -370,3 +406,4 @@ class SavedPlacesScreen extends ConsumerWidget {
     );
   }
 }
+

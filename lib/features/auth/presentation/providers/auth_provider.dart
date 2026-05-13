@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/providers/dio_provider.dart';
@@ -41,15 +43,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   bool get isRegisterFlow => _isRegisterFlow;
 
-  Future<void> sendOtp(String phone, {bool isRegister = false}) async {
+  Future<void> sendOtp(String phoneInput, {bool isRegister = false}) async {
+    final phone = phoneInput.replaceAll(' ', '');
     _isRegisterFlow = isRegister;
     state = state.copyWith(status: AuthStatus.loading, phone: phone);
-
-    // Dev bypass: skip the real API call
-    if (AppConstants.kDevBypass) {
-      state = state.copyWith(status: AuthStatus.otpSent, phone: phone);
-      return;
-    }
 
     try {
       // Check if phone exists before sending OTP
@@ -70,22 +67,32 @@ class AuthNotifier extends StateNotifier<AuthState> {
         return;
       }
 
+      // Send OTP via backend (Twilio)
       await _repo.sendOtp(phone);
-      state = state.copyWith(status: AuthStatus.otpSent, phone: phone);
+      
+      state = state.copyWith(
+        status: AuthStatus.otpSent,
+        phone: phone,
+      );
     } on ApiException catch (e) {
       state = AuthState.error(e);
-    } catch (_) {
-      state = AuthState.errorMessage('Something went wrong. Please try again.');
+    } catch (e) {
+      state = AuthState.errorMessage('Failed to send OTP. Please try again.');
     }
   }
 
   Future<void> verifyOtp({
-    required String phone,
+    required String phoneInput,
     required String otp,
   }) async {
+    final phone = phoneInput.replaceAll(' ', '');
     state = state.copyWith(status: AuthStatus.loading);
     try {
-      final response = await _repo.verifyOtp(phone: phone, otp: otp);
+      final response = await _repo.verifyOtp(
+        phone: phone,
+        otp: otp,
+      );
+
       if (response.isNewUser) {
         state = state.copyWith(
           status: AuthStatus.needsProfile,
@@ -98,8 +105,46 @@ class AuthNotifier extends StateNotifier<AuthState> {
         );
       }
     } on ApiException catch (e) {
+      state = AuthState.errorMessage(e.message ?? 'Invalid code. Please try again.');
+    } catch (e) {
+      state = AuthState.errorMessage('Verification failed. Please try again.');
+    }
+  }
+
+  Future<void> _signInWithCredential(PhoneAuthCredential credential) async {
+    try {
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final idToken = await userCredential.user?.getIdToken();
+
+      if (idToken != null) {
+        // Clear the saved session as it's no longer needed
+        await _repo.clearOtpSession();
+        
+        // Authenticate with backend using Firebase ID Token
+        final response = await _repo.socialLogin(
+          provider: 'PHONE',
+          idToken: idToken,
+        );
+
+        if (response.isNewUser) {
+          state = state.copyWith(
+            status: AuthStatus.needsProfile,
+            isNewUser: true,
+          );
+        } else {
+          state = state.copyWith(
+            status: AuthStatus.authenticated,
+            isNewUser: false,
+          );
+        }
+      } else {
+        state = AuthState.errorMessage('Failed to get verification token.');
+      }
+    } on FirebaseAuthException catch (e) {
+      state = AuthState.errorMessage(e.message ?? 'Authentication failed');
+    } on ApiException catch (e) {
       state = AuthState.error(e);
-    } catch (_) {
+    } catch (e) {
       state = AuthState.errorMessage('Something went wrong. Please try again.');
     }
   }
@@ -154,9 +199,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Resend OTP without changing auth status (avoids re-navigation to OTP screen).
-  Future<void> resendOtp(String phone) async {
+  Future<void> resendOtp(String phoneInput) async {
+    final phone = phoneInput.replaceAll(' ', '');
     try {
-      await _repo.sendOtp(phone);
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      await _repo.sendOtp(phone, fcmToken: fcmToken);
     } catch (_) {
       // Silently fail — the user can tap resend again
     }

@@ -1,13 +1,17 @@
 abstract final class ApiConstants {
   // ── Base URL ───────────────────────────────────────────
-  static const String baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'https://gozolt-new-ride-backend-production.up.railway.app/v1',
-  );
-  static const String wsUrl = String.fromEnvironment(
-    'WS_URL',
-    defaultValue: 'wss://gozolt-new-ride-backend-production.up.railway.app',
-  );
+  /// Set to true to use local backend for testing, false for production.
+  static const bool useLocal = false;
+
+  static const String baseUrl = useLocal 
+      ? 'http://10.0.2.2:3000/v1' // Use 10.0.2.2 for Android emulator to hit localhost
+      : 'https://gozolt-new-ride-backend-production.up.railway.app/v1';
+
+  static const String wsUrl = useLocal
+      ? 'ws://10.0.2.2:3000'
+      : 'wss://gozolt-new-ride-backend-production.up.railway.app';
+  
+
 
   // ── Auth ───────────────────────────────────────────────
   static const String checkPhone = '/auth/user/check-phone';
@@ -30,6 +34,9 @@ abstract final class ApiConstants {
   // ── Payment Methods ────────────────────────────────────
   static const String paymentMethods = '/users/me/payment-methods';
   static const String paymentSetupIntent = '/users/me/payment-methods/setup-intent';
+  static const String paymentPaymentSheet = '/users/me/payment-methods/payment-sheet';
+  static const String paymentConfirmSetup = '/users/me/payment-methods/confirm-setup';
+  static String paymentCheckout(String rideId) => '/users/me/payment-methods/checkout/$rideId';
 
   // ── Rides ──────────────────────────────────────────────
   static const String rideEstimate = '/rides/estimate';

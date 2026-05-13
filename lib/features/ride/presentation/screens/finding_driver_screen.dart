@@ -56,8 +56,8 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
       duration: const Duration(milliseconds: 2500),
     )..repeat();
 
-    // Auto-timeout after 30 seconds
-    _timeoutTimer = Timer(const Duration(seconds: 30), () {
+    // Auto-timeout after 70 seconds as a safety backup to backend timeout
+    _timeoutTimer = Timer(const Duration(seconds: 70), () {
       if (mounted) {
         _showNoDriversDialog();
       }
@@ -123,7 +123,7 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
 
   void _retry() {
     _timeoutTimer?.cancel();
-    _timeoutTimer = Timer(const Duration(seconds: 30), () {
+    _timeoutTimer = Timer(const Duration(seconds: 70), () {
       if (mounted) _showNoDriversDialog();
     });
     ref.read(rideBookingProvider.notifier).confirmBooking();
@@ -140,8 +140,15 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
       });
     }
 
+    // Handle no drivers or other booking errors
+    if (booking.status == BookingStatus.error) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showNoDriversDialog(errorMessage: booking.errorMessage);
+      });
+    }
+
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           // ── Google Map ─────────────────────────────────
@@ -153,7 +160,7 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
                     : LatLng(AppConstants.defaultLat, AppConstants.defaultLng),
                 zoom: 15,
               ),
-              style: _darkMapStyle,
+              style: Theme.of(context).brightness == Brightness.dark ? _darkMapStyle : null,
               markers: booking.pickup != null
                   ? {
                       Marker(
@@ -163,7 +170,7 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
                           booking.pickup!.longitude,
                         ),
                         icon: BitmapDescriptor.defaultMarkerWithHue(
-                            BitmapDescriptor.hueOrange),
+                            BitmapDescriptor.hueGreen),
                         infoWindow:
                             InfoWindow(title: booking.pickup!.address),
                       ),
@@ -181,7 +188,6 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
             ),
           ),
 
-          // ── Radar Ripple + Pin ───────────────────────────
           Center(
             child: SizedBox(
               width: 200,
@@ -200,7 +206,7 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
                         scale: 1.0 + (_pulseController.value * 0.1),
                         child: const Icon(
                           Icons.location_on,
-                          color: AppColors.primaryGold,
+                          color: AppColors.success,
                           size: 48,
                         ),
                       ),
@@ -218,12 +224,12 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
             bottom: 0,
             child: Container(
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
-              decoration: const BoxDecoration(
-                color: AppColors.surfaceDark,
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color,
                 borderRadius:
                     BorderRadius.vertical(top: Radius.circular(24)),
               ),
-              child: _buildSearchingContent(),
+              child: _buildSearchingContent(booking),
             ),
           ),
         ],
@@ -240,14 +246,14 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(
-          color: AppColors.primaryGold.withValues(alpha: opacity),
+          color: AppColors.primaryGold.withOpacity(opacity),
           width: 2,
         ),
       ),
     );
   }
 
-  Widget _buildSearchingContent() {
+   Widget _buildSearchingContent(RideBookingState booking) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -257,14 +263,14 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
           width: 180,
           height: 140,
           fit: BoxFit.contain,
-          errorBuilder: (_, _, _) => AnimatedBuilder(
+          errorBuilder: (context, error, stackTrace) => AnimatedBuilder(
             animation: _pulseController,
             builder: (context, _) {
               return Icon(
                 Icons.local_taxi,
                 size: 80,
                 color: AppColors.primaryGold
-                    .withValues(alpha: 0.5 + _pulseController.value * 0.5),
+                    .withOpacity(0.5 + _pulseController.value * 0.5),
               );
             },
           ),
@@ -274,14 +280,19 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
         Text(
           'Finding Your Driver...',
           style: AppTextStyles.headlineSmall.copyWith(
-            color: AppColors.textPrimary,
+            color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
           ),
         ),
         const SizedBox(height: 8),
-        Text(
-          'Searching for luxury rides nearby',
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textSecondary,
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: Text(
+            booking.searchingMessage ?? 'Searching for luxury rides nearby',
+            key: ValueKey(booking.searchingMessage),
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+            ),
+            textAlign: TextAlign.center,
           ),
         ),
         const SizedBox(height: 24),
@@ -293,16 +304,17 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
           child: OutlinedButton(
             onPressed: _cancelRequest,
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.textPrimary,
-              side: const BorderSide(color: AppColors.borderDark, width: 1),
+              foregroundColor: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+              side: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, width: 1),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
             child: Text(
               'Cancel Request',
-              style: AppTextStyles.button
-                  .copyWith(color: AppColors.textPrimary),
+              style: AppTextStyles.button.copyWith(
+                color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+              ),
             ),
           ),
         ),
@@ -310,12 +322,21 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
     );
   }
 
-  void _showNoDriversDialog() {
+  void _showNoDriversDialog({String? errorMessage}) {
+    // Prevent multiple dialogs
+    if (!mounted) return;
+    
+    // Check if dialog is already showing
+    if (ModalRoute.of(context)?.isCurrent == false) {
+      // If we are not the current route, we might be inside a dialog already
+      // This is a simple check, for production you might use a flag
+    }
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -326,13 +347,13 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
             Text(
               'No Drivers Available',
               style: AppTextStyles.headlineSmall
-                  .copyWith(color: AppColors.textPrimary),
+                  .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
             ),
             const SizedBox(height: 8),
             Text(
-              'We couldn\'t find a driver near your pickup location. You can retry, change your pickup, or try again later.',
+              errorMessage ?? 'We couldn\'t find a driver near your pickup location. You can retry, change your pickup, or try again later.',
               style: AppTextStyles.bodyMedium
-                  .copyWith(color: AppColors.textSecondary),
+                  .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
@@ -345,7 +366,7 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGold,
-                  foregroundColor: AppColors.backgroundDark,
+                  foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -382,8 +403,8 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
                   context.goNamed(RouteNames.home);
                 },
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.textPrimary,
-                  side: const BorderSide(color: AppColors.borderDark),
+                  foregroundColor: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                  side: BorderSide(color: Theme.of(context).dividerTheme.color ?? (Theme.of(context).brightness == Brightness.dark ? AppColors.borderDark : AppColors.borderLight)),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -402,7 +423,7 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -413,13 +434,13 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
             Text(
               'Ride Scheduled!',
               style: AppTextStyles.headlineSmall
-                  .copyWith(color: AppColors.textPrimary),
+                  .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
             ),
             const SizedBox(height: 8),
             Text(
               'Your ride has been scheduled successfully.',
               style: AppTextStyles.bodyMedium
-                  .copyWith(color: AppColors.textSecondary),
+                  .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
@@ -433,7 +454,7 @@ class _FindingDriverScreenState extends ConsumerState<FindingDriverScreen>
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGold,
-                  foregroundColor: AppColors.backgroundDark,
+                  foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),

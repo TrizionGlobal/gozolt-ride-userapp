@@ -114,7 +114,7 @@ class ReceiptScreen extends ConsumerWidget {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: AppColors.backgroundDark
-                                  .withValues(alpha: 0.15),
+                                  .withOpacity(0.15),
                             ),
                             child: const Icon(Icons.arrow_back,
                                 color: AppColors.backgroundDark, size: 20),

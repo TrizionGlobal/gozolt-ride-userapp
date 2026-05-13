@@ -9,7 +9,7 @@ class TierBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = _tierColors(tier);
+    final colors = _tierColors(context, tier);
     final displayName = _tierDisplayName(tier);
 
     return Container(
@@ -76,36 +76,37 @@ class TierBadge extends StatelessWidget {
     }
   }
 
-  /// Returns (background, border, text/icon) colors.
-  static (Color, Color, Color) _tierColors(String tier) {
+  (Color, Color, Color) _tierColors(BuildContext context, String tier) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     switch (tier) {
       case 'BRONZE':
         return (
-          const Color(0xFF3D2B1F),
+          isDark ? const Color(0xFF3D2B1F) : const Color(0xFFFDEFE2),
           const Color(0xFFCD7F32),
           const Color(0xFFCD7F32),
         );
       case 'SILVER':
         return (
-          const Color(0xFF2A2A30),
+          isDark ? const Color(0xFF2A2A30) : const Color(0xFFF5F5F5),
           const Color(0xFFC0C0C0),
-          const Color(0xFFC0C0C0),
+          const Color(0xFF9E9E9E),
         );
       case 'GOLD':
         return (
-          const Color(0xFF3D3415),
+          isDark ? const Color(0xFF3D3415) : const Color(0xFFFFF9E6),
           const Color(0xFFF5C518),
-          const Color(0xFFF5C518),
+          const Color(0xFFD4A017),
         );
       case 'PLATINUM':
         return (
-          const Color(0xFF2A1F3D),
+          isDark ? const Color(0xFF2A1F3D) : const Color(0xFFF3E5F5),
           const Color(0xFFB388FF),
-          const Color(0xFFB388FF),
+          const Color(0xFF7E57C2),
         );
       default:
         return (
-          const Color(0xFF3D2B1F),
+          isDark ? const Color(0xFF3D2B1F) : const Color(0xFFFDEFE2),
           const Color(0xFFCD7F32),
           const Color(0xFFCD7F32),
         );

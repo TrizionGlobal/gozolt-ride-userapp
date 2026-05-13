@@ -30,7 +30,7 @@ class VehicleTypeSelector extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: VehicleType.values.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 10),
+        separatorBuilder: (context, error) => const SizedBox(width: 10),
         itemBuilder: (context, index) {
           final type = VehicleType.values[index];
           final isSelected = type == selected;
@@ -41,19 +41,19 @@ class VehicleTypeSelector extends StatelessWidget {
           return GestureDetector(
             onTap: () => onSelect(type),
             child: Opacity(
-              opacity: isAvailable ? 1.0 : 0.45,
+              opacity: (isAvailable || isSelected) ? 1.0 : 0.5,
               child: Container(
                 width: 110,
                 padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.cardDark : AppColors.surfaceDark,
+                  color: isSelected ? Theme.of(context).cardTheme.color : Theme.of(context).cardTheme.color?.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
                     color: isSelected
                         ? AppColors.primaryGold
                         : isAvailable
-                            ? AppColors.borderDark
-                            : AppColors.borderDark.withValues(alpha: 0.3),
+                            ? (Theme.of(context).dividerTheme.color ?? AppColors.borderDark)
+                            : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark).withOpacity(0.3),
                     width: isSelected ? 2 : 0.5,
                   ),
                 ),
@@ -65,7 +65,7 @@ class VehicleTypeSelector extends StatelessWidget {
                       width: 56,
                       height: 36,
                       fit: BoxFit.contain,
-                      errorBuilder: (_, _, _) => Icon(
+                      errorBuilder: (context, error, stackTrace) => Icon(
                         Icons.directions_car,
                         size: 36,
                         color: isSelected
@@ -78,7 +78,7 @@ class VehicleTypeSelector extends StatelessWidget {
                       type.displayName,
                       style: AppTextStyles.titleSmall.copyWith(
                         color: isSelected
-                            ? AppColors.textPrimary
+                            ? (Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight)
                             : AppColors.textSecondary,
                         fontSize: 12,
                         fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
@@ -104,7 +104,9 @@ class VehicleTypeSelector extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textMuted.withValues(alpha: 0.7),
+                          color: isSelected 
+                              ? AppColors.textSecondary 
+                              : AppColors.textMuted.withOpacity(0.7),
                         ),
                       )
                     else ...[
@@ -139,7 +141,7 @@ class VehicleTypeSelector extends StatelessWidget {
                             Icons.access_time,
                             size: 11,
                             color: isSelected
-                                ? AppColors.textPrimary
+                                ? (Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight)
                                 : AppColors.textMuted,
                           ),
                           const SizedBox(width: 2),
@@ -148,7 +150,7 @@ class VehicleTypeSelector extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 9,
                               color: isSelected
-                                  ? AppColors.textPrimary
+                                  ? (Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight)
                                   : AppColors.textMuted,
                             ),
                           ),

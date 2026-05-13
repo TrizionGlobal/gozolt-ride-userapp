@@ -15,12 +15,14 @@ class AuthState {
   final String? phone;
   final String? errorMessage;
   final bool isNewUser;
+  final String? verificationId;
 
   const AuthState({
     this.status = AuthStatus.initial,
     this.phone,
     this.errorMessage,
     this.isNewUser = false,
+    this.verificationId,
   });
 
   AuthState copyWith({
@@ -28,12 +30,14 @@ class AuthState {
     String? phone,
     String? errorMessage,
     bool? isNewUser,
+    String? verificationId,
   }) {
     return AuthState(
       status: status ?? this.status,
       phone: phone ?? this.phone,
       errorMessage: errorMessage,
       isNewUser: isNewUser ?? this.isNewUser,
+      verificationId: verificationId ?? this.verificationId,
     );
   }
 

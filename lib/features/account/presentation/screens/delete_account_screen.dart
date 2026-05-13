@@ -22,7 +22,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -35,7 +35,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    AppColors.error.withValues(alpha: 0.8),
+                    AppColors.error.withOpacity(0.8),
                     AppColors.error,
                   ],
                 ),
@@ -58,7 +58,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                             height: 36,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.white.withValues(alpha: 0.2),
+                              color: Colors.white.withOpacity(0.2),
                             ),
                             child: const Icon(Icons.arrow_back,
                                 color: Colors.white, size: 20),
@@ -90,7 +90,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                     width: 64,
                     height: 64,
                     decoration: BoxDecoration(
-                      color: AppColors.error.withValues(alpha: 0.12),
+                      color: AppColors.error.withOpacity(0.12),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.warning_amber_rounded,
@@ -113,9 +113,9 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.cardDark,
+                    color: Theme.of(context).cardTheme.color,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.borderDark),
+                    border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,10 +142,10 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: AppColors.info.withValues(alpha: 0.08),
+                    color: AppColors.info.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                        color: AppColors.info.withValues(alpha: 0.2)),
+                        color: AppColors.info.withOpacity(0.2)),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -187,7 +187,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                             border: Border.all(
                               color: _confirmChecked
                                   ? AppColors.error
-                                  : AppColors.borderDark,
+                                  : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                             ),
                           ),
                           child: _confirmChecked
@@ -220,7 +220,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                       backgroundColor: AppColors.error,
                       foregroundColor: Colors.white,
                       disabledBackgroundColor:
-                          AppColors.error.withValues(alpha: 0.3),
+                          AppColors.error.withOpacity(0.3),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
@@ -279,7 +279,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Final Confirmation', style: AppTextStyles.headlineSmall),
         content: Text(
@@ -288,20 +288,24 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
               .copyWith(color: AppColors.textSecondary),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child:
-                Text('Go Back', style: TextStyle(color: AppColors.textMuted)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-            child: const Text('Yes, Delete'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text('Go Back',
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.error,
+                ),
+                child: const Text('Yes, Delete',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+            ],
           ),
         ],
       ),

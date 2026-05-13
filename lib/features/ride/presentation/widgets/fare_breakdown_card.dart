@@ -23,9 +23,9 @@ class FareBreakdownCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surfaceDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderDark, width: 0.5),
+        border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent, width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -37,7 +37,7 @@ class FareBreakdownCard extends StatelessWidget {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: AppColors.primaryGold.withValues(alpha: 0.15),
+                  color: AppColors.primaryGold.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(Icons.access_time,
@@ -55,7 +55,7 @@ class FareBreakdownCard extends StatelessWidget {
                   Text(
                     _estimatedArrivalText(),
                     style: AppTextStyles.titleSmall.copyWith(
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).textTheme.titleMedium?.color ?? (Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -64,7 +64,7 @@ class FareBreakdownCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          const Divider(color: AppColors.borderDark, height: 1),
+          Divider(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, height: 1),
           const SizedBox(height: 14),
 
           // Fare lines
@@ -94,7 +94,7 @@ class FareBreakdownCard extends StatelessWidget {
           _FareLine(label: 'Booking Fee', amount: estimate.bookingFee),
 
           const SizedBox(height: 6),
-          const Divider(color: AppColors.borderDark, height: 1),
+          Divider(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, height: 1),
           const SizedBox(height: 10),
 
           // Total
@@ -104,7 +104,7 @@ class FareBreakdownCard extends StatelessWidget {
               Text(
                 'Estimated Total',
                 style: AppTextStyles.titleSmall.copyWith(
-                  color: AppColors.textPrimary,
+                  color: Theme.of(context).textTheme.titleMedium?.color ?? (Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -171,7 +171,7 @@ class _FareLine extends StatelessWidget {
           Text(
             '${isNegative ? '-' : ''}€ ${amount.abs().toStringAsFixed(2)}',
             style: AppTextStyles.bodySmall.copyWith(
-              color: displayColor,
+              color: color ?? (Theme.of(context).textTheme.bodyMedium?.color ?? (Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight)),
               fontWeight: FontWeight.w600,
             ),
           ),

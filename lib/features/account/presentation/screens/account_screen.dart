@@ -11,6 +11,7 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/providers/storage_provider.dart';
 import '../../../home/presentation/providers/home_providers.dart';
 import '../providers/account_providers.dart';
+import '../../../../core/providers/theme_provider.dart';
 import '../../../rewards/presentation/providers/rewards_providers.dart';
 
 class AccountScreen extends ConsumerStatefulWidget {
@@ -24,6 +25,8 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   DateTime? _lastRateAppTap;
 
   void _showPremiumSnackBar(String message, {IconData icon = Icons.info_outline}) {
+    final isDark = ref.read(isDarkModeProvider);
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
@@ -33,12 +36,14 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
             Expanded(
               child: Text(
                 message,
-                style: AppTextStyles.bodySmall.copyWith(color: AppColors.textPrimary),
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                ),
               ),
             ),
           ],
         ),
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -52,10 +57,10 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     final isDark = ref.watch(isDarkModeProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         color: AppColors.primaryGold,
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         onRefresh: () async {
           ref.invalidate(userProfileProvider);
           await Future.delayed(const Duration(milliseconds: 300));
@@ -99,13 +104,13 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                         ],
                       ),
                     ),
-                    error: (_, _) => const SizedBox(height: 80),
+                    error: (context, error) => const SizedBox(height: 80),
                     data: (profile) => Row(
                       children: [
                         CircleAvatar(
                           radius: 30,
                           backgroundColor:
-                              AppColors.backgroundDark.withValues(alpha: 0.2),
+                              AppColors.backgroundDark.withOpacity(0.2),
                           backgroundImage: profile.avatarUrl != null &&
                                   profile.avatarUrl!.isNotEmpty
                               ? NetworkImage(ApiConstants.fullUrl(profile.avatarUrl!))
@@ -137,7 +142,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                                   profile.phone!,
                                   style: AppTextStyles.bodySmall.copyWith(
                                     color: AppColors.backgroundDark
-                                        .withValues(alpha: 0.7),
+                                        .withOpacity(0.7),
                                   ),
                                 ),
                             ],
@@ -155,7 +160,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: AppColors.backgroundDark
-                                    .withValues(alpha: 0.15),
+                                    .withOpacity(0.15),
                               ),
                               child: const Icon(Icons.edit,
                                   color: AppColors.backgroundDark, size: 18),
@@ -200,7 +205,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryGold.withValues(alpha: 0.15),
+                      color: AppColors.primaryGold.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
@@ -244,11 +249,9 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                   icon: Icons.dark_mode_outlined,
                   label: 'Dark Mode',
                   value: isDark,
-                  onChanged: (_) {
-                    _showPremiumSnackBar(
-                      'Light theme is coming soon!',
-                      icon: Icons.palette_outlined,
-                    );
+                  onChanged: (v) {
+                    ref.read(themeModeProvider.notifier).state = 
+                        v ? ThemeMode.dark : ThemeMode.light;
                   },
                 ),
 
@@ -380,14 +383,14 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         margin: const EdgeInsets.only(bottom: 4),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
         decoration: BoxDecoration(
-          color: AppColors.cardDark,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.borderDark),
+          border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
         ),
         child: Row(
           children: [
             Icon(icon,
-                color: textColor ?? AppColors.textSecondary, size: 22),
+                color: textColor ?? (Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight), size: 22),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -396,7 +399,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                   Text(
                     label,
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: textColor ?? AppColors.textPrimary,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -409,7 +411,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 ],
               ),
             ),
-            ?trailing,
+            if (trailing != null) trailing,
             const SizedBox(width: 4),
             Icon(Icons.chevron_right,
                 color: AppColors.textMuted, size: 20),
@@ -430,13 +432,13 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
       margin: const EdgeInsets.only(bottom: 4),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
       ),
       child: Row(
         children: [
-          Icon(icon, color: AppColors.textSecondary, size: 22),
+          Icon(icon, color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight, size: 22),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -449,15 +451,17 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
           Semantics(
             label: 'Dark mode toggle',
             toggled: value,
-            child: Switch.adaptive(
-              value: value,
-              onChanged: (v) {
-                HapticFeedback.selectionClick();
-                onChanged(v);
-              },
-              activeTrackColor: AppColors.primaryGold,
-              activeThumbColor: AppColors.backgroundDark,
-              inactiveTrackColor: AppColors.borderDark,
+            child: Transform.scale(
+              scale: 0.7,
+              child: Switch.adaptive(
+                value: value,
+                onChanged: (v) {
+                  HapticFeedback.selectionClick();
+                  onChanged(v);
+                },
+                activeTrackColor: AppColors.primaryGold,
+                inactiveTrackColor: Theme.of(context).dividerTheme.color,
+              ),
             ),
           ),
         ],
@@ -467,9 +471,10 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
 
   void _showLanguageSheet() {
     final current = ref.read(languageProvider);
+    final isDark = ref.read(isDarkModeProvider);
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -484,7 +489,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.borderDark,
+                  color: Theme.of(context).dividerTheme.color,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -532,10 +537,14 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryGold.withValues(alpha: 0.1) : AppColors.cardDark,
+          color: isSelected 
+              ? AppColors.primaryGold.withOpacity(0.1) 
+              : Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primaryGold : AppColors.borderDark,
+            color: isSelected 
+                ? AppColors.primaryGold 
+                : (Theme.of(context).dividerTheme.color ?? Colors.transparent),
           ),
         ),
         child: Row(
@@ -588,7 +597,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(ctx).colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Download My Data', style: AppTextStyles.headlineSmall),
         content: Text(
@@ -597,26 +606,30 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               .copyWith(color: AppColors.textSecondary),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel',
-                style: TextStyle(color: AppColors.textMuted)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              _showPremiumSnackBar(
-                'Data export requested. You\'ll receive it via email.',
-                icon: Icons.download_done_outlined,
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryGold,
-              foregroundColor: AppColors.backgroundDark,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-            child: const Text('Request Export'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Cancel',
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _showPremiumSnackBar(
+                    'Data export requested. You\'ll receive it via email.',
+                    icon: Icons.download_done_outlined,
+                  );
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.primaryGold,
+                ),
+                child: const Text('Request Export',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+            ],
           ),
         ],
       ),
@@ -628,7 +641,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(ctx).colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Log Out', style: AppTextStyles.headlineSmall),
         content: Text(
@@ -637,32 +650,36 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               .copyWith(color: AppColors.textSecondary),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel',
-                style: TextStyle(color: AppColors.textMuted)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final storage = ref.read(secureStorageProvider);
-              await storage.clearTokens();
-              // Clear stale cached data from the old session
-              ref.invalidate(userProfileProvider);
-              ref.invalidate(savedAddressesProvider);
-              ref.invalidate(unreadNotificationCountProvider);
-              ref.invalidate(rewardSummaryProvider);
-              if (context.mounted) {
-                context.goNamed(RouteNames.welcome);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-            child: const Text('Log Out'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Cancel',
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+              ),
+              const SizedBox(width: 8),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  final storage = ref.read(secureStorageProvider);
+                  await storage.clearTokens();
+                  // Clear stale cached data from the old session
+                  ref.invalidate(userProfileProvider);
+                  ref.invalidate(savedAddressesProvider);
+                  ref.invalidate(unreadNotificationCountProvider);
+                  ref.invalidate(rewardSummaryProvider);
+                  if (context.mounted) {
+                    context.goNamed(RouteNames.welcome);
+                  }
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.error,
+                ),
+                child: const Text('Log Out',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+            ],
           ),
         ],
       ),

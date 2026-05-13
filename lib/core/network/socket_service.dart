@@ -34,6 +34,8 @@ class UserSocketService {
       StreamController<Map<String, dynamic>>.broadcast();
   final _destinationChangeResponseController =
       StreamController<Map<String, dynamic>>.broadcast();
+  final _rideMatchingProgressController =
+      StreamController<Map<String, dynamic>>.broadcast();
 
   Stream<Map<String, dynamic>> get onRideAccepted =>
       _rideAcceptedController.stream;
@@ -47,6 +49,8 @@ class UserSocketService {
       _chatMessageController.stream;
   Stream<Map<String, dynamic>> get onDestinationChangeResponse =>
       _destinationChangeResponseController.stream;
+  Stream<Map<String, dynamic>> get onRideMatchingProgress =>
+      _rideMatchingProgressController.stream;
 
   bool get isConnected => _socket?.connected == true;
 
@@ -178,6 +182,15 @@ class UserSocketService {
         _destinationChangeResponseController.add(map);
       }
     });
+
+    // Ride matching progress (radius expansion)
+    _socket!.on('ride:matching:progress', (data) {
+      _log('[Socket] Ride matching progress: $data');
+      final map = _toMap(data);
+      if (map != null) {
+        _rideMatchingProgressController.add(map);
+      }
+    });
   }
 
   Map<String, dynamic>? _toMap(dynamic data) {
@@ -221,5 +234,6 @@ class UserSocketService {
     _rideCompletedController.close();
     _chatMessageController.close();
     _destinationChangeResponseController.close();
+    _rideMatchingProgressController.close();
   }
 }

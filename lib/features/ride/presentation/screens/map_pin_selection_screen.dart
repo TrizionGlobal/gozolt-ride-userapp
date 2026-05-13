@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+
+
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -57,19 +60,44 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
     }
   }
 
-  void _onCameraIdle() {
-    setState(() {
-      _isMoving = false;
-      _address =
-          '${_center.latitude.toStringAsFixed(4)}, ${_center.longitude.toStringAsFixed(4)}';
-      _subtitle = 'Selected location';
-    });
+  void _onCameraIdle() async {
+    setState(() => _isMoving = false);
+    
+    try {
+      final placemarks = await geocoding.placemarkFromCoordinates(
+        _center.latitude,
+        _center.longitude,
+      );
+      if (placemarks.isNotEmpty && mounted) {
+        final p = placemarks.first;
+        final street = p.street ?? '';
+        final locality = p.locality ?? '';
+        final name = p.name ?? '';
+        
+        setState(() {
+          if (street.isNotEmpty && locality.isNotEmpty) {
+            _address = '$street, $locality';
+          } else {
+            _address = name.isNotEmpty ? name : '${_center.latitude.toStringAsFixed(4)}, ${_center.longitude.toStringAsFixed(4)}';
+          }
+          _subtitle = 'Selected location';
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _address = '${_center.latitude.toStringAsFixed(4)}, ${_center.longitude.toStringAsFixed(4)}';
+          _subtitle = 'Coordinates only';
+        });
+      }
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           // ── Google Map ─────────────────────────────────
@@ -78,7 +106,7 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
               target: _center,
               zoom: 15,
             ),
-            style: _darkMapStyle,
+            style: Theme.of(context).brightness == Brightness.dark ? _darkMapStyle : null,
             onMapCreated: (controller) {
               _mapController.complete(controller);
             },
@@ -100,7 +128,7 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
                 duration: const Duration(milliseconds: 150),
                 child: const Icon(
                   Icons.location_on,
-                  color: AppColors.primaryGold,
+                  color: AppColors.success,
                   size: 48,
                 ),
               ),
@@ -117,9 +145,9 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceDark,
+                  color: Theme.of(context).cardTheme.color,
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.borderDark),
+                  border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                 ),
                 child: const Icon(Icons.arrow_back,
                     color: AppColors.primaryGold, size: 20),
@@ -137,9 +165,9 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceDark,
+                  color: Theme.of(context).cardTheme.color,
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.borderDark),
+                  border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                 ),
                 child: const Icon(Icons.my_location,
                     color: AppColors.primaryGold, size: 20),
@@ -154,9 +182,9 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
             bottom: 0,
             child: Container(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-              decoration: const BoxDecoration(
-                color: AppColors.surfaceDark,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -168,7 +196,7 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
                         width: 10,
                         height: 10,
                         decoration: const BoxDecoration(
-                          color: AppColors.primaryGold,
+                          color: AppColors.success,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -212,7 +240,7 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
                       )),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryGold,
-                        foregroundColor: AppColors.backgroundDark,
+                        foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -220,7 +248,7 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
                       child: Text(
                         'Confirm Location',
                         style: AppTextStyles.button.copyWith(
-                          color: AppColors.backgroundDark,
+                          color: Theme.of(context).scaffoldBackgroundColor,
                         ),
                       ),
                     ),

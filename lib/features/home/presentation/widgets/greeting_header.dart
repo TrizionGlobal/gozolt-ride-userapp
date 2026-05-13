@@ -47,6 +47,8 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
         profile.country!,
     ].join(', ');
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     _popupEntry = OverlayEntry(
       builder: (context) => GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -65,14 +67,18 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                     width: 220,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.surfaceDark.withValues(alpha: 0.95),
+                      color: isDark 
+                          ? AppColors.surfaceDark.withOpacity(0.95)
+                          : AppColors.surfaceLight.withOpacity(0.98),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: AppColors.primaryGold.withValues(alpha: 0.3),
+                        color: AppColors.primaryGold.withOpacity(0.3),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.4),
+                          color: isDark 
+                              ? Colors.black.withOpacity(0.4)
+                              : Colors.black.withOpacity(0.1),
                           blurRadius: 20,
                           offset: const Offset(0, 8),
                         ),
@@ -87,7 +93,7 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                                 radius: 28,
                                 backgroundImage: NetworkImage(ApiConstants.fullUrl(profile.avatarUrl!)),
                                 onBackgroundImageError: (_, __) {},
-                                backgroundColor: AppColors.cardDark,
+                                backgroundColor: Theme.of(context).cardTheme.color,
                                 child: Text(
                                   profile.initials,
                                   style: const TextStyle(
@@ -102,8 +108,8 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                                 backgroundColor: AppColors.primaryGold,
                                 child: Text(
                                   profile?.initials ?? 'U',
-                                  style: const TextStyle(
-                                    color: AppColors.backgroundDark,
+                                  style: TextStyle(
+                                    color: Theme.of(context).scaffoldBackgroundColor,
                                     fontWeight: FontWeight.w700,
                                     fontSize: 20,
                                   ),
@@ -114,7 +120,6 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                         Text(
                           fullName.isEmpty ? 'User' : fullName,
                           style: AppTextStyles.titleSmall.copyWith(
-                            color: AppColors.textPrimary,
                             fontWeight: FontWeight.w700,
                           ),
                           textAlign: TextAlign.center,
@@ -128,7 +133,7 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                             Icon(Icons.location_on,
                                 size: 14,
                                 color: AppColors.primaryGold
-                                    .withValues(alpha: 0.8)),
+                                    .withOpacity(0.8)),
                             const SizedBox(width: 4),
                             Flexible(
                               child: Text(
@@ -136,7 +141,7 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                                     ? 'Location not set'
                                     : location,
                                 style: AppTextStyles.bodySmall.copyWith(
-                                  color: AppColors.textSecondary,
+                                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
                                   fontSize: 12,
                                 ),
                                 maxLines: 1,
@@ -146,7 +151,7 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        Container(height: 1, color: AppColors.borderDark),
+                        Container(height: 1, color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                         const SizedBox(height: 12),
                         // GoCoins
                         Container(
@@ -154,7 +159,7 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                               horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
                             color:
-                                AppColors.primaryGold.withValues(alpha: 0.1),
+                                AppColors.primaryGold.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
@@ -188,17 +193,17 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppColors.cardDark,
+                            color: Theme.of(context).cardTheme.color,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: AppColors.primaryGold
-                                  .withValues(alpha: 0.2),
+                                  .withOpacity(0.2),
                             ),
                           ),
                           child: Text(
                             '${reward?.tier ?? 'BRONZE'} Member',
                             style: AppTextStyles.labelSmall.copyWith(
-                              color: AppColors.textSecondary,
+                              color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
                               fontSize: 10,
                               letterSpacing: 0.5,
                             ),
@@ -257,7 +262,6 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                   Text(
                     'ZOLT',
                     style: AppTextStyles.titleMedium.copyWith(
-                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -287,14 +291,14 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                     HapticFeedback.lightImpact();
                     context.pushNamed(RouteNames.notifications);
                   },
-                  child: const Padding(
-                    padding: EdgeInsets.all(8),
-                    child: Icon(
-                      Icons.notifications_outlined,
-                      color: AppColors.textPrimary,
-                      size: 26,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(
+                        Icons.notifications_outlined,
+                        color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.textPrimaryLight,
+                        size: 26,
+                      ),
                     ),
-                  ),
                 ),
               ),
               unreadAsync.when(
@@ -323,7 +327,7 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                   );
                 },
                 loading: () => const SizedBox.shrink(),
-                error: (_, _) => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
               ),
             ],
           ),
@@ -342,7 +346,7 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                     radius: 18,
                     backgroundImage: NetworkImage(ApiConstants.fullUrl(profile.avatarUrl!)),
                     onBackgroundImageError: (_, __) {},
-                    backgroundColor: AppColors.cardDark,
+                    backgroundColor: Theme.of(context).cardTheme.color,
                     child: Text(
                       profile.initials,
                       style: const TextStyle(
@@ -356,25 +360,25 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                 return CircleAvatar(
                   radius: 18,
                   backgroundColor: AppColors.primaryGold,
-                  child: Text(
-                    profile.initials,
-                    style: const TextStyle(
-                      color: AppColors.backgroundDark,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
+                    child: Text(
+                      profile.initials,
+                      style: TextStyle(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
                 );
               },
-              loading: () => const CircleAvatar(
+              loading: () => CircleAvatar(
                 radius: 18,
-                backgroundColor: AppColors.cardDark,
+                backgroundColor: Theme.of(context).cardTheme.color,
               ),
-              error: (_, _) => const CircleAvatar(
+              error: (_, __) => CircleAvatar(
                 radius: 18,
-                backgroundColor: AppColors.cardDark,
+                backgroundColor: Theme.of(this.context).cardTheme.color,
                 child:
-                    Icon(Icons.person, color: AppColors.textMuted, size: 20),
+                    Icon(Icons.person, color: Theme.of(this.context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight, size: 20),
               ),
             ),
           ),

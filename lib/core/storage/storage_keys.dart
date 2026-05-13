@@ -4,4 +4,6 @@ abstract final class StorageKeys {
   static const String hasSeenOnboarding = 'has_seen_onboarding';
   static const String themeMode = 'theme_mode';
   static const String language = 'language';
+  static const String verificationId = 'verification_id';
+  static const String pendingPhone = 'pending_phone';
 }

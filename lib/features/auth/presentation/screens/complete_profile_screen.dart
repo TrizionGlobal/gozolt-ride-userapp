@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:universal_io/io.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -118,14 +118,14 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         title: Text(
           'Accept Terms',
           style: AppTextStyles.titleLarge.copyWith(color: AppColors.textPrimary),
         ),
         content: Text(
           'You must accept the Terms of Service & Privacy Policy to continue.',
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+          style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
         ),
         actions: [
           TextButton(
@@ -143,7 +143,7 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
   Future<void> _pickProfileImage() async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).cardTheme.color,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -157,7 +157,7 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.borderDark,
+                  color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -248,7 +248,7 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).cardTheme.color,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -284,7 +284,7 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
     final isLoading = authState.status == AuthStatus.loading;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -312,7 +312,7 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
                     Text(
                       'Personalize your luxury experience',
                       style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
+                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
                       ),
                     ),
 
@@ -357,16 +357,16 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 16),
                         decoration: BoxDecoration(
-                          color: AppColors.inputDark,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.borderDark),
+          color: Theme.of(context).cardTheme.color,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                         ),
                         child: Row(
                           children: [
                             Text(
                               _selectedCountry,
                               style: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.textPrimary,
+                                color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
                               ),
                             ),
                             const Spacer(),
@@ -426,7 +426,7 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
                       child: Text(
                         'Skip for now',
                         style: AppTextStyles.titleSmall.copyWith(
-                          color: AppColors.textSecondary,
+                          color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
                         ),
                       ),
                     ),
@@ -452,8 +452,8 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
             height: 100,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.inputDark,
-              border: Border.all(color: AppColors.borderDark, width: 2),
+              color: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[200],
+              border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, width: 2),
               image: _profileImage != null
                   ? DecorationImage(
                       image: FileImage(_profileImage!),
@@ -462,10 +462,10 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
                   : null,
             ),
             child: _profileImage == null
-                ? const Icon(
+                ? Icon(
                     Icons.person,
                     size: 48,
-                    color: AppColors.textSecondary,
+                    color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
                   )
                 : null,
           ),
@@ -479,10 +479,10 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
                 shape: BoxShape.circle,
                 color: AppColors.primaryGold,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.camera_alt,
                 size: 16,
-                color: AppColors.backgroundDark,
+                color: Theme.of(context).scaffoldBackgroundColor,
               ),
             ),
           ),
@@ -500,17 +500,17 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
     return TextField(
       controller: controller,
       inputFormatters: inputFormatters,
-      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary),
+      style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
       decoration: InputDecoration(
         hintText: label,
         hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted),
-        prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 20),
+        prefixIcon: Icon(icon, color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight, size: 20),
         filled: true,
-        fillColor: AppColors.inputDark,
+        fillColor: Theme.of(context).cardTheme.color,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.borderDark),
+          borderSide: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -527,16 +527,16 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
         Text(
           'PREFERRED LANGUAGE',
           style: AppTextStyles.labelSmall.copyWith(
-            color: AppColors.textSecondary,
+            color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
             letterSpacing: 1.2,
           ),
         ),
         const SizedBox(height: 10),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.inputDark,
+            color: Theme.of(context).cardTheme.color,
             borderRadius: BorderRadius.circular(25),
-            border: Border.all(color: AppColors.borderDark),
+            border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
           ),
           padding: const EdgeInsets.all(4),
           child: Row(
@@ -569,7 +569,7 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
           child: Text(
             label,
             style: AppTextStyles.titleSmall.copyWith(
-              color: isSelected ? AppColors.backgroundDark : AppColors.textSecondary,
+              color: isSelected ? Theme.of(context).scaffoldBackgroundColor : Theme.of(context).textTheme.bodyMedium?.color,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             ),
           ),
@@ -593,7 +593,7 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
             child: RichText(
               text: TextSpan(
                 style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textSecondary,
+                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
                   height: 1.4,
                 ),
                 children: [
@@ -649,7 +649,7 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
             child: Text(
               'I consent to receive marketing updates and GDPR-related notifications',
               style: AppTextStyles.bodySmall.copyWith(
-                color: AppColors.textSecondary,
+                color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
                 height: 1.4,
               ),
             ),
@@ -668,12 +668,12 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
         borderRadius: BorderRadius.circular(5),
         color: checked ? AppColors.primaryGold : Colors.transparent,
         border: Border.all(
-          color: checked ? AppColors.primaryGold : AppColors.borderDark,
+          color: checked ? AppColors.primaryGold : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
           width: 1.5,
         ),
       ),
       child: checked
-          ? const Icon(Icons.check, size: 16, color: AppColors.backgroundDark)
+          ? Icon(Icons.check, size: 16, color: Theme.of(context).scaffoldBackgroundColor)
           : null,
     );
   }
@@ -738,7 +738,7 @@ class _CountrySearchSheetState extends State<_CountrySearchSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.borderDark,
+                color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -749,15 +749,15 @@ class _CountrySearchSheetState extends State<_CountrySearchSheet> {
                 autofocus: true,
                 onChanged: _search,
                 style: AppTextStyles.bodyMedium
-                    .copyWith(color: AppColors.textPrimary),
+                    .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                 decoration: InputDecoration(
                   hintText: 'Search country...',
                   hintStyle: AppTextStyles.bodyMedium
                       .copyWith(color: AppColors.textMuted),
-                  prefixIcon: const Icon(Icons.search,
-                      color: AppColors.textSecondary),
+                  prefixIcon: Icon(Icons.search,
+                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                   filled: true,
-                  fillColor: AppColors.inputDark,
+                  fillColor: Theme.of(context).cardTheme.color,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -784,7 +784,7 @@ class _CountrySearchSheetState extends State<_CountrySearchSheet> {
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: isSelected
                             ? AppColors.primaryGold
-                            : AppColors.textPrimary,
+                            : (Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                         fontWeight: isSelected
                             ? FontWeight.w700
                             : FontWeight.w400,

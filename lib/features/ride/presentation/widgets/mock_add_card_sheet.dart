@@ -33,9 +33,9 @@ class _MockAddCardSheetState extends State<MockAddCardSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceDark,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
         top: false,
@@ -56,7 +56,7 @@ class _MockAddCardSheetState extends State<MockAddCardSheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppColors.borderDark,
+                    color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -142,20 +142,20 @@ class _MockAddCardSheetState extends State<MockAddCardSheet> {
                   onPressed: _isSaving ? null : _saveCard,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryGold,
-                    foregroundColor: AppColors.backgroundDark,
+                    foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                     disabledBackgroundColor:
-                        AppColors.primaryGold.withValues(alpha: 0.3),
+                        AppColors.primaryGold.withOpacity(0.3),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
                   ),
                   child: _isSaving
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              color: AppColors.backgroundDark),
+                              color: Theme.of(context).scaffoldBackgroundColor),
                         )
                       : const Text('Add Card', style: AppTextStyles.button),
                 ),
@@ -175,11 +175,11 @@ class _MockAddCardSheetState extends State<MockAddCardSheet> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primaryGold.withValues(alpha: 0.15)
-              : AppColors.cardDark,
+              ? AppColors.primaryGold.withOpacity(0.15)
+              : Theme.of(context).scaffoldBackgroundColor,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? AppColors.primaryGold : AppColors.borderDark,
+            color: isSelected ? AppColors.primaryGold : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
           ),
         ),
         child: Text(
@@ -203,14 +203,14 @@ class _MockAddCardSheetState extends State<MockAddCardSheet> {
           AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted),
       counterText: '',
       filled: true,
-      fillColor: AppColors.inputDark,
+      fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[200],
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.borderDark),
+        borderSide: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.borderDark),
+        borderSide: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

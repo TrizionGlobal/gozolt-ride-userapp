@@ -21,6 +21,8 @@ class ActiveRideState {
   final String? cancelReason;
   final bool isLoading;
   final String? errorMessage;
+  final bool isPaymentLoading;
+  final bool isPaid;
 
   // Fare breakdown
   final double? baseFare;
@@ -55,8 +57,10 @@ class ActiveRideState {
     this.isDestinationChangePending = false,
     this.pendingNewDropoffAddress,
     this.pendingNewDropoffLat,
-    this.pendingNewDropoffLng,
+     this.pendingNewDropoffLng,
     this.pendingNewFare,
+    this.isPaymentLoading = false,
+    this.isPaid = false,
   });
 
   bool get hasDriver => driverInfo != null;
@@ -87,6 +91,8 @@ class ActiveRideState {
     double? pendingNewDropoffLng,
     double? pendingNewFare,
     bool clearPendingDestination = false,
+    bool? isPaymentLoading,
+    bool? isPaid,
   }) {
     return ActiveRideState(
       ride: ride ?? this.ride,
@@ -119,6 +125,8 @@ class ActiveRideState {
       pendingNewFare: clearPendingDestination
           ? null
           : (pendingNewFare ?? this.pendingNewFare),
+      isPaymentLoading: isPaymentLoading ?? this.isPaymentLoading,
+      isPaid: isPaid ?? this.isPaid,
     );
   }
 }

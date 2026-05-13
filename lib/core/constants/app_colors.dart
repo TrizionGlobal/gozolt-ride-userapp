@@ -32,5 +32,6 @@ abstract final class AppColors {
   static const Color cardLight = Colors.white;
   static const Color textPrimaryLight = Color(0xFF1F2328);
   static const Color textSecondaryLight = Color(0xFF656D76);
+  static const Color textMutedLight = Color(0xFF8B949E);
   static const Color borderLight = Color(0xFFD0D7DE);
 }

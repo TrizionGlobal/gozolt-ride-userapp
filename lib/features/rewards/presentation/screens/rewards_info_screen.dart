@@ -15,7 +15,7 @@ class RewardsInfoScreen extends ConsumerWidget {
     final summaryAsync = ref.watch(rewardSummaryProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -46,7 +46,7 @@ class RewardsInfoScreen extends ConsumerWidget {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: AppColors.backgroundDark
-                                .withValues(alpha: 0.15),
+                                .withOpacity(0.15),
                           ),
                           child: const Icon(Icons.arrow_back,
                               color: AppColors.backgroundDark, size: 20),
@@ -106,14 +106,19 @@ class RewardsInfoScreen extends ConsumerWidget {
                     _sectionTitle('Collect coins on every ride and turn them into savings'),
                     const SizedBox(height: 16),
                     _bulletPoint(
+                        context,
                         'Earn ${rules.earning.pointsPerEur} coin for every \u20AC10 spent on rides.'),
                     _bulletPoint(
+                        context,
                         'Each coin is worth \u20AC${(1 / rules.redemption.pointsToEurRatio).toStringAsFixed(2)} when redeemed.'),
                     _bulletPoint(
+                        context,
                         'Use coins to cover up to 20% of your ride cost.'),
                     _bulletPoint(
+                        context,
                         'Rewards are added automatically after each completed ride.'),
                     _bulletPoint(
+                        context,
                         'Reward rules are set by the app admin and may be updated anytime.'),
 
                     const SizedBox(height: 28),
@@ -122,21 +127,25 @@ class RewardsInfoScreen extends ConsumerWidget {
                     _sectionHeader('Bonus Opportunities'),
                     const SizedBox(height: 12),
                     _bonusCard(
+                        context,
                         Icons.celebration,
                         'First ride bonus',
                         '${rules.earning.firstRideBonus} coins',
                         AppColors.primaryGold),
                     _bonusCard(
+                        context,
                         Icons.star,
                         '5-star rating bonus',
                         '${rules.earning.fiveStarRatingBonus} coins per ride',
                         AppColors.primaryGold),
                     _bonusCard(
+                        context,
                         Icons.calendar_today,
                         'Scheduled ride bonus',
                         '${rules.earning.scheduledRideBonus} coins',
                         AppColors.info),
                     _bonusCard(
+                        context,
                         Icons.local_fire_department,
                         'Weekly streak',
                         'Complete ${rules.earning.weeklyStreakThreshold} rides for ${rules.earning.weeklyStreakBonus} bonus coins',
@@ -151,9 +160,9 @@ class RewardsInfoScreen extends ConsumerWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.cardDark,
+                        color: Theme.of(context).cardTheme.color,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.borderDark),
+                        border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -169,8 +178,10 @@ class RewardsInfoScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 12),
                           _bulletPoint(
+                              context,
                               'You get: ${rules.referral.referrerBonus} coins when your friend completes their first ride'),
                           _bulletPoint(
+                              context,
                               'They get: ${rules.referral.newUserBonus} coins as a welcome bonus'),
                         ],
                       ),
@@ -182,7 +193,7 @@ class RewardsInfoScreen extends ConsumerWidget {
                     _sectionHeader('Tier Levels'),
                     const SizedBox(height: 12),
                     ...rules.tiers.map((tier) =>
-                        _tierCard(tier, tier.tier == currentTier)),
+                        _tierCard(context, tier, tier.tier == currentTier)),
 
                     const SizedBox(height: 28),
 
@@ -193,18 +204,21 @@ class RewardsInfoScreen extends ConsumerWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.cardDark,
+                        color: Theme.of(context).cardTheme.color,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.borderDark),
+                        border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _bulletPoint(
+                              context,
                               'Minimum ${rules.redemption.minimumPoints} points to redeem'),
                           _bulletPoint(
+                              context,
                               '${rules.redemption.pointsToEurRatio.toStringAsFixed(0)} points = \u20AC1 ride credit'),
                           _bulletPoint(
+                              context,
                               'Apply at checkout using the \'Use Coins\' toggle'),
                         ],
                       ),
@@ -217,11 +231,11 @@ class RewardsInfoScreen extends ConsumerWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.warning.withValues(alpha: 0.08),
+                        color: AppColors.warning.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                             color:
-                                AppColors.warning.withValues(alpha: 0.2)),
+                                AppColors.warning.withOpacity(0.2)),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,7 +279,7 @@ class RewardsInfoScreen extends ConsumerWidget {
     return Text(text, style: AppTextStyles.titleLarge);
   }
 
-  Widget _bulletPoint(String text) {
+  Widget _bulletPoint(BuildContext context, String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -275,9 +289,9 @@ class RewardsInfoScreen extends ConsumerWidget {
             width: 6,
             height: 6,
             margin: const EdgeInsets.only(top: 6),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.textSecondary,
+              color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
             ),
           ),
           const SizedBox(width: 10),
@@ -285,7 +299,7 @@ class RewardsInfoScreen extends ConsumerWidget {
             child: Text(
               text,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+                color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
                 height: 1.4,
               ),
             ),
@@ -296,15 +310,15 @@ class RewardsInfoScreen extends ConsumerWidget {
   }
 
   Widget _bonusCard(
-      IconData icon, String title, String value, Color accentColor) {
+      BuildContext context, IconData icon, String title, String value, Color accentColor) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
       ),
       child: Row(
         children: [
@@ -312,7 +326,7 @@ class RewardsInfoScreen extends ConsumerWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: accentColor.withValues(alpha: 0.12),
+              color: accentColor.withOpacity(0.12),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: accentColor, size: 18),
@@ -325,7 +339,7 @@ class RewardsInfoScreen extends ConsumerWidget {
                 Text(title, style: AppTextStyles.titleSmall),
                 Text(value,
                     style: AppTextStyles.bodySmall
-                        .copyWith(color: AppColors.textSecondary)),
+                        .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight)),
               ],
             ),
           ),
@@ -334,7 +348,7 @@ class RewardsInfoScreen extends ConsumerWidget {
     );
   }
 
-  Widget _tierCard(TierInfo tier, bool isCurrent) {
+  Widget _tierCard(BuildContext context, TierInfo tier, bool isCurrent) {
     final tierColor = _getTierColor(tier.tier);
 
     return Container(
@@ -342,10 +356,10 @@ class RewardsInfoScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isCurrent ? tierColor : AppColors.borderDark,
+          color: isCurrent ? tierColor : (Theme.of(context).dividerTheme.color ?? Colors.transparent),
           width: isCurrent ? 1.5 : 1,
         ),
       ),
@@ -362,7 +376,7 @@ class RewardsInfoScreen extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: tierColor.withValues(alpha: 0.15),
+                    color: tierColor.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -380,11 +394,11 @@ class RewardsInfoScreen extends ConsumerWidget {
 
           // Details
           _tierDetailRow(
-              'Minimum', '${tier.minPoints} points'),
+              context, 'Minimum', '${tier.minPoints} points'),
           _tierDetailRow(
-              'Earning multiplier', '${tier.multiplier}x'),
+              context, 'Earning multiplier', '${tier.multiplier}x'),
           _tierDetailRow(
-              'Max discount', '\u20AC${tier.maxDiscount.toStringAsFixed(0)} per redemption'),
+              context, 'Max discount', '\u20AC${tier.maxDiscount.toStringAsFixed(0)} per redemption'),
           if (tier.benefits.isNotEmpty) ...[
             const SizedBox(height: 8),
             ...tier.benefits.map(
@@ -399,7 +413,7 @@ class RewardsInfoScreen extends ConsumerWidget {
                       child: Text(
                         b,
                         style: AppTextStyles.bodySmall.copyWith(
-                          color: AppColors.textSecondary,
+                          color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
                         ),
                       ),
                     ),
@@ -413,7 +427,7 @@ class RewardsInfoScreen extends ConsumerWidget {
     );
   }
 
-  Widget _tierDetailRow(String label, String value) {
+  Widget _tierDetailRow(BuildContext context, String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
@@ -421,7 +435,7 @@ class RewardsInfoScreen extends ConsumerWidget {
         children: [
           Text(label,
               style: AppTextStyles.bodySmall
-                  .copyWith(color: AppColors.textMuted)),
+                  .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight)),
           Text(value,
               style: AppTextStyles.bodySmall
                   .copyWith(fontWeight: FontWeight.w600)),

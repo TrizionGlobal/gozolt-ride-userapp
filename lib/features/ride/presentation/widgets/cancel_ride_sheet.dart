@@ -43,9 +43,9 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.7,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceDark,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -57,7 +57,7 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.borderDark,
+                color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -97,10 +97,10 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.1),
+                  color: AppColors.warning.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                      color: AppColors.warning.withValues(alpha: 0.3)),
+                      color: AppColors.warning.withOpacity(0.3)),
                 ),
                 child: Row(
                   children: [
@@ -140,16 +140,16 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
                         hintStyle: AppTextStyles.bodyMedium
                             .copyWith(color: AppColors.textMuted),
                         filled: true,
-                        fillColor: AppColors.inputDark,
+                        fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[200],
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide:
-                              const BorderSide(color: AppColors.borderDark),
+                              BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide:
-                              const BorderSide(color: AppColors.borderDark),
+                              BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -176,7 +176,7 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
                       onPressed: () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.textPrimary,
-                        side: const BorderSide(color: AppColors.borderDark),
+                        side: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
@@ -194,7 +194,7 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
                         backgroundColor: AppColors.error,
                         foregroundColor: Colors.white,
                         disabledBackgroundColor:
-                            AppColors.error.withValues(alpha: 0.3),
+                            AppColors.error.withOpacity(0.3),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
@@ -228,11 +228,11 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.error.withValues(alpha: 0.08)
-              : AppColors.cardDark,
+              ? AppColors.error.withOpacity(0.08)
+              : Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? AppColors.error : AppColors.borderDark,
+            color: isSelected ? AppColors.error : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
           ),
         ),
         child: Row(
@@ -301,7 +301,7 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -321,40 +321,30 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                  context.goNamed(RouteNames.searchDestination);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGold,
-                  foregroundColor: AppColors.backgroundDark,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    context.goNamed(RouteNames.home);
+                  },
+                  child: const Text('Go to Home',
+                      style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
                 ),
-                child: const Text('Book New Ride'),
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                  context.goNamed(RouteNames.home);
-                },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.textPrimary,
-                  side: const BorderSide(color: AppColors.borderDark),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                const SizedBox(width: 12),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    context.goNamed(RouteNames.searchDestination);
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primaryGold,
                   ),
+                  child: const Text('Book New Ride',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 ),
-                child: const Text('Go to Home'),
-              ),
+              ],
             ),
           ],
         ),

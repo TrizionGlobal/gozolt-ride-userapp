@@ -39,7 +39,7 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
     context.pop();
   }
 
-  void _addNewPaymentMethod() {
+  void _addNewPaymentMethod({double? amount}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -51,7 +51,7 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('${cardData['brand'].toString().toUpperCase()} ****${cardData['last4']} added'),
-                  backgroundColor: AppColors.surfaceDark,
+                  backgroundColor: Theme.of(context).cardTheme.color,
                 ),
               );
               ref.invalidate(paymentMethodsProvider);
@@ -61,14 +61,24 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
         final ds = ref.read(paymentRemoteDatasourceProvider);
         return StripeAddCardSheet(
           datasource: ds,
-          onCardAdded: () {
+          amount: amount,
+          onCardAdded: (paymentMethodId) {
             ref.invalidate(paymentMethodsProvider);
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Card added successfully'),
-                backgroundColor: AppColors.surfaceDark,
-              ),
-            );
+            if (amount != null) {
+              // If it was a payment, we should select Card type
+              setState(() {
+                _selectedType = PaymentMethodType.card;
+                _selectedCardId = null; // Stripe handles the card
+              });
+              _confirm(); // Auto-confirm after payment
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('Card added successfully'),
+                  backgroundColor: Theme.of(context).cardTheme.color,
+                ),
+              );
+            }
           },
         );
       },
@@ -78,17 +88,19 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
   @override
   Widget build(BuildContext context) {
     final paymentMethodsAsync = ref.watch(paymentMethodsProvider);
+    final booking = ref.watch(rideBookingProvider);
+    final totalFare = booking.totalFare;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppColors.primaryGold,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         automaticallyImplyLeading: false,
         title: Text(
           'Payment Method',
           style: AppTextStyles.titleLarge.copyWith(
-            color: AppColors.backgroundDark,
+            color: AppColors.primaryGold,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -100,36 +112,36 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: AppColors.backgroundDark.withValues(alpha: 0.2),
+                color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.2) : Colors.black.withOpacity(0.05),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.close,
-                  color: AppColors.backgroundDark, size: 18),
+              child: Icon(Icons.close,
+                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black, size: 18),
             ),
           ),
         ],
       ),
       body: RefreshIndicator(
         color: AppColors.primaryGold,
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         onRefresh: () async {
           ref.invalidate(paymentMethodsProvider);
           await Future.delayed(const Duration(milliseconds: 300));
         },
         child: paymentMethodsAsync.when(
-          data: (methods) => _buildContent(methods),
+          data: (methods) => _buildContent(methods, totalFare),
           loading: () => buildShimmerList(
             itemBuilder: () => const ShimmerListTile(),
             count: 3,
           ),
-          error: (_, _) => _buildContent([]),
+          error: (context, error) => _buildContent([], totalFare),
         ),
       ),
-      bottomNavigationBar: _buildBottomBar(paymentMethodsAsync),
+      bottomNavigationBar: _buildBottomBar(),
     );
   }
 
-  Widget _buildContent(List<SavedPaymentMethod> methods) {
+  Widget _buildContent(List<SavedPaymentMethod> methods, double totalFare) {
     if (methods.isEmpty && _selectedType == PaymentMethodType.card) {
       _selectedType = PaymentMethodType.cash;
     }
@@ -144,7 +156,7 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
               width: 40,
               height: 28,
               decoration: BoxDecoration(
-                color: AppColors.cardDark,
+                color: Theme.of(context).cardTheme.color,
                 borderRadius: BorderRadius.circular(6),
               ),
               child: const Icon(Icons.payments_outlined,
@@ -163,104 +175,65 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
 
           const SizedBox(height: 12),
 
-          // Card options
-          if (methods.isNotEmpty)
-            ...methods.map((method) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Dismissible(
-                    key: Key(method.id),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 20),
-                      decoration: BoxDecoration(
-                        color: AppColors.error,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Icon(Icons.delete_outline,
-                          color: Colors.white),
-                    ),
-                    confirmDismiss: (_) async {
-                      final confirmed = await showDialog<bool>(
-                        context: context,
-                        builder: (ctx) => AlertDialog(
-                          backgroundColor: AppColors.surfaceDark,
-                          title: Text('Remove Card',
-                              style: AppTextStyles.titleMedium
-                                  .copyWith(color: AppColors.textPrimary)),
-                          content: Text(
-                            'Remove ${method.displayName}?',
-                            style: AppTextStyles.bodyMedium
-                                .copyWith(color: AppColors.textSecondary),
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.of(ctx).pop(false),
-                              child: const Text('Cancel'),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.of(ctx).pop(true),
-                              child: const Text('Remove',
-                                  style: TextStyle(color: AppColors.error)),
-                            ),
-                          ],
-                        ),
-                      );
-                      if (confirmed == true) {
-                        try {
-                          final ds = ref.read(paymentRemoteDatasourceProvider);
-                          await ds.deletePaymentMethod(method.id);
-                          ref.invalidate(paymentMethodsProvider);
-                        } catch (_) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Failed to remove card'),
-                                backgroundColor: AppColors.error,
-                              ),
-                            );
-                          }
-                          return false;
-                        }
-                      }
-                      return confirmed ?? false;
-                    },
-                    child: _PaymentOption(
-                      leading: PaymentBrandIcon(brand: method.brand),
-                      title: method.displayName,
-                      subtitle: method.maskedNumber,
-                      isSelected: _selectedType == PaymentMethodType.card &&
-                          _selectedCardId == method.id,
-                      onTap: () {
-                        setState(() {
-                          _selectedType = PaymentMethodType.card;
-                          _selectedCardId = method.id;
-                        });
-                      },
-                    ),
-                  ),
-                )),
-
-          if (methods.isEmpty) ...[
-            const SizedBox(height: 60),
-            Text(
-              'No Payment Method Available',
-              style: AppTextStyles.bodyMedium
-                  .copyWith(color: AppColors.textMuted),
+          // Stripe / Card option (Always visible to promote usage)
+          _PaymentOption(
+            leading: Container(
+              width: 40,
+              height: 28,
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Icon(Icons.credit_card_outlined,
+                  color: AppColors.primaryGold, size: 18),
             ),
-          ],
+            title: 'Credit / Debit Card',
+            subtitle: 'Pay ₹${totalFare.toStringAsFixed(2)} securely',
+            isSelected: _selectedType == PaymentMethodType.card && _selectedCardId == null,
+            onTap: () {
+              _addNewPaymentMethod(amount: totalFare);
+            },
+          ),
+
+
+          const SizedBox(height: 12),
+
+          // UPI Option
+          _PaymentOption(
+            leading: Container(
+              width: 40,
+              height: 28,
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Icon(Icons.account_balance_wallet_outlined,
+                  color: AppColors.primaryGold, size: 18),
+            ),
+            title: 'UPI',
+            subtitle: 'Pay via Google Pay, PhonePe, etc.',
+            isSelected: _selectedType == PaymentMethodType.upi,
+            onTap: () {
+              setState(() {
+                _selectedType = PaymentMethodType.upi;
+                _selectedCardId = null;
+              });
+            },
+          ),
+
+          const SizedBox(height: 12),
         ],
       ),
     );
   }
 
-  Widget _buildBottomBar(AsyncValue<List<SavedPaymentMethod>> methodsAsync) {
+  Widget _buildBottomBar() {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceDark,
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
         border: Border(
-          top: BorderSide(color: AppColors.borderDark, width: 0.5),
+          top: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, width: 0.5),
         ),
       ),
       child: Column(
@@ -274,7 +247,7 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
               onPressed: _confirm,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGold,
-                foregroundColor: AppColors.backgroundDark,
+                foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -282,30 +255,7 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
               child: Text(
                 'Next',
                 style: AppTextStyles.button
-                    .copyWith(color: AppColors.backgroundDark),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
-          // Add New Payment Method
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: OutlinedButton(
-              onPressed: _addNewPaymentMethod,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primaryGold,
-                side: const BorderSide(color: AppColors.primaryGold, width: 1.5),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: Text(
-                'Add New Payment Method',
-                style: AppTextStyles.button
-                    .copyWith(color: AppColors.primaryGold),
+                    .copyWith(color: Theme.of(context).scaffoldBackgroundColor),
               ),
             ),
           ),
@@ -339,10 +289,10 @@ class _PaymentOption extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.surfaceDark,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isSelected ? AppColors.primaryGold : AppColors.borderDark,
+            color: isSelected ? AppColors.primaryGold : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
             width: isSelected ? 1.5 : 0.5,
           ),
         ),
@@ -357,7 +307,7 @@ class _PaymentOption extends StatelessWidget {
                   Text(
                     title,
                     style: AppTextStyles.titleSmall
-                        .copyWith(color: AppColors.textPrimary),
+                        .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                   ),
                   Text(
                     subtitle,

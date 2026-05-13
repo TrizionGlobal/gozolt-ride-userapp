@@ -21,10 +21,10 @@ class DriverEnRouteView extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           decoration: BoxDecoration(
-            color: AppColors.primaryGold.withValues(alpha: 0.1),
+            color: AppColors.primaryGold.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-                color: AppColors.primaryGold.withValues(alpha: 0.2)),
+                color: AppColors.primaryGold.withOpacity(0.2)),
           ),
           child: Row(
             children: [
@@ -49,7 +49,7 @@ class DriverEnRouteView extends StatelessWidget {
                 child: Text(
                   '$etaMinutes min',
                   style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.backgroundDark,
+                    color: Theme.of(context).scaffoldBackgroundColor,
                     fontWeight: FontWeight.w700,
                   ),
                 ),

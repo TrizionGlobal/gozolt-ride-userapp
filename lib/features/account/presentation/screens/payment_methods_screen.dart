@@ -19,7 +19,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
     final pmState = ref.watch(accountPaymentMethodsProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -49,18 +49,17 @@ class PaymentMethodsScreen extends ConsumerWidget {
                           height: 36,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: AppColors.backgroundDark
-                                .withValues(alpha: 0.15),
+                            color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.2) : Colors.black.withOpacity(0.05),
                           ),
-                          child: const Icon(Icons.arrow_back,
-                              color: AppColors.backgroundDark, size: 20),
+                          child: Icon(Icons.arrow_back,
+                              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black, size: 20),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Text(
                         'Payment Methods',
                         style: AppTextStyles.headlineSmall.copyWith(
-                          color: AppColors.backgroundDark,
+                          color: Theme.of(context).scaffoldBackgroundColor,
                         ),
                       ),
                     ],
@@ -88,6 +87,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
                 delegate: SliverChildListDelegate([
                   // Cash option (always shown)
                   _paymentTile(
+                    context,
                     icon: Icons.money,
                     iconColor: AppColors.success,
                     title: 'Cash',
@@ -107,17 +107,38 @@ class PaymentMethodsScreen extends ConsumerWidget {
                         ),
                       )),
 
+                  // UPI Option
+                  _paymentTile(
+                    context,
+                    icon: Icons.account_balance_wallet_outlined,
+                    iconColor: AppColors.info,
+                    title: 'UPI',
+                    subtitle: 'Pay via GPay, PhonePe, or BHIM',
+                    isDefault: false,
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('UPI will be available during ride booking'),
+                          backgroundColor: Theme.of(context).cardTheme.color,
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
+
                   // Add new card
                   const SizedBox(height: 8),
                   GestureDetector(
                     onTap: () => _addCard(context, ref),
+
                     child: Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: AppColors.cardDark,
+                        color: Theme.of(context).cardTheme.color,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: AppColors.primaryGold.withValues(alpha: 0.3),
+                          color: AppColors.primaryGold.withOpacity(0.3),
                         ),
                       ),
                       child: Row(
@@ -141,10 +162,10 @@ class PaymentMethodsScreen extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: AppColors.info.withValues(alpha: 0.08),
+                      color: AppColors.info.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                          color: AppColors.info.withValues(alpha: 0.2)),
+                          color: AppColors.info.withOpacity(0.2)),
                     ),
                     child: Row(
                       children: [
@@ -169,27 +190,31 @@ class PaymentMethodsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _paymentTile({
+  Widget _paymentTile(BuildContext context, {
     required IconData icon,
     required Color iconColor,
     required String title,
     required String subtitle,
     bool isDefault = false,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.cardDark,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderDark),
-      ),
-      child: Row(
-        children: [
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardTheme.color,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.borderDark),
+        ),
+        child: Row(
+          children: [
+
           Container(
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.12),
+              color: iconColor.withOpacity(0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: iconColor, size: 20),
@@ -199,7 +224,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: AppTextStyles.titleSmall),
+                Text(title, style: AppTextStyles.titleSmall.copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight)),
                 Text(subtitle,
                     style: AppTextStyles.bodySmall
                         .copyWith(color: AppColors.textMuted)),
@@ -211,7 +236,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
               padding:
                   const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.15),
+                color: AppColors.success.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -225,19 +250,21 @@ class PaymentMethodsScreen extends ConsumerWidget {
             ),
         ],
       ),
+    ),
     );
   }
+
 
   Widget _cardTile(
       BuildContext context, WidgetRef ref, SavedPaymentMethod pm) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: pm.isDefault
-              ? AppColors.primaryGold.withValues(alpha: 0.3)
+              ? AppColors.primaryGold.withOpacity(0.3)
               : AppColors.borderDark,
         ),
       ),
@@ -247,7 +274,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: _brandColor(pm.brand).withValues(alpha: 0.12),
+              color: _brandColor(pm.brand).withOpacity(0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Center(
@@ -267,7 +294,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(pm.displayName, style: AppTextStyles.titleSmall),
+                Text(pm.displayName, style: AppTextStyles.titleSmall.copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight)),
                 Text(
                     'Expires ${pm.expMonth.toString().padLeft(2, '0')}/${pm.expYear.toString().substring(2)}',
                     style: AppTextStyles.bodySmall
@@ -281,7 +308,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
                   const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               margin: const EdgeInsets.only(right: 8),
               decoration: BoxDecoration(
-                color: AppColors.primaryGold.withValues(alpha: 0.15),
+                color: AppColors.primaryGold.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -326,9 +353,9 @@ class PaymentMethodsScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Remove Card', style: AppTextStyles.headlineSmall),
+        title: Text('Remove Card', style: AppTextStyles.headlineSmall.copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight)),
         content: Text(
           'Remove ${pm.displayName}?',
           style: AppTextStyles.bodyMedium
@@ -373,7 +400,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('${cardData['brand'].toString().toUpperCase()} ****${cardData['last4']} added'),
-                  backgroundColor: AppColors.surfaceDark,
+                  backgroundColor: Theme.of(context).cardTheme.color,
                 ),
               );
               ref.read(accountPaymentMethodsProvider.notifier).load();
@@ -383,12 +410,16 @@ class PaymentMethodsScreen extends ConsumerWidget {
         final ds = ref.read(paymentRemoteDatasourceProvider);
         return StripeAddCardSheet(
           datasource: ds,
-          onCardAdded: () {
-            ref.read(accountPaymentMethodsProvider.notifier).load();
+          onCardAdded: (paymentMethodId) {
+            if (paymentMethodId != null) {
+              ref.read(accountPaymentMethodsProvider.notifier).confirmSetup(paymentMethodId);
+            } else {
+              ref.read(accountPaymentMethodsProvider.notifier).load();
+            }
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Card added successfully'),
-                backgroundColor: AppColors.surfaceDark,
+              SnackBar(
+                content: const Text('Card added successfully'),
+                backgroundColor: Theme.of(context).cardTheme.color,
               ),
             );
           },

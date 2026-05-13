@@ -23,10 +23,10 @@ class RewardsScreen extends ConsumerWidget {
     final rulesAsync = ref.watch(rewardRulesProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         color: AppColors.primaryGold,
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: Theme.of(context).cardTheme.color,
         onRefresh: () async {
           ref.invalidate(rewardSummaryProvider);
           ref.read(rewardHistoryProvider.notifier).load();
@@ -41,7 +41,7 @@ class RewardsScreen extends ConsumerWidget {
             SliverToBoxAdapter(
               child: summaryAsync.when(
                 loading: () => _buildHeaderShimmer(),
-                error: (_, _) => _buildHeaderError(ref),
+                error: (context, error) => _buildHeaderError(ref),
                 data: (summary) => _buildGoldHeader(context, ref, summary),
               ),
             ),
@@ -50,7 +50,7 @@ class RewardsScreen extends ConsumerWidget {
             SliverToBoxAdapter(
               child: summaryAsync.when(
                 loading: () => const SizedBox(height: 80),
-                error: (_, _) => const SizedBox.shrink(),
+                error: (context, error) => const SizedBox.shrink(),
                 data: (summary) =>
                     _buildActionButtons(context, ref, summary),
               ),
@@ -60,10 +60,10 @@ class RewardsScreen extends ConsumerWidget {
             SliverToBoxAdapter(
               child: summaryAsync.when(
                 loading: () => const SizedBox.shrink(),
-                error: (_, _) => const SizedBox.shrink(),
+                error: (context, error) => const SizedBox.shrink(),
                 data: (summary) => rulesAsync.when(
                   loading: () => const SizedBox.shrink(),
-                  error: (_, _) => const SizedBox.shrink(),
+                  error: (context, error) => const SizedBox.shrink(),
                   data: (rules) {
                     final currentTier = rules.tierFor(summary.tier);
                     if (currentTier == null ||
@@ -146,7 +146,7 @@ class RewardsScreen extends ConsumerWidget {
 
             // Bottom padding
             const SliverToBoxAdapter(
-              child: SizedBox(height: 32),
+              child: SizedBox(height: 100),
             ),
           ],
         ),
@@ -199,7 +199,7 @@ class RewardsScreen extends ConsumerWidget {
                         height: 32,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColors.backgroundDark.withValues(alpha: 0.15),
+                          color: AppColors.backgroundDark.withOpacity(0.15),
                         ),
                         child: const Icon(Icons.info_outline,
                             color: AppColors.backgroundDark, size: 18),
@@ -234,7 +234,7 @@ class RewardsScreen extends ConsumerWidget {
                           'Total Coins ',
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: AppColors.backgroundDark
-                                .withValues(alpha: 0.7),
+                                .withOpacity(0.7),
                           ),
                         ),
                         const Icon(Icons.stars,
@@ -262,13 +262,13 @@ class RewardsScreen extends ConsumerWidget {
                     Text(
                       '${summary.progress.pointsNeeded.toStringAsFixed(0)} pts to ${summary.progress.nextTier ?? ""}',
                       style: AppTextStyles.labelSmall.copyWith(
-                        color: AppColors.backgroundDark.withValues(alpha: 0.7),
+                        color: AppColors.backgroundDark.withOpacity(0.7),
                       ),
                     ),
                     Text(
                       '${summary.progress.progressPercent.toStringAsFixed(0)}%',
                       style: AppTextStyles.labelSmall.copyWith(
-                        color: AppColors.backgroundDark.withValues(alpha: 0.7),
+                        color: AppColors.backgroundDark.withOpacity(0.7),
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -281,7 +281,7 @@ class RewardsScreen extends ConsumerWidget {
                     value: summary.progress.progressPercent / 100,
                     minHeight: 6,
                     backgroundColor:
-                        AppColors.backgroundDark.withValues(alpha: 0.15),
+                        AppColors.backgroundDark.withOpacity(0.15),
                     valueColor: const AlwaysStoppedAnimation<Color>(
                         AppColors.backgroundDark),
                   ),
@@ -292,7 +292,7 @@ class RewardsScreen extends ConsumerWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: AppColors.backgroundDark.withValues(alpha: 0.15),
+                      color: AppColors.backgroundDark.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -373,7 +373,7 @@ class RewardsScreen extends ConsumerWidget {
                   Text(
                     'Total Coins ',
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.backgroundDark.withValues(alpha: 0.7),
+                      color: AppColors.backgroundDark.withOpacity(0.7),
                     ),
                   ),
                   const Icon(Icons.stars,
@@ -386,7 +386,7 @@ class RewardsScreen extends ConsumerWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: AppColors.backgroundDark.withValues(alpha: 0.15),
+                    color: AppColors.backgroundDark.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -471,9 +471,9 @@ class RewardsScreen extends ConsumerWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.cardDark,
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.borderDark),
+          border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -542,12 +542,12 @@ class RewardsScreen extends ConsumerWidget {
           children: [
             Icon(Icons.receipt_long_outlined,
                 size: 48,
-                color: AppColors.textMuted.withValues(alpha: 0.3)),
+                color: AppColors.textMuted.withOpacity(0.3)),
             const SizedBox(height: 12),
             Text(
               'No Reward History',
               style: AppTextStyles.titleMedium
-                  .copyWith(color: AppColors.textMuted),
+                  .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight),
             ),
             const SizedBox(height: 8),
             Text(
@@ -556,15 +556,18 @@ class RewardsScreen extends ConsumerWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
-            OutlinedButton(
-              onPressed: () => context.pushNamed(RouteNames.searchDestination),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primaryGold,
-                side: const BorderSide(color: AppColors.primaryGold),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+            SizedBox(
+              width: 150,
+              child: OutlinedButton(
+                onPressed: () => context.pushNamed(RouteNames.searchDestination),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primaryGold,
+                  side: const BorderSide(color: AppColors.primaryGold),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text('Book a Ride'),
               ),
-              child: const Text('Book a Ride'),
             ),
           ],
         ),
@@ -580,7 +583,7 @@ class RewardsScreen extends ConsumerWidget {
 
     return referralAsync.when(
       loading: () => const SizedBox.shrink(),
-      error: (_, _) => const SizedBox.shrink(),
+      error: (context, error) => const SizedBox.shrink(),
       data: (referral) => Padding(
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
         child: Container(
@@ -589,13 +592,13 @@ class RewardsScreen extends ConsumerWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                AppColors.primaryGold.withValues(alpha: 0.12),
-                AppColors.primaryGold.withValues(alpha: 0.04),
+                AppColors.primaryGold.withOpacity(0.12),
+                AppColors.primaryGold.withOpacity(0.04),
               ],
             ),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-                color: AppColors.primaryGold.withValues(alpha: 0.2)),
+                color: AppColors.primaryGold.withOpacity(0.2)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -616,11 +619,11 @@ class RewardsScreen extends ConsumerWidget {
               const SizedBox(height: 8),
               rulesAsync.when(
                 loading: () => const SizedBox.shrink(),
-                error: (_, _) => const SizedBox.shrink(),
+                error: (context, error) => const SizedBox.shrink(),
                 data: (rules) => Text(
                   'Earn ${rules.referral.referrerBonus} GoCoins for every friend who takes their first ride. They get ${rules.referral.newUserBonus} coins!',
                   style: AppTextStyles.bodySmall
-                      .copyWith(color: AppColors.textSecondary),
+                      .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                 ),
               ),
               const SizedBox(height: 12),
@@ -631,9 +634,9 @@ class RewardsScreen extends ConsumerWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: AppColors.cardDark,
+                  color: Theme.of(context).cardTheme.color,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.borderDark),
+                  border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -651,25 +654,27 @@ class RewardsScreen extends ConsumerWidget {
               const SizedBox(height: 12),
 
               // Share button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (_) => const ReferralBottomSheet(),
-                    );
-                  },
-                  icon: const Icon(Icons.share, size: 16),
-                  label: const Text('Share'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGold,
-                    foregroundColor: AppColors.backgroundDark,
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+              Center(
+                child: SizedBox(
+                  width: 150,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => const ReferralBottomSheet(),
+                      );
+                    },
+                    icon: const Icon(Icons.share, size: 16),
+                    label: const Text('Share'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGold,
+                      foregroundColor: AppColors.backgroundDark,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
                   ),
                 ),
               ),
@@ -680,11 +685,11 @@ class RewardsScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _referralStat(
-                      'Invited', referral.totalReferrals.toString()),
+                      context, 'Invited', referral.totalReferrals.toString()),
                   _referralStat(
-                      'Completed', referral.completedReferrals.toString()),
+                      context, 'Completed', referral.completedReferrals.toString()),
                   _referralStat(
-                      'Earned', '${referral.earnedPoints} pts'),
+                      context, 'Earned', '${referral.earnedPoints} pts'),
                 ],
               ),
             ],
@@ -694,13 +699,15 @@ class RewardsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _referralStat(String label, String value) {
+  Widget _referralStat(BuildContext context, String label, String value) {
     return Column(
       children: [
         Text(value,
             style: AppTextStyles.titleSmall
                 .copyWith(color: AppColors.primaryGold)),
-        Text(label, style: AppTextStyles.labelSmall),
+        Text(label, style: AppTextStyles.labelSmall.copyWith(
+          color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+        )),
       ],
     );
   }
@@ -748,10 +755,10 @@ class _ActionButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
             color: enabled
-                ? AppColors.cardDark
-                : AppColors.cardDark.withValues(alpha: 0.5),
+                ? Theme.of(context).cardTheme.color
+                : Theme.of(context).cardTheme.color?.withOpacity(0.5),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: AppColors.borderDark),
+            border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
           ),
           child: Column(
             children: [
@@ -767,7 +774,7 @@ class _ActionButton extends StatelessWidget {
                 label,
                 style: AppTextStyles.labelSmall.copyWith(
                   color: enabled
-                      ? AppColors.textPrimary
+                      ? (Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight)
                       : AppColors.textMuted,
                   fontWeight: FontWeight.w600,
                 ),
@@ -790,19 +797,19 @@ class _TransactionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (transaction.isRideRelated && transaction.pickupAddress != null) {
-      return _buildRideTransactionCard();
+      return _buildRideTransactionCard(context);
     }
-    return _buildGenericTransactionCard();
+    return _buildGenericTransactionCard(context);
   }
 
-  Widget _buildRideTransactionCard() {
+  Widget _buildRideTransactionCard(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
       ),
       child: Row(
         children: [
@@ -819,15 +826,15 @@ class _TransactionCard extends StatelessWidget {
                       height: 8,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.error.withValues(alpha: 0.8),
+                        color: AppColors.error.withOpacity(0.8),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         transaction.pickupAddress ?? '',
-                        style: AppTextStyles.bodySmall
-                            .copyWith(color: AppColors.textPrimary),
+                        style: AppTextStyles.bodySmall.copyWith(
+                            color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -850,8 +857,8 @@ class _TransactionCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         transaction.dropoffAddress ?? '',
-                        style: AppTextStyles.bodySmall
-                            .copyWith(color: AppColors.textPrimary),
+                        style: AppTextStyles.bodySmall.copyWith(
+                            color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -863,7 +870,7 @@ class _TransactionCard extends StatelessWidget {
                 Row(
                   children: [
                     Icon(Icons.calendar_today,
-                        size: 12, color: AppColors.textMuted),
+                        size: 12, color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight),
                     const SizedBox(width: 4),
                     Text(
                       _formatDate(transaction.createdAt),
@@ -894,7 +901,7 @@ class _TransactionCard extends StatelessWidget {
                 width: 48,
                 height: 32,
                 fit: BoxFit.contain,
-                errorBuilder: (_, _, _) => const Icon(
+                errorBuilder: (context, error, stackTrace) => const Icon(
                   Icons.directions_car,
                   color: AppColors.primaryGold,
                   size: 28,
@@ -922,7 +929,7 @@ class _TransactionCard extends StatelessWidget {
     );
   }
 
-  Widget _buildGenericTransactionCard() {
+  Widget _buildGenericTransactionCard(BuildContext context) {
     final isPositive = transaction.isPositive;
 
     IconData typeIcon;
@@ -948,9 +955,9 @@ class _TransactionCard extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
       ),
       child: Row(
         children: [
@@ -959,7 +966,7 @@ class _TransactionCard extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               color: (isPositive ? AppColors.success : AppColors.error)
-                  .withValues(alpha: 0.1),
+                  .withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(

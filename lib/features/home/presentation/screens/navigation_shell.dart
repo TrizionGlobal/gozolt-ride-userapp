@@ -23,9 +23,10 @@ class NavigationShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(homeTabIndexProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       extendBody: true,
       body: IndexedStack(
         index: currentIndex,
@@ -43,14 +44,20 @@ class NavigationShell extends ConsumerWidget {
           child: Container(
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             decoration: BoxDecoration(
-              color: AppColors.surfaceDark.withValues(alpha: 0.7),
+              color: isDark 
+                  ? AppColors.surfaceDark.withOpacity(0.7) 
+                  : AppColors.surfaceLight.withOpacity(0.85),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: AppColors.primaryGold.withValues(alpha: 0.15),
+                color: isDark 
+                    ? AppColors.primaryGold.withOpacity(0.15)
+                    : AppColors.primaryGold.withOpacity(0.3),
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
+                  color: isDark 
+                      ? Colors.black.withOpacity(0.3)
+                      : Colors.black.withOpacity(0.1),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),

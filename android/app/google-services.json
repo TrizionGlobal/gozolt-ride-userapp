@@ -1,43 +1,35 @@
 {
   "project_info": {
-    "project_number": "411058986195",
-    "project_id": "gozolt-testing",
-    "storage_bucket": "gozolt-testing.firebasestorage.app"
+    "project_number": "715853709143",
+    "project_id": "numbers-9f9f6",
+    "storage_bucket": "numbers-9f9f6.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:411058986195:android:a6a3cc41e0fe3ae2b0c826",
+        "mobilesdk_app_id": "1:715853709143:android:6b36f4393bf3e7a1494812",
         "android_client_info": {
-          "package_name": "com.gozolt.gozolt_user_app"
+          "package_name": "com.gozolt.gozolt_app"
         }
       },
       "oauth_client": [
         {
-          "client_id": "411058986195-j2tig3ltu7sjgtaqk6bu7hgj5qshg9cn.apps.googleusercontent.com",
-          "client_type": 3
+          "client_id": "715853709143-gagc0550bigp6lbv82mcrje4jdj3sla5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.gozolt.gozolt_app",
+            "certificate_hash": "f3a45442befe78532c6b3f1dfeae8861bc84eab4"
+          }
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAKfixj3c-dAXd46WvkVFFvjI9a_fSHq-I"
+          "current_key": "AIzaSyDridqV09-x8J8EdVSsrQElGsCbBWRJJcc"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "411058986195-j2tig3ltu7sjgtaqk6bu7hgj5qshg9cn.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "411058986195-fl0vqo7f17v2pjkb6mv2deh74104st2m.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.xoligo.partner"
-              }
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

@@ -16,10 +16,10 @@ class DriverArrivedView extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           decoration: BoxDecoration(
-            color: AppColors.success.withValues(alpha: 0.1),
+            color: AppColors.success.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
             border:
-                Border.all(color: AppColors.success.withValues(alpha: 0.2)),
+                Border.all(color: AppColors.success.withOpacity(0.2)),
           ),
           child: Row(
             children: [
@@ -65,10 +65,10 @@ class DriverArrivedView extends StatelessWidget {
               height: 64,
               margin: const EdgeInsets.symmetric(horizontal: 6),
               decoration: BoxDecoration(
-                color: AppColors.cardDark,
+                color: Theme.of(context).cardTheme.color,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                    color: AppColors.primaryGold.withValues(alpha: 0.5),
+                    color: AppColors.primaryGold.withOpacity(0.5),
                     width: 1.5),
               ),
               child: Center(

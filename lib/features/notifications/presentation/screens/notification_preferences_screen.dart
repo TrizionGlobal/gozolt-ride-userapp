@@ -12,7 +12,7 @@ class NotificationPreferencesScreen extends ConsumerWidget {
     final prefs = ref.watch(notificationPreferencesProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -43,7 +43,7 @@ class NotificationPreferencesScreen extends ConsumerWidget {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: AppColors.backgroundDark
-                                .withValues(alpha: 0.15),
+                                .withOpacity(0.15),
                           ),
                           child: const Icon(Icons.arrow_back,
                               color: AppColors.backgroundDark, size: 20),
@@ -75,6 +75,7 @@ class NotificationPreferencesScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 20),
                 _toggleTile(
+                  context: context,
                   ref: ref,
                   icon: Icons.directions_car,
                   iconColor: AppColors.info,
@@ -87,6 +88,7 @@ class NotificationPreferencesScreen extends ConsumerWidget {
                       .update(prefs.copyWith(rideUpdates: v)),
                 ),
                 _toggleTile(
+                  context: context,
                   ref: ref,
                   icon: Icons.payment,
                   iconColor: AppColors.success,
@@ -98,6 +100,7 @@ class NotificationPreferencesScreen extends ConsumerWidget {
                       .update(prefs.copyWith(payments: v)),
                 ),
                 _toggleTile(
+                  context: context,
                   ref: ref,
                   icon: Icons.local_offer,
                   iconColor: AppColors.primaryGold,
@@ -109,17 +112,7 @@ class NotificationPreferencesScreen extends ConsumerWidget {
                       .update(prefs.copyWith(promotions: v)),
                 ),
                 _toggleTile(
-                  ref: ref,
-                  icon: Icons.description,
-                  iconColor: AppColors.warning,
-                  title: 'Document Expiry',
-                  subtitle: 'Reminders for expiring documents',
-                  value: prefs.documentExpiry,
-                  onChanged: (v) => ref
-                      .read(notificationPreferencesProvider.notifier)
-                      .update(prefs.copyWith(documentExpiry: v)),
-                ),
-                _toggleTile(
+                  context: context,
                   ref: ref,
                   icon: Icons.settings,
                   iconColor: AppColors.textSecondary,
@@ -139,6 +132,7 @@ class NotificationPreferencesScreen extends ConsumerWidget {
   }
 
   Widget _toggleTile({
+    required BuildContext context,
     required WidgetRef ref,
     required IconData icon,
     required Color iconColor,
@@ -151,9 +145,9 @@ class NotificationPreferencesScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
       ),
       child: Row(
         children: [
@@ -161,7 +155,7 @@ class NotificationPreferencesScreen extends ConsumerWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.12),
+              color: iconColor.withOpacity(0.12),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: iconColor, size: 18),
@@ -179,12 +173,14 @@ class NotificationPreferencesScreen extends ConsumerWidget {
               ],
             ),
           ),
-          Switch.adaptive(
-            value: value,
-            onChanged: onChanged,
-            activeTrackColor: AppColors.primaryGold,
-            activeThumbColor: AppColors.backgroundDark,
-            inactiveTrackColor: AppColors.borderDark,
+          Transform.scale(
+            scale: 0.7,
+            child: Switch.adaptive(
+              value: value,
+              onChanged: onChanged,
+              activeTrackColor: AppColors.primaryGold,
+              inactiveTrackColor: Theme.of(context).dividerTheme.color,
+            ),
           ),
         ],
       ),

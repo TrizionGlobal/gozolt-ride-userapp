@@ -6,7 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/utils/input_validators.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
-import 'dart:io';
+import 'package:universal_io/io.dart';
 import 'package:image_picker/image_picker.dart';
 import '../providers/account_providers.dart';
 import '../../../home/presentation/providers/home_providers.dart';
@@ -50,7 +50,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     });
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -81,7 +81,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: AppColors.backgroundDark
-                                .withValues(alpha: 0.15),
+                                .withOpacity(0.15),
                           ),
                           child: const Icon(Icons.arrow_back,
                               color: AppColors.backgroundDark, size: 20),
@@ -112,7 +112,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     loading: () => const ShimmerWrap(
                       child: ShimmerCircle(radius: 44),
                     ),
-                    error: (_, _) => const SizedBox.shrink(),
+                    error: (context, error) => const SizedBox.shrink(),
                     data: (profile) => Stack(
                       children: [
                         _avatarPath != null
@@ -121,19 +121,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                 backgroundImage:
                                     FileImage(File(_avatarPath!)),
                                 backgroundColor: AppColors.primaryGold
-                                    .withValues(alpha: 0.15),
+                                    .withOpacity(0.15),
                               )
                             : (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty)
                                 ? CircleAvatar(
                                     radius: 44,
                                     backgroundImage: NetworkImage(ApiConstants.fullUrl(profile.avatarUrl!)),
                                     backgroundColor: AppColors.primaryGold
-                                        .withValues(alpha: 0.15),
+                                        .withOpacity(0.15),
                                   )
                                 : CircleAvatar(
                                     radius: 44,
                                     backgroundColor: AppColors.primaryGold
-                                        .withValues(alpha: 0.15),
+                                        .withOpacity(0.15),
                                     child: Text(
                                       profile.initials,
                                       style:
@@ -154,11 +154,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                 color: AppColors.primaryGold,
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                    color: AppColors.backgroundDark, width: 2),
+                                    color: Theme.of(context).scaffoldBackgroundColor, width: 2),
                               ),
-                              child: const Icon(Icons.camera_alt,
+                              child: Icon(Icons.camera_alt,
                                   size: 16,
-                                  color: AppColors.backgroundDark),
+                                  color: Theme.of(context).scaffoldBackgroundColor),
                             ),
                           ),
                         ),
@@ -212,15 +212,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 const SizedBox(height: 6),
                 profileAsync.when(
                   loading: () => const SizedBox.shrink(),
-                  error: (_, _) => const SizedBox.shrink(),
+                  error: (context, error) => const SizedBox.shrink(),
                   data: (profile) => Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
-                      color: AppColors.inputDark.withValues(alpha: 0.5),
+                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark.withOpacity(0.5) : Colors.grey[200],
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.borderDark),
+                      border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                     ),
                     child: Row(
                       children: [
@@ -256,20 +256,20 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                     onPressed: _isLoading ? null : _saveProfile,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,
-                      foregroundColor: AppColors.backgroundDark,
+                      foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                       disabledBackgroundColor:
-                          AppColors.primaryGold.withValues(alpha: 0.3),
+                          AppColors.primaryGold.withOpacity(0.3),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
                     child: _isLoading
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: AppColors.backgroundDark),
+                                color: Theme.of(context).scaffoldBackgroundColor),
                           )
                         : const Text('Save Changes',
                             style: AppTextStyles.button),
@@ -287,7 +287,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     return Text(
       text,
       style: AppTextStyles.labelLarge.copyWith(
-        color: AppColors.textSecondary,
+        color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
         fontSize: 13,
       ),
     );
@@ -309,14 +309,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         hintStyle:
             AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted),
         filled: true,
-        fillColor: AppColors.inputDark,
+        fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[200],
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.borderDark),
+          borderSide: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.borderDark),
+          borderSide: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -331,7 +331,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   void _showAvatarOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: Theme.of(context).cardTheme.color,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -346,7 +346,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.borderDark,
+                  color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -410,7 +410,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   void _snackBar(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-          content: Text(msg), backgroundColor: AppColors.surfaceDark),
+          content: Text(msg), backgroundColor: Theme.of(context).cardTheme.color),
     );
   }
 

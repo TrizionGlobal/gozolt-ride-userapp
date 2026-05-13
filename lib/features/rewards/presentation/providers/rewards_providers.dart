@@ -125,9 +125,9 @@ final rewardRulesProvider = FutureProvider<RewardRules>((ref) async {
         ),
       ],
       expiry: ExpiryRules(
-        inactivityMonths: 12,
+        inactivityMonths: 6,
         description:
-            'Points expire after 12 months of account inactivity.',
+            'Points expire after 6 months of account inactivity.',
       ),
     );
   }
@@ -155,8 +155,8 @@ final rewardRulesProvider = FutureProvider<RewardRules>((ref) async {
       ),
       tiers: [],
       expiry: ExpiryRules(
-        inactivityMonths: 12,
-        description: 'Points expire after 12 months of account inactivity.',
+        inactivityMonths: 6,
+        description: 'Points expire after 6 months of account inactivity.',
       ),
     );
   }
