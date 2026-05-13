@@ -118,8 +118,8 @@ class PaymentMethodsScreen extends ConsumerWidget {
                     onTap: () {
                       HapticFeedback.lightImpact();
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('UPI will be available during ride booking'),
+                        SnackBar(
+                          content: const Text('UPI will be available during ride booking'),
                           backgroundColor: Theme.of(context).cardTheme.color,
                         ),
                       );
@@ -417,8 +417,8 @@ class PaymentMethodsScreen extends ConsumerWidget {
               ref.read(accountPaymentMethodsProvider.notifier).load();
             }
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Card added successfully'),
+              SnackBar(
+                content: const Text('Card added successfully'),
                 backgroundColor: Theme.of(context).cardTheme.color,
               ),
             );

@@ -685,11 +685,11 @@ class RewardsScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _referralStat(
-                      'Invited', referral.totalReferrals.toString()),
+                      context, 'Invited', referral.totalReferrals.toString()),
                   _referralStat(
-                      'Completed', referral.completedReferrals.toString()),
+                      context, 'Completed', referral.completedReferrals.toString()),
                   _referralStat(
-                      'Earned', '${referral.earnedPoints} pts'),
+                      context, 'Earned', '${referral.earnedPoints} pts'),
                 ],
               ),
             ],
@@ -699,7 +699,7 @@ class RewardsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _referralStat(String label, String value) {
+  Widget _referralStat(BuildContext context, String label, String value) {
     return Column(
       children: [
         Text(value,
@@ -797,12 +797,12 @@ class _TransactionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (transaction.isRideRelated && transaction.pickupAddress != null) {
-      return _buildRideTransactionCard();
+      return _buildRideTransactionCard(context);
     }
-    return _buildGenericTransactionCard();
+    return _buildGenericTransactionCard(context);
   }
 
-  Widget _buildRideTransactionCard() {
+  Widget _buildRideTransactionCard(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       padding: const EdgeInsets.all(14),
@@ -929,7 +929,7 @@ class _TransactionCard extends StatelessWidget {
     );
   }
 
-  Widget _buildGenericTransactionCard() {
+  Widget _buildGenericTransactionCard(BuildContext context) {
     final isPositive = transaction.isPositive;
 
     IconData typeIcon;

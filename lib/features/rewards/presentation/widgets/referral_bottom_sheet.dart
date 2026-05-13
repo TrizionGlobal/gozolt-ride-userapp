@@ -159,19 +159,19 @@ class ReferralBottomSheet extends ConsumerWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _statColumn('Friends\ninvited',
+                          _statColumn(context, 'Friends\ninvited',
                               referral.totalReferrals.toString()),
                           Container(
                               width: 1,
                               height: 36,
                               color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
-                          _statColumn('Completed\nfirst ride',
+                          _statColumn(context, 'Completed\nfirst ride',
                               referral.completedReferrals.toString()),
                           Container(
                               width: 1,
                               height: 36,
                               color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
-                          _statColumn('Total\nearned',
+                          _statColumn(context, 'Total\nearned',
                               '${referral.earnedPoints} pts'),
                         ],
                       ),
@@ -193,12 +193,12 @@ class ReferralBottomSheet extends ConsumerWidget {
                           Text('How it works',
                               style: AppTextStyles.titleSmall),
                           const SizedBox(height: 12),
-                          _stepRow('1', 'Share your code with friends'),
+                          _stepRow(context, '1', 'Share your code with friends'),
                           const SizedBox(height: 8),
-                          _stepRow('2',
+                          _stepRow(context, '2',
                               'They sign up and complete their first ride'),
                           const SizedBox(height: 8),
-                          _stepRow('3', 'You both earn GoCoins!'),
+                          _stepRow(context, '3', 'You both earn GoCoins!'),
                         ],
                       ),
                     ),
@@ -212,7 +212,7 @@ class ReferralBottomSheet extends ConsumerWidget {
     );
   }
 
-  Widget _statColumn(String label, String value) {
+  Widget _statColumn(BuildContext context, String label, String value) {
     return Column(
       children: [
         Text(
@@ -234,7 +234,7 @@ class ReferralBottomSheet extends ConsumerWidget {
     );
   }
 
-  Widget _stepRow(String number, String text) {
+  Widget _stepRow(BuildContext context, String number, String text) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

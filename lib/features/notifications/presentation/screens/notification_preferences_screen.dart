@@ -75,6 +75,7 @@ class NotificationPreferencesScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 20),
                 _toggleTile(
+                  context: context,
                   ref: ref,
                   icon: Icons.directions_car,
                   iconColor: AppColors.info,
@@ -87,6 +88,7 @@ class NotificationPreferencesScreen extends ConsumerWidget {
                       .update(prefs.copyWith(rideUpdates: v)),
                 ),
                 _toggleTile(
+                  context: context,
                   ref: ref,
                   icon: Icons.payment,
                   iconColor: AppColors.success,
@@ -98,6 +100,7 @@ class NotificationPreferencesScreen extends ConsumerWidget {
                       .update(prefs.copyWith(payments: v)),
                 ),
                 _toggleTile(
+                  context: context,
                   ref: ref,
                   icon: Icons.local_offer,
                   iconColor: AppColors.primaryGold,
@@ -108,8 +111,8 @@ class NotificationPreferencesScreen extends ConsumerWidget {
                       .read(notificationPreferencesProvider.notifier)
                       .update(prefs.copyWith(promotions: v)),
                 ),
-
                 _toggleTile(
+                  context: context,
                   ref: ref,
                   icon: Icons.settings,
                   iconColor: AppColors.textSecondary,
@@ -129,6 +132,7 @@ class NotificationPreferencesScreen extends ConsumerWidget {
   }
 
   Widget _toggleTile({
+    required BuildContext context,
     required WidgetRef ref,
     required IconData icon,
     required Color iconColor,

@@ -106,14 +106,19 @@ class RewardsInfoScreen extends ConsumerWidget {
                     _sectionTitle('Collect coins on every ride and turn them into savings'),
                     const SizedBox(height: 16),
                     _bulletPoint(
+                        context,
                         'Earn ${rules.earning.pointsPerEur} coin for every \u20AC10 spent on rides.'),
                     _bulletPoint(
+                        context,
                         'Each coin is worth \u20AC${(1 / rules.redemption.pointsToEurRatio).toStringAsFixed(2)} when redeemed.'),
                     _bulletPoint(
+                        context,
                         'Use coins to cover up to 20% of your ride cost.'),
                     _bulletPoint(
+                        context,
                         'Rewards are added automatically after each completed ride.'),
                     _bulletPoint(
+                        context,
                         'Reward rules are set by the app admin and may be updated anytime.'),
 
                     const SizedBox(height: 28),
@@ -122,21 +127,25 @@ class RewardsInfoScreen extends ConsumerWidget {
                     _sectionHeader('Bonus Opportunities'),
                     const SizedBox(height: 12),
                     _bonusCard(
+                        context,
                         Icons.celebration,
                         'First ride bonus',
                         '${rules.earning.firstRideBonus} coins',
                         AppColors.primaryGold),
                     _bonusCard(
+                        context,
                         Icons.star,
                         '5-star rating bonus',
                         '${rules.earning.fiveStarRatingBonus} coins per ride',
                         AppColors.primaryGold),
                     _bonusCard(
+                        context,
                         Icons.calendar_today,
                         'Scheduled ride bonus',
                         '${rules.earning.scheduledRideBonus} coins',
                         AppColors.info),
                     _bonusCard(
+                        context,
                         Icons.local_fire_department,
                         'Weekly streak',
                         'Complete ${rules.earning.weeklyStreakThreshold} rides for ${rules.earning.weeklyStreakBonus} bonus coins',
@@ -169,8 +178,10 @@ class RewardsInfoScreen extends ConsumerWidget {
                           ),
                           const SizedBox(height: 12),
                           _bulletPoint(
+                              context,
                               'You get: ${rules.referral.referrerBonus} coins when your friend completes their first ride'),
                           _bulletPoint(
+                              context,
                               'They get: ${rules.referral.newUserBonus} coins as a welcome bonus'),
                         ],
                       ),
@@ -182,7 +193,7 @@ class RewardsInfoScreen extends ConsumerWidget {
                     _sectionHeader('Tier Levels'),
                     const SizedBox(height: 12),
                     ...rules.tiers.map((tier) =>
-                        _tierCard(tier, tier.tier == currentTier)),
+                        _tierCard(context, tier, tier.tier == currentTier)),
 
                     const SizedBox(height: 28),
 
@@ -201,10 +212,13 @@ class RewardsInfoScreen extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _bulletPoint(
+                              context,
                               'Minimum ${rules.redemption.minimumPoints} points to redeem'),
                           _bulletPoint(
+                              context,
                               '${rules.redemption.pointsToEurRatio.toStringAsFixed(0)} points = \u20AC1 ride credit'),
                           _bulletPoint(
+                              context,
                               'Apply at checkout using the \'Use Coins\' toggle'),
                         ],
                       ),
@@ -265,7 +279,7 @@ class RewardsInfoScreen extends ConsumerWidget {
     return Text(text, style: AppTextStyles.titleLarge);
   }
 
-  Widget _bulletPoint(String text) {
+  Widget _bulletPoint(BuildContext context, String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -296,7 +310,7 @@ class RewardsInfoScreen extends ConsumerWidget {
   }
 
   Widget _bonusCard(
-      IconData icon, String title, String value, Color accentColor) {
+      BuildContext context, IconData icon, String title, String value, Color accentColor) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 8),
@@ -334,7 +348,7 @@ class RewardsInfoScreen extends ConsumerWidget {
     );
   }
 
-  Widget _tierCard(TierInfo tier, bool isCurrent) {
+  Widget _tierCard(BuildContext context, TierInfo tier, bool isCurrent) {
     final tierColor = _getTierColor(tier.tier);
 
     return Container(
@@ -380,11 +394,11 @@ class RewardsInfoScreen extends ConsumerWidget {
 
           // Details
           _tierDetailRow(
-              'Minimum', '${tier.minPoints} points'),
+              context, 'Minimum', '${tier.minPoints} points'),
           _tierDetailRow(
-              'Earning multiplier', '${tier.multiplier}x'),
+              context, 'Earning multiplier', '${tier.multiplier}x'),
           _tierDetailRow(
-              'Max discount', '\u20AC${tier.maxDiscount.toStringAsFixed(0)} per redemption'),
+              context, 'Max discount', '\u20AC${tier.maxDiscount.toStringAsFixed(0)} per redemption'),
           if (tier.benefits.isNotEmpty) ...[
             const SizedBox(height: 8),
             ...tier.benefits.map(
@@ -413,7 +427,7 @@ class RewardsInfoScreen extends ConsumerWidget {
     );
   }
 
-  Widget _tierDetailRow(String label, String value) {
+  Widget _tierDetailRow(BuildContext context, String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(

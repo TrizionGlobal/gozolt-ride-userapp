@@ -290,17 +290,17 @@ class NotificationsScreen extends ConsumerWidget {
                 style: AppTextStyles.headlineSmall
                     .copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.textPrimaryLight)),
             const SizedBox(height: 16),
-            _detailRow(Icons.location_on, 'Pickup', pickup),
+            _detailRow(context, Icons.location_on, 'Pickup', pickup),
             const SizedBox(height: 10),
-            _detailRow(Icons.flag, 'Dropoff', dropoff),
+            _detailRow(context, Icons.flag, 'Dropoff', dropoff),
             const SizedBox(height: 10),
-            _detailRow(Icons.access_time, 'Scheduled', scheduledDisplay),
+            _detailRow(context, Icons.access_time, 'Scheduled', scheduledDisplay),
             const SizedBox(height: 10),
-            _detailRow(Icons.euro, 'Fare', fare),
+            _detailRow(context, Icons.euro, 'Fare', fare),
             if (vehicleType.isNotEmpty) ...[
               const SizedBox(height: 10),
               _detailRow(
-                  Icons.directions_car, 'Vehicle', vehicleType),
+                  context, Icons.directions_car, 'Vehicle', vehicleType),
             ],
             const SizedBox(height: 24),
             SizedBox(
@@ -335,7 +335,7 @@ class NotificationsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _detailRow(IconData icon, String label, String value) {
+  Widget _detailRow(BuildContext context, IconData icon, String label, String value) {
     return Row(
       children: [
         Icon(icon, color: AppColors.primaryGold, size: 18),
