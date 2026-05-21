@@ -12,6 +12,7 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/widgets/gozolt_button.dart';
 import '../../data/models/location_data.dart';
 import '../providers/ride_providers.dart';
+import '../providers/ride_booking_state.dart';
 import '../../../account/presentation/providers/account_providers.dart';
 
 class SearchDestinationScreen extends ConsumerStatefulWidget {
@@ -403,7 +404,12 @@ class _SearchDestinationScreenState
 
     await ref.read(rideBookingProvider.notifier).fetchFareEstimate();
     if (mounted) {
-      context.pushNamed(RouteNames.rideBooking);
+      final bookingState = ref.read(rideBookingProvider);
+      if (bookingState.status == BookingStatus.error) {
+        _showErrorSnackBar(bookingState.errorMessage ?? 'Failed to estimate fare. Please try again.');
+      } else {
+        context.pushNamed(RouteNames.rideBooking);
+      }
     }
   }
 
@@ -692,6 +698,7 @@ class _SearchDestinationScreenState
             child: GozoltButton(
               label: 'Search Vehicles',
               width: double.infinity,
+              isLoading: booking.status == BookingStatus.estimating,
               onPressed: _searchVehicles,
             ),
           ),
@@ -810,38 +817,87 @@ class _LocationField extends StatelessWidget {
     this.onTap,
   });
 
+  String get _label {
+    if (dotColor == AppColors.success) return 'PICKUP';
+    if (dotColor == AppColors.error) return 'DROP-OFF';
+    return 'STOP';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasValue = controller.text.isNotEmpty;
+    final fieldBg = isDark
+        ? const Color(0xFF1A1F2B)
+        : const Color(0xFFF0F2F5);
+    final fieldBorder = isDark
+        ? AppColors.borderDark
+        : AppColors.borderLight;
+    final labelColor = dotColor.withOpacity(0.85);
+
     return Row(
       children: [
+        // Colored dot with subtle glow
         Container(
-          width: 10,
-          height: 10,
+          width: 12,
+          height: 12,
           decoration: BoxDecoration(
             color: dotColor,
             shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: dotColor.withOpacity(0.4),
+                blurRadius: 6,
+                spreadRadius: 1,
+              ),
+            ],
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
             onTap: onTap,
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: Theme.of(context).inputDecorationTheme.fillColor ?? AppColors.inputDark,
+                color: fieldBg,
                 borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                controller.text.isEmpty ? hint : controller.text,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: controller.text.isEmpty
-                      ? AppColors.textMuted
-                      : (Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
+                border: Border.all(
+                  color: hasValue
+                      ? dotColor.withOpacity(0.35)
+                      : fieldBorder,
+                  width: hasValue ? 1.2 : 0.8,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Label row
+                  Text(
+                    _label,
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                      color: labelColor,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  // Value / hint
+                  Text(
+                    hasValue ? controller.text : hint,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: hasValue
+                          ? (isDark ? AppColors.textPrimary : AppColors.textPrimaryLight)
+                          : (isDark ? AppColors.textMuted : AppColors.textMutedLight),
+                      fontWeight: hasValue ? FontWeight.w500 : FontWeight.w400,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
             ),
           ),
@@ -1276,30 +1332,91 @@ class _LocationSearchSheetState extends State<_LocationSearchSheet> {
               Expanded(
                 child: ListView.builder(
                   controller: scrollController,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
                   itemCount: _results.length,
                   itemBuilder: (context, index) {
                     final loc = _results[index];
-                    return ListTile(
-                      leading: Icon(
-                        _showingQuickPicks
-                            ? Icons.location_on_outlined
-                            : Icons.place_outlined,
-                        color: _showingQuickPicks
-                            ? AppColors.textSecondary
-                            : AppColors.primaryGold,
+                    final isDark = Theme.of(context).brightness == Brightness.dark;
+                    return Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(10),
+                        onTap: () {
+                          // Immediately call onSelect — no delay
+                          widget.onSelect(loc);
+                        },
+                        splashColor: AppColors.primaryGold.withOpacity(0.15),
+                        highlightColor: AppColors.primaryGold.withOpacity(0.08),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 12),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: _showingQuickPicks
+                                      ? (isDark ? const Color(0xFF1C2333) : const Color(0xFFF0F2F5))
+                                      : AppColors.primaryGold.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  _showingQuickPicks
+                                      ? Icons.location_on_outlined
+                                      : Icons.place_outlined,
+                                  color: _showingQuickPicks
+                                      ? (isDark ? AppColors.textSecondary : AppColors.textSecondaryLight)
+                                      : AppColors.primaryGold,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      loc.address,
+                                      style:
+                                          AppTextStyles.bodyMedium.copyWith(
+                                        color: isDark
+                                            ? AppColors.textPrimary
+                                            : AppColors.textPrimaryLight,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    if (loc.subtitle != null) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        loc.subtitle!,
+                                        style: AppTextStyles.bodySmall
+                                            .copyWith(
+                                          color: isDark
+                                              ? AppColors.textSecondary
+                                              : AppColors.textSecondaryLight,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                size: 14,
+                                color: isDark
+                                    ? AppColors.textMuted
+                                    : AppColors.textMutedLight,
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                      title: Text(
-                        loc.address,
-                        style: AppTextStyles.bodyMedium,
-                      ),
-                      subtitle: loc.subtitle != null
-                          ? Text(
-                              loc.subtitle!,
-                              style: AppTextStyles.bodySmall
-                                  .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
-                            )
-                          : null,
-                      onTap: () => widget.onSelect(loc),
                     );
                   },
                 ),

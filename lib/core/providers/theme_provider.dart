@@ -10,9 +10,9 @@ final sharedPrefsProvider = Provider<SharedPreferences>((ref) {
 /// Controls the app's ThemeMode with persistence.
 class ThemeModeNotifier extends StateNotifier<ThemeMode> {
   final SharedPreferences _prefs;
-  static const _key = 'theme_mode';
+  static const _key = 'app_theme_mode_v2';
 
-  ThemeModeNotifier(this._prefs) : super(ThemeMode.light) {
+  ThemeModeNotifier(this._prefs) : super(ThemeMode.dark) {
     _loadTheme();
   }
 
@@ -23,7 +23,7 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
     } else if (savedMode == 'dark') {
       state = ThemeMode.dark;
     } else {
-      state = ThemeMode.light;
+      state = ThemeMode.dark;
     }
   }
 
@@ -50,7 +50,7 @@ final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((r
 final isDarkModeProvider = Provider<bool>((ref) {
   final mode = ref.watch(themeModeProvider);
   if (mode == ThemeMode.system) {
-    return false; // Default to light for system
+    return true; // Default to dark for system
   }
   return mode == ThemeMode.dark;
 });
