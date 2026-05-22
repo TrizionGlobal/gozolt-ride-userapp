@@ -9,6 +9,7 @@ import 'api_exception.dart';
 class ApiInterceptor extends Interceptor {
   final SecureStorageService _storage;
   final Dio _dio;
+  final void Function()? _onUnauthorized;
 
   /// Endpoints that don't need an auth header.
   static const _publicPaths = {
@@ -21,8 +22,10 @@ class ApiInterceptor extends Interceptor {
   ApiInterceptor({
     required SecureStorageService storage,
     required Dio dio,
+    void Function()? onUnauthorized,
   })  : _storage = storage,
-        _dio = dio;
+        _dio = dio,
+        _onUnauthorized = onUnauthorized;
 
   // ── Attach Bearer token ────────────────────────────────
   @override
@@ -62,20 +65,25 @@ class ApiInterceptor extends Interceptor {
 
     // 401: attempt token refresh
     if (statusCode == 401) {
-      final refreshed = await _attemptTokenRefresh();
-      if (refreshed) {
-        final token = await _storage.getAccessToken();
-        final options = err.requestOptions;
-        options.headers['Authorization'] = 'Bearer $token';
+      final path = err.requestOptions.path;
+      final isPublic = _publicPaths.any((p) => path.endsWith(p));
+      if (!isPublic) {
+        final refreshed = await _attemptTokenRefresh();
+        if (refreshed) {
+          final token = await _storage.getAccessToken();
+          final options = err.requestOptions;
+          options.headers['Authorization'] = 'Bearer $token';
 
-        try {
-          final response = await _dio.fetch(options);
-          return handler.resolve(response);
-        } on DioException catch (e) {
-          return handler.next(e);
+          try {
+            final response = await _dio.fetch(options);
+            return handler.resolve(response);
+          } on DioException catch (e) {
+            return handler.next(e);
+          }
+        } else {
+          await _storage.clearTokens();
+          _onUnauthorized?.call();
         }
-      } else {
-        await _storage.clearTokens();
       }
     }
 

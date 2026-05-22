@@ -88,23 +88,55 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
                   child: profileAsync.when(
-                    loading: () => ShimmerWrap(
-                      child: Row(
-                        children: [
-                          const ShimmerCircle(radius: 30),
-                          const SizedBox(width: 14),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              ShimmerText(width: 120, height: 14),
-                              SizedBox(height: 8),
-                              ShimmerText(width: 160, height: 10),
-                            ],
-                          ),
-                        ],
+                    loading: () => SizedBox(
+                      height: 64,
+                      child: ShimmerWrap(
+                        child: Row(
+                          children: [
+                            const ShimmerCircle(radius: 30),
+                            const SizedBox(width: 14),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                ShimmerText(width: 120, height: 14),
+                                SizedBox(height: 8),
+                                ShimmerText(width: 160, height: 10),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    error: (context, error) => const SizedBox(height: 80),
+                    error: (error, __) {
+                      // Auto-retry after 3s for transient errors.
+                      // 401 is handled separately by the API interceptor (it redirects to login).
+                      Future.delayed(const Duration(seconds: 3), () {
+                        if (mounted) ref.invalidate(userProfileProvider);
+                      });
+                      // Show shimmer while waiting for retry — no broken UI shown
+                      return SizedBox(
+                        height: 64,
+                        child: ShimmerWrap(
+                          child: Row(
+                            children: [
+                              const ShimmerCircle(radius: 30),
+                              const SizedBox(width: 14),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: const [
+                                  ShimmerText(width: 120, height: 14),
+                                  SizedBox(height: 8),
+                                  ShimmerText(width: 160, height: 10),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+
                     data: (profile) => Row(
                       children: [
                         CircleAvatar(
@@ -250,8 +282,9 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                   label: 'Dark Mode',
                   value: isDark,
                   onChanged: (v) {
-                    ref.read(themeModeProvider.notifier).state = 
-                        v ? ThemeMode.dark : ThemeMode.light;
+                    ref.read(themeModeProvider.notifier).setThemeMode(
+                      v ? ThemeMode.dark : ThemeMode.light,
+                    );
                   },
                 ),
 

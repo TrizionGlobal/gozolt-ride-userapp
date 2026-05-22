@@ -17,9 +17,9 @@ class GozoltApp extends ConsumerWidget {
       restorationScopeId: 'app',
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark,
+      theme: AppTheme.light,
       darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.dark,
+      themeMode: themeMode,
       routerConfig: router,
       builder: (context, child) {
         // DEV MODE banner overlay

@@ -176,25 +176,32 @@ class _ShareRideSheetState extends ConsumerState<ShareRideSheet> {
                 const SizedBox(height: 16),
 
                 // Share button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      await Share.share(
-                        'Track my Gozolt ride in real-time: $_trackingUrl',
-                        subject: 'My Gozolt Live Location',
-                      );
-                    },
-                    icon: const Icon(Icons.share, size: 18),
-                    label: const Text('Share with Contacts'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGold,
-                      foregroundColor: Theme.of(context).scaffoldBackgroundColor,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
+                Builder(
+                  builder: (context) {
+                    return SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          final box = context.findRenderObject() as RenderBox?;
+                          final rect = box != null ? box.localToGlobal(Offset.zero) & box.size : null;
+                          await Share.share(
+                            'Track my Gozolt ride in real-time: $_trackingUrl',
+                            subject: 'My Gozolt Live Location',
+                            sharePositionOrigin: rect,
+                          );
+                        },
+                        icon: const Icon(Icons.share, size: 18),
+                        label: const Text('Share with Contacts'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGold,
+                          foregroundColor: Theme.of(context).scaffoldBackgroundColor,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             ],

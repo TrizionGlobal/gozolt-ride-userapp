@@ -14,6 +14,10 @@ final homeTabIndexProvider = StateProvider<int>((ref) => 0);
 
 /// User profile for greeting header.
 final userProfileProvider = FutureProvider.autoDispose<UserProfile>((ref) async {
+  // Keep alive unconditionally — prevents the header from flashing empty
+  // every time the user switches back to the Account or Home tab.
+  ref.keepAlive();
+
   if (AppConstants.kDevBypass) {
     return const UserProfile(
       id: 'dev-user',
@@ -24,7 +28,6 @@ final userProfileProvider = FutureProvider.autoDispose<UserProfile>((ref) async 
       country: 'MT',
     );
   }
-  ref.keepAlive();
   final ds = ref.read(homeRemoteDatasourceProvider);
   return ds.getUserProfile();
 });

@@ -108,6 +108,8 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
                     const SizedBox(width: 8),
                     _presetButton(1000, summary.currentPoints),
                     const SizedBox(width: 8),
+                    _presetButton(2000, summary.currentPoints),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: GestureDetector(
                         onTap: () {
@@ -147,7 +149,7 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
                 textAlign: TextAlign.center,
                 onChanged: (_) => setState(() => _errorText = null),
                 decoration: InputDecoration(
-                  hintText: 'Enter points to redeem',
+                  hintText: 'Enter coins to redeem',
                   hintStyle: AppTextStyles.bodyMedium.copyWith(
                       color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight),
                   filled: true,
@@ -177,13 +179,23 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
               const SizedBox(height: 12),
 
               // EUR conversion
-              rulesAsync.when(
+              summaryAsync.when(
                 loading: () => const SizedBox.shrink(),
                 error: (context, error) => const SizedBox.shrink(),
-                data: (rules) {
+                data: (summary) {
                   final points =
                       int.tryParse(_pointsController.text) ?? 0;
-                  final eurValue = points / rules.redemption.pointsToEurRatio;
+                  double coinValueInEur = 0.0025;
+                  if (summary.tier == 'PLATINUM') {
+                    coinValueInEur = 0.01;
+                  } else if (summary.tier == 'GOLD') {
+                    coinValueInEur = 0.0075;
+                  } else if (summary.tier == 'SILVER') {
+                    coinValueInEur = 0.005;
+                  } else {
+                    coinValueInEur = 0.0025;
+                  }
+                  final eurValue = points * coinValueInEur;
                   return Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
@@ -209,7 +221,7 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
 
               // Minimum notice
               Text(
-                'Minimum 200 points to redeem',
+                'Minimum 200 coins to redeem',
                 style: AppTextStyles.labelSmall.copyWith(
                   color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight,
                 ),
@@ -295,11 +307,11 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
       return;
     }
     if (points < (rules?.redemption.minimumPoints ?? 200)) {
-      setState(() => _errorText = 'Minimum ${rules?.redemption.minimumPoints ?? 200} points required');
+      setState(() => _errorText = 'Minimum ${rules?.redemption.minimumPoints ?? 200} coins required');
       return;
     }
     if (summary != null && points > summary.currentPoints) {
-      setState(() => _errorText = 'Insufficient points');
+      setState(() => _errorText = 'Insufficient coins');
       return;
     }
 
@@ -321,7 +333,17 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
       if (mounted) {
         Navigator.pop(context);
         // Show success dialog
-        final eurValue = points / (rules?.redemption.pointsToEurRatio ?? 10);
+        double coinValueInEur = 0.0025;
+        if (summary?.tier == 'PLATINUM') {
+          coinValueInEur = 0.01;
+        } else if (summary?.tier == 'GOLD') {
+          coinValueInEur = 0.0075;
+        } else if (summary?.tier == 'SILVER') {
+          coinValueInEur = 0.005;
+        } else {
+          coinValueInEur = 0.0025;
+        }
+        final eurValue = points * coinValueInEur;
         _showSuccessDialog(points, eurValue);
         // Refresh data
         ref.invalidate(rewardSummaryProvider);
@@ -358,14 +380,14 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
             Text('Redeemed!', style: AppTextStyles.headlineSmall),
             const SizedBox(height: 8),
             Text(
-              '$points coins converted to \u20AC${eurValue.toStringAsFixed(2)} ride credit',
+              '$points coins converted to \u20AC${eurValue.toStringAsFixed(2)} wallet balance',
               textAlign: TextAlign.center,
               style: AppTextStyles.bodyMedium.copyWith(
                   color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
             ),
             const SizedBox(height: 4),
             Text(
-              'This will be applied to your next ride.',
+              'This has been credited directly to your wallet.',
               textAlign: TextAlign.center,
               style: AppTextStyles.bodySmall,
             ),

@@ -3,11 +3,11 @@ abstract final class ApiConstants {
   static const bool useLocal = true;
 
   static const String baseUrl = useLocal 
-      ? 'http://10.21.255.84:3000/v1' // Use physical Mac network IP for local emulator/device testing
+      ? 'http://192.168.1.6:3000/v1' // Use physical Mac network IP for local emulator/device testing
       : 'https://gozolt-new-ride-backend-production.up.railway.app/v1';
 
   static const String wsUrl = useLocal
-      ? 'ws://10.21.255.84:3000'
+      ? 'ws://192.168.1.6:3000'
       : 'wss://gozolt-new-ride-backend-production.up.railway.app';
   
 

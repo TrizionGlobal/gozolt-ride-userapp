@@ -117,33 +117,40 @@ class ReferralBottomSheet extends ConsumerWidget {
                     const SizedBox(height: 16),
 
                     // Share button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          final code = referral.referralCode;
-                          final bonus = rulesAsync.value
-                                  ?.referral.newUserBonus
-                                  .toString() ??
-                              '100';
-                          
-                          Share.share(
-                            'Join Gozolt! Use my referral code $code and get $bonus GoCoins on your first ride! 🚗✨\n\nDownload the app: https://gozolt.com/app',
-                            subject: 'Join Gozolt and get bonus coins!',
-                          );
-                        },
+                    Builder(
+                      builder: (context) {
+                        return SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              final code = referral.referralCode;
+                              final bonus = rulesAsync.value
+                                      ?.referral.newUserBonus
+                                      .toString() ??
+                                  '100';
+                              
+                              final box = context.findRenderObject() as RenderBox?;
+                              final rect = box != null ? box.localToGlobal(Offset.zero) & box.size : null;
+                              Share.share(
+                                'Join Gozolt! Use my referral code $code and get $bonus GoCoins on your first ride! 🚗✨\n\nDownload the app: https://gozolt.com/app',
+                                subject: 'Join Gozolt and get bonus coins!',
+                                sharePositionOrigin: rect,
+                              );
+                            },
 
-                        icon: const Icon(Icons.share, size: 18),
-                        label: const Text('Share your code'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryGold,
-                          foregroundColor: Theme.of(context).scaffoldBackgroundColor,
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
-                      ),
+                            icon: const Icon(Icons.share, size: 18),
+                            label: const Text('Share your code'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryGold,
+                              foregroundColor: Theme.of(context).scaffoldBackgroundColor,
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 20),
 
@@ -172,7 +179,7 @@ class ReferralBottomSheet extends ConsumerWidget {
                               height: 36,
                               color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                           _statColumn(context, 'Total\nearned',
-                              '${referral.earnedPoints} pts'),
+                              '${referral.earnedPoints} coins'),
                         ],
                       ),
                     ),

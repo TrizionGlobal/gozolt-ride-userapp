@@ -308,7 +308,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                       const SizedBox(height: 12),
                       AnimatedSwitcher(
                         duration: const Duration(milliseconds: 300),
-                        child: _validitySeconds <= 0
+                        child: _canResend
                             ? TextButton.icon(
                                 key: const ValueKey('resend_btn'),
                                 onPressed: _resendOtp,
@@ -319,7 +319,16 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                                   textStyle: AppTextStyles.titleSmall,
                                 ),
                               )
-                            : const SizedBox.shrink(key: ValueKey('empty_space')),
+                            : Padding(
+                                key: const ValueKey('resend_countdown'),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                child: Text(
+                                  'Resend code in $_resendSeconds seconds',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ),
                       ),
                     ],
                   ),

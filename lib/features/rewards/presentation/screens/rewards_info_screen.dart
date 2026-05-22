@@ -103,17 +103,17 @@ class RewardsInfoScreen extends ConsumerWidget {
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     // Section 1: How to Earn
-                    _sectionTitle('Collect coins on every ride and turn them into savings'),
+                    _sectionTitle('Collect coins on every ride and turn them into wallet cash'),
                     const SizedBox(height: 16),
                     _bulletPoint(
                         context,
-                        'Earn ${rules.earning.pointsPerEur} coin for every \u20AC10 spent on rides.'),
+                        'Earn ${rules.earning.pointsPerEur} coins for every \u20AC1 spent on completed rides.'),
                     _bulletPoint(
                         context,
-                        'Each coin is worth \u20AC${(1 / rules.redemption.pointsToEurRatio).toStringAsFixed(2)} when redeemed.'),
+                        'Redeem coins directly into your wallet balance. Base rate: 400 coins = \u20AC1.00 cash credit, improving up to 100 coins = \u20AC1.00 for Platinum.'),
                     _bulletPoint(
                         context,
-                        'Use coins to cover up to 20% of your ride cost.'),
+                        'Wallet cash can be used to pay for any of your rides without limit.'),
                     _bulletPoint(
                         context,
                         'Rewards are added automatically after each completed ride.'),
@@ -123,37 +123,7 @@ class RewardsInfoScreen extends ConsumerWidget {
 
                     const SizedBox(height: 28),
 
-                    // Section 2: Bonus Opportunities
-                    _sectionHeader('Bonus Opportunities'),
-                    const SizedBox(height: 12),
-                    _bonusCard(
-                        context,
-                        Icons.celebration,
-                        'First ride bonus',
-                        '${rules.earning.firstRideBonus} coins',
-                        AppColors.primaryGold),
-                    _bonusCard(
-                        context,
-                        Icons.star,
-                        '5-star rating bonus',
-                        '${rules.earning.fiveStarRatingBonus} coins per ride',
-                        AppColors.primaryGold),
-                    _bonusCard(
-                        context,
-                        Icons.calendar_today,
-                        'Scheduled ride bonus',
-                        '${rules.earning.scheduledRideBonus} coins',
-                        AppColors.info),
-                    _bonusCard(
-                        context,
-                        Icons.local_fire_department,
-                        'Weekly streak',
-                        'Complete ${rules.earning.weeklyStreakThreshold} rides for ${rules.earning.weeklyStreakBonus} bonus coins',
-                        AppColors.error),
-
-                    const SizedBox(height: 28),
-
-                    // Section 3: Referral Program
+                    // Section 2: Referral Program
                     _sectionHeader('Referral Program'),
                     const SizedBox(height: 12),
                     Container(
@@ -189,7 +159,7 @@ class RewardsInfoScreen extends ConsumerWidget {
 
                     const SizedBox(height: 28),
 
-                    // Section 4: Tier Table
+                    // Section 3: Tier Table
                     _sectionHeader('Tier Levels'),
                     const SizedBox(height: 12),
                     ...rules.tiers.map((tier) =>
@@ -197,7 +167,7 @@ class RewardsInfoScreen extends ConsumerWidget {
 
                     const SizedBox(height: 28),
 
-                    // Section 5: Redemption Rules
+                    // Section 4: Redemption Rules
                     _sectionHeader('How to Redeem'),
                     const SizedBox(height: 12),
                     Container(
@@ -213,13 +183,13 @@ class RewardsInfoScreen extends ConsumerWidget {
                         children: [
                           _bulletPoint(
                               context,
-                              'Minimum ${rules.redemption.minimumPoints} points to redeem'),
+                              'Minimum ${rules.redemption.minimumPoints} coins to redeem'),
                           _bulletPoint(
                               context,
-                              '${rules.redemption.pointsToEurRatio.toStringAsFixed(0)} points = \u20AC1 ride credit'),
+                              'Redeem rate depends on your active tier (up to 100 coins = \u20AC1.00 for Platinum)'),
                           _bulletPoint(
                               context,
-                              'Apply at checkout using the \'Use Coins\' toggle'),
+                              'Redeemed cash is instantly credited to your wallet balance and can be used on any future bookings.'),
                         ],
                       ),
                     ),
@@ -245,7 +215,7 @@ class RewardsInfoScreen extends ConsumerWidget {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
-                              'Points expire after ${rules.expiry.inactivityMonths} months of account inactivity.',
+                              'Coins expire after ${rules.expiry.inactivityMonths} months of account inactivity.',
                               style: AppTextStyles.bodyMedium.copyWith(
                                 color: AppColors.warning,
                               ),
@@ -394,13 +364,11 @@ class RewardsInfoScreen extends ConsumerWidget {
 
           // Details
           _tierDetailRow(
-              context, 'Minimum', '${tier.minPoints} points'),
+              context, 'Minimum requirement', '${tier.minRides} completed rides'),
           _tierDetailRow(
-              context, 'Earning multiplier', '${tier.multiplier}x'),
-          _tierDetailRow(
-              context, 'Max discount', '\u20AC${tier.maxDiscount.toStringAsFixed(0)} per redemption'),
+              context, 'Redemption rate', _getTierRedeemRate(tier.tier)),
           if (tier.benefits.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             ...tier.benefits.map(
               (b) => Padding(
                 padding: const EdgeInsets.only(bottom: 4),
@@ -456,6 +424,20 @@ class RewardsInfoScreen extends ConsumerWidget {
         return const Color(0xFFB388FF);
       default:
         return const Color(0xFFCD7F32);
+    }
+  }
+
+  String _getTierRedeemRate(String tier) {
+    switch (tier) {
+      case 'PLATINUM':
+        return '100 Coins = \u20AC1.00';
+      case 'GOLD':
+        return '100 Coins = \u20AC0.75';
+      case 'SILVER':
+        return '100 Coins = \u20AC0.50';
+      case 'BRONZE':
+      default:
+        return '100 Coins = \u20AC0.25';
     }
   }
 }

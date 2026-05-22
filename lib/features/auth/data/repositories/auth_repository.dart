@@ -24,7 +24,8 @@ class AuthRepository {
 
   Future<void> clearOtpSession() => _storage.clearOtpSession();
 
-  Future<void> sendOtp(String phone, {String? fcmToken}) => _remote.sendOtp(phone, fcmToken: fcmToken);
+  Future<void> sendOtp(String phone, {String? fcmToken, bool? isRegister}) =>
+      _remote.sendOtp(phone, fcmToken: fcmToken, isRegister: isRegister);
 
   Future<AuthResponse> verifyOtp({
     required String phone,

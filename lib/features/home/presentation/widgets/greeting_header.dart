@@ -347,14 +347,7 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                     backgroundImage: NetworkImage(ApiConstants.fullUrl(profile.avatarUrl!)),
                     onBackgroundImageError: (_, __) {},
                     backgroundColor: Theme.of(context).cardTheme.color,
-                    child: Text(
-                      profile.initials,
-                      style: const TextStyle(
-                        color: AppColors.primaryGold,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                      ),
-                    ),
+                    // No child — image takes full space, initials not shown
                   );
                 }
                 return CircleAvatar(
