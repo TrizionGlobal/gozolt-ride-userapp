@@ -12,7 +12,7 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
   final SharedPreferences _prefs;
   static const _key = 'app_theme_mode_v2';
 
-  ThemeModeNotifier(this._prefs) : super(ThemeMode.dark) {
+  ThemeModeNotifier(this._prefs) : super(ThemeMode.light) {
     _loadTheme();
   }
 
@@ -23,7 +23,7 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
     } else if (savedMode == 'dark') {
       state = ThemeMode.dark;
     } else {
-      state = ThemeMode.dark;
+      state = ThemeMode.light;
     }
   }
 
@@ -50,7 +50,7 @@ final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((r
 final isDarkModeProvider = Provider<bool>((ref) {
   final mode = ref.watch(themeModeProvider);
   if (mode == ThemeMode.system) {
-    return true; // Default to dark for system
+    return false; // Default to light for system
   }
   return mode == ThemeMode.dark;
 });

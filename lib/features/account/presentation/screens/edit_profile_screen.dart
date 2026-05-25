@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
@@ -8,6 +9,7 @@ import '../../../../core/utils/input_validators.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import 'package:universal_io/io.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 import '../providers/account_providers.dart';
 import '../../../home/presentation/providers/home_providers.dart';
 
@@ -74,7 +76,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   child: Row(
                     children: [
                       GestureDetector(
-                        onTap: () => Navigator.pop(context),
+                        onTap: () => context.pop(),
                         child: Container(
                           width: 36,
                           height: 36,
@@ -379,7 +381,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 onTap: () {
                   Navigator.pop(context);
                   setState(() => _avatarPath = null);
-                  _snackBar('Photo removed');
                 },
               ),
             ],
@@ -398,8 +399,27 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         imageQuality: 80,
       );
       if (picked != null) {
-        setState(() => _avatarPath = picked.path);
-        _snackBar('Photo updated');
+        final croppedFile = await ImageCropper().cropImage(
+          sourcePath: picked.path,
+          aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+          uiSettings: [
+            AndroidUiSettings(
+              toolbarTitle: 'Crop Photo',
+              toolbarColor: AppColors.primaryGold,
+              toolbarWidgetColor: Colors.white,
+              initAspectRatio: CropAspectRatioPreset.square,
+              lockAspectRatio: true,
+            ),
+            IOSUiSettings(
+              title: 'Crop Photo',
+              aspectRatioLockEnabled: true,
+              resetAspectRatioEnabled: false,
+            ),
+          ],
+        );
+        if (croppedFile != null) {
+          setState(() => _avatarPath = croppedFile.path);
+        }
       }
     } catch (e) {
       _snackBar(
@@ -464,7 +484,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
       if (mounted) {
         _snackBar('Profile updated successfully');
-        Navigator.pop(context);
+        context.pop();
       }
     } catch (e) {
       if (mounted) {

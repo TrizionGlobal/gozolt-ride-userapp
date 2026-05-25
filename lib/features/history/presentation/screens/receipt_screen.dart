@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/ride_history_item.dart';
@@ -28,7 +29,7 @@ class ReceiptScreen extends ConsumerWidget {
                 child: Row(
                   children: [
                     GestureDetector(
-                      onTap: () => Navigator.pop(context),
+                      onTap: () => context.pop(),
                       child: Container(
                         width: 36,
                         height: 36,
@@ -107,7 +108,7 @@ class ReceiptScreen extends ConsumerWidget {
                     Row(
                       children: [
                         GestureDetector(
-                          onTap: () => Navigator.pop(context),
+                          onTap: () => context.pop(),
                           child: Container(
                             width: 36,
                             height: 36,

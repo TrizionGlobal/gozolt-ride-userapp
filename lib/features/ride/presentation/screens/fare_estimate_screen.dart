@@ -42,6 +42,12 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchRoute();
       _fetchNearbyDrivers();
+
+      final isScheduleMode = ref.read(isScheduleModeProvider);
+      final booking = ref.read(rideBookingProvider);
+      if (isScheduleMode && !booking.isScheduled) {
+        _showScheduleSheet();
+      }
     });
     _driverRefreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       _fetchNearbyDrivers();
@@ -502,30 +508,8 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                         promoDiscount: booking.promoDiscount,
                         coinsDiscount: booking.coinsDiscount,
                         useCoins: booking.useCoins,
-                      ),
-
-                    // Schedule info
-                    if (booking.isScheduled && booking.scheduledAt != null)
-                      Container(
-                        margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryGold.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.schedule,
-                                color: AppColors.primaryGold, size: 18),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Scheduled for ${_formatSchedule(booking.scheduledAt!)}',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: AppColors.primaryGold,
-                              ),
-                            ),
-                          ],
-                        ),
+                        isScheduled: booking.isScheduled,
+                        scheduledAtText: booking.scheduledAt != null ? _formatSchedule(booking.scheduledAt!) : null,
                       ),
 
                     const SizedBox(height: 100),
@@ -650,34 +634,42 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
             const SizedBox(height: 12),
 
             // Find my Go partner button + schedule icon
-            Row(
-              children: [
-                // Main CTA
-                Expanded(
-                  child: SizedBox(
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: booking.fareEstimate != null
-                          ? () => _onSelectRide()
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryGold,
-                        foregroundColor: Theme.of(context).scaffoldBackgroundColor,
-                        disabledBackgroundColor:
-                            AppColors.primaryGold.withOpacity(0.3),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        'Find my Go partner',
-                        style: AppTextStyles.button.copyWith(
-                          color: Theme.of(context).scaffoldBackgroundColor,
+            Builder(
+              builder: (context) {
+                final bool isAvailable = booking.isScheduled ||
+                    _availableVehicleTypes == null ||
+                    _availableVehicleTypes!.contains(booking.vehicleType);
+
+                return Row(
+                  children: [
+                    // Main CTA
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: (booking.fareEstimate != null && isAvailable)
+                              ? () => _onSelectRide()
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isAvailable ? AppColors.primaryGold : AppColors.borderDark,
+                            foregroundColor: Theme.of(context).scaffoldBackgroundColor,
+                            disabledBackgroundColor:
+                                AppColors.textMuted.withOpacity(0.3),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: Text(
+                            isAvailable 
+                                ? (booking.isScheduled ? 'Schedule Ride' : 'Find my Go partner') 
+                                : 'No drivers available',
+                            style: AppTextStyles.button.copyWith(
+                              color: isAvailable ? Theme.of(context).scaffoldBackgroundColor : AppColors.textSecondary,
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ),
 
                 const SizedBox(width: 10),
 
@@ -702,7 +694,9 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                   ),
                 ),
               ],
-            ),
+            );
+          },
+        ),
 
             // Total now shown inside fare breakdown card
           ],
@@ -838,6 +832,12 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
             backgroundColor: Theme.of(context).dialogBackgroundColor,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
+          timePickerTheme: TimePickerThemeData(
+            hourMinuteTextStyle: const TextStyle(
+              fontSize: 42,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
         child: child!,
       ),
@@ -915,28 +915,9 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
     if (confirmed == true && mounted) {
       HapticFeedback.mediumImpact();
       ref.read(rideBookingProvider.notifier).setScheduled(true, scheduledAt: scheduledAt);
-      // Stay on fare estimate — show scheduled confirmation
-      ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: AppColors.backgroundDark, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Ride scheduled for ${_formatSchedule(scheduledAt)}',
-                  style: const TextStyle(color: AppColors.backgroundDark),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: AppColors.primaryGold,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      
+      // Automatically trigger the booking process which navigates home and shows confirmation
+      await _onSelectRide();
     }
   }
 
@@ -965,76 +946,11 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
 
 // ── Discount Bottom Sheet (GoCoins + Coupon) ────────────
 
-class _DiscountBottomSheet extends ConsumerStatefulWidget {
+class _DiscountBottomSheet extends ConsumerWidget {
   const _DiscountBottomSheet();
 
   @override
-  ConsumerState<_DiscountBottomSheet> createState() =>
-      _DiscountBottomSheetState();
-}
-
-class _DiscountBottomSheetState extends ConsumerState<_DiscountBottomSheet> {
-  final _couponController = TextEditingController();
-  String? _couponError;
-  String? _appliedCoupon;
-  String? _couponDescription;
-  bool _isValidating = false;
-
-  @override
-  void dispose() {
-    _couponController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _validateCoupon() async {
-    HapticFeedback.lightImpact();
-    final code = _couponController.text.trim();
-    if (code.isEmpty) return;
-
-    setState(() {
-      _isValidating = true;
-      _couponError = null;
-    });
-
-    final booking = ref.read(rideBookingProvider);
-    final fare = booking.fareEstimate?.estimatedFare ?? 0;
-
-    try {
-      final result = await ref.read(
-        promoValidationProvider((code: code, fare: fare)).future,
-      );
-
-      if (!mounted) return;
-
-      if (result.isValid) {
-        setState(() {
-          _appliedCoupon = result.code;
-          _couponDescription = result.description;
-          _isValidating = false;
-        });
-        ref.read(rideBookingProvider.notifier).setPromo(
-              result.code ?? code,
-              result.discountAmount ?? 0,
-              result.description ?? '',
-            );
-      } else {
-        setState(() {
-          _couponError = result.errorMessage ?? 'Invalid coupon code';
-          _isValidating = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _couponError = 'Failed to validate coupon';
-          _isValidating = false;
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final booking = ref.watch(rideBookingProvider);
     final rewardsAsync = ref.watch(userRewardsPointsProvider);
 
@@ -1134,116 +1050,6 @@ class _DiscountBottomSheetState extends ConsumerState<_DiscountBottomSheet> {
               ],
             ),
           ),
-
-          const SizedBox(height: 20),
-
-          // ── Apply Coupon ──────────────────────────────
-          Text(
-            'Apply coupon',
-            style: AppTextStyles.titleMedium
-                .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
-          ),
-          const SizedBox(height: 10),
-
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _couponController,
-                  style: AppTextStyles.bodyMedium
-                      .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
-                  decoration: InputDecoration(
-                    hintText: 'Enter Coupon code',
-                    hintStyle: AppTextStyles.bodyMedium
-                        .copyWith(color: AppColors.textMuted),
-                    filled: true,
-                    fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Color(0xFFF1F3F4),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 12),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              SizedBox(
-                width: 80,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: _isValidating ? null : _validateCoupon,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGold,
-                    foregroundColor: AppColors.backgroundDark,
-                    padding: EdgeInsets.zero,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: _isValidating
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.backgroundDark,
-                          ),
-                        )
-                      : const Text('APPLY'),
-                ),
-              ),
-            ],
-          ),
-
-          if (_couponError != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              _couponError!,
-              style: AppTextStyles.bodySmall
-                  .copyWith(color: AppColors.error),
-            ),
-          ],
-
-          if (_appliedCoupon != null) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardTheme.color,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: AppColors.success.withOpacity(0.3)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.check_circle,
-                      color: AppColors.success, size: 20),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _appliedCoupon!,
-                          style: AppTextStyles.titleSmall.copyWith(
-                            color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        if (_couponDescription != null)
-                          Text(
-                            _couponDescription!,
-                            style: AppTextStyles.bodySmall
-                                .copyWith(color: AppColors.textSecondary),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
 
           const SizedBox(height: 16),
         ],

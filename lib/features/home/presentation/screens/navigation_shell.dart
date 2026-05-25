@@ -10,8 +10,16 @@ import '../../../rewards/presentation/screens/rewards_screen.dart';
 import '../providers/home_providers.dart';
 import 'home_screen.dart';
 
-class NavigationShell extends ConsumerWidget {
+class NavigationShell extends ConsumerStatefulWidget {
   const NavigationShell({super.key});
+
+  @override
+  ConsumerState<NavigationShell> createState() => _NavigationShellState();
+}
+
+class _NavigationShellState extends ConsumerState<NavigationShell> {
+  final List<int> _tabHistory = [];
+  bool _isPopping = false;
 
   static const _tabs = [
     _TabItem(icon: Icons.home_rounded, label: 'Home'),
@@ -20,62 +28,100 @@ class NavigationShell extends ConsumerWidget {
     _TabItem(icon: Icons.person_outline_rounded, label: 'Account'),
   ];
 
+  void _handlePop() {
+    if (_tabHistory.isNotEmpty) {
+      final prevTab = _tabHistory.removeLast();
+      setState(() {
+        _isPopping = true;
+      });
+      ref.read(homeTabIndexProvider.notifier).state = prevTab;
+      setState(() {
+        _isPopping = false;
+      });
+    } else {
+      setState(() {
+        _isPopping = true;
+      });
+      ref.read(homeTabIndexProvider.notifier).state = 0;
+      setState(() {
+        _isPopping = false;
+      });
+    }
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final currentIndex = ref.watch(homeTabIndexProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      extendBody: true,
-      body: IndexedStack(
-        index: currentIndex,
-        children: const [
-          HomeScreen(),
-          MyRidesScreen(),
-          RewardsScreen(),
-          AccountScreen(),
-        ],
-      ),
-      bottomNavigationBar: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-          child: Container(
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            decoration: BoxDecoration(
-              color: isDark 
-                  ? AppColors.surfaceDark.withOpacity(0.7) 
-                  : AppColors.surfaceLight.withOpacity(0.85),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
+    // Listen to tab changes to build history
+    ref.listen<int>(homeTabIndexProvider, (previous, next) {
+      if (_isPopping) return;
+      if (previous != null && previous != next) {
+        setState(() {
+          _tabHistory.remove(next);
+          _tabHistory.add(previous);
+        });
+      }
+    });
+
+    return PopScope(
+      canPop: currentIndex == 0 && _tabHistory.isEmpty,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
+        _handlePop();
+      },
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        extendBody: true,
+        body: IndexedStack(
+          index: currentIndex,
+          children: const [
+            HomeScreen(),
+            MyRidesScreen(),
+            RewardsScreen(),
+            AccountScreen(),
+          ],
+        ),
+        bottomNavigationBar: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              decoration: BoxDecoration(
                 color: isDark 
-                    ? AppColors.primaryGold.withOpacity(0.15)
-                    : AppColors.primaryGold.withOpacity(0.3),
-              ),
-              boxShadow: [
-                BoxShadow(
+                    ? AppColors.surfaceDark.withOpacity(0.7) 
+                    : AppColors.surfaceLight.withOpacity(0.85),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
                   color: isDark 
-                      ? Colors.black.withOpacity(0.3)
-                      : Colors.black.withOpacity(0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
+                      ? AppColors.primaryGold.withOpacity(0.15)
+                      : AppColors.primaryGold.withOpacity(0.3),
                 ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: List.generate(_tabs.length, (index) {
-                  final isSelected = currentIndex == index;
-                  return _buildNavItem(
-                    ref: ref,
-                    tab: _tabs[index],
-                    index: index,
-                    isSelected: isSelected,
-                  );
-                }),
+                boxShadow: [
+                  BoxShadow(
+                    color: isDark 
+                        ? Colors.black.withOpacity(0.3)
+                        : Colors.black.withOpacity(0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: List.generate(_tabs.length, (index) {
+                    final isSelected = currentIndex == index;
+                    return _buildNavItem(
+                      tab: _tabs[index],
+                      index: index,
+                      isSelected: isSelected,
+                    );
+                  }),
+                ),
               ),
             ),
           ),
@@ -85,7 +131,6 @@ class NavigationShell extends ConsumerWidget {
   }
 
   Widget _buildNavItem({
-    required WidgetRef ref,
     required _TabItem tab,
     required int index,
     required bool isSelected,

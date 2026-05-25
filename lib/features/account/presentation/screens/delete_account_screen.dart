@@ -53,7 +53,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                         label: 'Go back',
                         button: true,
                         child: GestureDetector(
-                          onTap: () => Navigator.pop(context),
+                          onTap: () => context.pop(),
                           child: Container(
                             width: 36,
                             height: 36,
@@ -240,7 +240,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                 const SizedBox(height: 12),
                 Center(
                   child: TextButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => context.pop(),
                     child: Text('Cancel, keep my account',
                         style: AppTextStyles.bodyMedium
                             .copyWith(color: AppColors.textMuted)),

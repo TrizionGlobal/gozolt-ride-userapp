@@ -8,6 +8,7 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/constants/asset_paths.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../rewards/presentation/providers/rewards_providers.dart';
+import '../../../rewards/presentation/widgets/tier_badge.dart';
 import '../providers/home_providers.dart';
 
 class GreetingHeader extends ConsumerStatefulWidget {
@@ -48,6 +49,7 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
     ].join(', ');
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final goldColor = isDark ? AppColors.primaryGold : const Color(0xFFC29000);
 
     _popupEntry = OverlayEntry(
       builder: (context) => GestureDetector(
@@ -72,7 +74,7 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                           : AppColors.surfaceLight.withOpacity(0.98),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: AppColors.primaryGold.withOpacity(0.3),
+                        color: goldColor.withOpacity(0.3),
                       ),
                       boxShadow: [
                         BoxShadow(
@@ -94,18 +96,10 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                                 backgroundImage: NetworkImage(ApiConstants.fullUrl(profile.avatarUrl!)),
                                 onBackgroundImageError: (_, __) {},
                                 backgroundColor: Theme.of(context).cardTheme.color,
-                                child: Text(
-                                  profile.initials,
-                                  style: const TextStyle(
-                                    color: AppColors.primaryGold,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 20,
-                                  ),
-                                ),
                               )
                             : CircleAvatar(
                                 radius: 28,
-                                backgroundColor: AppColors.primaryGold,
+                                backgroundColor: goldColor,
                                 child: Text(
                                   profile?.initials ?? 'U',
                                   style: TextStyle(
@@ -132,8 +126,7 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                           children: [
                             Icon(Icons.location_on,
                                 size: 14,
-                                color: AppColors.primaryGold
-                                    .withOpacity(0.8)),
+                                color: goldColor.withOpacity(0.8)),
                             const SizedBox(width: 4),
                             Flexible(
                               child: Text(
@@ -158,21 +151,20 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
-                            color:
-                                AppColors.primaryGold.withOpacity(0.1),
+                            color: goldColor.withOpacity(isDark ? 0.1 : 0.08),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.stars_rounded,
-                                  color: AppColors.primaryGold, size: 18),
+                              Icon(Icons.stars_rounded,
+                                  color: goldColor, size: 18),
                               const SizedBox(width: 6),
                               Text(
                                 '${reward?.currentPoints ?? 0}',
                                 style: AppTextStyles.titleSmall.copyWith(
-                                  color: AppColors.primaryGold,
+                                  color: goldColor,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
@@ -180,34 +172,18 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                               Text(
                                 'GoCoins',
                                 style: AppTextStyles.bodySmall.copyWith(
-                                  color: AppColors.primaryGold,
+                                  color: goldColor,
                                   fontSize: 11,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 10),
                         // Tier badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).cardTheme.color,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: AppColors.primaryGold
-                                  .withOpacity(0.2),
-                            ),
-                          ),
-                          child: Text(
-                            '${reward?.tier ?? 'BRONZE'} Member',
-                            style: AppTextStyles.labelSmall.copyWith(
-                              color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
-                              fontSize: 10,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
+                        TierBadge(
+                          tier: reward?.tier ?? 'BRONZE',
+                          small: true,
                         ),
                       ],
                     ),
@@ -238,6 +214,8 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(userProfileProvider);
     final unreadAsync = ref.watch(unreadNotificationCountProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final goldColor = isDark ? AppColors.primaryGold : const Color(0xFFC29000);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -255,13 +233,14 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                   Text(
                     'GO',
                     style: AppTextStyles.titleMedium.copyWith(
-                      color: AppColors.primaryGold,
+                      color: goldColor,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
                   Text(
                     'ZOLT',
                     style: AppTextStyles.titleMedium.copyWith(
+                      color: goldColor,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -270,7 +249,7 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
               Text(
                 'The Super App',
                 style: AppTextStyles.labelSmall.copyWith(
-                  color: AppColors.primaryGold,
+                  color: goldColor,
                   fontSize: 8,
                   letterSpacing: 0.8,
                 ),
@@ -352,7 +331,7 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                 }
                 return CircleAvatar(
                   radius: 18,
-                  backgroundColor: AppColors.primaryGold,
+                  backgroundColor: goldColor,
                     child: Text(
                       profile.initials,
                       style: TextStyle(

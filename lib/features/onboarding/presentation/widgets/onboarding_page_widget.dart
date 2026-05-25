@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/constants/asset_paths.dart';
 import '../../data/onboarding_data.dart';
 
 class OnboardingPageWidget extends StatelessWidget {
@@ -19,20 +20,25 @@ class OnboardingPageWidget extends StatelessWidget {
     final verticalGap = isSmallScreen ? 20.0 : 40.0;
     final subtitleGap = isSmallScreen ? 12.0 : 20.0;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final resolvedImagePath = (data.imagePath == AssetPaths.onboardingTracking && !isDark)
+        ? AssetPaths.onboardingTrackingLight
+        : data.imagePath;
+
     return Column(
       children: [
         const Spacer(flex: 2),
 
         // ── Illustration ─────────────────────────────
         if (data.fullWidthImage)
-          _buildFullWidthImage(context, imageHeight)
+          _buildFullWidthImage(context, imageHeight, resolvedImagePath)
         else
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: SizedBox(
               height: imageHeight,
               child: Image.asset(
-                data.imagePath,
+                resolvedImagePath,
                 fit: BoxFit.contain,
               ),
             ),
@@ -65,14 +71,14 @@ class OnboardingPageWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildFullWidthImage(BuildContext context, double imageHeight) {
+  Widget _buildFullWidthImage(BuildContext context, double imageHeight, String imagePath) {
     final screenWidth = MediaQuery.of(context).size.width;
 
     Widget imageWidget = SizedBox(
       width: screenWidth,
       height: imageHeight,
       child: Image.asset(
-        data.imagePath,
+        imagePath,
         width: screenWidth,
         height: imageHeight,
         fit: BoxFit.cover,

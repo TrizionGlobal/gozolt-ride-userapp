@@ -8,6 +8,8 @@ class FareBreakdownCard extends StatelessWidget {
   final double? promoDiscount;
   final double? coinsDiscount;
   final bool useCoins;
+  final bool isScheduled;
+  final String? scheduledAtText;
 
   const FareBreakdownCard({
     super.key,
@@ -15,6 +17,8 @@ class FareBreakdownCard extends StatelessWidget {
     this.promoDiscount,
     this.coinsDiscount,
     this.useCoins = false,
+    this.isScheduled = false,
+    this.scheduledAtText,
   });
 
   @override
@@ -117,6 +121,34 @@ class FareBreakdownCard extends StatelessWidget {
               ),
             ],
           ),
+          
+          if (isScheduled && scheduledAtText != null) ...[
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGold.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.primaryGold.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.schedule,
+                      color: AppColors.primaryGold, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Scheduled for $scheduledAtText',
+                      style: AppTextStyles.titleSmall.copyWith(
+                        color: AppColors.primaryGold,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -55,6 +55,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(userProfileProvider);
     final isDark = ref.watch(isDarkModeProvider);
+    final rewardSummaryAsync = ref.watch(rewardSummaryProvider);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -229,25 +230,35 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                   label: 'Payment Methods',
                   onTap: () => context.pushNamed(RouteNames.accountPaymentMethods),
                 ),
-                _menuItem(
+                 _menuItem(
                   icon: Icons.stars_outlined,
                   label: 'GoCoins Rewards',
                   onTap: () => ref.read(homeTabIndexProvider.notifier).state = 2,
-                  trailing: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGold.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      'Gold',
-                      style: AppTextStyles.labelSmall.copyWith(
-                        color: AppColors.primaryGold,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 10,
-                      ),
-                    ),
+                  trailing: rewardSummaryAsync.when(
+                    data: (summary) {
+                      final tierName = summary.tier.toUpperCase();
+                      final formattedTier = tierName.isNotEmpty 
+                          ? (tierName.substring(0, 1) + tierName.substring(1).toLowerCase())
+                          : 'Bronze';
+                      final tierColor = _getTierColor(tierName);
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: tierColor.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          formattedTier,
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: tierColor,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 10,
+                          ),
+                        ),
+                      );
+                    },
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, __) => const SizedBox.shrink(),
                   ),
                 ),
                 _menuItem(
@@ -717,5 +728,19 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         ],
       ),
     );
+  }
+
+  Color _getTierColor(String tier) {
+    switch (tier.toUpperCase()) {
+      case 'SILVER':
+        return Colors.blueGrey;
+      case 'GOLD':
+        return AppColors.primaryGold;
+      case 'PLATINUM':
+        return const Color(0xFFB0C4DE); // Platinum color
+      case 'BRONZE':
+      default:
+        return const Color(0xFFCD7F32); // Bronze color
+    }
   }
 }

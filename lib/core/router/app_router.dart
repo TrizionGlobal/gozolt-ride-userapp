@@ -37,6 +37,7 @@ import 'route_names.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final redirectNotifier = ref.watch(authRedirectProvider);
+  final storage = ref.read(secureStorageProvider);
 
   return GoRouter(
     initialLocation: '/',
@@ -44,7 +45,6 @@ final routerProvider = Provider<GoRouter>((ref) {
     debugLogDiagnostics: true,
     refreshListenable: redirectNotifier,
     redirect: (context, state) async {
-      final storage = ref.read(secureStorageProvider);
       final hasTokens = await storage.hasTokens();
       final hasSeenOnboarding = await storage.hasSeenOnboarding();
 

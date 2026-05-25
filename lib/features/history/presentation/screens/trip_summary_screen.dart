@@ -71,7 +71,7 @@ class TripSummaryScreen extends ConsumerWidget {
                     Row(
                       children: [
                         GestureDetector(
-                          onTap: () => Navigator.pop(context),
+                          onTap: () => context.pop(),
                           child: Container(
                             width: 36,
                             height: 36,

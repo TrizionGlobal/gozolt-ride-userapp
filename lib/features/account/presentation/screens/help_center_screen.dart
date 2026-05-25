@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 
@@ -138,7 +139,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                       Row(
                         children: [
                           GestureDetector(
-                            onTap: () => Navigator.pop(context),
+                            onTap: () => context.pop(),
                             child: Container(
                               width: 36,
                               height: 36,

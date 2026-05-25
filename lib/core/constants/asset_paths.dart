@@ -4,6 +4,7 @@ abstract final class AssetPaths {
   // ── Brand ──────────────────────────────────────────────
   static const String gozoltLogo = '$_images/gozolt_logo_circle.png';
   static const String gozoltLogoWithText = '$_images/gozolt_logo_with_text.png';
+  static const String gozoltLogoWithTextLight = '$_images/light_gozolt_logo_with_text.png';
   static const String maltaFlag = '$_images/malta_flag.png';
   static const String euFlag = '$_images/eu_flag.png';
   static const String primoooLogo = '$_images/primooo_logo.png';
@@ -16,6 +17,7 @@ abstract final class AssetPaths {
   static const String onboardingRide = '$_images/onboarding_ride.png';
   static const String onboardingCoins = '$_images/onboarding_coins.png';
   static const String onboardingTracking = '$_images/onboarding_tracking.jpg';
+  static const String onboardingTrackingLight = '$_images/light_onboarding_tracking.png';
 
   // ── Transport Grid ────────────────────────────────────
   static const String iconRide = '$_images/icon_ride.png';

@@ -39,6 +39,8 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     // Try to find linked ride data
     RideHistoryItem? linkedRide;
     if (widget.rideId != null && AppConstants.kDevBypass) {
@@ -73,7 +75,7 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                   child: Row(
                     children: [
                       GestureDetector(
-                        onTap: () => Navigator.pop(context),
+                        onTap: () => context.pop(),
                         child: Container(
                           width: 36,
                           height: 36,
@@ -117,7 +119,7 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                 // Category selector
                 Text("What's this about?",
                     style: AppTextStyles.labelLarge
-                        .copyWith(color: AppColors.textSecondary, fontSize: 13)),
+                        .copyWith(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight, fontSize: 13)),
                 const SizedBox(height: 8),
                 GestureDetector(
                   onTap: () => _showCategorySheet(context),
@@ -126,13 +128,22 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
-                      color: AppColors.inputDark,
+                      color: isDark ? AppColors.inputDark : AppColors.surfaceLight,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: _selectedCategory != null
                             ? AppColors.primaryGold.withOpacity(0.3)
-                            : AppColors.borderDark,
+                            : (isDark ? AppColors.borderDark : AppColors.borderLight),
                       ),
+                      boxShadow: isDark
+                          ? null
+                          : [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.04),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                     ),
                     child: Row(
                       children: [
@@ -144,11 +155,11 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                             child: Text(
                               'Select a category',
                               style: AppTextStyles.bodyMedium
-                                  .copyWith(color: AppColors.textMuted),
+                                  .copyWith(color: isDark ? AppColors.textMuted : AppColors.textMutedLight),
                             ),
                           ),
-                        const Icon(Icons.keyboard_arrow_down,
-                            color: AppColors.textMuted, size: 22),
+                        Icon(Icons.keyboard_arrow_down,
+                            color: isDark ? AppColors.textMuted : AppColors.textMutedLight, size: 22),
                       ],
                     ),
                   ),
@@ -161,11 +172,11 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                   children: [
                     Text('Brief summary',
                         style: AppTextStyles.labelLarge.copyWith(
-                            color: AppColors.textSecondary, fontSize: 13)),
+                            color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight, fontSize: 13)),
                     Text(
                       '${_subjectController.text.length}/200',
                       style: AppTextStyles.labelSmall
-                          .copyWith(color: AppColors.textMuted, fontSize: 10),
+                          .copyWith(color: isDark ? AppColors.textMuted : AppColors.textMutedLight, fontSize: 10),
                     ),
                   ],
                 ),
@@ -174,23 +185,23 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                   controller: _subjectController,
                   maxLength: 200,
                   onChanged: (_) => setState(() {}),
-                  style: AppTextStyles.bodyMedium,
+                  style: AppTextStyles.bodyMedium.copyWith(color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                   decoration: InputDecoration(
                     hintText: 'e.g., Driver took a wrong route',
                     hintStyle: AppTextStyles.bodyMedium
-                        .copyWith(color: AppColors.textMuted),
+                        .copyWith(color: isDark ? AppColors.textMuted : AppColors.textMutedLight),
                     filled: true,
-                    fillColor: AppColors.inputDark,
+                    fillColor: isDark ? AppColors.inputDark : AppColors.surfaceLight,
                     counterText: '',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide:
-                          const BorderSide(color: AppColors.borderDark),
+                          BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide:
-                          const BorderSide(color: AppColors.borderDark),
+                          BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -209,11 +220,11 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                   children: [
                     Text('Describe your issue',
                         style: AppTextStyles.labelLarge.copyWith(
-                            color: AppColors.textSecondary, fontSize: 13)),
+                            color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight, fontSize: 13)),
                     Text(
                       '${_descriptionController.text.length}/2000',
                       style: AppTextStyles.labelSmall
-                          .copyWith(color: AppColors.textMuted, fontSize: 10),
+                          .copyWith(color: isDark ? AppColors.textMuted : AppColors.textMutedLight, fontSize: 10),
                     ),
                   ],
                 ),
@@ -223,25 +234,25 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                   maxLength: 2000,
                   maxLines: 5,
                   onChanged: (_) => setState(() {}),
-                  style: AppTextStyles.bodyMedium,
+                  style: AppTextStyles.bodyMedium.copyWith(color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                   decoration: InputDecoration(
                     hintText:
                         'Please provide as much detail as possible. Include any relevant information like time, location, or specifics of what happened...',
                     hintStyle: AppTextStyles.bodyMedium
-                        .copyWith(color: AppColors.textMuted),
+                        .copyWith(color: isDark ? AppColors.textMuted : AppColors.textMutedLight),
                     hintMaxLines: 3,
                     filled: true,
-                    fillColor: AppColors.inputDark,
+                    fillColor: isDark ? AppColors.inputDark : AppColors.surfaceLight,
                     counterText: '',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide:
-                          const BorderSide(color: AppColors.borderDark),
+                          BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide:
-                          const BorderSide(color: AppColors.borderDark),
+                          BorderSide(color: isDark ? AppColors.borderDark : AppColors.borderLight),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -289,19 +300,29 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
 
   // ── Linked Ride Card ───────────────────────────────────
   Widget _linkedRideCard(RideHistoryItem ride) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: isDark ? AppColors.cardDark : AppColors.cardLight,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Related Ride',
               style: AppTextStyles.labelSmall
-                  .copyWith(color: AppColors.textMuted, fontSize: 10)),
+                  .copyWith(color: isDark ? AppColors.textMuted : AppColors.textMutedLight, fontSize: 10)),
           const SizedBox(height: 8),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -317,7 +338,7 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                     ),
                   ),
                   Container(
-                      width: 1.5, height: 16, color: AppColors.borderDark),
+                      width: 1.5, height: 16, color: isDark ? AppColors.borderDark : AppColors.borderLight),
                   Container(
                     width: 8,
                     height: 8,
@@ -334,12 +355,14 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(ride.pickupAddress,
-                        style: AppTextStyles.bodySmall,
+                        style: AppTextStyles.bodySmall.copyWith(
+                            color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 10),
                     Text(ride.dropoffAddress,
-                        style: AppTextStyles.bodySmall,
+                        style: AppTextStyles.bodySmall.copyWith(
+                            color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis),
                   ],
@@ -353,26 +376,26 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
               Text(
                 _formatDate(ride.createdAt),
                 style: AppTextStyles.labelSmall
-                    .copyWith(color: AppColors.textMuted, fontSize: 10),
+                    .copyWith(color: isDark ? AppColors.textMuted : AppColors.textMutedLight, fontSize: 10),
               ),
               const Spacer(),
               Text(
                 '\u20AC${ride.displayFare.toStringAsFixed(2)}',
                 style: AppTextStyles.titleSmall
-                    .copyWith(color: AppColors.primaryGold, fontSize: 12),
+                    .copyWith(color: isDark ? AppColors.primaryGold : AppColors.primaryGoldDark, fontSize: 12),
               ),
               const SizedBox(width: 8),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceDark,
+                  color: isDark ? AppColors.surfaceDark : AppColors.backgroundLight,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
                   ride.displayVehicle,
                   style: AppTextStyles.labelSmall
-                      .copyWith(fontSize: 9, color: AppColors.textMuted),
+                      .copyWith(fontSize: 9, color: isDark ? AppColors.textMuted : AppColors.textMutedLight),
                 ),
               ),
             ],
@@ -383,21 +406,31 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
   }
 
   Widget _minimalRideCard(String rideId) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: isDark ? AppColors.cardDark : AppColors.cardLight,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Row(
         children: [
-          const Icon(Icons.directions_car,
-              color: AppColors.textMuted, size: 18),
+          Icon(Icons.directions_car,
+              color: isDark ? AppColors.textMuted : AppColors.textMutedLight, size: 18),
           const SizedBox(width: 8),
           Text('Related Ride: ',
               style: AppTextStyles.bodySmall
-                  .copyWith(color: AppColors.textMuted)),
+                  .copyWith(color: isDark ? AppColors.textMuted : AppColors.textMutedLight)),
           Text(rideId,
               style: AppTextStyles.bodySmall
                   .copyWith(color: AppColors.primaryGold)),
@@ -435,9 +468,10 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
 
   // ── Category Bottom Sheet ──────────────────────────────
   void _showCategorySheet(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -453,13 +487,14 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.borderDark,
+                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
               const SizedBox(height: 16),
               Text("What's this about?",
-                  style: AppTextStyles.headlineSmall),
+                  style: AppTextStyles.headlineSmall.copyWith(
+                      color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight)),
               const SizedBox(height: 16),
               ..._allCategories.map((cat) => GestureDetector(
                     onTap: () {
@@ -474,12 +509,12 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                       decoration: BoxDecoration(
                         color: _selectedCategory == cat.value
                             ? cat.color.withOpacity(0.08)
-                            : AppColors.cardDark,
+                            : (isDark ? AppColors.cardDark : AppColors.cardLight),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: _selectedCategory == cat.value
                               ? cat.color.withOpacity(0.3)
-                              : AppColors.borderDark,
+                              : (isDark ? AppColors.borderDark : AppColors.borderLight),
                         ),
                       ),
                       child: Row(
@@ -500,10 +535,11 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(cat.label,
-                                    style: AppTextStyles.titleSmall),
+                                    style: AppTextStyles.titleSmall.copyWith(
+                                        color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight)),
                                 Text(cat.subtitle,
                                     style: AppTextStyles.bodySmall.copyWith(
-                                        color: AppColors.textMuted,
+                                        color: isDark ? AppColors.textMuted : AppColors.textMutedLight,
                                         fontSize: 11)),
                               ],
                             ),
@@ -524,6 +560,7 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
 
   // ── Submit ─────────────────────────────────────────────
   Future<void> _submit() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     HapticFeedback.mediumImpact();
     setState(() => _isSubmitting = true);
 
@@ -544,20 +581,21 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
       _showSuccessSheet(ticket.id, ticket.shortId);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to submit ticket. Please try again.'),
-          backgroundColor: AppColors.surfaceDark,
+        SnackBar(
+          content: const Text('Failed to submit ticket. Please try again.'),
+          backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         ),
       );
     }
   }
 
   void _showSuccessSheet(String ticketId, String shortId) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       isDismissible: false,
       enableDrag: false,
-      backgroundColor: AppColors.surfaceDark,
+      backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -580,19 +618,20 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
               ),
               const SizedBox(height: 16),
               Text('Ticket Submitted!',
-                  style: AppTextStyles.headlineSmall),
+                  style: AppTextStyles.headlineSmall.copyWith(
+                      color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight)),
               const SizedBox(height: 8),
               Text(
                 "We've received your report and will get back to you as soon as possible.",
                 textAlign: TextAlign.center,
                 style: AppTextStyles.bodyMedium
-                    .copyWith(color: AppColors.textSecondary),
+                    .copyWith(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
               ),
               const SizedBox(height: 8),
               Text(
                 'Ticket #$shortId',
                 style: AppTextStyles.titleSmall
-                    .copyWith(color: AppColors.primaryGold),
+                    .copyWith(color: isDark ? AppColors.primaryGold : AppColors.primaryGoldDark),
               ),
               const SizedBox(height: 20),
               SizedBox(
@@ -600,7 +639,7 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.pop(ctx);
-                    Navigator.pop(context);
+                    context.pop();
                     context.pushNamed(
                       RouteNames.ticketDetail,
                       extra: ticketId,
@@ -621,11 +660,11 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
               TextButton(
                 onPressed: () {
                   Navigator.pop(ctx);
-                  Navigator.pop(context);
+                  context.pop();
                 },
                 child: Text('Done',
                     style: AppTextStyles.bodyMedium
-                        .copyWith(color: AppColors.textMuted)),
+                        .copyWith(color: isDark ? AppColors.textMuted : AppColors.textMutedLight)),
               ),
             ],
           ),

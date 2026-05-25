@@ -39,7 +39,11 @@ class VehicleTypeSelector extends StatelessWidget {
           final isAvailable = availableTypes == null || availableTypes!.contains(type);
 
           return GestureDetector(
-            onTap: () => onSelect(type),
+            onTap: () {
+              if (isAvailable) {
+                onSelect(type);
+              }
+            },
             child: Opacity(
               opacity: (isAvailable || isSelected) ? 1.0 : 0.5,
               child: Container(

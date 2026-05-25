@@ -26,7 +26,9 @@ class WelcomeScreen extends ConsumerWidget {
 
               // ── Logo with text ─────────────────────────────
               Image.asset(
-                AssetPaths.gozoltLogoWithText,
+                Theme.of(context).brightness == Brightness.dark
+                    ? AssetPaths.gozoltLogoWithText
+                    : AssetPaths.gozoltLogoWithTextLight,
                 width: 240,
                 fit: BoxFit.contain,
               ),
