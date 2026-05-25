@@ -30,15 +30,19 @@ import '../../features/account/presentation/screens/help_center_screen.dart';
 import '../../features/support/presentation/screens/ticket_list_screen.dart';
 import '../../features/support/presentation/screens/create_ticket_screen.dart';
 import '../../features/support/presentation/screens/ticket_detail_screen.dart';
+import '../providers/auth_redirect_provider.dart';
 import '../providers/storage_provider.dart';
 import 'route_names.dart';
 
 
 final routerProvider = Provider<GoRouter>((ref) {
+  final redirectNotifier = ref.watch(authRedirectProvider);
+
   return GoRouter(
     initialLocation: '/',
     restorationScopeId: 'router',
     debugLogDiagnostics: true,
+    refreshListenable: redirectNotifier,
     redirect: (context, state) async {
       final storage = ref.read(secureStorageProvider);
       final hasTokens = await storage.hasTokens();

@@ -808,7 +808,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                   primary: AppColors.primaryGold,
                   onSurface: AppColors.textPrimaryLight,
                 ),
-          dialogTheme: DialogTheme(
+          dialogTheme: DialogThemeData(
             backgroundColor: Theme.of(context).dialogBackgroundColor,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
@@ -834,7 +834,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                   primary: AppColors.primaryGold,
                   onSurface: AppColors.textPrimaryLight,
                 ),
-          dialogTheme: DialogTheme(
+          dialogTheme: DialogThemeData(
             backgroundColor: Theme.of(context).dialogBackgroundColor,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),

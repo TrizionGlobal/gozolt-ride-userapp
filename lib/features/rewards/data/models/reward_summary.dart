@@ -25,6 +25,9 @@ class RewardSummary {
   final double earningMultiplier;
   final double discountCap;
   final RewardProgress progress;
+  final int completedRides;
+  final int nextTierAt;
+  final int ridesRemaining;
 
   const RewardSummary({
     required this.tier,
@@ -33,6 +36,9 @@ class RewardSummary {
     required this.earningMultiplier,
     required this.discountCap,
     required this.progress,
+    this.completedRides = 0,
+    this.nextTierAt = 0,
+    this.ridesRemaining = 0,
   });
 
   bool get isBronze => tier == 'BRONZE';
@@ -60,6 +66,9 @@ class RewardSummary {
       currentPoints: (json['currentPoints'] as num?)?.toDouble() ?? 0,
       earningMultiplier: (json['earningMultiplier'] as num?)?.toDouble() ?? 1.0,
       discountCap: (json['discountCap'] as num?)?.toDouble() ?? 5.0,
+      completedRides: (json['completedRides'] as num?)?.toInt() ?? 0,
+      nextTierAt: (json['nextTierAt'] as num?)?.toInt() ?? 0,
+      ridesRemaining: (json['ridesRemaining'] as num?)?.toInt() ?? 0,
       progress: json['progress'] != null
           ? RewardProgress.fromJson(json['progress'] as Map<String, dynamic>)
           : const RewardProgress(pointsNeeded: 0, progressPercent: 0),

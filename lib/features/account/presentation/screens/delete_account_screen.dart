@@ -6,6 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/providers/storage_provider.dart';
 import '../../../../core/router/route_names.dart';
+import '../providers/account_providers.dart';
 
 class DeleteAccountScreen extends ConsumerStatefulWidget {
   const DeleteAccountScreen({super.key});
@@ -314,13 +315,47 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
     if (confirmed != true || !mounted) return;
 
     setState(() => _isDeleting = true);
-    await Future.delayed(const Duration(milliseconds: 800));
+
+    try {
+      final ds = ref.read(accountRemoteDatasourceProvider);
+      await ds.deleteAccount();
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isDeleting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to delete account. Please try again.')),
+        );
+      }
+      return;
+    }
 
     if (mounted) {
       final storage = ref.read(secureStorageProvider);
       await storage.clearTokens();
       if (mounted) {
-        context.goNamed(RouteNames.welcome);
+        // Show success modal
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: Theme.of(context).cardTheme.color,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text('Account Deleted', style: AppTextStyles.headlineSmall),
+            content: Text(
+              'Your account has been deleted successfully. We\'re sorry to see you go.',
+              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  context.goNamed(RouteNames.welcome);
+                },
+                child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        );
       }
     }
   }

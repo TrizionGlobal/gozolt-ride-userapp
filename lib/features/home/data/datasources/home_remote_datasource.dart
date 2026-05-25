@@ -9,8 +9,14 @@ class HomeRemoteDatasource {
   HomeRemoteDatasource(this._dio);
 
   Future<UserProfile> getUserProfile() async {
-    final response = await _dio.get(ApiConstants.userProfile);
-    return UserProfile.fromJson(response.data as Map<String, dynamic>);
+    try {
+      final response = await _dio.get(ApiConstants.userProfile);
+      return UserProfile.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      // 401 is handled by ApiInterceptor (refresh + redirect to login).
+      // For any other error, rethrow so the UI can show a retry option.
+      rethrow;
+    }
   }
 
   Future<List<UserAddress>> getUserAddresses() async {

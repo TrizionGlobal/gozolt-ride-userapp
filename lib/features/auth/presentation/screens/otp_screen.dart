@@ -29,6 +29,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   bool _hasError = false;
   String? _errorText;
   String _currentOtp = '';
+  bool _canPop = false;
 
   @override
   void initState() {
@@ -132,6 +133,48 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     _startTimers();
   }
 
+  Future<bool> _showExitDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Theme.of(context).cardTheme.color,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text('Cancel Verification?', style: AppTextStyles.titleMedium),
+          content: Text(
+            'If you exit now, this OTP will be invalidated and you will need to request a new one.',
+            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text('Stay', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+            ),
+            TextButton(
+              onPressed: () {
+                ref.read(authProvider.notifier).reset(); // Invalidates local state
+                Navigator.pop(context, true);
+              },
+              child: Text('Exit', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false;
+  }
+
+  void _onBackTapped() async {
+    final shouldExit = await _showExitDialog();
+    if (shouldExit && mounted) {
+      setState(() => _canPop = true);
+      // Wait for rebuild to apply canPop = true
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.pop();
+      });
+    }
+  }
+
   String _formatTime(int seconds) {
     final mins = (seconds ~/ 60).toString().padLeft(2, '0');
     final secs = (seconds % 60).toString().padLeft(2, '0');
@@ -181,8 +224,14 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
     final isLoading = authState.status == AuthStatus.loading;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+    return PopScope(
+      canPop: _canPop,
+      onPopInvoked: (didPop) {
+        if (didPop) return;
+        _onBackTapped();
+      },
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -192,7 +241,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
               const SizedBox(height: 12),
 
               // ── Back button ────────────────────────────────
-              AuthBackButton(onTap: () => context.pop()),
+              AuthBackButton(onTap: _onBackTapped),
 
               const SizedBox(height: 40),
 
@@ -227,7 +276,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                     ),
                     const SizedBox(width: 8),
                     GestureDetector(
-                      onTap: () => context.pop(),
+                      onTap: _onBackTapped,
                       child: Text(
                         'Edit',
                         style: AppTextStyles.bodyMedium.copyWith(
@@ -308,7 +357,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                       const SizedBox(height: 12),
                       AnimatedSwitcher(
                         duration: const Duration(milliseconds: 300),
-                        child: _validitySeconds <= 0
+                        child: _canResend
                             ? TextButton.icon(
                                 key: const ValueKey('resend_btn'),
                                 onPressed: _resendOtp,
@@ -319,7 +368,16 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                                   textStyle: AppTextStyles.titleSmall,
                                 ),
                               )
-                            : const SizedBox.shrink(key: ValueKey('empty_space')),
+                            : Padding(
+                                key: const ValueKey('resend_countdown'),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                child: Text(
+                                  'Resend code in $_resendSeconds seconds',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ),
                       ),
                     ],
                   ),
@@ -342,6 +400,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

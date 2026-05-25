@@ -150,10 +150,12 @@ class RideBookingNotifier extends StateNotifier<RideBookingState> {
         fareEstimate: estimate,
         status: BookingStatus.estimated,
       );
-    } catch (e) {
+    } catch (e, stack) {
+      print('Error in fetchFareEstimate: $e');
+      print(stack);
       state = state.copyWith(
         status: BookingStatus.error,
-        errorMessage: 'Failed to estimate fare. Please try again.',
+        errorMessage: 'Failed to estimate fare: $e',
       );
     }
   }

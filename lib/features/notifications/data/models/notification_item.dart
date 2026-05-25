@@ -39,14 +39,12 @@ class NotificationPreference {
   final bool rideUpdates;
   final bool payments;
   final bool promotions;
-  final bool documentExpiry;
   final bool systemAlerts;
 
   const NotificationPreference({
     this.rideUpdates = true,
     this.payments = true,
     this.promotions = true,
-    this.documentExpiry = true,
     this.systemAlerts = true,
   });
 
@@ -55,7 +53,6 @@ class NotificationPreference {
       rideUpdates: json['rideUpdates'] as bool? ?? true,
       payments: json['payments'] as bool? ?? true,
       promotions: json['promotions'] as bool? ?? true,
-      documentExpiry: json['documentExpiry'] as bool? ?? true,
       systemAlerts: json['systemAlerts'] as bool? ?? true,
     );
   }
@@ -64,7 +61,6 @@ class NotificationPreference {
         'rideUpdates': rideUpdates,
         'payments': payments,
         'promotions': promotions,
-        'documentExpiry': documentExpiry,
         'systemAlerts': systemAlerts,
       };
 
@@ -72,14 +68,12 @@ class NotificationPreference {
     bool? rideUpdates,
     bool? payments,
     bool? promotions,
-    bool? documentExpiry,
     bool? systemAlerts,
   }) {
     return NotificationPreference(
       rideUpdates: rideUpdates ?? this.rideUpdates,
       payments: payments ?? this.payments,
       promotions: promotions ?? this.promotions,
-      documentExpiry: documentExpiry ?? this.documentExpiry,
       systemAlerts: systemAlerts ?? this.systemAlerts,
     );
   }

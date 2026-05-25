@@ -88,7 +88,7 @@ class PhoneInputField extends StatelessWidget {
                     LengthLimitingTextInputFormatter(12),
                   ],
                   decoration: InputDecoration(
-                    hintText: 'Phone number',
+                    hintText: 'Enter Mobile Number',
                     hintStyle: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.textMuted,
                     ),

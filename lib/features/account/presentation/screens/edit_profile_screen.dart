@@ -403,24 +403,36 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       }
     } catch (e) {
       _snackBar(
-          'Could not access ${source == ImageSource.camera ? 'camera' : 'gallery'}');
+          'Could not access ${source == ImageSource.camera ? 'camera' : 'gallery'}',
+          isError: true);
     }
   }
 
-  void _snackBar(String msg) {
+  void _snackBar(String msg, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-          content: Text(msg), backgroundColor: Theme.of(context).cardTheme.color),
+        content: Text(
+          msg,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        backgroundColor: isError ? AppColors.error : AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+      ),
     );
   }
 
   Future<void> _saveProfile() async {
     if (!InputValidators.isValidName(_firstNameController.text)) {
-      _snackBar('Please enter a valid first name');
+      _snackBar('Please enter a valid first name', isError: true);
       return;
     }
     if (!InputValidators.isValidName(_lastNameController.text)) {
-      _snackBar('Please enter a valid last name');
+      _snackBar('Please enter a valid last name', isError: true);
       return;
     }
 
@@ -456,7 +468,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
-        _snackBar('Failed to update profile: ${e.toString()}');
+        _snackBar('Failed to update profile: ${e.toString()}', isError: true);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

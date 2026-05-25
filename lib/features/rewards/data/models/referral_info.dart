@@ -16,7 +16,7 @@ class ReferralInfo {
       referralCode: json['referralCode'] as String? ?? '',
       totalReferrals: (json['totalReferrals'] as num?)?.toInt() ?? 0,
       completedReferrals: (json['completedReferrals'] as num?)?.toInt() ?? 0,
-      earnedPoints: (json['earnedPoints'] as num?)?.toInt() ?? 0,
+      earnedPoints: ((json['earnedPoints'] ?? json['pointsEarned']) as num?)?.toInt() ?? 0,
     );
   }
 }

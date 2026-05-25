@@ -55,20 +55,20 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       if (isRegister && exists) {
         state = AuthState.errorMessage(
-          'This phone number is already registered. Please log in instead.',
+          'Already registered with this number. Please log in.',
         );
         return;
       }
 
       if (!isRegister && !exists) {
         state = AuthState.errorMessage(
-          'This phone number is not registered. Please register first.',
+          'No account found. Please register first.',
         );
         return;
       }
 
       // Send OTP via backend (Twilio)
-      await _repo.sendOtp(phone);
+      await _repo.sendOtp(phone, isRegister: isRegister);
       
       state = state.copyWith(
         status: AuthStatus.otpSent,
@@ -203,7 +203,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     final phone = phoneInput.replaceAll(' ', '');
     try {
       final fcmToken = await FirebaseMessaging.instance.getToken();
-      await _repo.sendOtp(phone, fcmToken: fcmToken);
+      await _repo.sendOtp(phone, fcmToken: fcmToken, isRegister: _isRegisterFlow);
     } catch (_) {
       // Silently fail — the user can tap resend again
     }

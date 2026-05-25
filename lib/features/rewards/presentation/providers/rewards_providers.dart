@@ -23,12 +23,15 @@ final rewardSummaryProvider = FutureProvider.autoDispose<RewardSummary>((ref) as
       tier: 'GOLD',
       totalPoints: 5620,
       currentPoints: 2450,
-      earningMultiplier: 1.5,
-      discountCap: 20,
+      earningMultiplier: 1.0,
+      discountCap: 99999,
+      completedRides: 55,
+      nextTierAt: 100,
+      ridesRemaining: 45,
       progress: RewardProgress(
         nextTier: 'PLATINUM',
-        pointsNeeded: 9380,
-        progressPercent: 37.5,
+        pointsNeeded: 45,
+        progressPercent: 10.0,
       ),
     );
   }
@@ -41,10 +44,13 @@ final rewardSummaryProvider = FutureProvider.autoDispose<RewardSummary>((ref) as
       totalPoints: 0,
       currentPoints: 0,
       earningMultiplier: 1.0,
-      discountCap: 5,
+      discountCap: 99999,
+      completedRides: 0,
+      nextTierAt: 25,
+      ridesRemaining: 25,
       progress: RewardProgress(
         nextTier: 'SILVER',
-        pointsNeeded: 1000,
+        pointsNeeded: 25,
         progressPercent: 0,
       ),
     );
@@ -58,76 +64,76 @@ final rewardRulesProvider = FutureProvider<RewardRules>((ref) async {
     await Future.delayed(const Duration(milliseconds: 300));
     return const RewardRules(
       earning: EarningRules(
-        pointsPerEur: 2,
-        firstRideBonus: 100,
-        fiveStarRatingBonus: 5,
-        scheduledRideBonus: 15,
-        weeklyStreakThreshold: 5,
-        weeklyStreakBonus: 50,
+        pointsPerEur: 10,
+        firstRideBonus: 0,
+        fiveStarRatingBonus: 0,
+        scheduledRideBonus: 0,
+        weeklyStreakThreshold: 9999,
+        weeklyStreakBonus: 0,
       ),
       referral: ReferralRules(
-        newUserBonus: 150,
+        newUserBonus: 200,
         referrerBonus: 200,
       ),
       redemption: RedemptionRules(
         minimumPoints: 200,
-        pointsToEurRatio: 100,
+        pointsToEurRatio: 400,
         description:
-            '100 GoCoins = €1 ride credit. Apply at checkout with the Use Coins toggle.',
+            '400 GoCoins = €1 wallet credit. Redeem coins directly to your wallet.',
       ),
       tiers: [
         TierInfo(
           tier: 'BRONZE',
           minPoints: 0,
+          minRides: 0,
           multiplier: 1.0,
-          maxDiscount: 5,
+          maxDiscount: 99999,
           benefits: [
-            'Earn 2 coins per €1 spent',
-            'Basic support',
+            'Earn 10 coins for every €1 spent on rides',
+            'Bronze loyalty status',
           ],
         ),
         TierInfo(
           tier: 'SILVER',
-          minPoints: 1000,
-          multiplier: 1.2,
-          maxDiscount: 10,
+          minPoints: 25,
+          minRides: 25,
+          multiplier: 1.0,
+          maxDiscount: 99999,
           benefits: [
-            '1.2x earning multiplier',
-            'Up to €10 discount per ride',
-            'Priority support',
+            'Earn 10 coins for every €1 spent on rides',
+            'Silver loyalty status',
+            'Redemption rate: 100 Coins = €0.50',
           ],
         ),
         TierInfo(
           tier: 'GOLD',
-          minPoints: 5000,
-          multiplier: 1.5,
-          maxDiscount: 20,
+          minPoints: 50,
+          minRides: 50,
+          multiplier: 1.0,
+          maxDiscount: 99999,
           benefits: [
-            '1.5x earning multiplier',
-            'Up to €20 discount per ride',
-            'Priority support',
-            'Exclusive promotions',
+            'Earn 10 coins for every €1 spent on rides',
+            'Gold loyalty status',
+            'Redemption rate: 100 Coins = €0.75',
           ],
         ),
         TierInfo(
           tier: 'PLATINUM',
-          minPoints: 15000,
-          multiplier: 2.0,
-          maxDiscount: 50,
+          minPoints: 100,
+          minRides: 100,
+          multiplier: 1.0,
+          maxDiscount: 99999,
           benefits: [
-            '2x earning multiplier',
-            'Up to €50 discount per ride',
-            'Dedicated support line',
-            'Exclusive promotions',
-            'Early access to new features',
-            'Airport lounge access',
+            'Earn 10 coins for every €1 spent on rides',
+            'Platinum loyalty status',
+            'Redemption rate: 100 Coins = €1.00',
           ],
         ),
       ],
       expiry: ExpiryRules(
         inactivityMonths: 6,
         description:
-            'Points expire after 6 months of account inactivity.',
+            'Coins expire after 6 months of account inactivity.',
       ),
     );
   }
@@ -137,26 +143,74 @@ final rewardRulesProvider = FutureProvider<RewardRules>((ref) async {
   } catch (_) {
     return const RewardRules(
       earning: EarningRules(
-        pointsPerEur: 2,
-        firstRideBonus: 100,
-        fiveStarRatingBonus: 5,
-        scheduledRideBonus: 15,
-        weeklyStreakThreshold: 5,
-        weeklyStreakBonus: 50,
+        pointsPerEur: 10,
+        firstRideBonus: 0,
+        fiveStarRatingBonus: 0,
+        scheduledRideBonus: 0,
+        weeklyStreakThreshold: 9999,
+        weeklyStreakBonus: 0,
       ),
       referral: ReferralRules(
-        newUserBonus: 150,
+        newUserBonus: 200,
         referrerBonus: 200,
       ),
       redemption: RedemptionRules(
         minimumPoints: 200,
-        pointsToEurRatio: 100,
-        description: '100 GoCoins = €1 ride credit. Apply at checkout with the Use Coins toggle.',
+        pointsToEurRatio: 400,
+        description: '400 GoCoins = €1 wallet credit. Redeem coins directly to your wallet.',
       ),
-      tiers: [],
+      tiers: [
+        TierInfo(
+          tier: 'BRONZE',
+          minPoints: 0,
+          minRides: 0,
+          multiplier: 1.0,
+          maxDiscount: 99999,
+          benefits: [
+            'Earn 10 coins for every €1 spent on rides',
+            'Bronze loyalty status',
+          ],
+        ),
+        TierInfo(
+          tier: 'SILVER',
+          minPoints: 25,
+          minRides: 25,
+          multiplier: 1.0,
+          maxDiscount: 99999,
+          benefits: [
+            'Earn 10 coins for every €1 spent on rides',
+            'Silver loyalty status',
+            'Redemption rate: 100 Coins = €0.50',
+          ],
+        ),
+        TierInfo(
+          tier: 'GOLD',
+          minPoints: 50,
+          minRides: 50,
+          multiplier: 1.0,
+          maxDiscount: 99999,
+          benefits: [
+            'Earn 10 coins for every €1 spent on rides',
+            'Gold loyalty status',
+            'Redemption rate: 100 Coins = €0.75',
+          ],
+        ),
+        TierInfo(
+          tier: 'PLATINUM',
+          minPoints: 100,
+          minRides: 100,
+          multiplier: 1.0,
+          maxDiscount: 99999,
+          benefits: [
+            'Earn 10 coins for every €1 spent on rides',
+            'Platinum loyalty status',
+            'Redemption rate: 100 Coins = €1.00',
+          ],
+        ),
+      ],
       expiry: ExpiryRules(
         inactivityMonths: 6,
-        description: 'Points expire after 6 months of account inactivity.',
+        description: 'Coins expire after 6 months of account inactivity.',
       ),
     );
   }
@@ -237,7 +291,7 @@ final referralInfoProvider = FutureProvider<ReferralInfo>((ref) async {
     return await ds.getReferralInfo();
   } catch (_) {
     return const ReferralInfo(
-      referralCode: '',
+      referralCode: 'GOZOLT-TEMP',
       totalReferrals: 0,
       completedReferrals: 0,
       earnedPoints: 0,

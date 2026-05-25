@@ -36,8 +36,8 @@ abstract final class AppConstants {
   static const String defaultCountryCode = '+356';
   static const String defaultCountry = 'MT';
   static const String defaultLanguage = 'en';
-  static const String defaultCurrency = 'INR';
-  static const String currencySymbol = '₹';
+  static const String defaultCurrency = 'EUR';
+  static const String currencySymbol = '€';
 
   // ── Timeouts ───────────────────────────────────────────
   static const Duration connectTimeout = Duration(seconds: 15);

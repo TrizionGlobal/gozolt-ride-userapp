@@ -188,7 +188,7 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
                   color: AppColors.primaryGold, size: 18),
             ),
             title: 'Credit / Debit Card',
-            subtitle: 'Pay ₹${totalFare.toStringAsFixed(2)} securely',
+            subtitle: 'Pay €${totalFare.toStringAsFixed(2)} securely',
             isSelected: _selectedType == PaymentMethodType.card && _selectedCardId == null,
             onTap: () {
               _addNewPaymentMethod(amount: totalFare);

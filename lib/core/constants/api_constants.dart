@@ -1,14 +1,13 @@
 abstract final class ApiConstants {
   // ── Base URL ───────────────────────────────────────────
-  /// Set to true to use local backend for testing, false for production.
   static const bool useLocal = false;
 
   static const String baseUrl = useLocal 
-      ? 'http://10.0.2.2:3000/v1' // Use 10.0.2.2 for Android emulator to hit localhost
+      ? 'http://192.168.1.7:3000/v1' // Use physical Mac network IP for local emulator/device testing
       : 'https://gozolt-new-ride-backend-production.up.railway.app/v1';
 
   static const String wsUrl = useLocal
-      ? 'ws://10.0.2.2:3000'
+      ? 'ws://192.168.1.7:3000'
       : 'wss://gozolt-new-ride-backend-production.up.railway.app';
   
 

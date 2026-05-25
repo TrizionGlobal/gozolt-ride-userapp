@@ -54,7 +54,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
       category: 'GoCoins',
       question: 'What are GoCoins?',
       answer:
-          'GoCoins are our loyalty reward points. You earn GoCoins on every ride and can redeem them for ride discounts. Check the Rewards tab for details.',
+          'GoCoins are our loyalty rewards. You earn GoCoins on every ride and can redeem them for ride discounts. Check the Rewards tab for details.',
     ),
     _FaqItem(
       category: 'GoCoins',

@@ -49,7 +49,7 @@ class RewardsHomeBanner extends ConsumerWidget {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const TextSpan(text: ' Points'),
+                    const TextSpan(text: ' Program'),
                   ],
                 ),
               ),

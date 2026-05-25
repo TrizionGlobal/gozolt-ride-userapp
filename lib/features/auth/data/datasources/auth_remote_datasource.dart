@@ -23,13 +23,14 @@ class AuthRemoteDatasource {
   }
 
   /// Send OTP to the given phone number.
-  Future<void> sendOtp(String phone, {String? fcmToken}) async {
+  Future<void> sendOtp(String phone, {String? fcmToken, bool? isRegister}) async {
     try {
       await _dio.post(
         ApiConstants.sendOtp,
         data: {
           'phone': phone,
           if (fcmToken != null) 'fcmToken': fcmToken,
+          if (isRegister != null) 'isRegister': isRegister,
         },
       );
     } on DioException catch (e) {

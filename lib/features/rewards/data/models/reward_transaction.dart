@@ -50,6 +50,12 @@ class RewardTransaction {
         return 'Weekly Streak';
       case 'redemption':
         return 'Redeemed';
+      case 'tier_upgrade_bonus_silver_25':
+        return 'Silver Tier Reward';
+      case 'tier_upgrade_bonus_gold_50':
+        return 'Gold Tier Reward';
+      case 'tier_upgrade_bonus_platinum_100':
+        return 'Platinum Tier Reward';
       default:
         return 'Reward';
     }
