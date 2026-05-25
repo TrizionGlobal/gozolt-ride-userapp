@@ -365,8 +365,6 @@ class RewardsInfoScreen extends ConsumerWidget {
           // Details
           _tierDetailRow(
               context, 'Minimum requirement', '${tier.minRides} completed rides'),
-          _tierDetailRow(
-              context, 'Redemption rate', _getTierRedeemRate(tier.tier)),
           if (tier.benefits.isNotEmpty) ...[
             const SizedBox(height: 12),
             ...tier.benefits.map(

@@ -2,7 +2,7 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
-    id("org.jetbrains.kotlin.android") version "2.1.0"
+    id("org.jetbrains.kotlin.android") version "2.3.10"
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
@@ -22,19 +22,20 @@ val localProperties = Properties().apply {
     }
 }
 
+kotlin {
+    jvmToolchain(17)
+}
 android {
     namespace = "com.gozolt.gozolt_app"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "25.1.8937393"
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17.toString()
-    }
+
 
     signingConfigs {
         create("release") {
@@ -56,10 +57,10 @@ android {
 
     defaultConfig {
         applicationId = "com.gozolt.gozolt_app"
-        minSdk = 23
+        minSdk = flutter.minSdkVersion
         targetSdk = 34
-        versionCode = flutter.versionCode()
-        versionName = flutter.versionName()
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
         
         val mapsApiKey = localProperties.getProperty("MAPS_API_KEY") ?: ""
         manifestPlaceholders += mapOf("MAPS_API_KEY" to mapsApiKey)

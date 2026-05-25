@@ -319,20 +319,10 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
 
     try {
       final ds = ref.read(rewardsRemoteDatasourceProvider);
-      // In dev mode, just simulate
-      await Future.delayed(const Duration(milliseconds: 500));
-      if (ref.read(rewardSummaryProvider).value != null) {
-        // ignore real call in dev
-        try {
-          await ds.redeemPoints(points);
-        } catch (_) {
-          // dev bypass
-        }
-      }
+      await ds.redeemPoints(points);
 
       if (mounted) {
         Navigator.pop(context);
-        // Show success dialog
         double coinValueInEur = 0.0025;
         if (summary?.tier == 'PLATINUM') {
           coinValueInEur = 0.01;
@@ -340,8 +330,6 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
           coinValueInEur = 0.0075;
         } else if (summary?.tier == 'SILVER') {
           coinValueInEur = 0.005;
-        } else {
-          coinValueInEur = 0.0025;
         }
         final eurValue = points * coinValueInEur;
         _showSuccessDialog(points, eurValue);
@@ -350,9 +338,19 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
         ref.read(rewardHistoryProvider.notifier).load();
       }
     } catch (e) {
+      // Extract a friendly error message from the API response if available
+      String message = 'Redemption failed. Please try again.';
+      final err = e.toString();
+      if (err.contains('Minimum redemption')) {
+        message = 'Minimum 200 coins required to redeem.';
+      } else if (err.contains('Insufficient')) {
+        message = 'You don\'t have enough coins.';
+      } else if (err.contains('401') || err.contains('Unauthorized')) {
+        message = 'Session expired. Please log in again.';
+      }
       setState(() {
         _isSubmitting = false;
-        _errorText = 'Redemption failed. Please try again.';
+        _errorText = message;
       });
     }
   }

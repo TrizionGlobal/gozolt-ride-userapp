@@ -163,7 +163,7 @@ class _StripeAddCardSheetState extends State<StripeAddCardSheet> {
           const SizedBox(height: 8),
           Text(
             widget.amount != null 
-              ? 'Pay ₹${widget.amount!.toStringAsFixed(2)} securely via Stripe.'
+              ? 'Pay €${widget.amount!.toStringAsFixed(2)} securely via Stripe.'
               : 'Add your card for seamless ride booking. Your details are encrypted and securely stored by Stripe.',
             textAlign: TextAlign.center,
             style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),

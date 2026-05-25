@@ -38,20 +38,6 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
     }
   }
 
-  String _tierMilestoneBonusText(String tier) {
-    switch (tier) {
-      case 'PLATINUM':
-        return '300 Coins';
-      case 'GOLD':
-        return '270 Coins';
-      case 'SILVER':
-        return '200 Coins';
-      case 'BRONZE':
-      default:
-        return '0 Coins';
-    }
-  }
-
   int _tierWeight(String tier) {
     switch (tier) {
       case 'BRONZE':
@@ -131,8 +117,6 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
 
   Widget _buildCelebrationContent(String tierName) {
     final gradient = _tierGradient(tierName);
-    final milestoneBonus = _milestoneBonus(tierName);
-
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -200,30 +184,6 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
               color: Colors.white.withOpacity(0.8),
             ),
           ),
-          if (milestoneBonus > 0) ...[
-            const SizedBox(height: 20),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.stars, color: AppColors.primaryGold, size: 20),
-                  const SizedBox(width: 8),
-                  Text(
-                    '+$milestoneBonus Milestone Bonus!',
-                    style: AppTextStyles.titleMedium.copyWith(
-                      color: AppColors.primaryGold,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
@@ -246,19 +206,6 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
         ],
       ),
     );
-  }
-
-  int _milestoneBonus(String tier) {
-    switch (tier) {
-      case 'SILVER':
-        return 200;
-      case 'GOLD':
-        return 270;
-      case 'PLATINUM':
-        return 300;
-      default:
-        return 0;
-    }
   }
 
   Widget _buildTotalCoinsCard(BuildContext context, RewardSummary summary) {
@@ -438,28 +385,6 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                           const SizedBox(width: 4),
                           Text(
                             _tierRedeemRateText(tier),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.stars, color: Colors.white, size: 12),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Bonus: ${_tierMilestoneBonusText(tier)}',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 10,
@@ -898,13 +823,31 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
   Widget _buildShimmerCard() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: const EdgeInsets.all(20),
       height: 100,
       decoration: BoxDecoration(
         color: Theme.of(context).cardTheme.color ?? AppColors.cardDark,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
       ),
-      child: const Center(
-        child: CircularProgressIndicator(color: AppColors.primaryGold),
+      child: ShimmerWrap(
+        child: Row(
+          children: [
+            const ShimmerCircle(radius: 20),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  ShimmerText(width: 140, height: 16),
+                  SizedBox(height: 8),
+                  ShimmerText(width: 80, height: 12),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

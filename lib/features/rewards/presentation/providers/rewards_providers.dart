@@ -91,7 +91,6 @@ final rewardRulesProvider = FutureProvider<RewardRules>((ref) async {
           benefits: [
             'Earn 10 coins for every €1 spent on rides',
             'Bronze loyalty status',
-            'No tier upgrade bonus',
           ],
         ),
         TierInfo(
@@ -103,7 +102,7 @@ final rewardRulesProvider = FutureProvider<RewardRules>((ref) async {
           benefits: [
             'Earn 10 coins for every €1 spent on rides',
             'Silver loyalty status',
-            'One-time upgrade bonus: +200 coins',
+            'Redemption rate: 100 Coins = €0.50',
           ],
         ),
         TierInfo(
@@ -115,7 +114,7 @@ final rewardRulesProvider = FutureProvider<RewardRules>((ref) async {
           benefits: [
             'Earn 10 coins for every €1 spent on rides',
             'Gold loyalty status',
-            'One-time upgrade bonus: +270 coins',
+            'Redemption rate: 100 Coins = €0.75',
           ],
         ),
         TierInfo(
@@ -127,7 +126,7 @@ final rewardRulesProvider = FutureProvider<RewardRules>((ref) async {
           benefits: [
             'Earn 10 coins for every €1 spent on rides',
             'Platinum loyalty status',
-            'One-time upgrade bonus: +300 coins',
+            'Redemption rate: 100 Coins = €1.00',
           ],
         ),
       ],
@@ -170,7 +169,6 @@ final rewardRulesProvider = FutureProvider<RewardRules>((ref) async {
           benefits: [
             'Earn 10 coins for every €1 spent on rides',
             'Bronze loyalty status',
-            'No tier upgrade bonus',
           ],
         ),
         TierInfo(
@@ -182,7 +180,7 @@ final rewardRulesProvider = FutureProvider<RewardRules>((ref) async {
           benefits: [
             'Earn 10 coins for every €1 spent on rides',
             'Silver loyalty status',
-            'One-time upgrade bonus: +200 coins',
+            'Redemption rate: 100 Coins = €0.50',
           ],
         ),
         TierInfo(
@@ -194,7 +192,7 @@ final rewardRulesProvider = FutureProvider<RewardRules>((ref) async {
           benefits: [
             'Earn 10 coins for every €1 spent on rides',
             'Gold loyalty status',
-            'One-time upgrade bonus: +270 coins',
+            'Redemption rate: 100 Coins = €0.75',
           ],
         ),
         TierInfo(
@@ -206,7 +204,7 @@ final rewardRulesProvider = FutureProvider<RewardRules>((ref) async {
           benefits: [
             'Earn 10 coins for every €1 spent on rides',
             'Platinum loyalty status',
-            'One-time upgrade bonus: +300 coins',
+            'Redemption rate: 100 Coins = €1.00',
           ],
         ),
       ],
