@@ -3,6 +3,7 @@ import '../../data/models/driver_location.dart';
 import '../../data/models/ride.dart';
 
 enum ActiveRideStatus {
+  scheduled,
   driverEnRoute,
   driverArrived,
   inProgress,

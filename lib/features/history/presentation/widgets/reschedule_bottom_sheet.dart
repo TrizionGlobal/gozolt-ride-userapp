@@ -201,6 +201,16 @@ class _RescheduleBottomSheetState extends State<RescheduleBottomSheet> {
               primary: AppColors.primaryGold,
               surface: AppColors.surfaceDark,
             ),
+            timePickerTheme: const TimePickerThemeData(
+              hourMinuteTextStyle: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
+              dayPeriodTextStyle: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
           child: child!,
         );

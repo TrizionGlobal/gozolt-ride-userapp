@@ -148,20 +148,20 @@ class RideDetailsSheet extends ConsumerWidget {
                 ),
                 child: Column(
                   children: [
-                    _detailRow('Estimated Fare',
+                    _detailRow(context, 'Estimated Fare',
                         '\u20AC${ride?.estimatedFare?.toStringAsFixed(2) ?? '0.00'}',
                         valueColor: AppColors.primaryGold),
                     Divider(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, height: 20),
                     _detailRow(
-                        'Vehicle Type', ride?.vehicleType ?? 'Standard'),
+                        context, 'Vehicle Type', ride?.vehicleType ?? 'Standard'),
                     Divider(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, height: 20),
                     _detailRow(
-                        'Payment', ride?.paymentMethod ?? 'Cash'),
+                        context, 'Payment', ride?.paymentMethod ?? 'Cash'),
                     if (driver != null) ...[
                       Divider(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, height: 20),
-                      _detailRow('Driver', driver.name),
+                      _detailRow(context, 'Driver', driver.name),
                       Divider(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, height: 20),
-                      _detailRow('Plate', driver.formattedPlate),
+                      _detailRow(context, 'Plate', driver.formattedPlate),
                     ],
                   ],
                 ),
@@ -174,7 +174,7 @@ class RideDetailsSheet extends ConsumerWidget {
                 child: OutlinedButton(
                   onPressed: () => Navigator.pop(context),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textPrimary,
+                    foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.textPrimaryLight,
                     side: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
@@ -190,7 +190,8 @@ class RideDetailsSheet extends ConsumerWidget {
     );
   }
 
-  Widget _detailRow(String label, String value, {Color? valueColor}) {
+  Widget _detailRow(BuildContext context, String label, String value, {Color? valueColor}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -200,7 +201,7 @@ class RideDetailsSheet extends ConsumerWidget {
         Text(value,
             style: AppTextStyles.bodyMedium.copyWith(
               fontWeight: FontWeight.w600,
-              color: valueColor ?? AppColors.textPrimary,
+              color: valueColor ?? (isDark ? Colors.white : AppColors.textPrimaryLight),
             )),
       ],
     );

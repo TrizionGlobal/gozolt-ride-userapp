@@ -10,6 +10,9 @@ import '../../../rewards/presentation/screens/rewards_screen.dart';
 import '../providers/home_providers.dart';
 import 'home_screen.dart';
 
+import '../../../ride/presentation/providers/active_ride_provider.dart';
+import '../widgets/active_ride_banner.dart';
+
 class NavigationShell extends ConsumerStatefulWidget {
   const NavigationShell({super.key});
 
@@ -53,6 +56,10 @@ class _NavigationShellState extends ConsumerState<NavigationShell> {
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(homeTabIndexProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final rideState = ref.watch(activeRideProvider);
+    final hasActiveRide = rideState.ride != null &&
+        !rideState.isCompleted &&
+        !rideState.isCancelled;
 
     // Listen to tab changes to build history
     ref.listen<int>(homeTabIndexProvider, (previous, next) {
@@ -74,13 +81,24 @@ class _NavigationShellState extends ConsumerState<NavigationShell> {
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         extendBody: true,
-        body: IndexedStack(
-          index: currentIndex,
-          children: const [
-            HomeScreen(),
-            MyRidesScreen(),
-            RewardsScreen(),
-            AccountScreen(),
+        body: Stack(
+          children: [
+            IndexedStack(
+              index: currentIndex,
+              children: const [
+                HomeScreen(),
+                MyRidesScreen(),
+                RewardsScreen(),
+                AccountScreen(),
+              ],
+            ),
+            if (hasActiveRide)
+              Positioned(
+                bottom: MediaQuery.of(context).padding.bottom + 88,
+                left: 0,
+                right: 0,
+                child: const ActiveRideBanner(),
+              ),
           ],
         ),
         bottomNavigationBar: ClipRRect(

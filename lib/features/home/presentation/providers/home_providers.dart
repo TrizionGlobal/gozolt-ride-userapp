@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/dio_provider.dart';
+import '../../../notifications/presentation/providers/notification_providers.dart';
 import '../../data/datasources/home_remote_datasource.dart';
 import '../../data/models/user_address.dart';
 import '../../data/models/user_profile.dart';
@@ -58,9 +59,17 @@ final savedAddressesProvider = FutureProvider.autoDispose<List<UserAddress>>((re
 });
 
 /// Unread notification badge count.
+/// In production: fetches from API.
+/// In dev bypass: derived reactively from notificationsProvider state so
+/// the badge updates instantly when notifications are marked as read.
 final unreadNotificationCountProvider = FutureProvider.autoDispose<int>((ref) async {
   ref.keepAlive();
-  if (AppConstants.kDevBypass) return 3;
+  if (AppConstants.kDevBypass) {
+    // Watch notificationsProvider so this updates reactively when read state changes
+    // ignore: unused_local_variable
+    final _ = ref.watch(notificationsProvider);
+    return ref.read(notificationsProvider).notifications.where((n) => !n.read).length;
+  }
   final ds = ref.read(homeRemoteDatasourceProvider);
   return ds.getUnreadNotificationCount();
 });

@@ -67,6 +67,9 @@ enum VehicleType {
     }
   }
 
+  /// Total seats including the driver seat.
+  int get totalSeats => maxPassengers + 1;
+
   static VehicleType fromApi(String value) {
     switch (value.toUpperCase()) {
       case 'ECONOMY':

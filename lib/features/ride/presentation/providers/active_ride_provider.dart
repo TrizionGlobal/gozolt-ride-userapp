@@ -29,6 +29,12 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
   Timer? _mockStatusTimer;
   Timer? _pollingTimer;
 
+  /// Prevents duplicate socket listener setup across multiple calls.
+  bool _socketListenersAttached = false;
+
+  /// Prevents re-entrant calls to initFromSocketEvent for the same ride.
+  bool _isInitializing = false;
+
   ActiveRideNotifier(this._ref) : super(const ActiveRideState());
 
   /// Initialize with a ride ID after driver is found.
@@ -142,6 +148,19 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
       return;
     }
 
+    // ── Guard: skip if already initialized for this ride or currently initializing ──
+    if (_isInitializing) {
+      if (kDebugMode) print('[ActiveRide] SKIP — already initializing');
+      return;
+    }
+    if (state.ride?.id == rideId && !state.isLoading && state.ride?.pickupAddress?.isNotEmpty == true) {
+      if (kDebugMode) print('[ActiveRide] SKIP — already initialized for ride $rideId');
+      // Ensure socket listeners are attached (idempotent)
+      if (!_socketListenersAttached) _listenToSocketUpdates();
+      return;
+    }
+
+    _isInitializing = true;
     state = state.copyWith(isLoading: true);
 
     try {
@@ -223,33 +242,43 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
         isLoading: false,
       );
       if (kDebugMode) print('[ActiveRide] State set successfully ✓');
+
+      // Attach socket listeners and start polling only once per ride session
+      if (!_socketListenersAttached) _listenToSocketUpdates();
+      if (_pollingTimer == null || !_pollingTimer!.isActive) _startStatusPolling();
     } catch (e, st) {
       if (kDebugMode) print('[ActiveRide] initFromSocketEvent FAILED: $e');
       if (kDebugMode) print('[ActiveRide] Stack trace: $st');
-      // Store a minimal ride object so socket listeners can join the room
-      state = ActiveRideState(
-        ride: Ride(
-          id: rideId,
-          status: 'ACCEPTED',
-          pickupAddress: '',
-          pickupLat: 0,
-          pickupLng: 0,
-          dropoffAddress: '',
-          dropoffLat: 0,
-          dropoffLng: 0,
-          vehicleType: '',
-          paymentMethod: '',
-          createdAt: DateTime.now().toIso8601String(),
-        ),
-        status: ActiveRideStatus.driverEnRoute,
-        etaMinutes: 5,
-        otpPin: data['otp'] as String?,
-        isLoading: false,
-      );
+      // Only set minimal state if we don't already have a valid ride loaded
+      if (state.ride?.id != rideId || state.ride?.pickupAddress?.isEmpty != false) {
+        state = ActiveRideState(
+          ride: Ride(
+            id: rideId,
+            status: 'ACCEPTED',
+            pickupAddress: '',
+            pickupLat: 0,
+            pickupLng: 0,
+            dropoffAddress: '',
+            dropoffLat: 0,
+            dropoffLng: 0,
+            vehicleType: '',
+            paymentMethod: '',
+            createdAt: DateTime.now().toIso8601String(),
+          ),
+          status: ActiveRideStatus.driverEnRoute,
+          etaMinutes: 5,
+          otpPin: data['otp'] as String?,
+          isLoading: false,
+        );
+      } else {
+        // Already have valid state — just clear loading
+        state = state.copyWith(isLoading: false);
+      }
+      // Do NOT call _listenToSocketUpdates on failure if already attached
+      if (!_socketListenersAttached) _listenToSocketUpdates();
+    } finally {
+      _isInitializing = false;
     }
-
-    _listenToSocketUpdates();
-    _startStatusPolling();
   }
 
   StreamSubscription? _socketLocationSub;
@@ -259,6 +288,12 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
   StreamSubscription? _socketDestChangeSub;
 
   void _listenToSocketUpdates() {
+    if (_socketListenersAttached) {
+      if (kDebugMode) print('[ActiveRide] Socket listeners already attached — skipping');
+      return;
+    }
+    _socketListenersAttached = true;
+
     final socketService = _ref.read(socketServiceProvider);
     final rideId = state.ride?.id;
 
@@ -406,6 +441,7 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
   }
 
   void _cancelSocketSubs() {
+    _socketListenersAttached = false;
     _socketLocationSub?.cancel();
     _socketStatusSub?.cancel();
     _socketCompletedSub?.cancel();
@@ -448,19 +484,31 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
 
   Future<String?> shareRide() async {
     if (state.ride == null) return null;
+
+    // Return cached URL if already generated
+    if (state.shareTrackingUrl != null) return state.shareTrackingUrl;
+
     if (kDebugMode) print('[ActiveRide] shareRide called for ride=${state.ride!.id}');
+
+    // Always build a fallback URL so copy/share works even if API is down
+    final fallbackUrl = 'https://gozolt.com/track/${state.ride!.id}';
+
+    if (AppConstants.kDevBypass) {
+      state = state.copyWith(shareTrackingUrl: fallbackUrl);
+      return fallbackUrl;
+    }
     try {
       final ds = _ref.read(rideRemoteDatasourceProvider);
       final response = await ds.shareRide(state.ride!.id);
       if (kDebugMode) print('[ActiveRide] shareRide response: $response');
-      final url = response['trackingUrl'] as String?;
-      if (url != null) {
-        state = state.copyWith(shareTrackingUrl: url);
-      }
+      final url = response['trackingUrl'] as String? ?? fallbackUrl;
+      state = state.copyWith(shareTrackingUrl: url);
       return url;
     } catch (e) {
-      if (kDebugMode) print('[ActiveRide] Share failed: $e');
-      return null;
+      if (kDebugMode) print('[ActiveRide] Share API failed ($e) — using fallback URL');
+      // Use fallback so the user can still share a link
+      state = state.copyWith(shareTrackingUrl: fallbackUrl);
+      return fallbackUrl;
     }
   }
 
@@ -759,8 +807,9 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
 
       if (kDebugMode) print('[ActiveRide] Restored active ride: ${ride.id}, status=$status');
 
-      _listenToSocketUpdates();
-      _startStatusPolling();
+      // Only attach socket listeners and start polling if not already running
+      if (!_socketListenersAttached) _listenToSocketUpdates();
+      if (_pollingTimer == null || !_pollingTimer!.isActive) _startStatusPolling();
     } on DioException catch (e) {
       // 404 = no active ride, that's normal
       if (e.response?.statusCode == 404) return;
@@ -773,15 +822,15 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
   void reset() {
     _stopMockTimers();
     _cancelSocketSubs();
+    _isInitializing = false;
     state = const ActiveRideState();
   }
 
   void _startStatusPolling() {
     _pollingTimer?.cancel();
-    // First poll immediately
-    _pollOnce();
-    // Then every 4 seconds
-    _pollingTimer = Timer.periodic(const Duration(seconds: 4), (_) => _pollOnce());
+    // Poll every 30 seconds — socket events handle real-time updates
+    // Polling only acts as a fallback for status sync
+    _pollingTimer = Timer.periodic(const Duration(seconds: 30), (_) => _pollOnce());
   }
 
   Future<void> _pollOnce() async {
@@ -799,13 +848,23 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
 
       // --- Status change ---
       if (newStatus != state.status) {
-        if (kDebugMode) print('[Poll] STATUS CHANGED: ${state.status} → $newStatus');
+        // For scheduled rides: only allow transitions AWAY from scheduled
+        // (e.g., when a driver is actually assigned). Never downgrade back to driverEnRoute.
+        final isScheduledDowngrade = state.status == ActiveRideStatus.scheduled &&
+            newStatus == ActiveRideStatus.driverEnRoute &&
+            apiStatus != 'ACCEPTED' && apiStatus != 'DRIVER_EN_ROUTE';
 
-        if (newStatus == ActiveRideStatus.completed) {
-          completeRide(actualFare: _safeDouble(json['actualFare'], 0));
-          return;
+        if (!isScheduledDowngrade) {
+          if (kDebugMode) print('[Poll] STATUS CHANGED: ${state.status} → $newStatus');
+
+          if (newStatus == ActiveRideStatus.completed) {
+            completeRide(actualFare: _safeDouble(json['actualFare'], 0));
+            return;
+          }
+          state = state.copyWith(status: newStatus);
+        } else {
+          if (kDebugMode) print('[Poll] Ignoring driverEnRoute override of scheduled status (apiStatus=$apiStatus)');
         }
-        state = state.copyWith(status: newStatus);
       }
 
       // --- OTP ---
@@ -896,6 +955,8 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
 
   ActiveRideStatus _mapApiStatus(String apiStatus) {
     switch (apiStatus) {
+      case 'SCHEDULED':
+        return ActiveRideStatus.scheduled;
       case 'ACCEPTED':
       case 'DRIVER_EN_ROUTE':
         return ActiveRideStatus.driverEnRoute;
@@ -908,7 +969,8 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
       case 'CANCELLED':
         return ActiveRideStatus.cancelled;
       default:
-        return ActiveRideStatus.driverEnRoute;
+        // Preserve current status for unknown states rather than defaulting to driverEnRoute
+        return state.status;
     }
   }
 

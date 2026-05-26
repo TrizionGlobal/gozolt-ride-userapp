@@ -62,7 +62,7 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Title
           Padding(
@@ -175,11 +175,11 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.textPrimary,
+                        foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.textPrimaryLight,
                         side: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(10)),
                       ),
                       child: const Text('Keep Ride'),
                     ),
@@ -195,9 +195,9 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
                         foregroundColor: Colors.white,
                         disabledBackgroundColor:
                             AppColors.error.withOpacity(0.3),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(10)),
                       ),
                       child: _isSubmitting
                           ? const SizedBox(
@@ -224,13 +224,13 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
       onTap: () => setState(() => _selectedReason = reason),
       child: Container(
         width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        margin: const EdgeInsets.only(bottom: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.error.withOpacity(0.08)
               : Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected ? AppColors.error : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
           ),
@@ -249,9 +249,10 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
               child: Text(
                 reason,
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: isSelected
-                      ? AppColors.textPrimary
-                      : AppColors.textSecondary,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? (isSelected ? Colors.white : AppColors.textSecondary)
+                      : (isSelected ? AppColors.textPrimaryLight : AppColors.textPrimaryLight.withOpacity(0.7)),
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
             ),

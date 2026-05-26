@@ -20,7 +20,13 @@ class _ShareRideSheetState extends ConsumerState<ShareRideSheet> {
   @override
   void initState() {
     super.initState();
-    _generateLink();
+    // Check if URL is already cached in state to avoid re-fetching
+    final cached = ref.read(activeRideProvider).shareTrackingUrl;
+    if (cached != null) {
+      _trackingUrl = cached;
+    } else {
+      _generateLink();
+    }
   }
 
   Future<void> _generateLink() async {
@@ -148,6 +154,7 @@ class _ShareRideSheetState extends ConsumerState<ShareRideSheet> {
                         onTap: () {
                           Clipboard.setData(
                               ClipboardData(text: _trackingUrl!));
+                          final isDark = Theme.of(context).brightness == Brightness.dark;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Row(
@@ -155,7 +162,14 @@ class _ShareRideSheetState extends ConsumerState<ShareRideSheet> {
                                   const Icon(Icons.check_circle,
                                       color: AppColors.success, size: 20),
                                   const SizedBox(width: 10),
-                                  const Text('Link copied'),
+                                  Text(
+                                    'Link copied',
+                                    style: TextStyle(
+                                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
+                                  ),
                                 ],
                               ),
                               backgroundColor: Theme.of(context).cardTheme.color,

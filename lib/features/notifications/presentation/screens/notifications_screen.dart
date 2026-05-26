@@ -6,13 +6,19 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
+import '../../../home/presentation/providers/home_providers.dart';
 import '../../data/models/notification_item.dart';
 import '../providers/notification_providers.dart';
 import '../widgets/notification_card.dart';
 
-class NotificationsScreen extends ConsumerWidget {
+class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
+  @override
+  ConsumerState<NotificationsScreen> createState() => _NotificationsScreenState();
+}
+
+class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   static const _filters = [
     _FilterTab(label: 'All', value: null),
     _FilterTab(label: 'Rides', value: 'RIDE_UPDATE'),
@@ -20,11 +26,21 @@ class NotificationsScreen extends ConsumerWidget {
   ];
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void initState() {
+    super.initState();
+    // Auto-mark all as read when screen opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(notificationsProvider.notifier).markAllAsRead();
+      // Invalidate the bell count so it recalculates
+      ref.invalidate(unreadNotificationCountProvider);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final currentFilter = ref.watch(notificationFilterProvider);
     final notifState = ref.watch(notificationsProvider);
-    final hasUnread =
-        notifState.notifications.any((n) => !n.read);
+    final hasUnread = notifState.notifications.any((n) => !n.read);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,

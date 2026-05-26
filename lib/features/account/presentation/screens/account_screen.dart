@@ -276,11 +276,11 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                   icon: Icons.language,
                   label: 'Language',
                   trailing: Text(
-                    ref.watch(languageProvider) == 'en' ? 'English' : 'Maltese',
+                    'English',
                     style: AppTextStyles.bodySmall
                         .copyWith(color: AppColors.textMuted),
                   ),
-                  onTap: () => _showLanguageSheet(),
+                  showChevron: false,
                 ),
                 _menuItem(
                   icon: Icons.notifications_outlined,
@@ -336,12 +336,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                   label: 'Terms & Conditions',
                   onTap: () => context.pushNamed(RouteNames.terms),
                 ),
-                _menuItem(
-                  icon: Icons.download_outlined,
-                  label: 'Download My Data',
-                  subtitle: 'GDPR data export',
-                  onTap: () => _downloadData(),
-                ),
+
                 _menuItem(
                   icon: Icons.delete_outline,
                   label: 'Delete Account',
@@ -375,7 +370,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 const SizedBox(height: 16),
                 Center(
                   child: Text(
-                    'Gozolt v1.0.0',
+                    'Gozolt v1.0.1',
                     style: AppTextStyles.labelSmall.copyWith(
                       color: AppColors.textMuted,
                       fontSize: 10,
@@ -413,6 +408,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     Widget? trailing,
     Color? textColor,
     VoidCallback? onTap,
+    bool showChevron = true,
   }) {
     return Semantics(
       label: label,
@@ -456,9 +452,11 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               ),
             ),
             if (trailing != null) trailing,
-            const SizedBox(width: 4),
-            Icon(Icons.chevron_right,
-                color: AppColors.textMuted, size: 20),
+            if (showChevron) ...[
+              const SizedBox(width: 4),
+              const Icon(Icons.chevron_right,
+                  color: AppColors.textMuted, size: 20),
+            ],
           ],
         ),
       ),
@@ -621,6 +619,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     }
   }
 
+
   void _rateApp() {
     final now = DateTime.now();
     if (_lastRateAppTap != null && now.difference(_lastRateAppTap!).inSeconds < 5) {
@@ -634,49 +633,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     _showPremiumSnackBar(
       'App Store rating coming soon!',
       icon: Icons.star_outline,
-    );
-  }
-
-  void _downloadData() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(ctx).colorScheme.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Download My Data', style: AppTextStyles.headlineSmall),
-        content: Text(
-          'We\'ll prepare a copy of your personal data as required by GDPR. This may take a few minutes.',
-          style: AppTextStyles.bodyMedium
-              .copyWith(color: AppColors.textSecondary),
-        ),
-        actions: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text('Cancel',
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
-              ),
-              const SizedBox(width: 8),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  _showPremiumSnackBar(
-                    'Data export requested. You\'ll receive it via email.',
-                    icon: Icons.download_done_outlined,
-                  );
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primaryGold,
-                ),
-                child: const Text('Request Export',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 

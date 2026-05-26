@@ -7,6 +7,7 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../ride/presentation/providers/active_ride_provider.dart';
 import '../../../ride/presentation/providers/active_ride_state.dart';
+import '../../../ride/data/models/ride.dart';
 
 class ActiveRideBanner extends ConsumerWidget {
   const ActiveRideBanner({super.key});
@@ -22,7 +23,7 @@ class ActiveRideBanner extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    final statusLabel = _statusLabel(rideState.status);
+    final statusLabel = _statusLabel(rideState.status, rideState.ride);
     final statusIcon = _statusIcon(rideState.status);
     final statusColor = _statusColor(rideState.status);
     final eta = rideState.etaMinutes;
@@ -161,6 +162,8 @@ class ActiveRideBanner extends ConsumerWidget {
 
   String _bannerTitle(ActiveRideStatus status) {
     switch (status) {
+      case ActiveRideStatus.scheduled:
+        return 'Ride Scheduled';
       case ActiveRideStatus.driverEnRoute:
         return 'Your Driver is Coming';
       case ActiveRideStatus.driverArrived:
@@ -174,8 +177,27 @@ class ActiveRideBanner extends ConsumerWidget {
     }
   }
 
-  String _statusLabel(ActiveRideStatus status) {
+  String _statusLabel(ActiveRideStatus status, Ride? ride) {
     switch (status) {
+      case ActiveRideStatus.scheduled:
+        if (ride?.scheduledAt != null) {
+          try {
+            final dt = DateTime.parse(ride!.scheduledAt!).toLocal();
+            final now = DateTime.now();
+            final isToday = dt.year == now.year && dt.month == now.month && dt.day == now.day;
+            final pad = (int n) => n.toString().padLeft(2, '0');
+            final timeStr = '${pad(dt.hour)}:${pad(dt.minute)}';
+            if (isToday) {
+              return 'Today at $timeStr';
+            } else {
+              final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+              return '${months[dt.month - 1]} ${dt.day} at $timeStr';
+            }
+          } catch (_) {
+            return 'Scheduled ride';
+          }
+        }
+        return 'Scheduled ride';
       case ActiveRideStatus.driverEnRoute:
         return 'En route to pickup';
       case ActiveRideStatus.driverArrived:
@@ -191,6 +213,8 @@ class ActiveRideBanner extends ConsumerWidget {
 
   IconData _statusIcon(ActiveRideStatus status) {
     switch (status) {
+      case ActiveRideStatus.scheduled:
+        return Icons.access_time_rounded;
       case ActiveRideStatus.driverEnRoute:
         return Icons.directions_car;
       case ActiveRideStatus.driverArrived:
@@ -206,6 +230,8 @@ class ActiveRideBanner extends ConsumerWidget {
 
   Color _statusColor(ActiveRideStatus status) {
     switch (status) {
+      case ActiveRideStatus.scheduled:
+        return AppColors.primaryGold;
       case ActiveRideStatus.driverEnRoute:
         return AppColors.primaryGold;
       case ActiveRideStatus.driverArrived:

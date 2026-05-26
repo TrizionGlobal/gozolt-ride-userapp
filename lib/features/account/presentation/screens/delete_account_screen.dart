@@ -156,7 +156,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Under GDPR, you have the right to request data deletion. Consider downloading your data first from Account > Download My Data.',
+                          'Under GDPR, you have the right to request data deletion.',
                           style: AppTextStyles.bodySmall
                               .copyWith(color: AppColors.info),
                         ),

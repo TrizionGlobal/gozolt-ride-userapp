@@ -233,14 +233,14 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                   Text(
                     'GO',
                     style: AppTextStyles.titleMedium.copyWith(
-                      color: goldColor,
+                      color: AppColors.primaryGold,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
                   Text(
                     'ZOLT',
                     style: AppTextStyles.titleMedium.copyWith(
-                      color: goldColor,
+                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -249,7 +249,7 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
               Text(
                 'The Super App',
                 style: AppTextStyles.labelSmall.copyWith(
-                  color: goldColor,
+                  color: AppColors.primaryGold,
                   fontSize: 8,
                   letterSpacing: 0.8,
                 ),

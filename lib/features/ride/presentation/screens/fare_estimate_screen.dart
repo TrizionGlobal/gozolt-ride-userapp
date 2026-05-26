@@ -834,8 +834,12 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
           ),
           timePickerTheme: TimePickerThemeData(
             hourMinuteTextStyle: const TextStyle(
-              fontSize: 42,
+              fontSize: 28,
               fontWeight: FontWeight.bold,
+            ),
+            dayPeriodTextStyle: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),

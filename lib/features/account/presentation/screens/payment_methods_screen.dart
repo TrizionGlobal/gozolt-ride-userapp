@@ -50,17 +50,17 @@ class PaymentMethodsScreen extends ConsumerWidget {
                           height: 36,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.2) : Colors.black.withOpacity(0.05),
+                            color: AppColors.backgroundDark.withOpacity(0.15),
                           ),
-                          child: Icon(Icons.arrow_back,
-                              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black, size: 20),
+                          child: const Icon(Icons.arrow_back,
+                              color: AppColors.backgroundDark, size: 20),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Text(
                         'Payment Methods',
                         style: AppTextStyles.headlineSmall.copyWith(
-                          color: Theme.of(context).scaffoldBackgroundColor,
+                          color: AppColors.backgroundDark,
                         ),
                       ),
                     ],

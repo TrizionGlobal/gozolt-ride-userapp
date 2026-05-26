@@ -124,24 +124,25 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
   }
 
   Future<void> markAllAsRead() async {
-    if (AppConstants.kDevBypass) {
-      state = state.copyWith(
-        notifications: state.notifications
-            .map((n) => NotificationItem(
-                  id: n.id,
-                  type: n.type,
-                  title: n.title,
-                  body: n.body,
-                  data: n.data,
-                  read: true,
-                  createdAt: n.createdAt,
-                ))
-            .toList(),
-      );
-      return;
+    // Always update local state immediately so the badge clears at once
+    state = state.copyWith(
+      notifications: state.notifications
+          .map((n) => NotificationItem(
+                id: n.id,
+                type: n.type,
+                title: n.title,
+                body: n.body,
+                data: n.data,
+                read: true,
+                createdAt: n.createdAt,
+              ))
+          .toList(),
+    );
+    if (!AppConstants.kDevBypass) {
+      try {
+        await _ds.markAsRead(all: true);
+      } catch (_) {}
     }
-    await _ds.markAsRead(all: true);
-    load();
   }
 
   static List<NotificationItem> _defaultNotifications() {
@@ -209,25 +210,27 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
   }
 
   Future<void> markAsRead(String id) async {
-    if (AppConstants.kDevBypass) {
-      state = state.copyWith(
-        notifications: state.notifications
-            .map((n) => n.id == id
-                ? NotificationItem(
-                    id: n.id,
-                    type: n.type,
-                    title: n.title,
-                    body: n.body,
-                    data: n.data,
-                    read: true,
-                    createdAt: n.createdAt,
-                  )
-                : n)
-            .toList(),
-      );
-      return;
+    // Always update local state immediately so the unread dot/badge clears at once
+    state = state.copyWith(
+      notifications: state.notifications
+          .map((n) => n.id == id
+              ? NotificationItem(
+                  id: n.id,
+                  type: n.type,
+                  title: n.title,
+                  body: n.body,
+                  data: n.data,
+                  read: true,
+                  createdAt: n.createdAt,
+                )
+              : n)
+          .toList(),
+    );
+    if (!AppConstants.kDevBypass) {
+      try {
+        await _ds.markAsRead(notificationIds: [id]);
+      } catch (_) {}
     }
-    await _ds.markAsRead(notificationIds: [id]);
   }
 }
 

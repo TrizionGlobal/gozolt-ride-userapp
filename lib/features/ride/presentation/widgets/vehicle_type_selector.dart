@@ -25,7 +25,7 @@ class VehicleTypeSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 160,
+      height: 182,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -100,7 +100,31 @@ class VehicleTypeSelector extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
+                    // Capacity row — always shown
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.person,
+                          size: 10,
+                          color: isSelected
+                              ? AppColors.primaryGold
+                              : AppColors.textMuted,
+                        ),
+                        const SizedBox(width: 2),
+                        Text(
+                          '${type.maxPassengers} seats',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                            color: isSelected
+                                ? AppColors.primaryGold
+                                : AppColors.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
                     if (!isAvailable)
                       // Unavailable label
                       Text(

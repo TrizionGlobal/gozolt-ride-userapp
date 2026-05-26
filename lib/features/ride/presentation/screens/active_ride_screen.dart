@@ -49,6 +49,9 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
   List<LatLng>? _driverToDropoffRoute;
   String? _lastRouteKey; // track which route we last fetched
 
+  /// One-shot guard: only attempt to re-fetch missing driver info once per screen lifetime.
+  bool _driverFetchAttempted = false;
+
   static const _darkMapStyle = '''[
     {"elementType":"geometry","stylers":[{"color":"#212121"}]},
     {"elementType":"labels.icon","stylers":[{"visibility":"off"}]},
@@ -412,12 +415,26 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
   Widget build(BuildContext context) {
     final rideState = ref.watch(activeRideProvider);
 
-    // If ride exists but driver info is missing, re-fetch from API
-    if (rideState.ride != null && rideState.driverInfo == null && !rideState.isLoading) {
+    // If ride exists, expects a driver, but driver info is missing, re-fetch from API.
+    // Guards:
+    //  1. Only for statuses where a driver is actually assigned (not scheduled)
+    //  2. Only attempt once per screen lifetime to avoid rebuild loops
+    final expectsDriver = rideState.status == ActiveRideStatus.driverEnRoute ||
+        rideState.status == ActiveRideStatus.driverArrived ||
+        rideState.status == ActiveRideStatus.inProgress;
+
+    if (!_driverFetchAttempted &&
+        rideState.ride != null &&
+        expectsDriver &&
+        rideState.driverInfo == null &&
+        !rideState.isLoading) {
+      _driverFetchAttempted = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(activeRideProvider.notifier).initFromSocketEvent({
-          'rideId': rideState.ride!.id,
-        });
+        if (mounted) {
+          ref.read(activeRideProvider.notifier).initFromSocketEvent({
+            'rideId': rideState.ride!.id,
+          });
+        }
       });
     }
 
@@ -515,7 +532,9 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
                             rideState.driverLocation!.latitude,
                             rideState.driverLocation!.longitude,
                           )
-                        : _defaultCenter,
+                        : (rideState.ride != null
+                            ? LatLng(rideState.ride!.pickupLat, rideState.ride!.pickupLng)
+                            : _defaultCenter),
                     zoom: 15,
                   ),
                   style: Theme.of(context).brightness == Brightness.dark ? _darkMapStyle : null,
@@ -597,8 +616,9 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
                     RideStatusBar(status: rideState.status),
                     const SizedBox(height: 16),
 
-                    // Ride PIN display
+                    // Ride PIN display — only show when driver is active (not for scheduled/no-driver)
                     if (rideState.otpPin != null &&
+                        rideState.status != ActiveRideStatus.scheduled &&
                         rideState.status != ActiveRideStatus.completed &&
                         rideState.status != ActiveRideStatus.cancelled)
                       Padding(
@@ -661,6 +681,37 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
 
   Widget _buildStatusContent(ActiveRideState rideState) {
     switch (rideState.status) {
+      case ActiveRideStatus.scheduled:
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            children: [
+              Text(
+                'Your partner will be assigned shortly before departure.',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColors.textSecondary
+                      : AppColors.textSecondaryLight,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () => _showCancelSheet(context),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.error,
+                    side: const BorderSide(color: AppColors.error),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: const Text('Cancel Scheduled Ride'),
+                ),
+              ),
+            ],
+          ),
+        );
       case ActiveRideStatus.driverEnRoute:
         return DriverEnRouteView(
           etaMinutes: rideState.etaMinutes ?? 0,
@@ -745,7 +796,11 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const RideDetailsSheet(),
+      useSafeArea: true,
+      builder: (ctx) => ProviderScope(
+        parent: ProviderScope.containerOf(context),
+        child: const RideDetailsSheet(),
+      ),
     );
   }
 
@@ -753,7 +808,11 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (_) => const ShareRideSheet(),
+      useSafeArea: true,
+      builder: (ctx) => ProviderScope(
+        parent: ProviderScope.containerOf(context),
+        child: const ShareRideSheet(),
+      ),
     );
   }
 
