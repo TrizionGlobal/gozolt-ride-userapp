@@ -122,7 +122,7 @@ class _ShareRideSheetState extends ConsumerState<ShareRideSheet> {
 
               // Tracking link
               if (_isLoading)
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(vertical: 16),
                   child: CircularProgressIndicator(
                       color: AppColors.primaryGold, strokeWidth: 2),
@@ -198,14 +198,18 @@ class _ShareRideSheetState extends ConsumerState<ShareRideSheet> {
                         onPressed: () async {
                           final box = context.findRenderObject() as RenderBox?;
                           final rect = box != null ? box.localToGlobal(Offset.zero) & box.size : null;
+                          final textToShare = driver != null
+                              ? 'Track my Gozolt ride in real-time!\n\nDriver: ${driver.name}\nVehicle: ${driver.vehicleDescription} (${driver.formattedPlate})\n\nLive tracking: $_trackingUrl'
+                              : 'Track my Gozolt ride in real-time: $_trackingUrl';
+                          
                           await Share.share(
-                            'Track my Gozolt ride in real-time: $_trackingUrl',
+                            textToShare,
                             subject: 'My Gozolt Live Location',
                             sharePositionOrigin: rect,
                           );
                         },
                         icon: const Icon(Icons.share, size: 18),
-                        label: const Text('Share with Contacts'),
+                        label: Text('Share with Contacts'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryGold,
                           foregroundColor: Theme.of(context).scaffoldBackgroundColor,

@@ -126,7 +126,7 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
               const SizedBox(height: 16),
 
               // ── Title ──────────────────────────────────────
-              const Center(
+              Center(
                 child: Text(
                   'Enter Your Phone Number',
                   style: AppTextStyles.headlineMedium,

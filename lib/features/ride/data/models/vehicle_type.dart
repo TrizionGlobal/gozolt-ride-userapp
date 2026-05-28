@@ -1,69 +1,96 @@
 import '../../../../core/constants/asset_paths.dart';
 
 enum VehicleType {
-  economy,
+  go,
   standard,
-  premium,
-  xl,
-  electric;
+  comfort,
+  green,
+  prime,
+  premiumXl,
+  van,
+  chauffeur;
 
   String get displayName {
     switch (this) {
-      case VehicleType.economy:
-        return 'Economy';
+      case VehicleType.go:
+        return 'Go';
       case VehicleType.standard:
         return 'Standard';
-      case VehicleType.premium:
-        return 'Premium';
-      case VehicleType.xl:
-        return 'XL (6+ seats)';
-      case VehicleType.electric:
-        return 'Electric';
+      case VehicleType.comfort:
+        return 'Comfort';
+      case VehicleType.green:
+        return 'Green';
+      case VehicleType.prime:
+        return 'Prime';
+      case VehicleType.premiumXl:
+        return 'Premium/XL';
+      case VehicleType.van:
+        return 'Van';
+      case VehicleType.chauffeur:
+        return 'Chauffeur';
     }
   }
 
   String get apiValue {
     switch (this) {
-      case VehicleType.economy:
-        return 'ECONOMY';
+      case VehicleType.go:
+        return 'GO';
       case VehicleType.standard:
         return 'STANDARD';
-      case VehicleType.premium:
-        return 'PREMIUM';
-      case VehicleType.xl:
-        return 'XL';
-      case VehicleType.electric:
-        return 'ELECTRIC';
+      case VehicleType.comfort:
+        return 'COMFORT';
+      case VehicleType.green:
+        return 'GREEN';
+      case VehicleType.prime:
+        return 'PRIME';
+      case VehicleType.premiumXl:
+        return 'PREMIUM_XL';
+      case VehicleType.van:
+        return 'VAN';
+      case VehicleType.chauffeur:
+        return 'CHAUFFEUR';
     }
   }
 
   String get iconPath {
     switch (this) {
-      case VehicleType.economy:
+      case VehicleType.go:
         return AssetPaths.vehicleStandard;
       case VehicleType.standard:
+        return AssetPaths.vehicleStandard;
+      case VehicleType.comfort:
         return AssetPaths.vehicleComfort;
-      case VehicleType.premium:
-        return AssetPaths.vehicleLuxury;
-      case VehicleType.xl:
-        return AssetPaths.vehicleXl;
-      case VehicleType.electric:
+      case VehicleType.green:
         return AssetPaths.vehicleAccessible;
+      case VehicleType.prime:
+        return AssetPaths.vehicleLuxury;
+      case VehicleType.premiumXl:
+        return AssetPaths.vehicleXl;
+      case VehicleType.van:
+        return AssetPaths.vehicleXl;
+      case VehicleType.chauffeur:
+        return AssetPaths.vehicleLuxury;
     }
   }
 
   int get maxPassengers {
     switch (this) {
-      case VehicleType.economy:
+      case VehicleType.go:
         return 4;
       case VehicleType.standard:
         return 4;
-      case VehicleType.premium:
+      case VehicleType.comfort:
         return 4;
-      case VehicleType.xl:
+      case VehicleType.green:
+        return 4;
+      case VehicleType.prime:
+        return 4;
+      case VehicleType.premiumXl:
         return 6;
-      case VehicleType.electric:
-        return 4;
+      case VehicleType.van:
+        return 8;
+      case VehicleType.chauffeur:
+        return 6;
     }
   }
 
@@ -72,18 +99,26 @@ enum VehicleType {
 
   static VehicleType fromApi(String value) {
     switch (value.toUpperCase()) {
-      case 'ECONOMY':
-        return VehicleType.economy;
+      case 'GO':
+        return VehicleType.go;
       case 'STANDARD':
         return VehicleType.standard;
-      case 'PREMIUM':
-        return VehicleType.premium;
+      case 'COMFORT':
+        return VehicleType.comfort;
+      case 'GREEN':
+        return VehicleType.green;
+      case 'PRIME':
+        return VehicleType.prime;
+      case 'PREMIUM_XL':
+      case 'PREMIUM/XL':
       case 'XL':
-        return VehicleType.xl;
-      case 'ELECTRIC':
-        return VehicleType.electric;
+        return VehicleType.premiumXl;
+      case 'VAN':
+        return VehicleType.van;
+      case 'CHAUFFEUR':
+        return VehicleType.chauffeur;
       default:
-        return VehicleType.standard;
+        return VehicleType.go;
     }
   }
 }

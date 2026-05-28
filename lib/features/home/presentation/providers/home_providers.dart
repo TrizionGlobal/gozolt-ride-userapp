@@ -5,6 +5,8 @@ import '../../../notifications/presentation/providers/notification_providers.dar
 import '../../data/datasources/home_remote_datasource.dart';
 import '../../data/models/user_address.dart';
 import '../../data/models/user_profile.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../auth/presentation/providers/auth_state.dart';
 
 final homeRemoteDatasourceProvider = Provider<HomeRemoteDatasource>((ref) {
   return HomeRemoteDatasource(ref.read(dioProvider));
@@ -15,9 +17,13 @@ final homeTabIndexProvider = StateProvider<int>((ref) => 0);
 
 /// User profile for greeting header.
 final userProfileProvider = FutureProvider.autoDispose<UserProfile>((ref) async {
-  // Keep alive unconditionally — prevents the header from flashing empty
-  // every time the user switches back to the Account or Home tab.
   ref.keepAlive();
+
+  ref.listen(authProvider, (previous, next) {
+    if (next.status == AuthStatus.unauthenticated) {
+      ref.invalidateSelf();
+    }
+  });
 
   if (AppConstants.kDevBypass) {
     return const UserProfile(
@@ -36,6 +42,12 @@ final userProfileProvider = FutureProvider.autoDispose<UserProfile>((ref) async 
 /// Saved addresses for the home shortcut.
 final savedAddressesProvider = FutureProvider.autoDispose<List<UserAddress>>((ref) async {
   ref.keepAlive();
+
+  ref.listen(authProvider, (previous, next) {
+    if (next.status == AuthStatus.unauthenticated) {
+      ref.invalidateSelf();
+    }
+  });
   if (AppConstants.kDevBypass) {
     return const [
       UserAddress(

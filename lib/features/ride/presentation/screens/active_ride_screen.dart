@@ -22,6 +22,8 @@ import '../widgets/cancel_ride_sheet.dart';
 import '../widgets/change_destination_sheet.dart';
 import '../widgets/ride_details_sheet.dart';
 import '../widgets/share_ride_sheet.dart';
+import '../widgets/safety_bottom_sheet.dart';
+import '../../../home/presentation/providers/home_providers.dart';
 
 class ActiveRideScreen extends ConsumerStatefulWidget {
   const ActiveRideScreen({super.key});
@@ -38,9 +40,31 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
   LatLng? _newPos;
   double _oldRot = 0;
   double _newRot = 0;
+  double _selectedExtraFare = 0;
+  late AnimationController _radarController;
+  late AnimationController _pulseController;
+
+  int _elapsedSearchTime = 0;
+  int _searchingMessageIndex = 0;
+  Timer? _searchingMessageTimer;
+  final List<String> _searchingMessages = [
+    'Contacting nearby drivers...',
+    'Matching you with the best driver...',
+    'Requesting drivers in your area...',
+    'Still searching for a ride...',
+    'Expanding search radius...',
+    'Waiting for drivers to accept...',
+  ];
+
+  // Ghost cars
+  List<LatLng> _ghostCarPositions = [];
+  List<double> _ghostCarHeadings = [];
+  Timer? _ghostCarTimer;
+  final Random _random = Random();
 
   static final _defaultCenter = LatLng(AppConstants.defaultLat, AppConstants.defaultLng);
-  BitmapDescriptor? _carIcon;
+  BitmapDescriptor? _carIconLight;
+  BitmapDescriptor? _carIconDark;
   BitmapDescriptor? _userIcon;
   BitmapDescriptor? _dropoffIcon;
 
@@ -73,6 +97,8 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
 
     // Driver marker — white car with heading rotation
     if (rideState.driverLocation != null) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final currentCarIcon = isDark ? _carIconDark : _carIconLight;
       final currentPos = _newPos ?? LatLng(rideState.driverLocation!.latitude, rideState.driverLocation!.longitude);
       final lerpPos = _oldPos != null
           ? LatLng(
@@ -86,7 +112,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
       markers.add(Marker(
         markerId: const MarkerId('driver'),
         position: lerpPos,
-        icon: _carIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+        icon: currentCarIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
         rotation: lerpRot,
         anchor: const Offset(0.5, 0.5),
         flat: true,
@@ -111,6 +137,23 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
       anchor: const Offset(0.5, 1.0),
       infoWindow: InfoWindow(title: ride.dropoffAddress),
     ));
+
+    // Ghost cars
+    if (rideState.status == ActiveRideStatus.searching && _ghostCarPositions.isNotEmpty) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final ghostCarIcon = isDark ? _carIconDark : _carIconLight;
+      for (int i = 0; i < _ghostCarPositions.length; i++) {
+        markers.add(Marker(
+          markerId: MarkerId('ghost_car_$i'),
+          position: _ghostCarPositions[i],
+          icon: ghostCarIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+          rotation: _ghostCarHeadings[i],
+          anchor: const Offset(0.5, 0.5),
+          flat: true,
+          alpha: 0.6,
+        ));
+      }
+    }
 
     return markers;
   }
@@ -256,6 +299,69 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
     _posController.addListener(() => setState(() {}));
     _rotController.addListener(() => setState(() {}));
 
+    _radarController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2500),
+    )..repeat();
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+
+    _searchingMessageTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (mounted) {
+        final state = ref.read(activeRideProvider);
+        if (state.status == ActiveRideStatus.searching) {
+          _elapsedSearchTime += 4;
+
+          // Auto-cancel after 2.25 minutes (135s)
+          if (_elapsedSearchTime >= 135) {
+            timer.cancel();
+            ref.read(activeRideProvider.notifier).cancelRide('All of our drivers are currently busy. Please try booking again in a few minutes.');
+            return;
+          }
+
+          setState(() {
+            _searchingMessageIndex = (_searchingMessageIndex + 1) % _searchingMessages.length;
+          });
+        } else {
+          // Reset timer counter if status is no longer searching
+          _elapsedSearchTime = 0;
+        }
+      }
+    });
+
+    _ghostCarTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      if (mounted) {
+        final state = ref.read(activeRideProvider);
+        if (state.status == ActiveRideStatus.searching && state.ride != null) {
+          if (_ghostCarPositions.isEmpty) {
+            // Initialize 3 ghost cars around the pickup location
+            for(int i = 0; i < 3; i++) {
+              double latOffset = (_random.nextDouble() - 0.5) * 0.015;
+              double lngOffset = (_random.nextDouble() - 0.5) * 0.015;
+              _ghostCarPositions.add(LatLng(state.ride!.pickupLat + latOffset, state.ride!.pickupLng + lngOffset));
+              _ghostCarHeadings.add(_random.nextDouble() * 360);
+            }
+          }
+          setState(() {
+            for (int i = 0; i < _ghostCarPositions.length; i++) {
+              double headingRad = _ghostCarHeadings[i] * pi / 180;
+              double dist = 0.0003; // small distance per tick
+              double newLat = _ghostCarPositions[i].latitude + dist * cos(headingRad);
+              double newLng = _ghostCarPositions[i].longitude + dist * sin(headingRad);
+              _ghostCarPositions[i] = LatLng(newLat, newLng);
+              _ghostCarHeadings[i] += (_random.nextDouble() - 0.5) * 60; // turn slightly
+            }
+          });
+        } else if (state.status != ActiveRideStatus.searching && _ghostCarPositions.isNotEmpty) {
+          _ghostCarPositions.clear();
+          _ghostCarHeadings.clear();
+        }
+      }
+    });
+
     _createCustomMarkers();
     // Initialize the ride with the ride ID passed from finding driver screen
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -268,20 +374,25 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
 
   @override
   void dispose() {
+    _searchingMessageTimer?.cancel();
+    _ghostCarTimer?.cancel();
     _posController.dispose();
     _rotController.dispose();
+    _radarController.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
   Future<void> _createCustomMarkers() async {
-    _carIcon = await _createCarIcon();
+    _carIconLight = await _createCarIcon(isDark: false);
+    _carIconDark = await _createCarIcon(isDark: true);
     _userIcon = await _createUserArrowIcon();
     _dropoffIcon = await _createDropoffIcon();
     if (mounted) setState(() {});
   }
 
   /// Small white car icon for driver (Uber-style, ~48px)
-  Future<BitmapDescriptor> _createCarIcon() async {
+  Future<BitmapDescriptor> _createCarIcon({required bool isDark}) async {
     const size = 48.0;
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
@@ -291,15 +402,15 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
       const Offset(size / 2, size / 2),
       16,
       Paint()
-        ..color = Colors.black.withOpacity(0.2)
+        ..color = Colors.black.withOpacity(isDark ? 0.4 : 0.2)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
     );
 
-    // White circle
+    // White circle (Dark background for dark mode)
     canvas.drawCircle(
       const Offset(size / 2, size / 2),
       14,
-      Paint()..color = Colors.white,
+      Paint()..color = isDark ? const Color(0xFF1E1E1E) : Colors.white,
     );
 
     // Car body (top-down)
@@ -308,7 +419,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
         Rect.fromCenter(center: const Offset(size / 2, size / 2), width: 12, height: 18),
         const Radius.circular(3),
       ),
-      Paint()..color = const Color(0xFF2C2C2C),
+      Paint()..color = isDark ? Colors.white : const Color(0xFF2C2C2C),
     );
 
     // Windshield
@@ -415,6 +526,19 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
   Widget build(BuildContext context) {
     final rideState = ref.watch(activeRideProvider);
 
+    if (rideState.ride == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.goNamed(RouteNames.home);
+        }
+      });
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     // If ride exists, expects a driver, but driver info is missing, re-fetch from API.
     // Guards:
     //  1. Only for statuses where a driver is actually assigned (not scheduled)
@@ -444,13 +568,30 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
         context.pushReplacementNamed(RouteNames.rideComplete);
       }
       if (next.isCancelled && prev?.isCancelled != true) {
-        _showRideCancelledDialog();
+        final reason = next.cancelReason ?? '';
+        if (reason == 'You cancelled the ride.' || reason.isEmpty) {
+          // User pressed cancel — go straight home, no dialog needed
+          ref.read(activeRideProvider.notifier).reset();
+          context.goNamed(RouteNames.home);
+        } else {
+          // System cancellation (no drivers, timeout, driver cancelled) — show dialog
+          _showRideCancelledDialog();
+        }
       }
       // Clear cached route when status changes so new route is fetched
       if (prev?.status != next.status) {
         _lastRouteKey = null;
         if (next.status == ActiveRideStatus.inProgress) {
           _driverToPickupRoute = null;
+        }
+        
+        // Navigate to the ride complete screen when the ride finishes
+        if (next.status == ActiveRideStatus.completed) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              context.goNamed(RouteNames.rideComplete);
+            }
+          });
         }
       }
       // Clear cached route when dropoff changes (destination change accepted)
@@ -510,7 +651,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
     if (rideState.isLoading && rideState.ride == null) {
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: const Center(
+        body: Center(
           child: CircularProgressIndicator(color: AppColors.primaryGold),
         ),
       );
@@ -552,6 +693,34 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
                   compassEnabled: false,
                 ),
 
+                if (rideState.status == ActiveRideStatus.searching)
+                  Center(
+                    child: SizedBox(
+                      width: 200,
+                      height: 200,
+                      child: AnimatedBuilder(
+                        animation: _radarController,
+                        builder: (context, _) {
+                          return Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              for (int i = 0; i < 3; i++)
+                                _buildRadarRipple((_radarController.value + i * 0.33) % 1.0),
+                              Transform.scale(
+                                scale: 1.0 + (_pulseController.value * 0.1),
+                                child: const Icon(
+                                  Icons.location_on,
+                                  color: AppColors.success,
+                                  size: 48,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+
                 // Top bar with back + actions
                 SafeArea(
                   child: Padding(
@@ -568,15 +737,9 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
                         Row(
                           children: [
                             _buildCircleButton(
-                              icon: Icons.info_outline,
-                              onTap: () => _showRideDetails(context),
-                              semanticLabel: 'Ride details',
-                            ),
-                            const SizedBox(width: 8),
-                            _buildCircleButton(
-                              icon: Icons.share_outlined,
-                              onTap: () => _showShareSheet(context),
-                              semanticLabel: 'Share ride',
+                              icon: Icons.my_location_rounded,
+                              onTap: () => _focusCurrentLocation(),
+                              semanticLabel: 'Focus location',
                             ),
                           ],
                         ),
@@ -584,6 +747,42 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
                     ),
                   ),
                 ),
+
+                // Safety floating button
+                if (rideState.status == ActiveRideStatus.driverEnRoute ||
+                    rideState.status == ActiveRideStatus.driverArrived ||
+                    rideState.status == ActiveRideStatus.inProgress)
+                  Positioned(
+                    bottom: 8,
+                    right: 16,
+                    child: SafeArea(
+                      child: GestureDetector(
+                        onTap: () => _showSafetyBottomSheet(context),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.success,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.health_and_safety_rounded, color: Colors.white, size: 14),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Safety',
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -591,8 +790,15 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
           // Bottom panel
           Container(
             decoration: BoxDecoration(
-              color: Theme.of(context).cardTheme.color,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              color: Theme.of(context).scaffoldBackgroundColor,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 10,
+                  offset: const Offset(0, -4),
+                ),
+              ],
             ),
             child: SafeArea(
               top: false,
@@ -612,58 +818,84 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
                     ),
                     const SizedBox(height: 16),
 
-                    // Status bar
-                    RideStatusBar(status: rideState.status),
-                    const SizedBox(height: 16),
+                    // Status bar removed as per user request
 
-                    // Ride PIN display — only show when driver is active (not for scheduled/no-driver)
+                    // Ride PIN — only show after driver has accepted the ride
                     if (rideState.otpPin != null &&
-                        rideState.status != ActiveRideStatus.scheduled &&
-                        rideState.status != ActiveRideStatus.completed &&
-                        rideState.status != ActiveRideStatus.cancelled)
+                        (rideState.status == ActiveRideStatus.driverEnRoute ||
+                         rideState.status == ActiveRideStatus.driverArrived))
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryGold.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                                color:
-                                    AppColors.primaryGold.withOpacity(0.3)),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.pin,
-                                  color: AppColors.primaryGold, size: 20),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Ride PIN: ',
-                                style: AppTextStyles.bodyMedium.copyWith(
-                                  color: AppColors.textSecondary,
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Column(
+                          children: [
+                            if (rideState.etaMinutes != null)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child: Text(
+                                  'Pick-up in ${rideState.etaMinutes} min',
+                                  style: AppTextStyles.headlineSmall.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
-                              Text(
-                                rideState.otpPin!,
-                                style: AppTextStyles.titleLarge.copyWith(
-                                  color: AppColors.primaryGold,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 4,
-                                ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGold,
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                            ],
-                          ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Share PIN',
+                                    style: AppTextStyles.titleMedium.copyWith(
+                                      color: AppColors.backgroundDark,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                  Row(
+                                    children: rideState.otpPin!.split('').map((digit) => Padding(
+                                      padding: const EdgeInsets.only(left: 6),
+                                      child: Container(
+                                        width: 26,
+                                        height: 26,
+                                        alignment: Alignment.center,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.backgroundDark,
+                                          borderRadius: BorderRadius.circular(13),
+                                        ),
+                                        child: Text(
+                                          digit,
+                                          style: AppTextStyles.titleSmall.copyWith(
+                                            color: AppColors.primaryGold,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    )).toList(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
 
-                    // Driver info card
+                    // Driver info card and Trip details
                     if (rideState.driverInfo != null)
-                      DriverInfoCard(
-                        driverInfo: rideState.driverInfo!,
-                        onCall: () => _callDriver(),
-                        onMessage: () => _openChat(context),
+                      Column(
+                        children: [
+                          DriverInfoCard(
+                            driverInfo: rideState.driverInfo!,
+                            onCall: () => _callDriver(),
+                            onMessage: () => _openChat(context),
+                            pickupAddress: rideState.ride?.pickupAddress ?? '',
+                            dropoffAddress: rideState.ride?.dropoffAddress ?? '',
+                            paymentMethod: rideState.ride?.paymentMethod ?? 'Cash',
+                          ),
+                        ],
                       ),
                     const SizedBox(height: 16),
 
@@ -681,6 +913,8 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
 
   Widget _buildStatusContent(ActiveRideState rideState) {
     switch (rideState.status) {
+      case ActiveRideStatus.searching:
+        return _buildSearchingContent(rideState);
       case ActiveRideStatus.scheduled:
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -706,7 +940,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: const Text('Cancel Scheduled Ride'),
+                  child: Text('Cancel Scheduled Ride'),
                 ),
               ),
             ],
@@ -722,29 +956,36 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
           otpPin: rideState.otpPin ?? '----',
         );
       case ActiveRideStatus.inProgress:
-        // Calculate remaining distance
+        // Calculate remaining distance dynamically
         double? remainingKm;
-        if (rideState.driverLocation != null && rideState.ride != null) {
+        if (rideState.ride != null) {
+          final lat1 = rideState.driverLocation?.latitude ?? rideState.ride!.pickupLat;
+          final lng1 = rideState.driverLocation?.longitude ?? rideState.ride!.pickupLng;
           remainingKm = _calcDistanceKm(
-            rideState.driverLocation!.latitude,
-            rideState.driverLocation!.longitude,
+            lat1,
+            lng1,
             rideState.ride!.dropoffLat,
             rideState.ride!.dropoffLng,
           );
         }
+        
+        final dynamicEtaMinutes = (remainingKm != null) ? (remainingKm * 2.5).ceil() : (rideState.etaMinutes ?? 0);
+
         return RideInProgressView(
-          etaMinutes: rideState.etaMinutes ?? 0,
+          etaMinutes: dynamicEtaMinutes,
           remainingKm: remainingKm,
           dropoffAddress: rideState.ride?.dropoffAddress ?? 'Destination',
-          onSos: () => _showSosConfirmation(context),
-          onCancel: () => _showCancelSheet(context),
-          onChangeDestination: () => _showChangeDestinationSheet(context),
+          onSos: null, // Moved to floating map button
+          onCancel: null, // Removed from the bottom bar
+          onChangeDestination: null, // Disabled changing location after ride accept
         );
       case ActiveRideStatus.completed:
       case ActiveRideStatus.cancelled:
         return const SizedBox.shrink();
     }
   }
+
+
 
   Widget _buildCircleButton({
     required IconData icon,
@@ -780,8 +1021,21 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
       return;
     }
     final uri = Uri.parse('tel:${driver.phone}');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
+    try {
+      final launched = await launchUrl(uri);
+      if (launched) return;
+    } catch (_) {
+      // Fallback below
+    }
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Calling ${driver.name}...'),
+          backgroundColor: AppColors.primaryGold,
+        ),
+      );
     }
   }
 
@@ -789,6 +1043,20 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
     final ride = ref.read(activeRideProvider).ride;
     if (ride == null) return;
     context.pushNamed(RouteNames.rideChat);
+  }
+
+  Future<void> _focusCurrentLocation() async {
+    final rideState = ref.read(activeRideProvider);
+    if (rideState.ride == null) return;
+    
+    if (!_mapController.isCompleted) return;
+    final controller = await _mapController.future;
+    
+    // Focus strictly on the rider's pickup location
+    final pickup = LatLng(rideState.ride!.pickupLat, rideState.ride!.pickupLng);
+    controller.animateCamera(CameraUpdate.newCameraPosition(
+      CameraPosition(target: pickup, zoom: 16),
+    ));
   }
 
   void _showRideDetails(BuildContext context) {
@@ -835,7 +1103,30 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
     );
   }
 
+  void _showSafetyBottomSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => SafetyBottomSheet(
+        onShareTrip: () => _showShareSheet(context),
+        onCallEmergency: () => _showSosConfirmation(context),
+        onAlertContacts: () => _showSosConfirmation(context),
+        onReportIssue: () {
+          final rideId = ref.read(activeRideProvider).ride?.id;
+          context.pushNamed(RouteNames.createTicket, extra: rideId);
+        },
+      ),
+    );
+  }
+
   void _showSosConfirmation(BuildContext context) {
+    final userProfile = ref.read(userProfileProvider).valueOrNull;
+    final contacts = userProfile?.emergencyContacts;
+    final hasPersonalContact = contacts != null && contacts.isNotEmpty;
+    final contactName = hasPersonalContact ? contacts.first['name'] : 'Emergency Contact';
+    final contactPhone = hasPersonalContact ? contacts.first['phone'] : '';
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -851,7 +1142,9 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
           ],
         ),
         content: Text(
-          'This will alert Gozolt safety team and allow you to call emergency services (112).\n\nAre you sure you want to proceed?',
+          hasPersonalContact
+              ? 'This will alert the Gozolt safety team. You can choose to call your personal emergency contact ($contactName) or emergency services (112).\n\nAre you sure you want to proceed?'
+              : 'This will alert the Gozolt safety team and allow you to call emergency services (112).\n\nAre you sure you want to proceed?',
           style: AppTextStyles.bodyMedium.copyWith(
             color: AppColors.textSecondary,
           ),
@@ -866,22 +1159,52 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
                     style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
               ),
               const SizedBox(width: 8),
+              if (hasPersonalContact)
+                TextButton(
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    ref.read(activeRideProvider.notifier).triggerSos(AppConstants.defaultLat, AppConstants.defaultLng);
+                    final url = Uri.parse("tel:$contactPhone");
+                    if (await canLaunchUrl(url)) {
+                      await launchUrl(url);
+                    } else {
+                      ScaffoldMessenger.of(context).clearSnackBars();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('SOS alert sent. Could not launch dialer for $contactPhone.'),
+                          backgroundColor: AppColors.error,
+                        ),
+                      );
+                    }
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.primaryGold,
+                  ),
+                  child: Text('Call $contactName',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                ),
+              if (hasPersonalContact) const SizedBox(width: 8),
               TextButton(
-                onPressed: () {
+                onPressed: () async {
                   Navigator.pop(ctx);
                   ref.read(activeRideProvider.notifier).triggerSos(AppConstants.defaultLat, AppConstants.defaultLng);
-                  ScaffoldMessenger.of(context).clearSnackBars();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('SOS alert sent. Calling 112...'),
-                      backgroundColor: AppColors.error,
-                    ),
-                  );
+                  final url = Uri.parse("tel:112");
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url);
+                  } else {
+                    ScaffoldMessenger.of(context).clearSnackBars();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('SOS alert sent. Calling 112...'),
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
+                  }
                 },
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.error,
                 ),
-                child: const Text('Call 112',
+                child: Text('Call 112',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               ),
             ],
@@ -893,66 +1216,384 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
 
   void _showRideCancelledDialog() {
     final reason = ref.read(activeRideProvider).cancelReason;
-    showDialog(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(context).cardTheme.color,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Column(
-          children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: const BoxDecoration(
-                color: Color(0x33E53935),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.cancel_outlined,
-                  color: AppColors.error, size: 32),
-            ),
-            const SizedBox(height: 12),
-            const Text('Ride Cancelled', style: AppTextStyles.headlineSmall),
-          ],
-        ),
-        content: Text(
-          reason ?? 'Your ride has been cancelled.',
-          textAlign: TextAlign.center,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textSecondary,
-          ),
-        ),
-        actionsAlignment: MainAxisAlignment.center,
-        actions: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+      isDismissible: false,
+      enableDrag: false,
+      backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => WillPopScope(
+        onWillPop: () async => false, // Prevent back button closing
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(24, 32, 24, 40),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  ref.read(activeRideProvider.notifier).reset();
-                  context.goNamed(RouteNames.home);
-                },
-                child: const Text('Go to Home',
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
-              ),
-              const SizedBox(width: 12),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  ref.read(activeRideProvider.notifier).reset();
-                  context.goNamed(RouteNames.searchDestination);
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primaryGold,
+              // Icon with soft glowing background
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: AppColors.error.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.error.withOpacity(0.3),
+                    width: 1.5,
+                  ),
                 ),
-                child: const Text('Book Another',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                child: const Icon(
+                  Icons.no_crash_outlined,
+                  color: AppColors.error,
+                  size: 36,
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Title
+              Text(
+                'Ride Unavailable',
+                style: AppTextStyles.headlineSmall.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                ),
+              ),
+              const SizedBox(height: 12),
+              
+              // Reason text
+              Text(
+                reason ?? 'Unfortunately, your ride has been cancelled.',
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Action Buttons
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGold,
+                    foregroundColor: Theme.of(context).scaffoldBackgroundColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    ref.read(activeRideProvider.notifier).reset();
+                    context.goNamed(RouteNames.searchDestination);
+                  },
+                  child: Text(
+                    'Book Another Ride',
+                    style: AppTextStyles.button.copyWith(
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    ref.read(activeRideProvider.notifier).reset();
+                    context.goNamed(RouteNames.home);
+                  },
+                  style: TextButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: Text(
+                    'Back to Home',
+                    style: AppTextStyles.button.copyWith(
+                      color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
-        ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildRadarRipple(double progress) {
+    final size = 40 + (160 * progress);
+    final opacity = (1.0 - progress).clamp(0.0, 0.6);
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: AppColors.primaryGold.withOpacity(opacity),
+          width: 2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchingContent(ActiveRideState rideState) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final ride = rideState.ride;
+    final paymentMethod = ride?.paymentMethod ?? 'CASH';
+    final extraFareAdded = rideState.extraFareAdded ?? 0.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Finding drivers nearby',
+          style: AppTextStyles.headlineSmall.copyWith(
+            color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 8),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 500),
+          child: Text(
+            _searchingMessages[_searchingMessageIndex],
+            key: ValueKey<int>(_searchingMessageIndex),
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Trip details card
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF2C2C2C) : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.location_on, color: AppColors.success, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Meet at pickup point',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.money, color: Colors.green, size: 12),
+                    const SizedBox(width: 4),
+                    Text(
+                      paymentMethod.toUpperCase(),
+                      style: AppTextStyles.labelSmall.copyWith(color: Colors.green, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        // Add extra fare card
+        Container(
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF2C2C2C) : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.primaryGold.withOpacity(0.5), width: 1),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header row
+              Row(
+                children: [
+                  const Icon(Icons.flash_on, color: AppColors.primaryGold, size: 18),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Add extra to get a faster ride',
+                      style: AppTextStyles.titleSmall.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  // Show confirmed extra badge
+                  if (extraFareAdded > 0)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: AppColors.success.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: AppColors.success.withOpacity(0.4), width: 0.8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.check_circle, color: AppColors.success, size: 11),
+                          const SizedBox(width: 3),
+                          Text(
+                            '+€${extraFareAdded.toStringAsFixed(0)} added',
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: AppColors.success,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '100% of the extra amount goes to your driver',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                  fontSize: 11,
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // Compact chip-style amount buttons
+              Row(
+                children: [5.0, 10.0, 15.0].map((amount) {
+                  final isSelected = _selectedExtraFare == amount;
+                  return Padding(
+                    padding: EdgeInsets.only(right: amount != 15.0 ? 8.0 : 0),
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedExtraFare = isSelected ? 0 : amount;
+                        });
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.primaryGold
+                              : (isDark ? const Color(0xFF3A3A3A) : Colors.white),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isSelected
+                                ? AppColors.primaryGold
+                                : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                            width: isSelected ? 0 : 1,
+                          ),
+                          boxShadow: isSelected
+                              ? [BoxShadow(color: AppColors.primaryGold.withOpacity(0.3), blurRadius: 6, offset: const Offset(0, 2))]
+                              : null,
+                        ),
+                        child: Text(
+                          '+€${amount.toInt()}',
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: isSelected
+                                ? Colors.black
+                                : (isDark ? AppColors.textPrimary : AppColors.textPrimaryLight),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+
+              if (_selectedExtraFare > 0) ...[
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      final amount = _selectedExtraFare;
+                      ref.read(activeRideProvider.notifier).addExtraFare(amount);
+                      setState(() { _selectedExtraFare = 0; });
+                      ScaffoldMessenger.of(context).clearSnackBars();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              const Icon(Icons.flash_on, color: Colors.black, size: 16),
+                              const SizedBox(width: 8),
+                              Text(
+                                '+€${amount.toInt()} offer sent to nearby drivers!',
+                                style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                          backgroundColor: AppColors.primaryGold,
+                          duration: const Duration(seconds: 3),
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGold,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      'Offer +€${_selectedExtraFare.toInt()} to drivers',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+
+        // Cancel button
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: OutlinedButton(
+            onPressed: () => _showCancelSheet(context),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.error,
+              side: const BorderSide(color: AppColors.error, width: 1),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              'Cancel Request',
+              style: AppTextStyles.button,
+            ),
+          ),
+        ),
+      ],
     );
   }
 

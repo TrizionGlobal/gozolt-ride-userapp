@@ -9,6 +9,7 @@ class OnboardingPageData {
   final double imageHeight;
   final bool fadeTop;
   final bool fullWidthImage;
+  final double horizontalPadding;
 
   const OnboardingPageData({
     required this.title,
@@ -19,6 +20,7 @@ class OnboardingPageData {
     this.imageHeight = 280.0,
     this.fadeTop = false,
     this.fullWidthImage = false,
+    this.horizontalPadding = 32.0,
   });
 }
 
@@ -36,6 +38,8 @@ const onboardingPages = [
     subtitle:
         'Obtain digital rewards on each journey. You can use it to get premium upgrades and exclusive luxury benefits.',
     imagePath: AssetPaths.onboardingCoins,
+    imageHeight: 320.0,
+    horizontalPadding: 16.0,
   ),
   OnboardingPageData(
     title: '"Track ',

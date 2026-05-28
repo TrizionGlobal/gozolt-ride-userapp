@@ -215,7 +215,7 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
                   Text(
                     _address,
                     style: AppTextStyles.titleMedium.copyWith(
-                      color: AppColors.textPrimary,
+                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
                     ),
                   ),
                   if (_subtitle != null) ...[
@@ -223,7 +223,7 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
                     Text(
                       _subtitle!,
                       style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textSecondary,
+                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
                       ),
                     ),
                   ],

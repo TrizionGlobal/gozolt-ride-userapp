@@ -15,6 +15,7 @@ import '../../data/models/saved_payment_method.dart';
 import '../providers/active_ride_state.dart';
 import '../providers/ride_providers.dart';
 import '../providers/ride_booking_provider.dart';
+import 'ride_booking_state.dart';
 
 // ── Active Ride Provider ──────────────────────────────────
 
@@ -137,6 +138,29 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
     state = state.copyWith(otpPin: pin);
   }
 
+  void initSearching(String rideId, RideBookingState booking) {
+    state = ActiveRideState(
+      ride: Ride(
+        id: rideId,
+        status: 'REQUESTED',
+        pickupAddress: booking.pickup?.address ?? '',
+        pickupLat: booking.pickup?.latitude ?? 0,
+        pickupLng: booking.pickup?.longitude ?? 0,
+        dropoffAddress: booking.dropoff?.address ?? '',
+        dropoffLat: booking.dropoff?.latitude ?? 0,
+        dropoffLng: booking.dropoff?.longitude ?? 0,
+        vehicleType: booking.vehicleType.name.toUpperCase(),
+        paymentMethod: booking.paymentMethodType.name.toUpperCase(),
+        estimatedFare: booking.fareEstimate?.estimatedFare ?? 0,
+        createdAt: DateTime.now().toIso8601String(),
+      ),
+      status: ActiveRideStatus.searching,
+      otpPin: booking.createdRideOtp,
+      isLoading: false,
+    );
+    if (!_socketListenersAttached) _listenToSocketUpdates();
+  }
+
   /// Initialize active ride from a socket 'ride:accepted' event.
   /// Fetches full ride details via direct API call.
   Future<void> initFromSocketEvent(Map<String, dynamic> data) async {
@@ -153,8 +177,8 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
       if (kDebugMode) print('[ActiveRide] SKIP — already initializing');
       return;
     }
-    if (state.ride?.id == rideId && !state.isLoading && state.ride?.pickupAddress?.isNotEmpty == true) {
-      if (kDebugMode) print('[ActiveRide] SKIP — already initialized for ride $rideId');
+    if (state.ride?.id == rideId && !state.isLoading && state.ride?.pickupAddress?.isNotEmpty == true && state.driverInfo != null) {
+      if (kDebugMode) print('[ActiveRide] SKIP — already initialized for ride $rideId with driver info');
       // Ensure socket listeners are attached (idempotent)
       if (!_socketListenersAttached) _listenToSocketUpdates();
       return;
@@ -214,7 +238,7 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
       }
 
       // 4. Parse OTP
-      final otp = json['otp'] as String? ?? data['otp'] as String? ?? '';
+      final otp = json['otp'] as String? ?? data['otp'] as String? ?? '1000';
       if (kDebugMode) print('[ActiveRide] OTP: $otp');
 
       // 5. Calculate initial ETA
@@ -286,6 +310,7 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
   StreamSubscription? _socketCompletedSub;
   StreamSubscription? _socketChatSub;
   StreamSubscription? _socketDestChangeSub;
+  StreamSubscription? _socketAcceptedSub;
 
   void _listenToSocketUpdates() {
     if (_socketListenersAttached) {
@@ -306,6 +331,18 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
       if (kDebugMode) print('[ActiveRide] Joining ride room: $rideId');
       socketService.joinRide(rideId);
     }
+
+    _socketAcceptedSub?.cancel();
+    _socketAcceptedSub = socketService.onRideAccepted.listen((data) async {
+      if (!mounted) return;
+      if (kDebugMode) print('[ActiveRide] Received ride:accepted event!');
+      
+      final otp = state.otpPin ?? '';
+      await initFromSocketEvent({
+        ...data,
+        'otp': otp,
+      });
+    });
 
     _socketLocationSub?.cancel();
     _socketLocationSub = socketService.onDriverLocation.listen((data) {
@@ -348,6 +385,17 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
       final status = data['status'] as String? ?? '';
       if (kDebugMode) print('[Socket] onRideStatusUpdate: status=$status, data keys=${data.keys.toList()}');
       switch (status) {
+        case 'REQUESTED':
+          if (kDebugMode) print('[Socket] → REQUESTED (searching)');
+          state = state.copyWith(status: ActiveRideStatus.searching);
+          break;
+        case 'NO_DRIVER':
+          if (kDebugMode) print('[Socket] → NO_DRIVER');
+          state = state.copyWith(
+            status: ActiveRideStatus.cancelled,
+            cancelReason: 'No drivers available nearby.',
+          );
+          break;
         case 'DRIVER_ARRIVED':
           if (kDebugMode) print('[Socket] → DRIVER_ARRIVED');
           final otp = data['otp'] as String?;
@@ -441,12 +489,13 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
   }
 
   void _cancelSocketSubs() {
-    _socketListenersAttached = false;
     _socketLocationSub?.cancel();
     _socketStatusSub?.cancel();
     _socketCompletedSub?.cancel();
     _socketChatSub?.cancel();
     _socketDestChangeSub?.cancel();
+    _socketAcceptedSub?.cancel();
+    _socketListenersAttached = false;
   }
 
   Future<void> cancelRide(String reason) async {
@@ -464,7 +513,8 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
     _stopMockTimers();
     state = state.copyWith(
       status: ActiveRideStatus.cancelled,
-      cancelReason: reason,
+      // Use the actual reason so the UI can distinguish user-cancel vs system-cancel
+      cancelReason: reason.isNotEmpty ? reason : 'You cancelled the ride.',
       isLoading: false,
     );
 
@@ -535,6 +585,33 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
       }
     } catch (_) {
       // Rating failure is non-blocking
+    }
+  }
+
+  Future<void> addExtraFare(double amount) async {
+    if (state.ride == null) return;
+    try {
+      if (!AppConstants.kDevBypass) {
+        final ds = _ref.read(rideRemoteDatasourceProvider);
+        await ds.addExtraFare(state.ride!.id, amount);
+      }
+      // Update local fare display
+      state = state.copyWith(
+        ride: state.ride!.copyWith(
+          estimatedFare: (state.ride!.estimatedFare ?? 0.0) + amount,
+        ),
+        extraFareAdded: (state.extraFareAdded ?? 0.0) + amount,
+      );
+      // Broadcast to ride room so drivers see the extra offer
+      try {
+        final socketService = _ref.read(socketServiceProvider);
+        socketService.emitExtraFare(state.ride!.id, amount);
+        if (kDebugMode) print('[ActiveRide] Extra fare €$amount emitted via socket');
+      } catch (e) {
+        if (kDebugMode) print('[ActiveRide] Socket emit failed: $e');
+      }
+    } catch (_) {
+      // Non-blocking
     }
   }
 
@@ -780,7 +857,7 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
       }
 
       // Parse OTP
-      final otp = json['otp'] as String? ?? '';
+      final otp = json['otp'] as String? ?? '1000';
 
       // Calculate ETA
       int eta = 5;
@@ -957,6 +1034,8 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
     switch (apiStatus) {
       case 'SCHEDULED':
         return ActiveRideStatus.scheduled;
+      case 'REQUESTED':
+        return ActiveRideStatus.searching;
       case 'ACCEPTED':
       case 'DRIVER_EN_ROUTE':
         return ActiveRideStatus.driverEnRoute;

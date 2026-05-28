@@ -60,6 +60,10 @@
 		</dict>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
+		<key>LSApplicationQueriesSchemes</key>
+		<array>
+			<string>tel</string>
+		</array>
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>Gozolt needs your location to find nearby drivers and track your ride.</string>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>

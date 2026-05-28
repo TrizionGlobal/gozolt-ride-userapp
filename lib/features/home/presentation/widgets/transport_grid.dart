@@ -121,7 +121,7 @@ class TransportGrid extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('OK'),
+                child: Text('OK'),
               ),
             ),
             const SizedBox(height: 8),

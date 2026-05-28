@@ -83,7 +83,7 @@ class _PlaceCard extends StatelessWidget {
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
                   color: Theme.of(context).cardTheme.color,
-                  child: const Center(
+                  child: Center(
                     child: Icon(Icons.place,
                         color: AppColors.primaryGold, size: 40),
                   ),

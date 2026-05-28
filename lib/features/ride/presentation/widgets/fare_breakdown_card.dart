@@ -106,7 +106,7 @@ class FareBreakdownCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Estimated Total',
+                'Total',
                 style: AppTextStyles.titleSmall.copyWith(
                   color: Theme.of(context).textTheme.titleMedium?.color ?? (Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                   fontWeight: FontWeight.w700,

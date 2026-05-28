@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -9,6 +10,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/constants/asset_paths.dart';
+import '../../../rewards/presentation/providers/rewards_providers.dart';
 import '../../../../core/router/route_names.dart';
 import '../../data/models/saved_payment_method.dart';
 import '../providers/ride_booking_state.dart';
@@ -20,6 +22,7 @@ import '../widgets/vehicle_type_selector.dart';
 import '../../../history/presentation/providers/history_providers.dart';
 import '../../../notifications/presentation/providers/notification_providers.dart';
 import '../../../../core/providers/dio_provider.dart';
+import '../providers/active_ride_provider.dart';
 
 class FareEstimateScreen extends ConsumerStatefulWidget {
   const FareEstimateScreen({super.key});
@@ -35,6 +38,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
   Set<Marker> _driverMarkers = {};
   Set<VehicleType> _availableVehicleTypes = {};
   Timer? _driverRefreshTimer;
+  bool _isFocusing = false;
 
   @override
   void initState() {
@@ -212,6 +216,48 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
     );
   }
 
+  /// Focuses the map camera on the user's live GPS, or pickup as fallback.
+  Future<void> _focusOnCurrentLocation() async {
+    if (_mapController == null) return;
+    setState(() => _isFocusing = true);
+    HapticFeedback.lightImpact();
+    try {
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        _focusFallbackToPickup();
+        return;
+      }
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 5),
+      );
+      await _mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(target: LatLng(pos.latitude, pos.longitude), zoom: 15),
+        ),
+      );
+    } catch (_) {
+      _focusFallbackToPickup();
+    } finally {
+      if (mounted) setState(() => _isFocusing = false);
+    }
+  }
+
+  void _focusFallbackToPickup() {
+    final booking = ref.read(rideBookingProvider);
+    if (booking.pickup != null && _mapController != null) {
+      _mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: LatLng(booking.pickup!.latitude, booking.pickup!.longitude),
+            zoom: 15,
+          ),
+        ),
+      );
+    }
+  }
+
   static const _darkMapStyle = '''[
     {"elementType":"geometry","stylers":[{"color":"#212121"}]},
     {"elementType":"labels.icon","stylers":[{"visibility":"off"}]},
@@ -311,7 +357,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                   compassEnabled: false,
                 ),
 
-                // Back button
+                // Back button — consistent with active_ride_screen style
                 Positioned(
                   top: MediaQuery.of(context).padding.top + 10,
                   left: 16,
@@ -324,11 +370,24 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: Theme.of(context).cardTheme.color?.withOpacity(0.9),
+                          color: Theme.of(context).cardTheme.color?.withOpacity(0.95),
                           shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.15),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                        child: Icon(Icons.arrow_back,
-                            color: Theme.of(context).primaryColor, size: 20),
+                        child: Icon(
+                          Icons.arrow_back,
+                          color: Theme.of(context).iconTheme.color ?? AppColors.textPrimary,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ),
@@ -399,6 +458,51 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                ),
+
+                // ── Focus / My Location Button ──────────────────
+                Positioned(
+                  bottom: 14,
+                  right: 12,
+                  child: Semantics(
+                    label: 'Focus on current location',
+                    button: true,
+                    child: GestureDetector(
+                      onTap: _focusOnCurrentLocation,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardTheme.color?.withOpacity(0.95),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.15),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: _isFocusing
+                            ? Padding(
+                                padding: const EdgeInsets.all(11),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryGold),
+                                ),
+                              )
+                            : const Icon(
+                                Icons.my_location,
+                                color: AppColors.primaryGold,
+                                size: 20,
+                              ),
+                      ),
                     ),
                   ),
                 ),
@@ -473,7 +577,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                         child: Column(
                           children: List.generate(
                             3,
-                            (_) => const Padding(
+                            (_) => Padding(
                               padding: EdgeInsets.only(bottom: 10),
                               child: ShimmerWrap(
                                 child: ShimmerBox(
@@ -636,10 +740,6 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
             // Find my Go partner button + schedule icon
             Builder(
               builder: (context) {
-                final bool isAvailable = booking.isScheduled ||
-                    _availableVehicleTypes == null ||
-                    _availableVehicleTypes!.contains(booking.vehicleType);
-
                 return Row(
                   children: [
                     // Main CTA
@@ -647,11 +747,11 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                       child: SizedBox(
                         height: 48,
                         child: ElevatedButton(
-                          onPressed: (booking.fareEstimate != null && isAvailable)
+                          onPressed: (booking.fareEstimate != null && booking.status != BookingStatus.booking)
                               ? () => _onSelectRide()
                               : null,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: isAvailable ? AppColors.primaryGold : AppColors.borderDark,
+                            backgroundColor: AppColors.primaryGold,
                             foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                             disabledBackgroundColor:
                                 AppColors.textMuted.withOpacity(0.3),
@@ -659,14 +759,23 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: Text(
-                            isAvailable 
-                                ? (booking.isScheduled ? 'Schedule Ride' : 'Find my Go partner') 
-                                : 'No drivers available',
-                            style: AppTextStyles.button.copyWith(
-                              color: isAvailable ? Theme.of(context).scaffoldBackgroundColor : AppColors.textSecondary,
-                            ),
-                          ),
+                          child: booking.status == BookingStatus.booking
+                              ? SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Theme.of(context).scaffoldBackgroundColor,
+                                    ),
+                                  ),
+                                )
+                              : Text(
+                                  booking.isScheduled ? 'Schedule Ride' : 'Find my Go partner',
+                                  style: AppTextStyles.button.copyWith(
+                                    color: Theme.of(context).scaffoldBackgroundColor,
+                                  ),
+                                ),
                         ),
                       ),
                     ),
@@ -750,20 +859,48 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
     await ref.read(rideBookingProvider.notifier).confirmBooking();
     final updatedBooking = ref.read(rideBookingProvider);
     if (updatedBooking.status == BookingStatus.error) {
-      // Show error instead of navigating
+      // Clear the error state so user can retry without stale error
+      ref.read(rideBookingProvider.notifier).fetchFareEstimate();
       if (mounted) {
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(updatedBooking.errorMessage ?? 'Failed to book ride'),
-            backgroundColor: AppColors.error,
-            duration: const Duration(seconds: 3),
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: AppColors.error, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    updatedBooking.errorMessage ?? 'Failed to book ride. Please try again.',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textPrimary
+                          : AppColors.textPrimaryLight,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Theme.of(context).cardTheme.color,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: AppColors.error.withOpacity(0.4)),
+            ),
+            duration: const Duration(seconds: 4),
           ),
         );
       }
       return;
     }
-    if (mounted) context.pushNamed(RouteNames.findingDriver);
+    if (mounted) {
+      ref.read(activeRideProvider.notifier).initSearching(
+        updatedBooking.createdRideId!,
+        updatedBooking,
+      );
+      context.pushNamed(RouteNames.rideActive);
+    }
   }
 
   void _showDiscountSheet() {
@@ -834,11 +971,11 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
           ),
           timePickerTheme: TimePickerThemeData(
             hourMinuteTextStyle: const TextStyle(
-              fontSize: 28,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
             dayPeriodTextStyle: const TextStyle(
-              fontSize: 13,
+              fontSize: 9,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -906,7 +1043,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.primaryGold,
                   ),
-                  child: const Text('Confirm',
+                  child: Text('Confirm',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 ),
               ],
@@ -957,6 +1094,19 @@ class _DiscountBottomSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final booking = ref.watch(rideBookingProvider);
     final rewardsAsync = ref.watch(userRewardsPointsProvider);
+    final rewardSummaryAsync = ref.watch(rewardSummaryProvider);
+
+    double getTierConversionRate(String tier) {
+      switch (tier.toUpperCase()) {
+        case 'PLATINUM': return 100.0;
+        case 'GOLD': return 133.33;
+        case 'SILVER': return 200.0;
+        default: return 400.0;
+      }
+    }
+
+    final currentTier = rewardSummaryAsync.value?.tier ?? 'BRONZE';
+    final conversionRate = getTierConversionRate(currentTier);
 
     return Padding(
       padding: EdgeInsets.only(
@@ -1006,7 +1156,7 @@ class _DiscountBottomSheet extends ConsumerWidget {
                       const SizedBox(height: 2),
                       rewardsAsync.when(
                         data: (points) {
-                          final eurValue = points / 100.0;
+                          final eurValue = points / conversionRate;
                           return Text(
                             'save €${eurValue.toStringAsFixed(2)} on your ride',
                             style: AppTextStyles.bodySmall
@@ -1033,13 +1183,13 @@ class _DiscountBottomSheet extends ConsumerWidget {
                       const SizedBox(width: 10),
                       Transform.scale(
                         scale: 0.7,
-                        child: Switch(
+                        child: Switch.adaptive(
                           value: booking.useCoins,
-                          activeColor: AppColors.primaryGold,
-                          activeTrackColor: AppColors.primaryGold.withOpacity(0.5),
+                          activeTrackColor: AppColors.primaryGold,
                           inactiveTrackColor: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
                           onChanged: (val) {
-                            final eurValue = points / 100.0;
+                            HapticFeedback.selectionClick();
+                            final eurValue = points / conversionRate;
                             ref
                                 .read(rideBookingProvider.notifier)
                                 .toggleUseCoins(val, discount: val ? eurValue : 0);

@@ -66,7 +66,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
           await Future.delayed(const Duration(milliseconds: 300));
         },
         child: ticketAsync.when(
-          loading: () => const Center(
+          loading: () => Center(
             child: CircularProgressIndicator(color: AppColors.primaryGold),
           ),
         error: (e, _) => Center(
@@ -82,7 +82,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
               TextButton(
                 onPressed: () => ref.invalidate(
                     ticketDetailProvider(widget.ticketId)),
-                child: const Text('Retry',
+                child: Text('Retry',
                     style: TextStyle(color: AppColors.primaryGold)),
               ),
             ],

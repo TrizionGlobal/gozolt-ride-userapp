@@ -153,7 +153,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
+                              horizontal: 12, vertical: 5),
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? AppColors.primaryGold
@@ -171,7 +171,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                               color: isSelected
                                   ? Theme.of(context).scaffoldBackgroundColor
                                   : (Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
-                              fontSize: 13,
+                              fontSize: 12,
                             ),
                           ),
                         ),
@@ -333,7 +333,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Reschedule'),
+                child: Text('Reschedule'),
               ),
             ),
             const SizedBox(height: 8),

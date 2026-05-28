@@ -74,6 +74,7 @@ dependencies:
   firebase_app_check: ^0.3.2+10
   flutter_svg: ^2.1.0
   image_cropper: ^12.2.1
+  google_fonts: ^8.1.0
 
 dev_dependencies:
   flutter_test:

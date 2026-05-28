@@ -141,4 +141,11 @@ class RideRemoteDatasource {
   Future<void> cancelDestinationChange(String rideId) async {
     await _dio.delete(ApiConstants.rideChangeDestination(rideId));
   }
+
+  Future<void> addExtraFare(String rideId, double amount) async {
+    await _dio.post(
+      ApiConstants.rideExtraFare(rideId),
+      data: {'amount': amount},
+    );
+  }
 }

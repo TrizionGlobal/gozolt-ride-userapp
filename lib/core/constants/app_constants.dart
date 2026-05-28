@@ -7,6 +7,9 @@ abstract final class AppConstants {
   static const String kDevRefreshToken = 'dev-refresh-placeholder';
   static const String kDevPhone = '+35699000001';
 
+  // ── Google Maps API ────────────────────────────────────
+  static const String googleMapsApiKey = 'AIzaSyCSwSCRQUTql_5bowO2-GiBMl4H8No0ZY4';
+
   // ── Splash ─────────────────────────────────────────────
   static const Duration splashDuration = Duration(milliseconds: 2500);
 

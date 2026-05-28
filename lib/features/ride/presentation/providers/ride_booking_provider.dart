@@ -276,17 +276,39 @@ class RideBookingNotifier extends StateNotifier<RideBookingState> {
     );
   }
 
+  Future<void> addExtraFare(double amount) async {
+    if (state.createdRideId == null) return;
+    try {
+      if (!AppConstants.kDevBypass) {
+        final ds = _ref.read(rideRemoteDatasourceProvider);
+        await ds.addExtraFare(state.createdRideId!, amount);
+      }
+      if (state.fareEstimate != null) {
+        state = state.copyWith(
+          fareEstimate: state.fareEstimate!.copyWith(
+            estimatedFare: state.fareEstimate!.estimatedFare + amount,
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error adding extra fare: $e');
+    }
+  }
+
   void reset() {
     state = const RideBookingState().copyWith(clearRideId: true);
   }
 
   FareEstimate _mockFareEstimate(VehicleType type) {
     final basePrices = {
-      VehicleType.economy: 6.50,
+      VehicleType.go: 6.50,
       VehicleType.standard: 8.50,
-      VehicleType.premium: 14.00,
-      VehicleType.xl: 15.00,
-      VehicleType.electric: 10.00,
+      VehicleType.comfort: 10.00,
+      VehicleType.green: 9.00,
+      VehicleType.prime: 12.00,
+      VehicleType.premiumXl: 15.00,
+      VehicleType.van: 20.00,
+      VehicleType.chauffeur: 25.00,
     };
     final base = basePrices[type] ?? 8.50;
     return FareEstimate(

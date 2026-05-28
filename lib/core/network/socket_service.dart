@@ -219,6 +219,17 @@ class UserSocketService {
     });
   }
 
+  /// Broadcasts an extra-fare offer to the ride room so nearby / assigned drivers
+  /// receive a push-style notification that the rider added an incentive.
+  void emitExtraFare(String rideId, double amount) {
+    _log('[Socket] Emitting ride:extra_fare: rideId=$rideId, amount=$amount');
+    _socket?.emit('ride:extra_fare', {
+      'rideId': rideId,
+      'extraAmount': amount,
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+    });
+  }
+
   void disconnect() {
     _currentRideId = null;
     _socket?.disconnect();

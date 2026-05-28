@@ -265,29 +265,32 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                 const SizedBox(height: 28),
 
                 // Submit button
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed:
-                        _isFormValid && !_isSubmitting ? _submit : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGold,
-                      foregroundColor: AppColors.backgroundDark,
-                      disabledBackgroundColor:
-                          AppColors.primaryGold.withOpacity(0.3),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                Align(
+                  alignment: Alignment.center,
+                  child: SizedBox(
+                    width: 220,
+                    child: ElevatedButton(
+                      onPressed:
+                          _isFormValid && !_isSubmitting ? _submit : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGold,
+                        foregroundColor: AppColors.backgroundDark,
+                        disabledBackgroundColor:
+                            AppColors.primaryGold.withOpacity(0.3),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: _isSubmitting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.backgroundDark),
+                            )
+                          : Text('Submit', style: AppTextStyles.button),
                     ),
-                    child: _isSubmitting
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppColors.backgroundDark),
-                          )
-                        : const Text('Submit', style: AppTextStyles.button),
                   ),
                 ),
               ]),
@@ -431,9 +434,12 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
           Text('Related Ride: ',
               style: AppTextStyles.bodySmall
                   .copyWith(color: isDark ? AppColors.textMuted : AppColors.textMutedLight)),
-          Text(rideId,
-              style: AppTextStyles.bodySmall
-                  .copyWith(color: AppColors.primaryGold)),
+          Expanded(
+            child: Text(rideId,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.bodySmall
+                    .copyWith(color: AppColors.primaryGold)),
+          ),
         ],
       ),
     );
@@ -582,7 +588,7 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Failed to submit ticket. Please try again.'),
+          content: Text('Failed to submit ticket. Please try again.'),
           backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         ),
       );
@@ -652,7 +658,7 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text('View Ticket',
+                  child: Text('View Ticket',
                       style: AppTextStyles.button),
                 ),
               ),

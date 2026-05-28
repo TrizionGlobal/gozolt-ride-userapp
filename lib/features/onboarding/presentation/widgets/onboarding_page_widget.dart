@@ -34,7 +34,7 @@ class OnboardingPageWidget extends StatelessWidget {
           _buildFullWidthImage(context, imageHeight, resolvedImagePath)
         else
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
+            padding: EdgeInsets.symmetric(horizontal: data.horizontalPadding),
             child: SizedBox(
               height: imageHeight,
               child: Image.asset(

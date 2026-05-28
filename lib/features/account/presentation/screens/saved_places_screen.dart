@@ -108,7 +108,7 @@ class SavedPlacesScreen extends ConsumerWidget {
                       child: ElevatedButton.icon(
                         onPressed: () => _showPlaceSheet(context, ref),
                         icon: const Icon(Icons.add, size: 18),
-                        label: const Text('Add Place'),
+                        label: Text('Add Place'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryGold,
                           foregroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -279,7 +279,7 @@ class SavedPlacesScreen extends ConsumerWidget {
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.error,
                 ),
-                child: const Text('Delete',
+                child: Text('Delete',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               ),
             ],

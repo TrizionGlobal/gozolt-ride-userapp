@@ -145,13 +145,14 @@ class RideHistoryCard extends StatelessWidget {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: onReschedule,
-                        icon: const Icon(Icons.schedule, size: 13),
+                        icon: const Icon(Icons.schedule, size: 14),
                         label: const Text('Reschedule'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.primaryGold,
                           side: const BorderSide(color: AppColors.primaryGold),
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                          minimumSize: const Size(0, 32),
+                          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8)),
                         ),
@@ -163,13 +164,14 @@ class RideHistoryCard extends StatelessWidget {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: onCancel,
-                        icon: const Icon(Icons.cancel_outlined, size: 13),
+                        icon: const Icon(Icons.cancel_outlined, size: 14),
                         label: const Text('Cancel'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.error,
                           side: const BorderSide(color: AppColors.error),
-                          padding: const EdgeInsets.symmetric(vertical: 6),
-                          textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                          minimumSize: const Size(0, 32),
+                          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8)),
                         ),

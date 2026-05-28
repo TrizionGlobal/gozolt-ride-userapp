@@ -13,7 +13,6 @@ import '../../features/ride/presentation/screens/search_destination_screen.dart'
 import '../../features/ride/presentation/screens/map_pin_selection_screen.dart';
 import '../../features/ride/presentation/screens/fare_estimate_screen.dart';
 import '../../features/ride/presentation/screens/payment_method_screen.dart';
-import '../../features/ride/presentation/screens/finding_driver_screen.dart';
 import '../../features/ride/presentation/screens/active_ride_screen.dart';
 import '../../features/ride/presentation/screens/ride_complete_screen.dart';
 import '../../features/ride/presentation/screens/chat_screen.dart';
@@ -25,6 +24,7 @@ import '../../features/notifications/presentation/screens/notification_preferenc
 import '../../features/account/presentation/screens/edit_profile_screen.dart';
 import '../../features/account/presentation/screens/saved_places_screen.dart';
 import '../../features/account/presentation/screens/payment_methods_screen.dart';
+import '../../features/account/presentation/screens/emergency_contacts_screen.dart';
 import '../../features/account/presentation/screens/delete_account_screen.dart';
 import '../../features/account/presentation/screens/help_center_screen.dart';
 import '../../features/support/presentation/screens/ticket_list_screen.dart';
@@ -280,17 +280,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
-      GoRoute(
-        path: '/finding-driver',
-        name: RouteNames.findingDriver,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const FindingDriverScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) =>
-              FadeTransition(opacity: animation, child: child),
-        ),
-      ),
-
       // ── Active Ride Experience ──────────────────────────────
 
       GoRoute(
@@ -497,6 +486,26 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => CustomTransitionPage(
           key: state.pageKey,
           child: const PaymentMethodsScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+              SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeInOut,
+            )),
+            child: child,
+          ),
+        ),
+      ),
+
+      GoRoute(
+        path: '/emergency-contacts',
+        name: RouteNames.emergencyContacts,
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const EmergencyContactsScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) =>
               SlideTransition(
             position: Tween<Offset>(

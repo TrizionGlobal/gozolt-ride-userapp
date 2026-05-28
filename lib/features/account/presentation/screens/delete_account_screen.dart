@@ -233,7 +233,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                             child: CircularProgressIndicator(
                                 strokeWidth: 2, color: Colors.white),
                           )
-                        : const Text('Delete My Account',
+                        : Text('Delete My Account',
                             style: AppTextStyles.button),
                   ),
                 ),
@@ -303,7 +303,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.error,
                 ),
-                child: const Text('Yes, Delete',
+                child: Text('Yes, Delete',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               ),
             ],
@@ -351,7 +351,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                   Navigator.pop(ctx);
                   context.goNamed(RouteNames.welcome);
                 },
-                child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Text('OK', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ],
           ),

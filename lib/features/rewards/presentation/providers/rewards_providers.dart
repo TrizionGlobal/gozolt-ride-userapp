@@ -284,6 +284,7 @@ final referralInfoProvider = FutureProvider<ReferralInfo>((ref) async {
       totalReferrals: 8,
       completedReferrals: 5,
       earnedPoints: 250,
+      referralsList: [],
     );
   }
   try {
@@ -295,6 +296,7 @@ final referralInfoProvider = FutureProvider<ReferralInfo>((ref) async {
       totalReferrals: 0,
       completedReferrals: 0,
       earnedPoints: 0,
+      referralsList: [],
     );
   }
 });

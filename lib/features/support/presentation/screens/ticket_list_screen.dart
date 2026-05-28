@@ -97,7 +97,7 @@ class TicketListScreen extends ConsumerWidget {
                       TextButton(
                         onPressed: () =>
                             ref.read(supportTicketsProvider.notifier).load(),
-                        child: const Text('Retry',
+                        child: Text('Retry',
                             style: TextStyle(color: AppColors.primaryGold)),
                       ),
                     ],
@@ -124,7 +124,7 @@ class TicketListScreen extends ConsumerWidget {
                         onPressed: () =>
                             context.pushNamed(RouteNames.createTicket),
                         icon: const Icon(Icons.add, size: 18),
-                        label: const Text('Create a Ticket'),
+                        label: Text('Create a Ticket'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.primaryGold,
                           side:

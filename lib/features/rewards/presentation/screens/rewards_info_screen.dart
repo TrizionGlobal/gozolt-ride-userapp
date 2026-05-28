@@ -88,7 +88,7 @@ class RewardsInfoScreen extends ConsumerWidget {
                             .copyWith(color: AppColors.textSecondary)),
                     TextButton(
                       onPressed: () => ref.invalidate(rewardRulesProvider),
-                      child: const Text('Retry',
+                      child: Text('Retry',
                           style:
                               TextStyle(color: AppColors.primaryGold)),
                     ),
@@ -109,9 +109,7 @@ class RewardsInfoScreen extends ConsumerWidget {
                     _bulletPoint(
                         context,
                         'Earn ${rules.earning.pointsPerEur} coins for every \u20AC1 spent on completed rides.'),
-                    _bulletPoint(
-                        context,
-                        'Redeem coins directly into your wallet balance. Base rate: 400 coins = \u20AC1.00 cash credit, improving up to 100 coins = \u20AC1.00 for Platinum.'),
+                 
                     _bulletPoint(
                         context,
                         'Wallet cash can be used to pay for any of your rides without limit.'),

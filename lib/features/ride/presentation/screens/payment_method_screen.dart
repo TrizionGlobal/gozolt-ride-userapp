@@ -74,7 +74,7 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: const Text('Card added successfully'),
+                  content: Text('Card added successfully'),
                   backgroundColor: Theme.of(context).cardTheme.color,
                 ),
               );
@@ -132,7 +132,7 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
           data: (methods) => _buildContent(methods, totalFare),
           loading: () => buildShimmerList(
             itemBuilder: () => const ShimmerListTile(),
-            count: 3,
+            count: 2,
           ),
           error: (context, error) => _buildContent([], totalFare),
         ),
@@ -196,32 +196,7 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
           ),
 
 
-          const SizedBox(height: 12),
 
-          // UPI Option
-          _PaymentOption(
-            leading: Container(
-              width: 40,
-              height: 28,
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardTheme.color,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Icon(Icons.account_balance_wallet_outlined,
-                  color: AppColors.primaryGold, size: 18),
-            ),
-            title: 'UPI',
-            subtitle: 'Pay via Google Pay, PhonePe, etc.',
-            isSelected: _selectedType == PaymentMethodType.upi,
-            onTap: () {
-              setState(() {
-                _selectedType = PaymentMethodType.upi;
-                _selectedCardId = null;
-              });
-            },
-          ),
-
-          const SizedBox(height: 12),
         ],
       ),
     );

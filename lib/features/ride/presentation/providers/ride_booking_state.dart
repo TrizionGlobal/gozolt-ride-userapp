@@ -39,7 +39,7 @@ class RideBookingState {
     this.pickup,
     this.dropoff,
     this.stops = const [],
-    this.vehicleType = VehicleType.standard,
+    this.vehicleType = VehicleType.go,
     this.paymentMethodType = PaymentMethodType.cash,
     this.selectedCardId,
     this.promoCode,

@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_text_styles.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 abstract final class AppTheme {
   // ── Dark Theme (default) ───────────────────────────────
   static ThemeData get dark => ThemeData(
         brightness: Brightness.dark,
         useMaterial3: true,
-        fontFamily: 'Roboto',
+        fontFamily: GoogleFonts.poppins().fontFamily,
         scaffoldBackgroundColor: AppColors.backgroundDark,
         colorScheme: const ColorScheme.dark(
           primary: AppColors.primaryGold,
@@ -115,7 +116,7 @@ abstract final class AppTheme {
           ),
           behavior: SnackBarBehavior.floating,
         ),
-        textTheme: const TextTheme(
+        textTheme: TextTheme(
           displayLarge: AppTextStyles.displayLarge,
           headlineLarge: AppTextStyles.headlineLarge,
           headlineMedium: AppTextStyles.headlineMedium,
@@ -135,7 +136,7 @@ abstract final class AppTheme {
   static ThemeData get light => ThemeData(
         brightness: Brightness.light,
         useMaterial3: true,
-        fontFamily: 'Roboto',
+        fontFamily: GoogleFonts.poppins().fontFamily,
         scaffoldBackgroundColor: AppColors.backgroundLight,
         colorScheme: const ColorScheme.light(
           primary: AppColors.primaryGold,
@@ -235,7 +236,7 @@ abstract final class AppTheme {
           ),
           behavior: SnackBarBehavior.floating,
         ),
-        textTheme: const TextTheme(
+        textTheme: TextTheme(
           displayLarge: AppTextStyles.displayLarge,
           headlineLarge: AppTextStyles.headlineLarge,
           headlineMedium: AppTextStyles.headlineMedium,

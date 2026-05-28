@@ -270,8 +270,9 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                     Text(
                       _maskedPhone,
                       style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w700,
+                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -362,7 +363,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                                 key: const ValueKey('resend_btn'),
                                 onPressed: _resendOtp,
                                 icon: const Icon(Icons.refresh, size: 18),
-                                label: const Text('Resend Code'),
+                                label: Text('Resend Code'),
                                 style: TextButton.styleFrom(
                                   foregroundColor: AppColors.primaryGold,
                                   textStyle: AppTextStyles.titleSmall,

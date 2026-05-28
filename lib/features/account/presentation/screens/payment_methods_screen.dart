@@ -77,7 +77,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) => const ShimmerListTile(),
-                  childCount: 4,
+                  childCount: 3,
                 ),
               ),
             )
@@ -108,25 +108,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
                         ),
                       )),
 
-                  // UPI Option
-                  _paymentTile(
-                    context,
-                    icon: Icons.account_balance_wallet_outlined,
-                    iconColor: AppColors.info,
-                    title: 'UPI',
-                    subtitle: 'Pay via GPay, PhonePe, or BHIM',
-                    isDefault: false,
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('UPI will be available during ride booking'),
-                          backgroundColor: Theme.of(context).cardTheme.color,
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 8),
+
 
                   // Add new card
                   const SizedBox(height: 8),
@@ -382,7 +364,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text('Remove'),
+            child: Text('Remove'),
           ),
         ],
       ),
@@ -419,7 +401,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
             }
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: const Text('Card added successfully'),
+                content: Text('Card added successfully'),
                 backgroundColor: Theme.of(context).cardTheme.color,
               ),
             );

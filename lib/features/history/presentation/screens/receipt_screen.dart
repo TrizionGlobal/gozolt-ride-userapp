@@ -18,7 +18,7 @@ class ReceiptScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
       body: rideAsync.when(
-        loading: () => const Center(
+        loading: () => Center(
           child: CircularProgressIndicator(color: AppColors.primaryGold),
         ),
         error: (e, _) => SafeArea(
@@ -63,7 +63,7 @@ class ReceiptScreen extends ConsumerWidget {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Retry'),
+                child: Text('Retry'),
               ),
               const Spacer(),
             ],
@@ -237,7 +237,7 @@ class ReceiptScreen extends ConsumerWidget {
                     );
                   },
                   icon: const Icon(Icons.share_outlined, size: 18),
-                  label: const Text('Share Receipt'),
+                  label: Text('Share Receipt'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.primaryGold,
                     side: const BorderSide(color: AppColors.primaryGold),
@@ -263,7 +263,7 @@ class ReceiptScreen extends ConsumerWidget {
                     );
                   },
                   icon: const Icon(Icons.download, size: 18),
-                  label: const Text('Download PDF'),
+                  label: Text('Download PDF'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryGold,
                     foregroundColor: AppColors.backgroundDark,

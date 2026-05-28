@@ -1,94 +1,81 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
 abstract final class AppTextStyles {
-  static const String _fontFamily = 'Roboto';
-
   // ── Display ────────────────────────────────────────────
-  static const TextStyle displayLarge = TextStyle(
-    fontFamily: _fontFamily,
+  static final TextStyle displayLarge = GoogleFonts.poppins(
     fontSize: 57,
     fontWeight: FontWeight.w900,
     color: null,
   );
 
   // ── Headlines ──────────────────────────────────────────
-  static const TextStyle headlineLarge = TextStyle(
-    fontFamily: _fontFamily,
+  static final TextStyle headlineLarge = GoogleFonts.poppins(
     fontSize: 32,
     fontWeight: FontWeight.w700,
     color: null,
   );
 
-  static const TextStyle headlineMedium = TextStyle(
-    fontFamily: _fontFamily,
+  static final TextStyle headlineMedium = GoogleFonts.poppins(
     fontSize: 24,
     fontWeight: FontWeight.w700,
     color: null,
   );
 
-  static const TextStyle headlineSmall = TextStyle(
-    fontFamily: _fontFamily,
+  static final TextStyle headlineSmall = GoogleFonts.poppins(
     fontSize: 20,
     fontWeight: FontWeight.w600,
     color: null,
   );
 
   // ── Titles ─────────────────────────────────────────────
-  static const TextStyle titleLarge = TextStyle(
-    fontFamily: _fontFamily,
+  static final TextStyle titleLarge = GoogleFonts.poppins(
     fontSize: 18,
     fontWeight: FontWeight.w600,
     color: null,
   );
 
-  static const TextStyle titleMedium = TextStyle(
-    fontFamily: _fontFamily,
+  static final TextStyle titleMedium = GoogleFonts.poppins(
     fontSize: 16,
     fontWeight: FontWeight.w600,
     color: null,
   );
 
-  static const TextStyle titleSmall = TextStyle(
-    fontFamily: _fontFamily,
+  static final TextStyle titleSmall = GoogleFonts.poppins(
     fontSize: 14,
     fontWeight: FontWeight.w600,
     color: null,
   );
 
   // ── Body ───────────────────────────────────────────────
-  static const TextStyle bodyLarge = TextStyle(
-    fontFamily: _fontFamily,
+  static final TextStyle bodyLarge = GoogleFonts.poppins(
     fontSize: 16,
     fontWeight: FontWeight.w400,
     color: null,
   );
 
-  static const TextStyle bodyMedium = TextStyle(
-    fontFamily: _fontFamily,
+  static final TextStyle bodyMedium = GoogleFonts.poppins(
     fontSize: 14,
     fontWeight: FontWeight.w400,
     color: null,
   );
 
-  static const TextStyle bodySmall = TextStyle(
-    fontFamily: _fontFamily,
+  static final TextStyle bodySmall = GoogleFonts.poppins(
     fontSize: 12,
     fontWeight: FontWeight.w400,
     color: null,
   );
 
   // ── Labels ─────────────────────────────────────────────
-  static const TextStyle labelLarge = TextStyle(
-    fontFamily: _fontFamily,
+  static final TextStyle labelLarge = GoogleFonts.poppins(
     fontSize: 14,
     fontWeight: FontWeight.w600,
     color: null,
     letterSpacing: 0.5,
   );
 
-  static const TextStyle labelSmall = TextStyle(
-    fontFamily: _fontFamily,
+  static final TextStyle labelSmall = GoogleFonts.poppins(
     fontSize: 11,
     fontWeight: FontWeight.w500,
     color: null,
@@ -96,24 +83,21 @@ abstract final class AppTextStyles {
   );
 
   // ── Splash / Branding ─────────────────────────────────
-  static const TextStyle splashBrandGo = TextStyle(
-    fontFamily: _fontFamily,
+  static final TextStyle splashBrandGo = GoogleFonts.poppins(
     fontSize: 42,
     fontWeight: FontWeight.w900,
     color: AppColors.primaryGold,
     letterSpacing: 2,
   );
 
-  static const TextStyle splashBrandZolt = TextStyle(
-    fontFamily: _fontFamily,
+  static final TextStyle splashBrandZolt = GoogleFonts.poppins(
     fontSize: 42,
     fontWeight: FontWeight.w900,
     color: null,
     letterSpacing: 2,
   );
 
-  static const TextStyle splashSubtitle = TextStyle(
-    fontFamily: _fontFamily,
+  static final TextStyle splashSubtitle = GoogleFonts.poppins(
     fontSize: 13,
     fontWeight: FontWeight.w500,
     color: AppColors.primaryGold,
@@ -121,16 +105,14 @@ abstract final class AppTextStyles {
   );
 
   // ── Onboarding ─────────────────────────────────────────
-  static const TextStyle onboardingTitle = TextStyle(
-    fontFamily: _fontFamily,
+  static final TextStyle onboardingTitle = GoogleFonts.poppins(
     fontSize: 24,
     fontWeight: FontWeight.w700,
     color: null,
     height: 1.3,
   );
 
-  static const TextStyle onboardingSubtitle = TextStyle(
-    fontFamily: _fontFamily,
+  static final TextStyle onboardingSubtitle = GoogleFonts.poppins(
     fontSize: 14,
     fontWeight: FontWeight.w400,
     color: null,
@@ -138,8 +120,7 @@ abstract final class AppTextStyles {
   );
 
   // ── Button ─────────────────────────────────────────────
-  static const TextStyle button = TextStyle(
-    fontFamily: _fontFamily,
+  static final TextStyle button = GoogleFonts.poppins(
     fontSize: 16,
     fontWeight: FontWeight.w700,
     letterSpacing: 0.5,

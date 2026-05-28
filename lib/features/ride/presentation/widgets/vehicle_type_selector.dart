@@ -114,7 +114,7 @@ class VehicleTypeSelector extends StatelessWidget {
                         ),
                         const SizedBox(width: 2),
                         Text(
-                          '${type.maxPassengers} seats',
+                          '${type.maxPassengers}',
                           style: TextStyle(
                             fontSize: 9,
                             fontWeight: FontWeight.w600,
@@ -138,29 +138,7 @@ class VehicleTypeSelector extends StatelessWidget {
                         ),
                       )
                     else ...[
-                      // GoCoins earned
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Image.asset(
-                            AssetPaths.iconGoCoin,
-                            width: 12,
-                            height: 12,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            '+${_goCoinsEarned(price)}',
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w600,
-                              color: isSelected
-                                  ? AppColors.primaryGold
-                                  : AppColors.textMuted,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 2),
+
                       // ETA
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -200,11 +178,14 @@ class VehicleTypeSelector extends StatelessWidget {
   int _etaForType(VehicleType type) {
     final baseEta = estimate?.etaMinutes ?? 5;
     return switch (type) {
-      VehicleType.economy => baseEta,
+      VehicleType.go => baseEta,
       VehicleType.standard => baseEta + 1,
-      VehicleType.premium => baseEta + 2,
-      VehicleType.xl => baseEta + 3,
-      VehicleType.electric => baseEta + 1,
+      VehicleType.comfort => baseEta + 2,
+      VehicleType.green => baseEta + 2,
+      VehicleType.prime => baseEta + 3,
+      VehicleType.premiumXl => baseEta + 4,
+      VehicleType.van => baseEta + 5,
+      VehicleType.chauffeur => baseEta + 6,
     };
   }
 
@@ -212,29 +193,38 @@ class VehicleTypeSelector extends StatelessWidget {
     if (estimate == null) {
       // Placeholder prices
       return switch (type) {
-        VehicleType.economy => 8.50,
+        VehicleType.go => 8.50,
         VehicleType.standard => 12.50,
-        VehicleType.premium => 18.00,
-        VehicleType.xl => 20.00,
-        VehicleType.electric => 14.00,
+        VehicleType.comfort => 15.00,
+        VehicleType.green => 14.00,
+        VehicleType.prime => 18.00,
+        VehicleType.premiumXl => 20.00,
+        VehicleType.van => 25.00,
+        VehicleType.chauffeur => 30.00,
       };
     }
     // The actual estimate is for the selected type; for others, apply a multiplier
     if (type == selected) return estimate!.estimatedFare;
     final multiplier = switch (type) {
-      VehicleType.economy => 0.8,
+      VehicleType.go => 0.8,
       VehicleType.standard => 1.0,
-      VehicleType.premium => 1.4,
-      VehicleType.xl => 1.6,
-      VehicleType.electric => 1.1,
+      VehicleType.comfort => 1.2,
+      VehicleType.green => 1.1,
+      VehicleType.prime => 1.4,
+      VehicleType.premiumXl => 1.6,
+      VehicleType.van => 2.0,
+      VehicleType.chauffeur => 2.5,
     };
     final baseStandard = estimate!.estimatedFare /
         (switch (selected) {
-          VehicleType.economy => 0.8,
+          VehicleType.go => 0.8,
           VehicleType.standard => 1.0,
-          VehicleType.premium => 1.4,
-          VehicleType.xl => 1.6,
-          VehicleType.electric => 1.1,
+          VehicleType.comfort => 1.2,
+          VehicleType.green => 1.1,
+          VehicleType.prime => 1.4,
+          VehicleType.premiumXl => 1.6,
+          VehicleType.van => 2.0,
+          VehicleType.chauffeur => 2.5,
         });
     return baseStandard * multiplier;
   }

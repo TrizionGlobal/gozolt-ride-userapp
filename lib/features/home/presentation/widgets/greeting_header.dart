@@ -91,24 +91,16 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                       children: [
                         // Avatar
                         (profile?.avatarUrl != null && profile!.avatarUrl!.isNotEmpty)
-                            ? CircleAvatar(
-                                radius: 28,
-                                backgroundImage: NetworkImage(ApiConstants.fullUrl(profile.avatarUrl!)),
-                                onBackgroundImageError: (_, __) {},
-                                backgroundColor: Theme.of(context).cardTheme.color,
-                              )
-                            : CircleAvatar(
-                                radius: 28,
-                                backgroundColor: goldColor,
-                                child: Text(
-                                  profile?.initials ?? 'U',
-                                  style: TextStyle(
-                                    color: Theme.of(context).scaffoldBackgroundColor,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 20,
-                                  ),
+                            ? ClipOval(
+                                child: Image.network(
+                                  ApiConstants.fullUrl(profile.avatarUrl!),
+                                  width: 56,
+                                  height: 56,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => _buildAvatarPlaceholder(profile, 56, 20, goldColor),
                                 ),
-                              ),
+                              )
+                            : _buildAvatarPlaceholder(profile, 56, 20, goldColor),
                         const SizedBox(height: 10),
                         // Name
                         Text(
@@ -224,37 +216,19 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
           // ── Logo + brand ────────────────────────────────
           Image.asset(AssetPaths.gozoltLogo, width: 32, height: 32),
           const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    'GO',
-                    style: AppTextStyles.titleMedium.copyWith(
-                      color: AppColors.primaryGold,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  Text(
-                    'ZOLT',
-                    style: AppTextStyles.titleMedium.copyWith(
-                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
-              ),
-              Text(
-                'The Super App',
-                style: AppTextStyles.labelSmall.copyWith(
-                  color: AppColors.primaryGold,
-                  fontSize: 8,
-                  letterSpacing: 0.8,
-                ),
-              ),
-            ],
+          Text(
+            'GO',
+            style: AppTextStyles.titleMedium.copyWith(
+              color: AppColors.primaryGold,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          Text(
+            'ZOLT',
+            style: AppTextStyles.titleMedium.copyWith(
+              color: isDark ? Colors.white : AppColors.textPrimaryLight,
+              fontWeight: FontWeight.w900,
+            ),
           ),
 
           const Spacer(),
@@ -317,44 +291,58 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
           GestureDetector(
             key: _avatarKey,
             onTap: _togglePopup,
-            child: profileAsync.when(
-              data: (profile) {
-                if (profile.avatarUrl != null &&
-                    profile.avatarUrl!.isNotEmpty) {
+            child: Builder(
+              builder: (context) {
+                final profile = profileAsync.valueOrNull;
+                
+                if (profile != null) {
+                  if (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty) {
+                    return ClipOval(
+                      child: Image.network(
+                        ApiConstants.fullUrl(profile.avatarUrl!),
+                        width: 36,
+                        height: 36,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _buildAvatarPlaceholder(profile, 36, 14, goldColor),
+                      ),
+                    );
+                  }
+                  return _buildAvatarPlaceholder(profile, 36, 14, goldColor);
+                }
+                
+                if (profileAsync.isLoading) {
                   return CircleAvatar(
                     radius: 18,
-                    backgroundImage: NetworkImage(ApiConstants.fullUrl(profile.avatarUrl!)),
-                    onBackgroundImageError: (_, __) {},
                     backgroundColor: Theme.of(context).cardTheme.color,
-                    // No child — image takes full space, initials not shown
                   );
                 }
-                return CircleAvatar(
-                  radius: 18,
-                  backgroundColor: goldColor,
-                    child: Text(
-                      profile.initials,
-                      style: TextStyle(
-                        color: Theme.of(context).scaffoldBackgroundColor,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                      ),
-                    ),
-                );
+                
+                return _buildAvatarPlaceholder(null, 36, 14, goldColor);
               },
-              loading: () => CircleAvatar(
-                radius: 18,
-                backgroundColor: Theme.of(context).cardTheme.color,
-              ),
-              error: (_, __) => CircleAvatar(
-                radius: 18,
-                backgroundColor: Theme.of(this.context).cardTheme.color,
-                child:
-                    Icon(Icons.person, color: Theme.of(this.context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight, size: 20),
-              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAvatarPlaceholder(dynamic profile, double size, double fontSize, Color goldColor) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: goldColor,
+      ),
+      child: Center(
+        child: Text(
+          profile?.initials ?? 'U',
+          style: TextStyle(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            fontWeight: FontWeight.w700,
+            fontSize: fontSize,
+          ),
+        ),
       ),
     );
   }
