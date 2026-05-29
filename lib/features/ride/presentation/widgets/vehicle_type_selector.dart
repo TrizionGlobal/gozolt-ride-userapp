@@ -66,8 +66,8 @@ class VehicleTypeSelector extends StatelessWidget {
                   children: [
                     Image.asset(
                       type.iconPath,
-                      width: 56,
-                      height: 36,
+                      width: 76,
+                      height: 46,
                       fit: BoxFit.contain,
                       errorBuilder: (context, error, stackTrace) => Icon(
                         Icons.directions_car,

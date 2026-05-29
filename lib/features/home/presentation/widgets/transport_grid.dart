@@ -58,7 +58,9 @@ class TransportGrid extends StatelessWidget {
             children: [
               Expanded(
                 child: _TransportTile(
-                  iconPath: AssetPaths.iconBikeRental,
+                  iconPath: Theme.of(context).brightness == Brightness.dark 
+                      ? AssetPaths.iconBikeRentalDarkTheme 
+                      : AssetPaths.iconBikeRental,
                   label: 'Bike Rental',
                   isActive: false,
                   onTap: () => _showComingSoon(context),
@@ -81,6 +83,7 @@ class TransportGrid extends StatelessWidget {
   }
 
   void _showComingSoon(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -105,7 +108,7 @@ class TransportGrid extends StatelessWidget {
             Text(
               'Coming Soon!',
               style: AppTextStyles.headlineSmall.copyWith(
-                color: AppColors.textPrimary,
+                color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
               ),
             ),
             const SizedBox(height: 8),
@@ -113,12 +116,12 @@ class TransportGrid extends StatelessWidget {
               "We're working on bringing you this feature.",
               textAlign: TextAlign.center,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textSecondary,
+                color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
               ),
             ),
             const SizedBox(height: 24),
             SizedBox(
-              width: double.infinity,
+              width: 160,
               child: ElevatedButton(
                 onPressed: () => Navigator.of(ctx).pop(),
                 child: Text('OK'),
@@ -153,23 +156,31 @@ class _TransportTile extends StatelessWidget {
         onTap();
       },
       child: Opacity(
-        opacity: isActive ? 1.0 : 0.4,
+        opacity: isActive ? 1.0 : 0.55,
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 18),
+          padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: isActive
-                  ? AppColors.primaryGold.withOpacity(0.4)
-                  : Theme.of(context).dividerTheme.color ?? Colors.transparent,
-              width: 1,
-            ),
+            border: isActive
+                ? Border.all(
+                    color: AppColors.primaryGold,
+                    width: 1.5,
+                  )
+                : Border.all(
+                    color: Colors.transparent,
+                    width: 1,
+                  ),
           ),
           child: Column(
             children: [
-              Image.asset(iconPath, width: 52, height: 52),
-              const SizedBox(height: 10),
+              Image.asset(
+                iconPath,
+                width: 96,
+                height: 68,
+                fit: BoxFit.contain,
+              ),
+              const SizedBox(height: 2),
               Text(
                 label,
                 style: AppTextStyles.titleSmall.copyWith(

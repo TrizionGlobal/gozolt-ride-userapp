@@ -11,6 +11,7 @@ class Ride {
   final double dropoffLng;
   final String vehicleType;
   final String? paymentMethod;
+  final String? paymentMethodId;
   final double? estimatedFare;
   final double? actualFare;
   final List<RideStop> stops;
@@ -28,6 +29,7 @@ class Ride {
   final double? distanceKm;
   final int? durationMinutes;
   final double? tipAmount;
+  final double? extraFare;
 
   const Ride({
     required this.id,
@@ -40,6 +42,7 @@ class Ride {
     required this.dropoffLng,
     required this.vehicleType,
     this.paymentMethod,
+    this.paymentMethodId,
     this.estimatedFare,
     this.actualFare,
     this.stops = const [],
@@ -57,6 +60,7 @@ class Ride {
     this.distanceKm,
     this.durationMinutes,
     this.tipAmount,
+    this.extraFare,
   });
 
   /// Safely parse a value that may be num or String to double.
@@ -92,6 +96,7 @@ class Ride {
       dropoffLng: _toDouble(json['dropoffLng'], 0),
       vehicleType: json['vehicleType'] as String? ?? 'STANDARD',
       paymentMethod: json['paymentMethod'] as String?,
+      paymentMethodId: json['paymentMethodId'] as String?,
       estimatedFare: _toDoubleOrNull(json['estimatedFare']),
       actualFare: _toDoubleOrNull(json['actualFare']),
       stops: (json['stops'] as List<dynamic>?)
@@ -112,6 +117,7 @@ class Ride {
       distanceKm: _toDoubleOrNull(json['distanceKm']),
       durationMinutes: _toIntOrNull(json['durationMinutes']),
       tipAmount: _toDoubleOrNull(json['tipAmount']),
+      extraFare: _toDoubleOrNull(json['extraFare']),
     );
   }
 
@@ -126,6 +132,7 @@ class Ride {
     double? dropoffLng,
     String? vehicleType,
     String? paymentMethod,
+    String? paymentMethodId,
     double? estimatedFare,
     double? actualFare,
     List<RideStop>? stops,
@@ -143,6 +150,7 @@ class Ride {
     double? distanceKm,
     int? durationMinutes,
     double? tipAmount,
+    double? extraFare,
   }) {
     return Ride(
       id: id ?? this.id,
@@ -155,6 +163,7 @@ class Ride {
       dropoffLng: dropoffLng ?? this.dropoffLng,
       vehicleType: vehicleType ?? this.vehicleType,
       paymentMethod: paymentMethod ?? this.paymentMethod,
+      paymentMethodId: paymentMethodId ?? this.paymentMethodId,
       estimatedFare: estimatedFare ?? this.estimatedFare,
       actualFare: actualFare ?? this.actualFare,
       stops: stops ?? this.stops,
@@ -172,6 +181,7 @@ class Ride {
       distanceKm: distanceKm ?? this.distanceKm,
       durationMinutes: durationMinutes ?? this.durationMinutes,
       tipAmount: tipAmount ?? this.tipAmount,
+      extraFare: extraFare ?? this.extraFare,
     );
   }
 }

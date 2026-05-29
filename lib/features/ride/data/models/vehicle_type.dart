@@ -55,21 +55,21 @@ enum VehicleType {
   String get iconPath {
     switch (this) {
       case VehicleType.go:
-        return AssetPaths.vehicleStandard;
+        return AssetPaths.vehicleGo;
       case VehicleType.standard:
         return AssetPaths.vehicleStandard;
       case VehicleType.comfort:
         return AssetPaths.vehicleComfort;
       case VehicleType.green:
-        return AssetPaths.vehicleAccessible;
+        return AssetPaths.vehicleGreen;
       case VehicleType.prime:
-        return AssetPaths.vehicleLuxury;
+        return AssetPaths.vehiclePrime;
       case VehicleType.premiumXl:
-        return AssetPaths.vehicleXl;
+        return AssetPaths.vehiclePremiumXl;
       case VehicleType.van:
-        return AssetPaths.vehicleXl;
+        return AssetPaths.vehicleVan;
       case VehicleType.chauffeur:
-        return AssetPaths.vehicleLuxury;
+        return AssetPaths.vehicleChauffeur;
     }
   }
 

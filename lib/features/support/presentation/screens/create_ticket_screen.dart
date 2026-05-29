@@ -265,22 +265,21 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                 const SizedBox(height: 28),
 
                 // Submit button
-                Align(
-                  alignment: Alignment.center,
-                  child: SizedBox(
-                    width: 220,
-                    child: ElevatedButton(
-                      onPressed:
-                          _isFormValid && !_isSubmitting ? _submit : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryGold,
-                        foregroundColor: AppColors.backgroundDark,
-                        disabledBackgroundColor:
-                            AppColors.primaryGold.withOpacity(0.3),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed:
+                        _isFormValid && !_isSubmitting ? _submit : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGold,
+                      foregroundColor: AppColors.backgroundDark,
+                      disabledBackgroundColor:
+                          AppColors.primaryGold.withOpacity(0.3),
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size.fromHeight(44),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
                       child: _isSubmitting
                           ? const SizedBox(
                               width: 20,
@@ -292,7 +291,6 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
                           : Text('Submit', style: AppTextStyles.button),
                     ),
                   ),
-                ),
               ]),
             ),
           ),
@@ -435,7 +433,8 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
               style: AppTextStyles.bodySmall
                   .copyWith(color: isDark ? AppColors.textMuted : AppColors.textMutedLight)),
           Expanded(
-            child: Text(rideId,
+            child: Text(
+                rideId.length > 8 ? '#${rideId.substring(0, 8)}' : '#$rideId',
                 overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.bodySmall
                     .copyWith(color: AppColors.primaryGold)),

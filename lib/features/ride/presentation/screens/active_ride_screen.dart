@@ -11,6 +11,8 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
+import '../../data/models/saved_payment_method.dart';
+import '../providers/ride_providers.dart';
 import '../providers/active_ride_provider.dart';
 import '../providers/active_ride_state.dart';
 import '../widgets/driver_en_route_view.dart';
@@ -23,6 +25,7 @@ import '../widgets/change_destination_sheet.dart';
 import '../widgets/ride_details_sheet.dart';
 import '../widgets/share_ride_sheet.dart';
 import '../widgets/safety_bottom_sheet.dart';
+import '../widgets/contact_selection_sheet.dart';
 import '../../../home/presentation/providers/home_providers.dart';
 
 class ActiveRideScreen extends ConsumerStatefulWidget {
@@ -138,22 +141,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
       infoWindow: InfoWindow(title: ride.dropoffAddress),
     ));
 
-    // Ghost cars
-    if (rideState.status == ActiveRideStatus.searching && _ghostCarPositions.isNotEmpty) {
-      final isDark = Theme.of(context).brightness == Brightness.dark;
-      final ghostCarIcon = isDark ? _carIconDark : _carIconLight;
-      for (int i = 0; i < _ghostCarPositions.length; i++) {
-        markers.add(Marker(
-          markerId: MarkerId('ghost_car_$i'),
-          position: _ghostCarPositions[i],
-          icon: ghostCarIcon ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
-          rotation: _ghostCarHeadings[i],
-          anchor: const Offset(0.5, 0.5),
-          flat: true,
-          alpha: 0.6,
-        ));
-      }
-    }
+    // Ghost cars logic removed as per user request
 
     return markers;
   }
@@ -526,6 +514,18 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
   Widget build(BuildContext context) {
     final rideState = ref.watch(activeRideProvider);
 
+    String formattedPaymentMethod = rideState.ride?.paymentMethod ?? 'Cash';
+    if (formattedPaymentMethod.toUpperCase() == 'CARD' && rideState.ride?.paymentMethodId != null) {
+      final pmState = ref.watch(paymentMethodsProvider);
+      final methods = pmState.value ?? [];
+      try {
+        final card = methods.firstWhere((m) => m.id == rideState.ride!.paymentMethodId);
+        formattedPaymentMethod = card.displayName;
+      } catch (_) {
+        formattedPaymentMethod = 'Card';
+      }
+    }
+
     if (rideState.ride == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -728,19 +728,45 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
                         horizontal: 16, vertical: 8),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildCircleButton(
                           icon: Icons.arrow_back,
                           onTap: () => context.goNamed(RouteNames.home),
                           semanticLabel: 'Go back',
                         ),
-                        Row(
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             _buildCircleButton(
                               icon: Icons.my_location_rounded,
                               onTap: () => _focusCurrentLocation(),
                               semanticLabel: 'Focus location',
                             ),
+                            if (rideState.status == ActiveRideStatus.driverEnRoute ||
+                                rideState.status == ActiveRideStatus.driverArrived ||
+                                rideState.status == ActiveRideStatus.inProgress) ...[
+                              const SizedBox(height: 12),
+                              GestureDetector(
+                                onTap: () => _showSafetyBottomSheet(context),
+                                child: Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.success,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(Icons.health_and_safety_rounded, color: Colors.white, size: 18),
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ],
@@ -748,41 +774,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
                   ),
                 ),
 
-                // Safety floating button
-                if (rideState.status == ActiveRideStatus.driverEnRoute ||
-                    rideState.status == ActiveRideStatus.driverArrived ||
-                    rideState.status == ActiveRideStatus.inProgress)
-                  Positioned(
-                    bottom: 8,
-                    right: 16,
-                    child: SafeArea(
-                      child: GestureDetector(
-                        onTap: () => _showSafetyBottomSheet(context),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AppColors.success,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.health_and_safety_rounded, color: Colors.white, size: 14),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Safety',
-                                style: AppTextStyles.labelSmall.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 11,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
+
               ],
             ),
           ),
@@ -893,14 +885,14 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
                             onMessage: () => _openChat(context),
                             pickupAddress: rideState.ride?.pickupAddress ?? '',
                             dropoffAddress: rideState.ride?.dropoffAddress ?? '',
-                            paymentMethod: rideState.ride?.paymentMethod ?? 'Cash',
+                            paymentMethod: formattedPaymentMethod,
                           ),
                         ],
                       ),
                     const SizedBox(height: 16),
 
                     // Status-specific content
-                    _buildStatusContent(rideState),
+                    _buildStatusContent(rideState, formattedPaymentMethod),
                   ],
                 ),
               ),
@@ -911,10 +903,10 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
     );
   }
 
-  Widget _buildStatusContent(ActiveRideState rideState) {
+  Widget _buildStatusContent(ActiveRideState rideState, String formattedPaymentMethod) {
     switch (rideState.status) {
       case ActiveRideStatus.searching:
-        return _buildSearchingContent(rideState);
+        return _buildSearchingContent(rideState, formattedPaymentMethod);
       case ActiveRideStatus.scheduled:
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -1109,13 +1101,48 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => SafetyBottomSheet(
-        onShareTrip: () => _showShareSheet(context),
-        onCallEmergency: () => _showSosConfirmation(context),
+        onShareTrip: () => _showWhatsAppShareSheet(context),
+        onCallEmergency: () => _showAlertContactsSheet(context),
         onAlertContacts: () => _showSosConfirmation(context),
         onReportIssue: () {
           final rideId = ref.read(activeRideProvider).ride?.id;
           context.pushNamed(RouteNames.createTicket, extra: rideId);
         },
+      ),
+    );
+  }
+
+  void _showAlertContactsSheet(BuildContext context) {
+    final userProfile = ref.read(userProfileProvider).valueOrNull;
+    final contacts = userProfile?.emergencyContacts;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ContactSelectionSheet(
+        mode: ContactSelectionMode.call,
+        emergencyContacts: contacts,
+      ),
+    );
+  }
+
+  void _showWhatsAppShareSheet(BuildContext context) {
+    final rideState = ref.read(activeRideProvider);
+    final vehicle = rideState.ride?.vehicleType ?? 'a Gozolt ride';
+    final destination = rideState.ride?.dropoffAddress ?? 'my destination';
+    final message = "I'm on $vehicle heading to $destination. Follow my ride!";
+    final userProfile = ref.read(userProfileProvider).valueOrNull;
+    final contacts = userProfile?.emergencyContacts;
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ContactSelectionSheet(
+        mode: ContactSelectionMode.whatsapp,
+        locationMessage: message,
+        emergencyContacts: contacts,
       ),
     );
   }
@@ -1345,10 +1372,10 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
     );
   }
 
-  Widget _buildSearchingContent(ActiveRideState rideState) {
+  Widget _buildSearchingContent(ActiveRideState rideState, String formattedPaymentMethod) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final ride = rideState.ride;
-    final paymentMethod = ride?.paymentMethod ?? 'CASH';
+    final paymentMethod = formattedPaymentMethod;
     final extraFareAdded = rideState.extraFareAdded ?? 0.0;
 
     return Column(

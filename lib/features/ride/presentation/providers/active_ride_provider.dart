@@ -151,6 +151,7 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
         dropoffLng: booking.dropoff?.longitude ?? 0,
         vehicleType: booking.vehicleType.name.toUpperCase(),
         paymentMethod: booking.paymentMethodType.name.toUpperCase(),
+        paymentMethodId: booking.paymentMethodType == PaymentMethodType.card ? booking.selectedCardId : null,
         estimatedFare: booking.fareEstimate?.estimatedFare ?? 0,
         createdAt: DateTime.now().toIso8601String(),
       ),
@@ -1094,8 +1095,8 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
               etaMinutes: 18,
             );
 
-            // After 15s of in-progress → COMPLETED
-            _mockStatusTimer = Timer(const Duration(seconds: 15), () {
+            // After 10 minutes of in-progress → COMPLETED
+            _mockStatusTimer = Timer(const Duration(minutes: 10), () {
               if (mounted) {
                 completeRide(actualFare: 19.80);
               }

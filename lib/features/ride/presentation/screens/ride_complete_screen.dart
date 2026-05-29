@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:printing/printing.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/constants/asset_paths.dart';
 import '../../../../core/router/route_names.dart';
+import '../../data/models/saved_payment_method.dart';
+import '../providers/ride_providers.dart';
 import '../providers/active_ride_provider.dart';
 import '../providers/active_ride_state.dart';
+import '../../history/presentation/screens/receipt_screen.dart';
 
 class RideCompleteScreen extends ConsumerStatefulWidget {
   const RideCompleteScreen({super.key});
@@ -21,6 +25,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
   int _rating = 0; // Starts at 0 to force user selection
   final _commentController = TextEditingController();
   bool _hasSubmittedRating = false;
+  bool _isSubmittingRating = false;
   late AnimationController _checkAnimController;
   late Animation<double> _checkScale;
 
@@ -29,6 +34,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
   bool _hasSentTip = false;
   bool _tipSkipped = false;
   bool _showCustomTip = false;
+  bool _isSendingTip = false;
   final _customTipController = TextEditingController();
 
   @override
@@ -73,11 +79,27 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
     final rideState = ref.watch(activeRideProvider);
     final ride = rideState.ride;
     final driver = rideState.driverInfo;
-    final fare = ride?.actualFare ?? ride?.estimatedFare ?? 19.80;
-
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.textPrimary : AppColors.textPrimaryLight;
     final secondaryTextColor = isDark ? AppColors.textSecondary : AppColors.textSecondaryLight;
+
+    String formattedPaymentMethod = ride?.paymentMethod ?? 'CASH';
+    bool isCash = formattedPaymentMethod.toUpperCase() == 'CASH';
+    
+    if (formattedPaymentMethod.toUpperCase() == 'CARD' && ride?.paymentMethodId != null) {
+      final pmState = ref.watch(paymentMethodsProvider);
+      final methods = pmState.value ?? [];
+      try {
+        final card = methods.firstWhere((m) => m.id == ride!.paymentMethodId);
+        formattedPaymentMethod = card.displayName;
+      } catch (_) {
+        formattedPaymentMethod = 'Card';
+      }
+    }
+
+    final fare = ride?.actualFare ?? ride?.estimatedFare ?? 0.0;
+    final extraFare = ride?.extraFare ?? 0.0;
+    final baseFareForDisplay = fare - extraFare;
     final cardColor = Theme.of(context).cardTheme.color;
     final borderColor = Theme.of(context).dividerTheme.color ?? AppColors.borderDark;
 
@@ -150,27 +172,67 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryGold.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        ride?.paymentMethod ?? 'CASH',
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.primaryGold,
-                          fontWeight: FontWeight.bold,
+                    if (extraFare > 0) ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isDark ? AppColors.inputDark : Colors.grey[100],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('Ride Fare', style: AppTextStyles.bodySmall.copyWith(color: secondaryTextColor)),
+                                  Text('\u20AC${baseFareForDisplay.toStringAsFixed(2)}', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('Extra Tip Added', style: AppTextStyles.bodySmall.copyWith(color: secondaryTextColor)),
+                                  Text('\u20AC${extraFare.toStringAsFixed(2)}', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold, color: AppColors.primaryGold)),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
+                    ],
+                    const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.payments_outlined, color: Colors.green, size: 14),
+                            const SizedBox(width: 4),
+                            Text(
+                              formattedPaymentMethod.toUpperCase(),
+                              style: AppTextStyles.labelSmall.copyWith(
+                                color: Colors.green, 
+                                fontWeight: FontWeight.w900,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
 
               // ── Pay Now Section ──
-              if (!rideState.isPaid)
+              if (!rideState.isPaid && !isCash)
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
@@ -187,15 +249,13 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                           Text('Payment Method', style: AppTextStyles.bodyMedium.copyWith(color: textColor, fontWeight: FontWeight.w600)),
                           Row(
                             children: [
-                              Icon(
-                                ride?.paymentMethod == 'CARD' ? Icons.credit_card :
-                                ride?.paymentMethod == 'UPI' ? Icons.account_balance :
-                                ride?.paymentMethod == 'WALLET' ? Icons.account_balance_wallet : Icons.money,
+                              const Icon(
+                                Icons.credit_card,
                                 size: 18,
                                 color: AppColors.primaryGold,
                               ),
                               const SizedBox(width: 8),
-                              Text(ride?.paymentMethod ?? 'CASH', style: AppTextStyles.titleSmall.copyWith(color: AppColors.primaryGold)),
+                              Text(formattedPaymentMethod, style: AppTextStyles.titleSmall.copyWith(color: AppColors.primaryGold)),
                             ],
                           ),
                         ],
@@ -221,6 +281,45 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                     ],
                   ),
                 )
+              else if (isCash)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGold.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.primaryGold.withOpacity(0.2)),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Payment Method', style: AppTextStyles.bodyMedium.copyWith(color: textColor, fontWeight: FontWeight.w600)),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.money,
+                                size: 18,
+                                color: AppColors.primaryGold,
+                              ),
+                              const SizedBox(width: 8),
+                              Text('Cash', style: AppTextStyles.titleSmall.copyWith(color: AppColors.primaryGold)),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Please pay the driver directly.',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: secondaryTextColor,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
               else
                 Container(
                   width: double.infinity,
@@ -239,7 +338,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                     ],
                   ),
                 ),
-              if (rideState.isPaid && !_hasSubmittedRating) ...[
+              if ((rideState.isPaid || isCash) && !_hasSubmittedRating) ...[
                 const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
@@ -265,7 +364,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
               // GoCoins earned badge
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
@@ -273,27 +372,27 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                       AppColors.primaryGold.withOpacity(0.05),
                     ],
                   ),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.primaryGold.withOpacity(0.3)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      width: 36,
-                      height: 36,
+                      width: 28,
+                      height: 28,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: AppColors.primaryGold.withOpacity(0.2),
                       ),
                       child: Center(
-                        child: Image.asset(AssetPaths.iconGoCoin, width: 22, height: 22),
+                        child: Image.asset(AssetPaths.iconGoCoin, width: 16, height: 16),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
                     Text(
-                      '+${(fare * 2).floor()} GoCoins Earned!',
-                      style: AppTextStyles.titleMedium.copyWith(
+                      '+${(fare * 10).floor()} GoCoins Earned!',
+                      style: AppTextStyles.titleSmall.copyWith(
                         color: AppColors.primaryGold,
                         fontWeight: FontWeight.bold,
                       ),
@@ -320,6 +419,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                   ],
                 ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
@@ -337,7 +437,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                           child: Text(
                             (ride?.pickupAddress?.isNotEmpty == true) ? ride!.pickupAddress : 'Pickup location',
                             style: AppTextStyles.bodyMedium.copyWith(color: textColor, fontWeight: FontWeight.w500, fontSize: 13),
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -374,7 +474,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                           child: Text(
                             (ride?.dropoffAddress?.isNotEmpty == true) ? ride!.dropoffAddress : 'Dropoff location',
                             style: AppTextStyles.bodyMedium.copyWith(color: textColor, fontWeight: FontWeight.w500, fontSize: 13),
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -414,8 +514,8 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
               ],
 
 
-              // Tip Your Driver section
-              if (!_hasSentTip && !_tipSkipped) _buildTipSection(driver?.name),
+              // Tip Your Driver section (Hidden for cash payments)
+              if (!isCash && !_hasSentTip && !_tipSkipped) _buildTipSection(driver?.name),
               if (_hasSentTip)
                 Container(
                   width: double.infinity,
@@ -460,11 +560,25 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
 
               // View Receipt (Change 6)
               TextButton.icon(
-                onPressed: () {
-                  context.pushNamed(
-                    RouteNames.receipt,
-                    extra: rideState.ride?.id ?? '',
-                  );
+                onPressed: () async {
+                  if (rideState.ride != null) {
+                    // Show loading
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (_) => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
+                    );
+                    try {
+                      final bytes = await generateInvoicePdf(rideState.ride!);
+                      if (context.mounted) Navigator.pop(context); // close loading
+                      await Printing.sharePdf(bytes: bytes, filename: 'Gozolt_Invoice_${rideState.ride!.id.substring(0, 8)}.pdf');
+                    } catch (e) {
+                      if (context.mounted) Navigator.pop(context); // close loading
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to generate PDF: $e')));
+                      }
+                    }
+                  }
                 },
                 icon: const Icon(Icons.share, size: 16),
                 label: Text('Download & Share Receipt', style: AppTextStyles.titleSmall.copyWith(color: AppColors.primaryGold)),
@@ -766,18 +880,26 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _sendTip,
+              onPressed: _isSendingTip ? null : _sendTip,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGold,
                 foregroundColor: Colors.white,
+                disabledBackgroundColor: AppColors.primaryGold.withOpacity(0.5),
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
-              child: Text(
-                'Send \u20AC${_tipAmount.toStringAsFixed(2)} Tip',
-                style: AppTextStyles.button,
-              ),
+              child: _isSendingTip
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : Text(
+                      'Send \u20AC${_tipAmount.toStringAsFixed(2)} Tip',
+                      style: AppTextStyles.button,
+                    ),
             ),
           ),
         const SizedBox(height: 4),
@@ -796,18 +918,33 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
   Future<void> _sendTip() async {
     if (_tipAmount <= 0) return;
     HapticFeedback.mediumImpact();
-    ref.read(activeRideProvider.notifier).sendTip(_tipAmount);
-    setState(() => _hasSentTip = true);
+    setState(() => _isSendingTip = true);
+    await ref.read(activeRideProvider.notifier).sendTip(_tipAmount);
+    
+    if (!mounted) return;
+    setState(() {
+      _isSendingTip = false;
+      _hasSentTip = true;
+    });
   }
 
-  Future<void> _submitRating() async {
+  Future<void> _submitRating(void Function(void Function()) setModalState) async {
     HapticFeedback.mediumImpact();
+    setModalState(() => _isSubmittingRating = true);
+    setState(() => _isSubmittingRating = true);
+    
     final comment = _commentController.text.trim();
     await ref.read(activeRideProvider.notifier).rateRide(
           _rating,
           comment: comment.isNotEmpty ? comment : null,
         );
-    setState(() => _hasSubmittedRating = true);
+        
+    if (!mounted) return;
+    Navigator.pop(context);
+    setState(() {
+      _isSubmittingRating = false;
+      _hasSubmittedRating = true;
+    });
   }
 
   void _showRatingModal() {
@@ -932,16 +1069,31 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: _rating == 0 ? null : () {
-                        Navigator.pop(context);
-                        _submitRating();
+                      onPressed: (_rating == 0 || _isSubmittingRating) ? null : () {
+                        _submitRating(setModalState);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryGold,
                         foregroundColor: Colors.white,
+                        disabledBackgroundColor: AppColors.primaryGold.withOpacity(0.5),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: Text('Submit Rating', style: AppTextStyles.titleMedium.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+                      child: _isSubmittingRating
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              'Submit Rating',
+                              style: AppTextStyles.titleMedium.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 8),

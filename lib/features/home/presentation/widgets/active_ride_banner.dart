@@ -8,6 +8,7 @@ import '../../../../core/router/route_names.dart';
 import '../../../ride/presentation/providers/active_ride_provider.dart';
 import '../../../ride/presentation/providers/active_ride_state.dart';
 import '../../../ride/data/models/ride.dart';
+import '../../../ride/data/models/vehicle_type.dart';
 
 class ActiveRideBanner extends ConsumerWidget {
   const ActiveRideBanner({super.key});
@@ -152,19 +153,7 @@ class ActiveRideBanner extends ConsumerWidget {
   }
 
   String _getVehicleAsset(String? vehicleType) {
-    switch (vehicleType?.toUpperCase()) {
-      case 'COMFORT':
-        return 'assets/images/icon_vehicle_comfort.png';
-      case 'XL':
-        return 'assets/images/icon_vehicle_xl.png';
-      case 'LUXURY':
-        return 'assets/images/icon_vehicle_luxury.png';
-      case 'ACCESSIBLE':
-        return 'assets/images/icon_vehicle_accessible.png';
-      case 'GO':
-      default:
-        return 'assets/images/icon_vehicle_standard.png';
-    }
+    return VehicleType.fromApi(vehicleType ?? '').iconPath;
   }
 
   String _bannerTitle(ActiveRideStatus status) {

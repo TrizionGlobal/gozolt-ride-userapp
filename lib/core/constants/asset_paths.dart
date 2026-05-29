@@ -20,10 +20,11 @@ abstract final class AssetPaths {
   static const String onboardingTrackingLight = '$_images/light_onboarding_tracking.png';
 
   // ── Transport Grid ────────────────────────────────────
-  static const String iconRide = '$_images/icon_ride.png';
-  static const String iconCarRental = '$_images/icon_car_rental.png';
-  static const String iconBikeRental = '$_images/icon_bike_rental.png';
-  static const String iconAirportTransfer = '$_images/icon_airport_transfer.png';
+  static const String iconRide = 'assets/icon_ride.png';
+  static const String iconCarRental = 'assets/icon_car_rental.png';
+  static const String iconBikeRental = 'assets/icon_bike_rental.png';
+  static const String iconBikeRentalDarkTheme = 'assets/icon_bike_rental_light_theme.png';
+  static const String iconAirportTransfer = 'assets/icon_airport_transfer.png';
 
   // ── Rewards ───────────────────────────────────────────
   static const String iconGoCoin = '$_images/icon_gocoin.png';
@@ -37,11 +38,14 @@ abstract final class AssetPaths {
   static const String placeHussainSagar = '$_images/place_hussain_sagar.png';
 
   // ── Vehicle Types ───────────────────────────────────
-  static const String vehicleStandard = '$_images/icon_vehicle_standard.png';
-  static const String vehicleComfort = '$_images/icon_vehicle_comfort.png';
-  static const String vehicleXl = '$_images/icon_vehicle_xl.png';
-  static const String vehicleLuxury = '$_images/icon_vehicle_luxury.png';
-  static const String vehicleAccessible = '$_images/icon_vehicle_accessible.png';
+  static const String vehicleGo = 'assets/go_vehicle_icon.png';
+  static const String vehicleStandard = 'assets/standard_vehicle_icon.png';
+  static const String vehicleComfort = 'assets/comfort_vehicle_icon.png';
+  static const String vehicleGreen = 'assets/green_vehicle_icon.png';
+  static const String vehiclePrime = 'assets/prime_vehicle_icon.png';
+  static const String vehiclePremiumXl = 'assets/premium_vehicle_icon.png';
+  static const String vehicleVan = 'assets/van_vehicle_icon.png';
+  static const String vehicleChauffeur = 'assets/chauffeur_vehicle_icon.png';
 
   // ── Banners ──────────────────────────────────────────
   static const String banner1 = '$_images/banner_1.png';

@@ -395,7 +395,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
                       overflow: TextOverflow.ellipsis,
                     )
                   else
-                    Text(rideId,
+                    Text(rideId.length > 8 ? '#${rideId.substring(0, 8)}' : '#$rideId',
                         style: AppTextStyles.bodySmall
                             .copyWith(color: isDark ? AppColors.primaryGold : AppColors.primaryGoldDark)),
                 ],

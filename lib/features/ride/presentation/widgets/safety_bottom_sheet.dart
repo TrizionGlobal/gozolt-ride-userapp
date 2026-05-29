@@ -27,12 +27,11 @@ class SafetyBottomSheet extends ConsumerWidget {
     final contacts = userProfile?.emergencyContacts;
     
     String alertSubtitle = 'Notify your emergency contacts';
+    String callSubtitle = 'Directly dial local emergency services';
     if (contacts != null && contacts.isNotEmpty) {
-      if (contacts.length == 1) {
-        alertSubtitle = 'Call ${contacts.first['name']}';
-      } else {
-        alertSubtitle = 'Call ${contacts.first['name']} and ${contacts.length - 1} others';
-      }
+      final names = contacts.map((c) => c['name']).join(', ');
+      alertSubtitle = 'Alert $names';
+      callSubtitle = 'Call $names';
     }
 
     return Container(
@@ -80,7 +79,7 @@ class SafetyBottomSheet extends ConsumerWidget {
           _SafetyOption(
             icon: Icons.local_phone_rounded,
             title: 'Call Emergency',
-            subtitle: 'Directly dial local emergency services',
+            subtitle: callSubtitle,
             iconColor: AppColors.error,
             onTap: onCallEmergency,
             isDark: isDark,
@@ -159,17 +158,17 @@ class _SafetyOption extends StatelessWidget {
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: Row(
               children: [
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 38,
+                  height: 38,
                   decoration: BoxDecoration(
                     color: iconColor.withOpacity(0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(icon, color: iconColor, size: 22),
+                  child: Icon(icon, color: iconColor, size: 20),
                 ),
                 const SizedBox(width: 16),
                 Expanded(

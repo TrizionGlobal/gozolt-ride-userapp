@@ -313,6 +313,15 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
     final booking = ref.watch(rideBookingProvider);
     final isLoading = booking.status == BookingStatus.estimating;
 
+    final paymentMethodsAsync = ref.watch(paymentMethodsProvider);
+    SavedPaymentMethod? selectedCard;
+    if (booking.paymentMethodType == PaymentMethodType.card && booking.selectedCardId != null) {
+      final methods = paymentMethodsAsync.value ?? [];
+      try {
+        selectedCard = methods.firstWhere((m) => m.id == booking.selectedCardId);
+      } catch (_) {}
+    }
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
@@ -669,7 +678,9 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                           Text(
                             booking.paymentMethodType == PaymentMethodType.cash
                                 ? 'Cash'
-                                : 'Card',
+                                : selectedCard != null
+                                    ? selectedCard.displayName
+                                    : 'Card',
                             style: AppTextStyles.bodySmall.copyWith(
                               color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
                               fontWeight: FontWeight.w600,
@@ -971,23 +982,34 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
           ),
           timePickerTheme: TimePickerThemeData(
             hourMinuteTextStyle: const TextStyle(
-              fontSize: 16,
+              fontSize: 32,
               fontWeight: FontWeight.bold,
             ),
             dayPeriodTextStyle: const TextStyle(
-              fontSize: 9,
+              fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
           ),
         ),
-        child: child!,
+        child: Transform.scale(
+          scale: 0.85,
+          child: child!,
+        ),
       ),
     );
     if (pickedTime == null || !mounted) return;
 
+    // Round to nearest 5 minutes
+    int roundedMinute = ((pickedTime.minute / 5).round() * 5);
+    int finalHour = pickedTime.hour;
+    if (roundedMinute >= 60) {
+      roundedMinute = 0;
+      finalHour = (finalHour + 1) % 24;
+    }
+
     final scheduledAt = DateTime(
       pickedDate.year, pickedDate.month, pickedDate.day,
-      pickedTime.hour, pickedTime.minute,
+      finalHour, roundedMinute,
     );
 
     if (scheduledAt.isBefore(minDate)) {
@@ -1157,8 +1179,11 @@ class _DiscountBottomSheet extends ConsumerWidget {
                       rewardsAsync.when(
                         data: (points) {
                           final eurValue = points / conversionRate;
+                          final remainingFare = (booking.fareEstimate?.estimatedFare ?? 0.0) - (booking.promoDiscount ?? 0.0);
+                          final appliedEurValue = eurValue > remainingFare && remainingFare >= 0 ? remainingFare : eurValue;
+
                           return Text(
-                            'save €${eurValue.toStringAsFixed(2)} on your ride',
+                            'save €${appliedEurValue.toStringAsFixed(2)} on your ride',
                             style: AppTextStyles.bodySmall
                                 .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                           );
@@ -1170,34 +1195,40 @@ class _DiscountBottomSheet extends ConsumerWidget {
                   ),
                 ),
                 rewardsAsync.when(
-                  data: (points) => Row(
-                    children: [
-                      Text(
-                        '$points',
-                        style: AppTextStyles.titleSmall
-                            .copyWith(color: AppColors.primaryGold),
-                      ),
-                      const SizedBox(width: 4),
-                      Image.asset(AssetPaths.iconGoCoin,
-                          width: 18, height: 18),
-                      const SizedBox(width: 10),
-                      Transform.scale(
-                        scale: 0.7,
-                        child: Switch.adaptive(
-                          value: booking.useCoins,
-                          activeTrackColor: AppColors.primaryGold,
-                          inactiveTrackColor: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
-                          onChanged: (val) {
-                            HapticFeedback.selectionClick();
-                            final eurValue = points / conversionRate;
-                            ref
-                                .read(rideBookingProvider.notifier)
-                                .toggleUseCoins(val, discount: val ? eurValue : 0);
-                          },
+                  data: (points) {
+                    final eurValue = points / conversionRate;
+                    final remainingFare = (booking.fareEstimate?.estimatedFare ?? 0.0) - (booking.promoDiscount ?? 0.0);
+                    final appliedEurValue = eurValue > remainingFare && remainingFare >= 0 ? remainingFare : eurValue;
+                    final coinsUsed = (appliedEurValue * conversionRate).round();
+                    
+                    return Row(
+                      children: [
+                        Text(
+                          '$coinsUsed',
+                          style: AppTextStyles.titleSmall
+                              .copyWith(color: AppColors.primaryGold),
                         ),
-                      ),
-                    ],
-                  ),
+                        const SizedBox(width: 4),
+                        Image.asset(AssetPaths.iconGoCoin,
+                            width: 18, height: 18),
+                        const SizedBox(width: 10),
+                        Transform.scale(
+                          scale: 0.7,
+                          child: Switch.adaptive(
+                            value: booking.useCoins,
+                            activeTrackColor: AppColors.primaryGold,
+                            inactiveTrackColor: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
+                            onChanged: (val) {
+                              HapticFeedback.selectionClick();
+                              ref
+                                  .read(rideBookingProvider.notifier)
+                                  .toggleUseCoins(val, discount: val ? appliedEurValue : 0);
+                            },
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                   loading: () => const SizedBox.shrink(),
                   error: (_, __) => const SizedBox.shrink(),
                 ),
