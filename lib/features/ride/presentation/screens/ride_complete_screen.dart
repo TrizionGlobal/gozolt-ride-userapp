@@ -11,7 +11,8 @@ import '../../data/models/saved_payment_method.dart';
 import '../providers/ride_providers.dart';
 import '../providers/active_ride_provider.dart';
 import '../providers/active_ride_state.dart';
-import '../../history/presentation/screens/receipt_screen.dart';
+import '../../../history/presentation/screens/receipt_screen.dart';
+import '../../../history/data/models/ride_history_item.dart';
 
 class RideCompleteScreen extends ConsumerStatefulWidget {
   const RideCompleteScreen({super.key});
@@ -569,7 +570,25 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                       builder: (_) => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
                     );
                     try {
-                      final bytes = await generateInvoicePdf(rideState.ride!);
+                      final rideItem = RideHistoryItem(
+                        id: rideState.ride!.id,
+                        status: rideState.ride!.status,
+                        pickupAddress: rideState.ride!.pickupAddress,
+                        dropoffAddress: rideState.ride!.dropoffAddress,
+                        vehicleType: rideState.ride!.vehicleType,
+                        createdAt: rideState.ride!.createdAt,
+                        estimatedFare: rideState.ride!.estimatedFare,
+                        actualFare: rideState.ride!.actualFare,
+                        paymentMethod: rideState.ride!.paymentMethod,
+                        baseFare: rideState.ride!.baseFare,
+                        distanceFare: rideState.ride!.distanceFare,
+                        timeFare: rideState.ride!.timeFare,
+                        bookingFee: rideState.ride!.bookingFee,
+                        tipAmount: rideState.ride!.tipAmount,
+                        extraFare: rideState.ride!.extraFare,
+                        goCoinsEarned: rideState.ride!.actualFare != null ? (rideState.ride!.actualFare! * 10).toInt() : 0, // Mock for invoice UI
+                      );
+                      final bytes = await generateInvoicePdf(rideItem);
                       if (context.mounted) Navigator.pop(context); // close loading
                       await Printing.sharePdf(bytes: bytes, filename: 'Gozolt_Invoice_${rideState.ride!.id.substring(0, 8)}.pdf');
                     } catch (e) {

@@ -20,7 +20,7 @@ class OnboardingPageData {
     this.imageHeight = 280.0,
     this.fadeTop = false,
     this.fullWidthImage = false,
-    this.horizontalPadding = 32.0,
+    this.horizontalPadding = 0.0,
   });
 }
 
@@ -39,7 +39,7 @@ const onboardingPages = [
         'Obtain digital rewards on each journey. You can use it to get premium upgrades and exclusive luxury benefits.',
     imagePath: AssetPaths.onboardingCoins,
     imageHeight: 320.0,
-    horizontalPadding: 16.0,
+    horizontalPadding: 0.0,
   ),
   OnboardingPageData(
     title: '"Track ',

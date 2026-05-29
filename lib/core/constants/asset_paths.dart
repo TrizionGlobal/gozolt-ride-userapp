@@ -14,8 +14,8 @@ abstract final class AssetPaths {
   static const String appleLogo = '$_images/apple_logo.png';
 
   // ── Onboarding ─────────────────────────────────────────
-  static const String onboardingRide = '$_images/onboarding_ride.png';
-  static const String onboardingCoins = '$_images/onboarding_coins.png';
+  static const String onboardingRide = 'assets/onboarding_ride.png';
+  static const String onboardingCoins = 'assets/onboarding_coins.png';
   static const String onboardingTracking = '$_images/onboarding_tracking.jpg';
   static const String onboardingTrackingLight = '$_images/light_onboarding_tracking.png';
 

@@ -13,10 +13,6 @@ class OnboardingPageWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
     final isSmallScreen = screenHeight < 700;
-    // Scale image height based on screen size, capping for small devices
-    final imageHeight = isSmallScreen
-        ? (data.imageHeight * 0.65).clamp(180.0, 240.0)
-        : data.imageHeight;
     final verticalGap = isSmallScreen ? 20.0 : 40.0;
     final subtitleGap = isSmallScreen ? 12.0 : 20.0;
 
@@ -25,49 +21,66 @@ class OnboardingPageWidget extends StatelessWidget {
         ? AssetPaths.onboardingTrackingLight
         : data.imagePath;
 
-    return Column(
-      children: [
-        const Spacer(flex: 2),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableHeight = constraints.maxHeight;
+        
+        // Dynamically scale image height to prevent overflow
+        final dynamicImageHeight = data.fullWidthImage 
+            ? (availableHeight * 0.45).clamp(150.0, 350.0)
+            : (availableHeight * 0.45).clamp(200.0, 350.0);
 
-        // ── Illustration ─────────────────────────────
-        if (data.fullWidthImage)
-          _buildFullWidthImage(context, imageHeight, resolvedImagePath)
-        else
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: data.horizontalPadding),
-            child: SizedBox(
-              height: imageHeight,
-              child: Image.asset(
-                resolvedImagePath,
-                fit: BoxFit.contain,
-              ),
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: availableHeight),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(height: availableHeight * 0.05),
+
+                // ── Illustration ─────────────────────────────
+                if (data.fullWidthImage)
+                  _buildFullWidthImage(context, dynamicImageHeight, resolvedImagePath)
+                else
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: data.horizontalPadding),
+                    child: SizedBox(
+                      height: dynamicImageHeight,
+                      child: Image.asset(
+                        resolvedImagePath,
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+
+                SizedBox(height: verticalGap),
+
+                // ── Title ────────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: _buildTitle(context),
+                ),
+
+                SizedBox(height: subtitleGap),
+
+                // ── Subtitle ─────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Text(
+                    data.subtitle,
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.onboardingSubtitle.copyWith(
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                    ),
+                  ),
+                ),
+                
+                SizedBox(height: availableHeight * 0.1),
+              ],
             ),
           ),
-
-        SizedBox(height: verticalGap),
-
-        // ── Title ────────────────────────────────────
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: _buildTitle(context),
-        ),
-
-        SizedBox(height: subtitleGap),
-
-        // ── Subtitle ─────────────────────────────────
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Text(
-            data.subtitle,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.onboardingSubtitle.copyWith(
-              color: Theme.of(context).textTheme.bodyMedium?.color,
-            ),
-          ),
-        ),
-
-        const Spacer(flex: 3),
-      ],
+        );
+      }
     );
   }
 
