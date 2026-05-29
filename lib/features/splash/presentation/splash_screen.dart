@@ -151,6 +151,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
@@ -169,7 +170,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     Transform.scale(
                       scale: _logoScale.value,
                       child: Image.asset(
-                        AssetPaths.gozoltLogoWithText,
+                        isDark ? AssetPaths.gozoltLogoWithText : AssetPaths.gozoltLogoWithTextLight,
                         width: 340,
                         fit: BoxFit.contain,
                       ),

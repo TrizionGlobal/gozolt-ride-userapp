@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/reward_rules.dart';
@@ -39,7 +40,7 @@ class RewardsInfoScreen extends ConsumerWidget {
                   child: Row(
                     children: [
                       GestureDetector(
-                        onTap: () => Navigator.pop(context),
+                        onTap: () => context.pop(),
                         child: Container(
                           width: 36,
                           height: 36,
@@ -87,7 +88,7 @@ class RewardsInfoScreen extends ConsumerWidget {
                             .copyWith(color: AppColors.textSecondary)),
                     TextButton(
                       onPressed: () => ref.invalidate(rewardRulesProvider),
-                      child: const Text('Retry',
+                      child: Text('Retry',
                           style:
                               TextStyle(color: AppColors.primaryGold)),
                     ),
@@ -108,9 +109,7 @@ class RewardsInfoScreen extends ConsumerWidget {
                     _bulletPoint(
                         context,
                         'Earn ${rules.earning.pointsPerEur} coins for every \u20AC1 spent on completed rides.'),
-                    _bulletPoint(
-                        context,
-                        'Redeem coins directly into your wallet balance. Base rate: 400 coins = \u20AC1.00 cash credit, improving up to 100 coins = \u20AC1.00 for Platinum.'),
+                 
                     _bulletPoint(
                         context,
                         'Wallet cash can be used to pay for any of your rides without limit.'),

@@ -60,6 +60,11 @@
 		</dict>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
+		<key>LSApplicationQueriesSchemes</key>
+		<array>
+			<string>tel</string>
+			<string>whatsapp</string>
+		</array>
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>Gozolt needs your location to find nearby drivers and track your ride.</string>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
@@ -87,5 +92,7 @@
 		<string>Gozolt needs camera access for your profile photo.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>Gozolt needs photo library access to select a profile picture.</string>
+		<key>NSContactsUsageDescription</key>
+		<string>Gozolt needs access to your contacts so you can alert friends and family during a ride.</string>
 	</dict>
 </plist>

@@ -69,9 +69,14 @@ class _CountryCodePickerState extends State<CountryCodePicker> {
       minChildSize: 0.4,
       expand: false,
       builder: (context, scrollController) {
-        return Column(
-          children: [
-            // Handle bar
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).bottomSheetTheme.backgroundColor ?? Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // Handle bar
             const SizedBox(height: 12),
             Container(
               width: 40,
@@ -186,6 +191,7 @@ class _CountryCodePickerState extends State<CountryCodePicker> {
                     ),
             ),
           ],
+        ),
         );
       },
     );

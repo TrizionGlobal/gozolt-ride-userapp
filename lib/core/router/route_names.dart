@@ -31,6 +31,7 @@ abstract final class RouteNames {
   static const String savedPlaces = 'saved-places';
   static const String paymentMethods = 'payment-methods';
   static const String accountPaymentMethods = 'account-payment-methods';
+  static const String emergencyContacts = 'emergency-contacts';
   static const String notifications = 'notifications';
   static const String notificationPreferences = 'notification-preferences';
   static const String helpCenter = 'help-center';

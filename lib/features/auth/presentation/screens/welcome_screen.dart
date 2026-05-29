@@ -26,7 +26,9 @@ class WelcomeScreen extends ConsumerWidget {
 
               // ── Logo with text ─────────────────────────────
               Image.asset(
-                AssetPaths.gozoltLogoWithText,
+                Theme.of(context).brightness == Brightness.dark
+                    ? AssetPaths.gozoltLogoWithText
+                    : AssetPaths.gozoltLogoWithTextLight,
                 width: 240,
                 fit: BoxFit.contain,
               ),
@@ -119,14 +121,14 @@ class WelcomeScreen extends ConsumerWidget {
                 text: TextSpan(
                   children: [
                     TextSpan(
-                      text: 'All rights reserved \u00a9 ',
+                      text: 'All rights reserved ©️ ',
                       style: AppTextStyles.bodySmall.copyWith(
                         color: Theme.of(context).textTheme.bodySmall?.color,
                         fontSize: 11,
                       ),
                     ),
                     TextSpan(
-                      text: 'PRIMOOO 2025',
+                      text: 'Primooo Global Ltd 2024',
                       style: AppTextStyles.bodySmall.copyWith(
                         color: AppColors.primaryGold,
                         fontSize: 11,
@@ -137,7 +139,17 @@ class WelcomeScreen extends ConsumerWidget {
                 ),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 4),
+
+              Text(
+                'Version 1.0.1',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.5) ?? Colors.grey,
+                  fontSize: 10,
+                ),
+              ),
+
+              const SizedBox(height: 20),
             ],
           ),
         ),

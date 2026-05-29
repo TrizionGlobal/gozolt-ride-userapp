@@ -20,7 +20,13 @@ class _ShareRideSheetState extends ConsumerState<ShareRideSheet> {
   @override
   void initState() {
     super.initState();
-    _generateLink();
+    // Check if URL is already cached in state to avoid re-fetching
+    final cached = ref.read(activeRideProvider).shareTrackingUrl;
+    if (cached != null) {
+      _trackingUrl = cached;
+    } else {
+      _generateLink();
+    }
   }
 
   Future<void> _generateLink() async {
@@ -116,7 +122,7 @@ class _ShareRideSheetState extends ConsumerState<ShareRideSheet> {
 
               // Tracking link
               if (_isLoading)
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(vertical: 16),
                   child: CircularProgressIndicator(
                       color: AppColors.primaryGold, strokeWidth: 2),
@@ -148,6 +154,7 @@ class _ShareRideSheetState extends ConsumerState<ShareRideSheet> {
                         onTap: () {
                           Clipboard.setData(
                               ClipboardData(text: _trackingUrl!));
+                          final isDark = Theme.of(context).brightness == Brightness.dark;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Row(
@@ -155,7 +162,14 @@ class _ShareRideSheetState extends ConsumerState<ShareRideSheet> {
                                   const Icon(Icons.check_circle,
                                       color: AppColors.success, size: 20),
                                   const SizedBox(width: 10),
-                                  const Text('Link copied'),
+                                  Text(
+                                    'Link copied',
+                                    style: TextStyle(
+                                      color: isDark ? Colors.white : AppColors.textPrimaryLight,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                    ),
+                                  ),
                                 ],
                               ),
                               backgroundColor: Theme.of(context).cardTheme.color,
@@ -184,14 +198,18 @@ class _ShareRideSheetState extends ConsumerState<ShareRideSheet> {
                         onPressed: () async {
                           final box = context.findRenderObject() as RenderBox?;
                           final rect = box != null ? box.localToGlobal(Offset.zero) & box.size : null;
+                          final textToShare = driver != null
+                              ? 'Track my Gozolt ride in real-time!\n\nDriver: ${driver.name}\nVehicle: ${driver.vehicleDescription} (${driver.formattedPlate})\n\nLive tracking: $_trackingUrl'
+                              : 'Track my Gozolt ride in real-time: $_trackingUrl';
+                          
                           await Share.share(
-                            'Track my Gozolt ride in real-time: $_trackingUrl',
+                            textToShare,
                             subject: 'My Gozolt Live Location',
                             sharePositionOrigin: rect,
                           );
                         },
                         icon: const Icon(Icons.share, size: 18),
-                        label: const Text('Share with Contacts'),
+                        label: Text('Share with Contacts'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryGold,
                           foregroundColor: Theme.of(context).scaffoldBackgroundColor,

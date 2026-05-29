@@ -18,7 +18,7 @@ class TripSummaryScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
       body: rideAsync.when(
-        loading: () => const Center(
+        loading: () => Center(
           child: CircularProgressIndicator(color: AppColors.primaryGold),
         ),
         error: (e, _) => Center(
@@ -33,7 +33,7 @@ class TripSummaryScreen extends ConsumerWidget {
                       .copyWith(color: AppColors.textSecondary)),
               TextButton(
                 onPressed: () => ref.invalidate(selectedRideDetailProvider(rideId)),
-                child: const Text('Retry',
+                child: Text('Retry',
                     style: TextStyle(color: AppColors.primaryGold)),
               ),
             ],
@@ -71,7 +71,7 @@ class TripSummaryScreen extends ConsumerWidget {
                     Row(
                       children: [
                         GestureDetector(
-                          onTap: () => Navigator.pop(context),
+                          onTap: () => context.pop(),
                           child: Container(
                             width: 36,
                             height: 36,
@@ -223,7 +223,7 @@ class TripSummaryScreen extends ConsumerWidget {
                           );
                         },
                         icon: const Icon(Icons.receipt_long, size: 18),
-                        label: const Text('Receipt'),
+                        label: Text('Receipt'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.textSecondary,
                           side: const BorderSide(color: AppColors.borderDark),
@@ -243,7 +243,7 @@ class TripSummaryScreen extends ConsumerWidget {
                           );
                         },
                         icon: const Icon(Icons.flag_outlined, size: 18),
-                        label: const Text('Report'),
+                        label: Text('Report'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.textSecondary,
                           side: const BorderSide(color: AppColors.borderDark),
@@ -263,7 +263,7 @@ class TripSummaryScreen extends ConsumerWidget {
                       context.goNamed(RouteNames.searchDestination);
                     },
                     icon: const Icon(Icons.replay, size: 18),
-                    label: const Text('Book Same Route'),
+                    label: Text('Book Same Route'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,
                       foregroundColor: AppColors.backgroundDark,

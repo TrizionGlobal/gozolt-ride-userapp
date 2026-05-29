@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
@@ -8,6 +9,7 @@ import '../../../../core/utils/input_validators.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import 'package:universal_io/io.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 import '../providers/account_providers.dart';
 import '../../../home/presentation/providers/home_providers.dart';
 
@@ -74,7 +76,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                   child: Row(
                     children: [
                       GestureDetector(
-                        onTap: () => Navigator.pop(context),
+                        onTap: () => context.pop(),
                         child: Container(
                           width: 36,
                           height: 36,
@@ -108,62 +110,60 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               delegate: SliverChildListDelegate([
                 // Avatar
                 Center(
-                  child: profileAsync.when(
-                    loading: () => const ShimmerWrap(
-                      child: ShimmerCircle(radius: 44),
-                    ),
-                    error: (context, error) => const SizedBox.shrink(),
-                    data: (profile) => Stack(
-                      children: [
-                        _avatarPath != null
-                            ? CircleAvatar(
-                                radius: 44,
-                                backgroundImage:
-                                    FileImage(File(_avatarPath!)),
-                                backgroundColor: AppColors.primaryGold
-                                    .withOpacity(0.15),
-                              )
-                            : (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty)
-                                ? CircleAvatar(
-                                    radius: 44,
-                                    backgroundImage: NetworkImage(ApiConstants.fullUrl(profile.avatarUrl!)),
-                                    backgroundColor: AppColors.primaryGold
-                                        .withOpacity(0.15),
-                                  )
-                                : CircleAvatar(
-                                    radius: 44,
-                                    backgroundColor: AppColors.primaryGold
-                                        .withOpacity(0.15),
-                                    child: Text(
-                                      profile.initials,
-                                      style:
-                                          AppTextStyles.headlineLarge.copyWith(
-                                        color: AppColors.primaryGold,
+                  child: Builder(
+                    builder: (context) {
+                      final profile = profileAsync.valueOrNull;
+                      
+                      if (profile == null && profileAsync.isLoading) {
+                        return const ShimmerWrap(
+                          child: ShimmerCircle(radius: 44),
+                        );
+                      }
+                      
+                      return Stack(
+                        children: [
+                          _avatarPath != null
+                              ? CircleAvatar(
+                                  radius: 44,
+                                  backgroundImage:
+                                      FileImage(File(_avatarPath!)),
+                                  backgroundColor: AppColors.primaryGold
+                                      .withOpacity(0.15),
+                                )
+                              : (profile?.avatarUrl != null && profile!.avatarUrl!.isNotEmpty)
+                                  ? ClipOval(
+                                      child: Image.network(
+                                        ApiConstants.fullUrl(profile.avatarUrl!),
+                                        width: 88,
+                                        height: 88,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, __, ___) => _buildAvatarPlaceholder(profile, 88),
                                       ),
-                                    ),
-                                  ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: GestureDetector(
-                            onTap: () => _showAvatarOptions(context),
-                            child: Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryGold,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                    color: Theme.of(context).scaffoldBackgroundColor, width: 2),
+                                    )
+                                  : _buildAvatarPlaceholder(profile, 88),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: () => _showAvatarOptions(context),
+                              child: Container(
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryGold,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                      color: Theme.of(context).scaffoldBackgroundColor, width: 2),
+                                ),
+                                child: Icon(Icons.camera_alt,
+                                    size: 16,
+                                    color: Theme.of(context).scaffoldBackgroundColor),
                               ),
-                              child: Icon(Icons.camera_alt,
-                                  size: 16,
-                                  color: Theme.of(context).scaffoldBackgroundColor),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 28),
@@ -271,7 +271,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                 strokeWidth: 2,
                                 color: Theme.of(context).scaffoldBackgroundColor),
                           )
-                        : const Text('Save Changes',
+                        : Text('Save Changes',
                             style: AppTextStyles.button),
                   ),
                 ),
@@ -379,7 +379,6 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 onTap: () {
                   Navigator.pop(context);
                   setState(() => _avatarPath = null);
-                  _snackBar('Photo removed');
                 },
               ),
             ],
@@ -398,8 +397,27 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         imageQuality: 80,
       );
       if (picked != null) {
-        setState(() => _avatarPath = picked.path);
-        _snackBar('Photo updated');
+        final croppedFile = await ImageCropper().cropImage(
+          sourcePath: picked.path,
+          aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+          uiSettings: [
+            AndroidUiSettings(
+              toolbarTitle: 'Crop Photo',
+              toolbarColor: AppColors.primaryGold,
+              toolbarWidgetColor: Colors.white,
+              initAspectRatio: CropAspectRatioPreset.square,
+              lockAspectRatio: true,
+            ),
+            IOSUiSettings(
+              title: 'Crop Photo',
+              aspectRatioLockEnabled: true,
+              resetAspectRatioEnabled: false,
+            ),
+          ],
+        );
+        if (croppedFile != null) {
+          setState(() => _avatarPath = croppedFile.path);
+        }
       }
     } catch (e) {
       _snackBar(
@@ -464,7 +482,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
       if (mounted) {
         _snackBar('Profile updated successfully');
-        Navigator.pop(context);
+        context.pop();
       }
     } catch (e) {
       if (mounted) {
@@ -473,5 +491,23 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+  Widget _buildAvatarPlaceholder(dynamic profile, double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppColors.primaryGold.withOpacity(0.15),
+      ),
+      child: Center(
+        child: Text(
+          profile?.initials ?? 'U',
+          style: AppTextStyles.headlineLarge.copyWith(
+            color: AppColors.primaryGold,
+          ),
+        ),
+      ),
+    );
   }
 }

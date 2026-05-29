@@ -32,6 +32,7 @@ class RideHistoryItem {
   final double? bookingFee;
   final double? surgeMultiplier;
   final double? tipAmount;
+  final double? extraFare;
 
   const RideHistoryItem({
     required this.id,
@@ -67,6 +68,7 @@ class RideHistoryItem {
     this.bookingFee,
     this.surgeMultiplier,
     this.tipAmount,
+    this.extraFare,
   });
 
   RideHistoryItem copyWith({
@@ -103,6 +105,7 @@ class RideHistoryItem {
     double? bookingFee,
     double? surgeMultiplier,
     double? tipAmount,
+    double? extraFare,
   }) {
     return RideHistoryItem(
       id: id ?? this.id,
@@ -138,6 +141,7 @@ class RideHistoryItem {
       bookingFee: bookingFee ?? this.bookingFee,
       surgeMultiplier: surgeMultiplier ?? this.surgeMultiplier,
       tipAmount: tipAmount ?? this.tipAmount,
+      extraFare: extraFare ?? this.extraFare,
     );
   }
 
@@ -230,6 +234,7 @@ class RideHistoryItem {
       bookingFee: _toDouble(json['bookingFee']),
       surgeMultiplier: _toDouble(json['surgeMultiplier']),
       tipAmount: _toDouble(json['tipAmount']),
+      extraFare: _toDouble(json['extraFare']),
     );
   }
 

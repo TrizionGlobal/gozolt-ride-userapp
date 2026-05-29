@@ -157,7 +157,7 @@ class _MockAddCardSheetState extends State<MockAddCardSheet> {
                               strokeWidth: 2,
                               color: Theme.of(context).scaffoldBackgroundColor),
                         )
-                      : const Text('Add Card', style: AppTextStyles.button),
+                      : Text('Add Card', style: AppTextStyles.button),
                 ),
               ),
             ],

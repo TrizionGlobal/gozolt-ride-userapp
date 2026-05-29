@@ -91,7 +91,7 @@ class _SearchDestinationScreenState
                 foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: const Text('Open Settings'),
+              child: Text('Open Settings'),
             ),
           ],
         ),
@@ -128,22 +128,29 @@ class _SearchDestinationScreenState
             style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text('Cancel',
-                  style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary)),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                Geolocator.openAppSettings();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryGold,
-                foregroundColor: Theme.of(context).scaffoldBackgroundColor,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              child: const Text('Open Settings'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: Text('Cancel',
+                      style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary)),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Geolocator.openAppSettings();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGold,
+                    foregroundColor: Theme.of(context).scaffoldBackgroundColor,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  ),
+                  child: Text('Open Settings'),
+                ),
+              ],
             ),
           ],
         ),
@@ -309,6 +316,7 @@ class _SearchDestinationScreenState
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => _LocationSearchSheet(
+        showCurrentLocation: field == 'pickup',
         onSelect: (location) {
           Navigator.of(ctx).pop();
           _applyLocation(field, location, stopIndex: stopIndex);
@@ -420,7 +428,16 @@ class _SearchDestinationScreenState
           children: [
             const Icon(Icons.warning_amber_rounded, color: Color(0xFFFACC15), size: 20),
             const SizedBox(width: 8),
-            Expanded(child: Text(message)),
+            Expanded(
+              child: Text(
+                message,
+                style: TextStyle(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : AppColors.textPrimaryLight,
+                ),
+              ),
+            ),
           ],
         ),
         backgroundColor: Theme.of(context).cardTheme.color,
@@ -452,7 +469,7 @@ class _SearchDestinationScreenState
               foregroundColor: Theme.of(context).scaffoldBackgroundColor,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text('OK'),
+            child: Text('OK'),
           ),
         ],
       ),
@@ -525,59 +542,6 @@ class _SearchDestinationScreenState
                   controller: _pickupController,
                   hint: 'Pickup location',
                   dotColor: AppColors.success,
-                  trailing: GestureDetector(
-                    onTap: () async {
-                      try {
-                        // Try last known first for speed
-                        final lastKnown = await Geolocator.getLastKnownPosition();
-                        if (lastKnown != null && mounted) {
-                          final addr = await _reverseGeocode(lastKnown.latitude, lastKnown.longitude);
-                          if (mounted) {
-                            _applyLocation(
-                              'pickup',
-                              LocationData(
-                                address: addr,
-                                latitude: lastKnown.latitude,
-                                longitude: lastKnown.longitude,
-                                subtitle:
-                                    '${lastKnown.latitude.toStringAsFixed(4)}, ${lastKnown.longitude.toStringAsFixed(4)}',
-                              ),
-                            );
-                          }
-                        }
-                        final position = await Geolocator.getCurrentPosition(
-                          locationSettings: const LocationSettings(
-                            accuracy: LocationAccuracy.high,
-                            timeLimit: Duration(seconds: 5),
-                          ),
-                        );
-                        if (!mounted) return;
-                        final addr = await _reverseGeocode(position.latitude, position.longitude);
-                        if (!mounted) return;
-                        _applyLocation(
-                          'pickup',
-                          LocationData(
-                            address: addr,
-                            latitude: position.latitude,
-                            longitude: position.longitude,
-                            subtitle:
-                                '${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}',
-                          ),
-                        );
-                      } catch (_) {
-                        if (!mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Could not get current location'),
-                            backgroundColor: AppColors.warning,
-                          ),
-                        );
-                      }
-                      setState(() {});
-                    },
-                    child: Icon(Icons.my_location,
-                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight, size: 20),
-                  ),
                   onTap: () => _selectLocation('pickup'),
                 ),
 
@@ -593,7 +557,7 @@ class _SearchDestinationScreenState
                         trailing: GestureDetector(
                           behavior: HitTestBehavior.opaque,
                           onTap: () => _removeStop(index),
-                          child: const Padding(
+                          child: Padding(
                             padding: EdgeInsets.all(6),
                             child: Icon(Icons.close,
                                 color: AppColors.textSecondary, size: 18),
@@ -616,90 +580,72 @@ class _SearchDestinationScreenState
                   onTap: () => _selectLocation('dropoff'),
                 ),
 
-                // Add Stop button
-                if (booking.stops.length < 3 &&
-                    _stopControllers.length < 3) ...[
-                  const SizedBox(height: 12),
-                  GestureDetector(
-                    onTap: _addStop,
-                    child: Row(
-                      children: [
-                        const Icon(Icons.add_circle_outline,
-                            color: AppColors.primaryGold, size: 18),
-                        const SizedBox(width: 8),
-                        Text(
-                          'ADD STOP',
-                          style: AppTextStyles.titleSmall.copyWith(
-                            color: AppColors.primaryGold,
-                            fontWeight: FontWeight.w700,
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Add Stop button
+                    (booking.stops.length < 3 && _stopControllers.length < 3)
+                        ? GestureDetector(
+                            onTap: _addStop,
+                            child: Row(
+                              children: [
+                                const Icon(Icons.add_circle_outline,
+                                    color: AppColors.primaryGold, size: 16),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'ADD STOP',
+                                  style: AppTextStyles.labelSmall.copyWith(
+                                    color: AppColors.primaryGold,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+
+                    // Choose on Map button
+                    GestureDetector(
+                      onTap: () async {
+                        final result = await context
+                            .pushNamed<LocationData>(RouteNames.mapPinSelection);
+                        if (result != null && mounted) {
+                          _applyLocation('dropoff', result);
+                        }
+                      },
+                      child: Row(
+                        children: [
+                          const Icon(Icons.map_outlined,
+                              color: AppColors.primaryGold, size: 16),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Choose on Map',
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: AppColors.primaryGold,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ],
             ),
           ),
 
-          // ── Choose on Map ─────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: GestureDetector(
-              onTap: () async {
-                final result = await context
-                    .pushNamed<LocationData>(RouteNames.mapPinSelection);
-                if (result != null && mounted) {
-                  _applyLocation('dropoff', result);
-                }
-              },
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(14),
-                  border:
-                      Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent, width: 0.5),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryGold.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(Icons.map_outlined,
-                          color: AppColors.primaryGold, size: 20),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Choose on Map',
-                      style: AppTextStyles.titleSmall.copyWith(
-                        color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
-                      ),
-                    ),
-                    const Spacer(),
-                    const Icon(Icons.chevron_right,
-                        color: AppColors.textSecondary, size: 22),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
           // ── Search Vehicles button ──────────────────────
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: GozoltButton(
-              label: 'Search Vehicles',
-              width: double.infinity,
-              isLoading: booking.status == BookingStatus.estimating,
-              onPressed: _searchVehicles,
+            child: SizedBox(
+              height: 44, // Smaller height
+              child: GozoltButton(
+                label: 'Search Vehicles',
+                width: double.infinity,
+                isLoading: booking.status == BookingStatus.estimating,
+                onPressed: _searchVehicles,
+              ),
             ),
           ),
 
@@ -859,7 +805,7 @@ class _LocationField extends StatelessWidget {
             behavior: HitTestBehavior.opaque,
             onTap: onTap,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: fieldBg,
                 borderRadius: BorderRadius.circular(10),
@@ -888,7 +834,7 @@ class _LocationField extends StatelessWidget {
                   // Value / hint
                   Text(
                     hasValue ? controller.text : hint,
-                    style: AppTextStyles.bodyMedium.copyWith(
+                    style: AppTextStyles.bodySmall.copyWith(
                       color: hasValue
                           ? (isDark ? AppColors.textPrimary : AppColors.textPrimaryLight)
                           : (isDark ? AppColors.textMuted : AppColors.textMutedLight),
@@ -1031,12 +977,16 @@ class _RecentSearchTile extends StatelessWidget {
   }
 }
 
-// ── Location Search Bottom Sheet (Photon API — typo-tolerant) ────
+// ── Location Search Bottom Sheet (Photon API + Native Fallback) ────
 
 class _LocationSearchSheet extends StatefulWidget {
   final ValueChanged<LocationData> onSelect;
+  final bool showCurrentLocation;
 
-  const _LocationSearchSheet({required this.onSelect});
+  const _LocationSearchSheet({
+    required this.onSelect,
+    this.showCurrentLocation = false,
+  });
 
   @override
   State<_LocationSearchSheet> createState() => _LocationSearchSheetState();
@@ -1147,53 +1097,64 @@ class _LocationSearchSheetState extends State<_LocationSearchSheet> {
       }
     } catch (_) {}
 
+    List<LocationData> newResults = [];
+
+    // TIER 1: Google Places Autocomplete
     try {
-      final url =
-          'https://photon.komoot.io/api/'
-          '?q=${Uri.encodeComponent(query)}'
-          '&lat=$biasLat'
-          '&lon=$biasLng'
-          '&limit=8'
-          '&lang=en';
+      final googleUrl = 'https://maps.googleapis.com/maps/api/place/autocomplete/json'
+          '?input=${Uri.encodeComponent(query)}'
+          '&location=$biasLat%2C$biasLng'
+          '&radius=100000'
+          '&key=${AppConstants.googleMapsApiKey}';
 
-      final response = await _dio.get(
-        url,
-        options: Options(headers: {
-          'User-Agent': 'GozoltApp/1.0',
-          'Accept': 'application/json',
-        }),
-      );
-      final data = response.data;
+      final googleRes = await _dio.get(googleUrl);
+      final gData = googleRes.data;
 
-      if (!mounted) return;
+      if (gData is Map<String, dynamic> && gData['status'] == 'OK' && gData['predictions'] is List) {
+        final predictions = gData['predictions'] as List;
+        newResults = predictions.map((p) {
+          final structured = p['structured_formatting'] as Map<String, dynamic>?;
+          final mainText = structured?['main_text'] as String? ?? p['description'] as String? ?? query;
+          final secondaryText = structured?['secondary_text'] as String?;
 
-      if (data is Map<String, dynamic> &&
-          data['features'] is List &&
-          (data['features'] as List).isNotEmpty) {
-        final features = data['features'] as List;
-        setState(() {
-          _isSearching = false;
-          _showingQuickPicks = false;
-          _results = features.map((f) {
+          return LocationData(
+            address: mainText,
+            latitude: 0,
+            longitude: 0,
+            subtitle: secondaryText,
+            placeId: p['place_id'] as String?,
+          );
+        }).toList();
+      }
+    } catch (_) {}
+
+    // TIER 2: Photon Fallback
+    if (newResults.isEmpty) {
+      try {
+        final url = 'https://photon.komoot.io/api/'
+            '?q=${Uri.encodeComponent(query)}'
+            '&lat=$biasLat'
+            '&lon=$biasLng'
+            '&limit=8'
+            '&lang=en';
+
+        final response = await _dio.get(url, options: Options(headers: {'User-Agent': 'GozoltApp/1.0', 'Accept': 'application/json'}));
+        final data = response.data;
+
+        if (data is Map<String, dynamic> && data['features'] is List) {
+          final features = data['features'] as List;
+          newResults = features.map((f) {
             final props = f['properties'] as Map<String, dynamic>? ?? {};
             final coords = f['geometry']?['coordinates'] as List?;
-            final lng = (coords != null && coords.isNotEmpty)
-                ? (coords[0] as num).toDouble()
-                : 0.0;
-            final lat = (coords != null && coords.length > 1)
-                ? (coords[1] as num).toDouble()
-                : 0.0;
+            final lng = (coords != null && coords.isNotEmpty) ? (coords[0] as num).toDouble() : 0.0;
+            final lat = (coords != null && coords.length > 1) ? (coords[1] as num).toDouble() : 0.0;
 
             final name = props['name'] as String? ?? '';
             final parts = <String>[
-              if ((props['street'] as String?)?.isNotEmpty == true)
-                props['street'] as String,
-              if ((props['city'] as String?)?.isNotEmpty == true)
-                props['city'] as String,
-              if ((props['state'] as String?)?.isNotEmpty == true)
-                props['state'] as String,
-              if ((props['country'] as String?)?.isNotEmpty == true)
-                props['country'] as String,
+              if ((props['street'] as String?)?.isNotEmpty == true) props['street'] as String,
+              if ((props['city'] as String?)?.isNotEmpty == true) props['city'] as String,
+              if ((props['state'] as String?)?.isNotEmpty == true) props['state'] as String,
+              if ((props['country'] as String?)?.isNotEmpty == true) props['country'] as String,
             ];
 
             return LocationData(
@@ -1203,25 +1164,50 @@ class _LocationSearchSheetState extends State<_LocationSearchSheet> {
               subtitle: parts.isNotEmpty ? parts.join(', ') : null,
             );
           }).toList();
-        });
-      } else {
-        if (mounted) {
-          setState(() {
-            _isSearching = false;
-            _showingQuickPicks = false;
-            _results = [];
-          });
         }
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _isSearching = false;
-          _showingQuickPicks = false;
-          _results = [];
-        });
-      }
+      } catch (_) {}
     }
+
+    // TIER 3: Native Geocoding Fallback
+    if (newResults.isEmpty) {
+      try {
+        final locations = await geocoding.locationFromAddress(query);
+        if (locations.isNotEmpty) {
+          final loc = locations.first;
+          try {
+            final placemarks = await geocoding.placemarkFromCoordinates(loc.latitude, loc.longitude);
+            if (placemarks.isNotEmpty) {
+              final p = placemarks.first;
+              final address = p.name ?? query;
+              final parts = [p.locality, p.administrativeArea, p.country].where((e) => e != null && e.isNotEmpty).join(', ');
+              newResults.add(LocationData(
+                address: address.isNotEmpty ? address : query,
+                latitude: loc.latitude,
+                longitude: loc.longitude,
+                subtitle: parts.isNotEmpty ? parts : 'Found via native search',
+              ));
+            } else {
+              throw Exception();
+            }
+          } catch (_) {
+            newResults.add(LocationData(
+              address: query,
+              latitude: loc.latitude,
+              longitude: loc.longitude,
+              subtitle: 'Found via native search',
+            ));
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      _isSearching = false;
+      _showingQuickPicks = false;
+      _results = newResults;
+    });
   }
 
   @override
@@ -1266,7 +1252,7 @@ class _LocationSearchSheetState extends State<_LocationSearchSheet> {
                   prefixIcon: Icon(Icons.search,
                       color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                   suffixIcon: _isSearching
-                      ? const Padding(
+                      ? Padding(
                           padding: EdgeInsets.all(14),
                           child: SizedBox(
                             width: 16,
@@ -1289,6 +1275,63 @@ class _LocationSearchSheetState extends State<_LocationSearchSheet> {
                 ),
               ),
             ),
+            // Current Location special button
+            if (_showingQuickPicks && widget.showCurrentLocation)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () async {
+                    final result = await context.pushNamed<LocationData>(RouteNames.mapPinSelection);
+                    if (result != null && mounted) {
+                      widget.onSelect(result);
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGold.withOpacity(0.1),
+                      border: Border.all(color: AppColors.primaryGold.withOpacity(0.3)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGold.withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.my_location, color: AppColors.primaryGold, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Current Location',
+                                style: AppTextStyles.titleSmall.copyWith(
+                                  color: AppColors.primaryGold,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                'Confirm via map',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right, color: AppColors.primaryGold, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             // Section header
             if (_showingQuickPicks && _results.isNotEmpty)
               Padding(
@@ -1341,7 +1384,29 @@ class _LocationSearchSheetState extends State<_LocationSearchSheet> {
                       color: Colors.transparent,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(10),
-                        onTap: () {
+                        onTap: () async {
+                          if (loc.placeId != null && loc.latitude == 0 && loc.longitude == 0) {
+                            try {
+                              final detailsUrl = 'https://maps.googleapis.com/maps/api/place/details/json'
+                                  '?place_id=${loc.placeId}'
+                                  '&fields=geometry'
+                                  '&key=${AppConstants.googleMapsApiKey}';
+                              final res = await _dio.get(detailsUrl);
+                              final dData = res.data;
+                              if (dData['status'] == 'OK') {
+                                final location = dData['result']['geometry']['location'];
+                                final lat = (location['lat'] as num).toDouble();
+                                final lng = (location['lng'] as num).toDouble();
+                                if (mounted) {
+                                  widget.onSelect(loc.copyWith(latitude: lat, longitude: lng));
+                                }
+                                return;
+                              }
+                            } catch (_) {
+                              // Fallback below
+                            }
+                          }
+                          
                           // Immediately call onSelect — no delay
                           widget.onSelect(loc);
                         },

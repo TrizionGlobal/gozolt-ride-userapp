@@ -162,20 +162,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Widget _buildBottomControls(bool isDark) {
     if (_isLastPage) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32),
+        padding: const EdgeInsets.only(left: 32, right: 32, top: 24),
         child: Column(
           children: [
-            // Full-width "Get Started" button
+            // Smaller "Get Started" button
             SizedBox(
-              width: double.infinity,
-              height: 56,
+              height: 48,
               child: ElevatedButton(
                 onPressed: _completeOnboarding,
                 style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
                   backgroundColor: AppColors.primaryGold,
                   foregroundColor: isDark ? AppColors.backgroundDark : Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
+                    borderRadius: BorderRadius.circular(24),
                   ),
                   elevation: 0,
                 ),

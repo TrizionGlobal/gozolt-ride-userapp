@@ -53,7 +53,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                         label: 'Go back',
                         button: true,
                         child: GestureDetector(
-                          onTap: () => Navigator.pop(context),
+                          onTap: () => context.pop(),
                           child: Container(
                             width: 36,
                             height: 36,
@@ -156,7 +156,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Under GDPR, you have the right to request data deletion. Consider downloading your data first from Account > Download My Data.',
+                          'Under GDPR, you have the right to request data deletion.',
                           style: AppTextStyles.bodySmall
                               .copyWith(color: AppColors.info),
                         ),
@@ -233,14 +233,14 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                             child: CircularProgressIndicator(
                                 strokeWidth: 2, color: Colors.white),
                           )
-                        : const Text('Delete My Account',
+                        : Text('Delete My Account',
                             style: AppTextStyles.button),
                   ),
                 ),
                 const SizedBox(height: 12),
                 Center(
                   child: TextButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => context.pop(),
                     child: Text('Cancel, keep my account',
                         style: AppTextStyles.bodyMedium
                             .copyWith(color: AppColors.textMuted)),
@@ -303,7 +303,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.error,
                 ),
-                child: const Text('Yes, Delete',
+                child: Text('Yes, Delete',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               ),
             ],
@@ -351,7 +351,7 @@ class _DeleteAccountScreenState extends ConsumerState<DeleteAccountScreen> {
                   Navigator.pop(ctx);
                   context.goNamed(RouteNames.welcome);
                 },
-                child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Text('OK', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ],
           ),

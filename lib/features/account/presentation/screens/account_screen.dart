@@ -13,6 +13,7 @@ import '../../../home/presentation/providers/home_providers.dart';
 import '../providers/account_providers.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../rewards/presentation/providers/rewards_providers.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 
 class AccountScreen extends ConsumerStatefulWidget {
   const AccountScreen({super.key});
@@ -23,6 +24,8 @@ class AccountScreen extends ConsumerStatefulWidget {
 
 class _AccountScreenState extends ConsumerState<AccountScreen> {
   DateTime? _lastRateAppTap;
+  int _profileRetryCount = 0;
+  static const int _maxProfileRetries = 3;
 
   void _showPremiumSnackBar(String message, {IconData icon = Icons.info_outline}) {
     final isDark = ref.read(isDarkModeProvider);
@@ -55,6 +58,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(userProfileProvider);
     final isDark = ref.watch(isDarkModeProvider);
+    final rewardSummaryAsync = ref.watch(rewardSummaryProvider);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -62,6 +66,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         color: AppColors.primaryGold,
         backgroundColor: Theme.of(context).colorScheme.surface,
         onRefresh: () async {
+          _profileRetryCount = 0; // reset retry cap on manual refresh
           ref.invalidate(userProfileProvider);
           await Future.delayed(const Duration(milliseconds: 300));
         },
@@ -109,11 +114,18 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                       ),
                     ),
                     error: (error, __) {
-                      // Auto-retry after 3s for transient errors.
-                      // 401 is handled separately by the API interceptor (it redirects to login).
-                      Future.delayed(const Duration(seconds: 3), () {
-                        if (mounted) ref.invalidate(userProfileProvider);
-                      });
+                      // Auto-retry with exponential backoff, capped at _maxProfileRetries.
+                      // When the server is completely unreachable we stop retrying to
+                      // avoid hammering the network with an infinite loop.
+                      if (_profileRetryCount < _maxProfileRetries) {
+                        _profileRetryCount++;
+                        // Backoff: 3s → 10s → 30s
+                        final delays = [3, 10, 30];
+                        final delaySecs = delays[(_profileRetryCount - 1).clamp(0, delays.length - 1)];
+                        Future.delayed(Duration(seconds: delaySecs), () {
+                          if (mounted) ref.invalidate(userProfileProvider);
+                        });
+                      }
                       // Show shimmer while waiting for retry — no broken UI shown
                       return SizedBox(
                         height: 64,
@@ -139,24 +151,17 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
 
                     data: (profile) => Row(
                       children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundColor:
-                              AppColors.backgroundDark.withOpacity(0.2),
-                          backgroundImage: profile.avatarUrl != null &&
-                                  profile.avatarUrl!.isNotEmpty
-                              ? NetworkImage(ApiConstants.fullUrl(profile.avatarUrl!))
-                              : null,
-                          child: profile.avatarUrl == null ||
-                                  profile.avatarUrl!.isEmpty
-                              ? Text(
-                                  profile.initials,
-                                  style: AppTextStyles.headlineSmall.copyWith(
-                                    color: AppColors.backgroundDark,
-                                  ),
-                                )
-                              : null,
-                        ),
+                        (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty)
+                            ? ClipOval(
+                                child: Image.network(
+                                  ApiConstants.fullUrl(profile.avatarUrl!),
+                                  width: 60,
+                                  height: 60,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => _buildAvatarPlaceholder(profile, 60),
+                                ),
+                              )
+                            : _buildAvatarPlaceholder(profile, 60),
                         const SizedBox(width: 14),
                         Expanded(
                           child: Column(
@@ -224,30 +229,41 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                   label: 'Saved Places',
                   onTap: () => context.pushNamed(RouteNames.savedPlaces),
                 ),
+
                 _menuItem(
                   icon: Icons.credit_card,
                   label: 'Payment Methods',
                   onTap: () => context.pushNamed(RouteNames.accountPaymentMethods),
                 ),
-                _menuItem(
+                 _menuItem(
                   icon: Icons.stars_outlined,
-                  label: 'GoCoins Rewards',
+                  label: 'Rewards/Tier',
                   onTap: () => ref.read(homeTabIndexProvider.notifier).state = 2,
-                  trailing: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGold.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      'Gold',
-                      style: AppTextStyles.labelSmall.copyWith(
-                        color: AppColors.primaryGold,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 10,
-                      ),
-                    ),
+                  trailing: rewardSummaryAsync.when(
+                    data: (summary) {
+                      final tierName = summary.tier.toUpperCase();
+                      final formattedTier = tierName.isNotEmpty 
+                          ? (tierName.substring(0, 1) + tierName.substring(1).toLowerCase())
+                          : 'Bronze';
+                      final tierColor = _getTierColor(tierName);
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: tierColor.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          formattedTier,
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: tierColor,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 10,
+                          ),
+                        ),
+                      );
+                    },
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, __) => const SizedBox.shrink(),
                   ),
                 ),
                 _menuItem(
@@ -265,11 +281,11 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                   icon: Icons.language,
                   label: 'Language',
                   trailing: Text(
-                    ref.watch(languageProvider) == 'en' ? 'English' : 'Maltese',
+                    'English',
                     style: AppTextStyles.bodySmall
                         .copyWith(color: AppColors.textMuted),
                   ),
-                  onTap: () => _showLanguageSheet(),
+                  showChevron: false,
                 ),
                 _menuItem(
                   icon: Icons.notifications_outlined,
@@ -290,6 +306,11 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
 
                 const SizedBox(height: 16),
                 _sectionLabel('Support'),
+                _menuItem(
+                  icon: Icons.security_outlined,
+                  label: 'Emergency Contacts',
+                  onTap: () => context.pushNamed(RouteNames.emergencyContacts),
+                ),
                 _menuItem(
                   icon: Icons.confirmation_number_outlined,
                   label: 'My Tickets',
@@ -325,12 +346,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                   label: 'Terms & Conditions',
                   onTap: () => context.pushNamed(RouteNames.terms),
                 ),
-                _menuItem(
-                  icon: Icons.download_outlined,
-                  label: 'Download My Data',
-                  subtitle: 'GDPR data export',
-                  onTap: () => _downloadData(),
-                ),
+
                 _menuItem(
                   icon: Icons.delete_outline,
                   label: 'Delete Account',
@@ -344,18 +360,18 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 Semantics(
                   label: 'Log out',
                   button: true,
-                  child: SizedBox(
-                    width: double.infinity,
+                  child: Center(
                     child: OutlinedButton.icon(
                       onPressed: () => _logOut(),
-                      icon: const Icon(Icons.logout, size: 18),
-                      label: const Text('Log Out'),
+                      icon: const Icon(Icons.logout, size: 16),
+                      label: Text('Log Out', style: TextStyle(fontSize: 12)),
                       style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 32),
                         foregroundColor: AppColors.error,
-                        side: const BorderSide(color: AppColors.error),
+                        side: const BorderSide(color: AppColors.error, width: 1.0),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                            borderRadius: BorderRadius.circular(16)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       ),
                     ),
                   ),
@@ -364,7 +380,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 const SizedBox(height: 16),
                 Center(
                   child: Text(
-                    'Gozolt v1.0.0',
+                    'Gozolt v1.0.1',
                     style: AppTextStyles.labelSmall.copyWith(
                       color: AppColors.textMuted,
                       fontSize: 10,
@@ -402,6 +418,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     Widget? trailing,
     Color? textColor,
     VoidCallback? onTap,
+    bool showChevron = true,
   }) {
     return Semantics(
       label: label,
@@ -445,9 +462,11 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               ),
             ),
             if (trailing != null) trailing,
-            const SizedBox(width: 4),
-            Icon(Icons.chevron_right,
-                color: AppColors.textMuted, size: 20),
+            if (showChevron) ...[
+              const SizedBox(width: 4),
+              const Icon(Icons.chevron_right,
+                  color: AppColors.textMuted, size: 20),
+            ],
           ],
         ),
       ),
@@ -610,6 +629,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     }
   }
 
+
   void _rateApp() {
     final now = DateTime.now();
     if (_lastRateAppTap != null && now.difference(_lastRateAppTap!).inSeconds < 5) {
@@ -623,49 +643,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     _showPremiumSnackBar(
       'App Store rating coming soon!',
       icon: Icons.star_outline,
-    );
-  }
-
-  void _downloadData() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(ctx).colorScheme.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Download My Data', style: AppTextStyles.headlineSmall),
-        content: Text(
-          'We\'ll prepare a copy of your personal data as required by GDPR. This may take a few minutes.',
-          style: AppTextStyles.bodyMedium
-              .copyWith(color: AppColors.textSecondary),
-        ),
-        actions: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text('Cancel',
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
-              ),
-              const SizedBox(width: 8),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  _showPremiumSnackBar(
-                    'Data export requested. You\'ll receive it via email.',
-                    icon: Icons.download_done_outlined,
-                  );
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primaryGold,
-                ),
-                child: const Text('Request Export',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 
@@ -695,13 +672,16 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               TextButton(
                 onPressed: () async {
                   Navigator.pop(ctx);
-                  final storage = ref.read(secureStorageProvider);
-                  await storage.clearTokens();
-                  // Clear stale cached data from the old session
+                  
+                  // First update auth state to unauthenticated and clear tokens
+                  await ref.read(authProvider.notifier).logout();
+                  
+                  // Invalidate stale cached data from the old session
                   ref.invalidate(userProfileProvider);
                   ref.invalidate(savedAddressesProvider);
                   ref.invalidate(unreadNotificationCountProvider);
                   ref.invalidate(rewardSummaryProvider);
+                  
                   if (context.mounted) {
                     context.goNamed(RouteNames.welcome);
                   }
@@ -709,12 +689,45 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.error,
                 ),
-                child: const Text('Log Out',
+                child: Text('Log Out',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Color _getTierColor(String tier) {
+    switch (tier.toUpperCase()) {
+      case 'SILVER':
+        return Colors.blueGrey;
+      case 'GOLD':
+        return AppColors.primaryGold;
+      case 'PLATINUM':
+        return const Color(0xFFB0C4DE); // Platinum color
+      case 'BRONZE':
+      default:
+        return const Color(0xFFCD7F32); // Bronze color
+    }
+  }
+
+  Widget _buildAvatarPlaceholder(dynamic profile, double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppColors.backgroundDark.withOpacity(0.2),
+      ),
+      child: Center(
+        child: Text(
+          profile?.initials ?? 'U',
+          style: AppTextStyles.headlineSmall.copyWith(
+            color: AppColors.backgroundDark,
+          ),
+        ),
       ),
     );
   }

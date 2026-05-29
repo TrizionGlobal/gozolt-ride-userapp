@@ -261,7 +261,7 @@ class _ChangeDestinationSheetState
                   prefixIcon: const Icon(Icons.location_on,
                       color: AppColors.primaryGold, size: 20),
                   suffixIcon: _isSearching
-                      ? const Padding(
+                      ? Padding(
                           padding: EdgeInsets.all(12),
                           child: SizedBox(
                             width: 16,
@@ -409,7 +409,7 @@ class _ChangeDestinationSheetState
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
-                    child: const Text('Cancel Request'),
+                    child: Text('Cancel Request'),
                   ),
                 )
               else
@@ -426,7 +426,7 @@ class _ChangeDestinationSheetState
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: const Text('Cancel'),
+                        child: Text('Cancel'),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -451,7 +451,7 @@ class _ChangeDestinationSheetState
                                     strokeWidth: 2,
                                     color: Theme.of(context).scaffoldBackgroundColor),
                               )
-                            : const Text('Request Change',
+                            : Text('Request Change',
                                 style: AppTextStyles.button),
                       ),
                     ),

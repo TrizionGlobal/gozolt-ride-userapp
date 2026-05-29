@@ -85,25 +85,25 @@ class MyRidesScreen extends ConsumerWidget {
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
+                                horizontal: 12, vertical: 5),
                             decoration: BoxDecoration(
                               color: isSelected
                                   ? AppColors.primaryGold
                                   : Theme.of(context).cardTheme.color,
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(20),
                               border: Border.all(
                                 color: isSelected
                                     ? AppColors.primaryGold
-                                    : AppColors.borderDark,
+                                    : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                               ),
                             ),
                             child: Text(
                               filter.label,
                               style: AppTextStyles.labelLarge.copyWith(
                                 color: isSelected
-                                    ? AppColors.backgroundDark
-                                    : AppColors.textSecondary,
-                                fontSize: 11,
+                                    ? Theme.of(context).scaffoldBackgroundColor
+                                    : (Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
+                                fontSize: 12,
                               ),
                             ),
                           ),
@@ -140,7 +140,7 @@ class MyRidesScreen extends ConsumerWidget {
                       TextButton(
                         onPressed: () =>
                             ref.read(rideHistoryProvider.notifier).load(),
-                        child: const Text('Retry',
+                        child: Text('Retry',
                             style: TextStyle(color: AppColors.primaryGold)),
                       ),
                     ],
@@ -215,7 +215,7 @@ class MyRidesScreen extends ConsumerWidget {
                                 .read(rideHistoryProvider.notifier)
                                 .loadMore();
                           });
-                          return const Padding(
+                          return Padding(
                             padding: EdgeInsets.all(16),
                             child: Center(
                               child: CircularProgressIndicator(

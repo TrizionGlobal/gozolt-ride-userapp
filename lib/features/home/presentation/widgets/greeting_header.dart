@@ -8,6 +8,7 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/constants/asset_paths.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../rewards/presentation/providers/rewards_providers.dart';
+import '../../../rewards/presentation/widgets/tier_badge.dart';
 import '../providers/home_providers.dart';
 
 class GreetingHeader extends ConsumerStatefulWidget {
@@ -48,6 +49,7 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
     ].join(', ');
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final goldColor = isDark ? AppColors.primaryGold : const Color(0xFFC29000);
 
     _popupEntry = OverlayEntry(
       builder: (context) => GestureDetector(
@@ -72,7 +74,7 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                           : AppColors.surfaceLight.withOpacity(0.98),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: AppColors.primaryGold.withOpacity(0.3),
+                        color: goldColor.withOpacity(0.3),
                       ),
                       boxShadow: [
                         BoxShadow(
@@ -89,32 +91,16 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                       children: [
                         // Avatar
                         (profile?.avatarUrl != null && profile!.avatarUrl!.isNotEmpty)
-                            ? CircleAvatar(
-                                radius: 28,
-                                backgroundImage: NetworkImage(ApiConstants.fullUrl(profile.avatarUrl!)),
-                                onBackgroundImageError: (_, __) {},
-                                backgroundColor: Theme.of(context).cardTheme.color,
-                                child: Text(
-                                  profile.initials,
-                                  style: const TextStyle(
-                                    color: AppColors.primaryGold,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 20,
-                                  ),
+                            ? ClipOval(
+                                child: Image.network(
+                                  ApiConstants.fullUrl(profile.avatarUrl!),
+                                  width: 56,
+                                  height: 56,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => _buildAvatarPlaceholder(profile, 56, 20, goldColor),
                                 ),
                               )
-                            : CircleAvatar(
-                                radius: 28,
-                                backgroundColor: AppColors.primaryGold,
-                                child: Text(
-                                  profile?.initials ?? 'U',
-                                  style: TextStyle(
-                                    color: Theme.of(context).scaffoldBackgroundColor,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 20,
-                                  ),
-                                ),
-                              ),
+                            : _buildAvatarPlaceholder(profile, 56, 20, goldColor),
                         const SizedBox(height: 10),
                         // Name
                         Text(
@@ -132,8 +118,7 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                           children: [
                             Icon(Icons.location_on,
                                 size: 14,
-                                color: AppColors.primaryGold
-                                    .withOpacity(0.8)),
+                                color: goldColor.withOpacity(0.8)),
                             const SizedBox(width: 4),
                             Flexible(
                               child: Text(
@@ -158,21 +143,20 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
-                            color:
-                                AppColors.primaryGold.withOpacity(0.1),
+                            color: goldColor.withOpacity(isDark ? 0.1 : 0.08),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.stars_rounded,
-                                  color: AppColors.primaryGold, size: 18),
+                              Icon(Icons.stars_rounded,
+                                  color: goldColor, size: 18),
                               const SizedBox(width: 6),
                               Text(
                                 '${reward?.currentPoints ?? 0}',
                                 style: AppTextStyles.titleSmall.copyWith(
-                                  color: AppColors.primaryGold,
+                                  color: goldColor,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
@@ -180,34 +164,18 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
                               Text(
                                 'GoCoins',
                                 style: AppTextStyles.bodySmall.copyWith(
-                                  color: AppColors.primaryGold,
+                                  color: goldColor,
                                   fontSize: 11,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 10),
                         // Tier badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).cardTheme.color,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: AppColors.primaryGold
-                                  .withOpacity(0.2),
-                            ),
-                          ),
-                          child: Text(
-                            '${reward?.tier ?? 'BRONZE'} Member',
-                            style: AppTextStyles.labelSmall.copyWith(
-                              color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
-                              fontSize: 10,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
+                        TierBadge(
+                          tier: reward?.tier ?? 'BRONZE',
+                          small: true,
                         ),
                       ],
                     ),
@@ -238,6 +206,8 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(userProfileProvider);
     final unreadAsync = ref.watch(unreadNotificationCountProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final goldColor = isDark ? AppColors.primaryGold : const Color(0xFFC29000);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -246,36 +216,19 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
           // ── Logo + brand ────────────────────────────────
           Image.asset(AssetPaths.gozoltLogo, width: 32, height: 32),
           const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    'GO',
-                    style: AppTextStyles.titleMedium.copyWith(
-                      color: AppColors.primaryGold,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  Text(
-                    'ZOLT',
-                    style: AppTextStyles.titleMedium.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
-              ),
-              Text(
-                'The Super App',
-                style: AppTextStyles.labelSmall.copyWith(
-                  color: AppColors.primaryGold,
-                  fontSize: 8,
-                  letterSpacing: 0.8,
-                ),
-              ),
-            ],
+          Text(
+            'GO',
+            style: AppTextStyles.titleMedium.copyWith(
+              color: AppColors.primaryGold,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          Text(
+            'ZOLT',
+            style: AppTextStyles.titleMedium.copyWith(
+              color: isDark ? Colors.white : AppColors.textPrimaryLight,
+              fontWeight: FontWeight.w900,
+            ),
           ),
 
           const Spacer(),
@@ -338,44 +291,58 @@ class _GreetingHeaderState extends ConsumerState<GreetingHeader> {
           GestureDetector(
             key: _avatarKey,
             onTap: _togglePopup,
-            child: profileAsync.when(
-              data: (profile) {
-                if (profile.avatarUrl != null &&
-                    profile.avatarUrl!.isNotEmpty) {
+            child: Builder(
+              builder: (context) {
+                final profile = profileAsync.valueOrNull;
+                
+                if (profile != null) {
+                  if (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty) {
+                    return ClipOval(
+                      child: Image.network(
+                        ApiConstants.fullUrl(profile.avatarUrl!),
+                        width: 36,
+                        height: 36,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _buildAvatarPlaceholder(profile, 36, 14, goldColor),
+                      ),
+                    );
+                  }
+                  return _buildAvatarPlaceholder(profile, 36, 14, goldColor);
+                }
+                
+                if (profileAsync.isLoading) {
                   return CircleAvatar(
                     radius: 18,
-                    backgroundImage: NetworkImage(ApiConstants.fullUrl(profile.avatarUrl!)),
-                    onBackgroundImageError: (_, __) {},
                     backgroundColor: Theme.of(context).cardTheme.color,
-                    // No child — image takes full space, initials not shown
                   );
                 }
-                return CircleAvatar(
-                  radius: 18,
-                  backgroundColor: AppColors.primaryGold,
-                    child: Text(
-                      profile.initials,
-                      style: TextStyle(
-                        color: Theme.of(context).scaffoldBackgroundColor,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                      ),
-                    ),
-                );
+                
+                return _buildAvatarPlaceholder(null, 36, 14, goldColor);
               },
-              loading: () => CircleAvatar(
-                radius: 18,
-                backgroundColor: Theme.of(context).cardTheme.color,
-              ),
-              error: (_, __) => CircleAvatar(
-                radius: 18,
-                backgroundColor: Theme.of(this.context).cardTheme.color,
-                child:
-                    Icon(Icons.person, color: Theme.of(this.context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight, size: 20),
-              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAvatarPlaceholder(dynamic profile, double size, double fontSize, Color goldColor) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: goldColor,
+      ),
+      child: Center(
+        child: Text(
+          profile?.initials ?? 'U',
+          style: TextStyle(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            fontWeight: FontWeight.w700,
+            fontSize: fontSize,
+          ),
+        ),
       ),
     );
   }

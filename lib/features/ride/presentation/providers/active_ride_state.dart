@@ -3,6 +3,8 @@ import '../../data/models/driver_location.dart';
 import '../../data/models/ride.dart';
 
 enum ActiveRideStatus {
+  scheduled,
+  searching,
   driverEnRoute,
   driverArrived,
   inProgress,
@@ -38,6 +40,9 @@ class ActiveRideState {
   final double? pendingNewDropoffLng;
   final double? pendingNewFare;
 
+  // Extra fare added by user during searching
+  final double? extraFareAdded;
+
   const ActiveRideState({
     this.ride,
     this.driverInfo,
@@ -61,6 +66,7 @@ class ActiveRideState {
     this.pendingNewFare,
     this.isPaymentLoading = false,
     this.isPaid = false,
+    this.extraFareAdded,
   });
 
   bool get hasDriver => driverInfo != null;
@@ -93,6 +99,7 @@ class ActiveRideState {
     bool clearPendingDestination = false,
     bool? isPaymentLoading,
     bool? isPaid,
+    double? extraFareAdded,
   }) {
     return ActiveRideState(
       ride: ride ?? this.ride,
@@ -127,6 +134,7 @@ class ActiveRideState {
           : (pendingNewFare ?? this.pendingNewFare),
       isPaymentLoading: isPaymentLoading ?? this.isPaymentLoading,
       isPaid: isPaid ?? this.isPaid,
+      extraFareAdded: extraFareAdded ?? this.extraFareAdded,
     );
   }
 }

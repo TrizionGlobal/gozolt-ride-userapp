@@ -58,7 +58,13 @@ class _GozoltButtonState extends State<GozoltButton> {
 
     return SizedBox(
       width: widget.width,
-      child: ElevatedButton(onPressed: effectiveOnPressed, child: child),
+      child: ElevatedButton(
+        onPressed: effectiveOnPressed,
+        style: ElevatedButton.styleFrom(
+          foregroundColor: Colors.white,
+        ),
+        child: child,
+      ),
     );
   }
 }

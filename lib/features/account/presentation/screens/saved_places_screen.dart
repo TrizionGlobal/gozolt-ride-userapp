@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
@@ -48,7 +49,7 @@ class SavedPlacesScreen extends ConsumerWidget {
                   child: Row(
                     children: [
                       GestureDetector(
-                        onTap: () => Navigator.pop(context),
+                        onTap: () => context.pop(),
                         child: Container(
                           width: 36,
                           height: 36,
@@ -107,7 +108,7 @@ class SavedPlacesScreen extends ConsumerWidget {
                       child: ElevatedButton.icon(
                         onPressed: () => _showPlaceSheet(context, ref),
                         icon: const Icon(Icons.add, size: 18),
-                        label: const Text('Add Place'),
+                        label: Text('Add Place'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryGold,
                           foregroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -278,7 +279,7 @@ class SavedPlacesScreen extends ConsumerWidget {
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.error,
                 ),
-                child: const Text('Delete',
+                child: Text('Delete',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               ),
             ],

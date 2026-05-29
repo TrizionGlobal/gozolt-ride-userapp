@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/providers/dio_provider.dart';
@@ -202,7 +203,24 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> resendOtp(String phoneInput) async {
     final phone = phoneInput.replaceAll(' ', '');
     try {
-      final fcmToken = await FirebaseMessaging.instance.getToken();
+      String? fcmToken;
+      try {
+        if (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS) {
+          String? apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+          if (apnsToken == null) {
+            await Future.delayed(const Duration(seconds: 2));
+            apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+          }
+          if (apnsToken != null) {
+             fcmToken = await FirebaseMessaging.instance.getToken();
+          }
+        } else {
+          fcmToken = await FirebaseMessaging.instance.getToken();
+        }
+      } catch (e) {
+        debugPrint("Error getting FCM token: $e");
+      }
+      
       await _repo.sendOtp(phone, fcmToken: fcmToken, isRegister: _isRegisterFlow);
     } catch (_) {
       // Silently fail — the user can tap resend again

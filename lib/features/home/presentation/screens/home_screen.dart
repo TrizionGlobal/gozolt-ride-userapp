@@ -11,7 +11,6 @@ import '../widgets/promo_banner.dart';
 import '../widgets/book_schedule_buttons.dart';
 import '../widgets/transport_grid.dart';
 import '../widgets/rewards_home_banner.dart';
-import '../widgets/active_ride_banner.dart';
 import '../widgets/go_places_section.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -76,7 +75,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(height: topPadding + 64),
-                  const ActiveRideBanner(),
                   const SizedBox(height: 20),
                   const PromoBanner(),
                   const SizedBox(height: 20),

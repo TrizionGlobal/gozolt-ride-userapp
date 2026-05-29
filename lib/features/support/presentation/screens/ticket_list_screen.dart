@@ -15,12 +15,13 @@ class TicketListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ticketState = ref.watch(supportTicketsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: RefreshIndicator(
         color: AppColors.primaryGold,
-        backgroundColor: AppColors.surfaceDark,
+        backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         onRefresh: () => ref.read(supportTicketsProvider.notifier).load(),
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(
@@ -46,7 +47,7 @@ class TicketListScreen extends ConsumerWidget {
                     child: Row(
                       children: [
                         GestureDetector(
-                          onTap: () => Navigator.pop(context),
+                          onTap: () => context.pop(),
                           child: Container(
                             width: 36,
                             height: 36,
@@ -87,16 +88,16 @@ class TicketListScreen extends ConsumerWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.error_outline,
-                          color: AppColors.textMuted, size: 48),
+                      Icon(Icons.error_outline,
+                          color: isDark ? AppColors.textMuted : AppColors.textMutedLight, size: 48),
                       const SizedBox(height: 12),
                       Text('Failed to load tickets',
                           style: AppTextStyles.bodyMedium
-                              .copyWith(color: AppColors.textSecondary)),
+                              .copyWith(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight)),
                       TextButton(
                         onPressed: () =>
                             ref.read(supportTicketsProvider.notifier).load(),
-                        child: const Text('Retry',
+                        child: Text('Retry',
                             style: TextStyle(color: AppColors.primaryGold)),
                       ),
                     ],
@@ -109,21 +110,21 @@ class TicketListScreen extends ConsumerWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.support_agent,
-                          color: AppColors.textMuted, size: 56),
+                      Icon(Icons.support_agent,
+                          color: isDark ? AppColors.textMuted : AppColors.textMutedLight, size: 56),
                       const SizedBox(height: 16),
                       Text('No support tickets',
                           style: AppTextStyles.titleMedium
-                              .copyWith(color: AppColors.textSecondary)),
+                              .copyWith(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight)),
                       const SizedBox(height: 6),
                       Text("Need help? We're here for you.",
-                          style: AppTextStyles.bodySmall),
+                          style: AppTextStyles.bodySmall.copyWith(color: isDark ? AppColors.textMuted : AppColors.textMutedLight)),
                       const SizedBox(height: 20),
                       OutlinedButton.icon(
                         onPressed: () =>
                             context.pushNamed(RouteNames.createTicket),
                         icon: const Icon(Icons.add, size: 18),
-                        label: const Text('Create a Ticket'),
+                        label: Text('Create a Ticket'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.primaryGold,
                           side:
@@ -182,6 +183,7 @@ class _TicketCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cat = _categoryStyle(ticket.category);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: () {
@@ -192,9 +194,18 @@ class _TicketCard extends StatelessWidget {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: AppColors.cardDark,
+          color: isDark ? AppColors.cardDark : AppColors.cardLight,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.borderDark),
+          border: Border.all(color: isDark ? AppColors.borderDark : AppColors.borderLight),
+          boxShadow: isDark
+              ? null
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,7 +233,9 @@ class _TicketCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           ticket.subject,
-                          style: AppTextStyles.titleSmall,
+                          style: AppTextStyles.titleSmall.copyWith(
+                            color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -239,7 +252,7 @@ class _TicketCard extends StatelessWidget {
                         ? ticket.replies.last.message
                         : ticket.description,
                     style: AppTextStyles.bodySmall
-                        .copyWith(color: AppColors.textMuted),
+                        .copyWith(color: isDark ? AppColors.textMuted : AppColors.textMutedLight),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -249,7 +262,7 @@ class _TicketCard extends StatelessWidget {
                   Text(
                     'Created ${_formatTimeAgo(ticket.createdAt)}',
                     style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.textMuted,
+                      color: isDark ? AppColors.textMuted : AppColors.textMutedLight,
                       fontSize: 10,
                     ),
                   ),
@@ -287,13 +300,19 @@ class _StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (Color borderColor, Color textColor, String label) =
-        _statusStyle(status);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final (Color baseColor, String label) = _statusStyle(status);
+    
+    final textColor = (status == 'OPEN' && !isDark) 
+        ? AppColors.primaryGoldDark 
+        : baseColor;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
+        color: baseColor.withOpacity(isDark ? 0.12 : 0.08),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: baseColor.withOpacity(0.2)),
       ),
       child: Text(
         label,
@@ -306,18 +325,18 @@ class _StatusBadge extends StatelessWidget {
     );
   }
 
-  (Color, Color, String) _statusStyle(String status) {
+  (Color, String) _statusStyle(String status) {
     switch (status) {
       case 'OPEN':
-        return (AppColors.primaryGold, AppColors.primaryGold, 'Open');
+        return (AppColors.primaryGold, 'Open');
       case 'IN_PROGRESS':
-        return (AppColors.info, AppColors.info, 'In Progress');
+        return (AppColors.info, 'In Progress');
       case 'RESOLVED':
-        return (AppColors.success, AppColors.success, 'Resolved');
+        return (AppColors.success, 'Resolved');
       case 'CLOSED':
-        return (AppColors.textMuted, AppColors.textMuted, 'Closed');
+        return (AppColors.textMuted, 'Closed');
       default:
-        return (AppColors.textMuted, AppColors.textMuted, status);
+        return (AppColors.textMuted, status);
     }
   }
 }

@@ -7,6 +7,8 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../ride/presentation/providers/active_ride_provider.dart';
 import '../../../ride/presentation/providers/active_ride_state.dart';
+import '../../../ride/data/models/ride.dart';
+import '../../../ride/data/models/vehicle_type.dart';
 
 class ActiveRideBanner extends ConsumerWidget {
   const ActiveRideBanner({super.key});
@@ -22,7 +24,7 @@ class ActiveRideBanner extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    final statusLabel = _statusLabel(rideState.status);
+    final statusLabel = _statusLabel(rideState.status, rideState.ride);
     final statusIcon = _statusIcon(rideState.status);
     final statusColor = _statusColor(rideState.status);
     final eta = rideState.etaMinutes;
@@ -46,121 +48,120 @@ class ActiveRideBanner extends ConsumerWidget {
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16),
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDark 
-                ? [Theme.of(context).cardTheme.color ?? const Color(0xFF1C2333), Theme.of(context).cardTheme.color?.withOpacity(0.8) ?? const Color(0xFF161B22)]
-                : [Colors.white, const Color(0xFFF6F8FA)],
-          ),
-          borderRadius: BorderRadius.circular(14),
+          color: Theme.of(context).cardTheme.color,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: statusColor.withOpacity(isDark ? 0.4 : 0.2),
+            color: Theme.of(context).dividerTheme.color ?? AppColors.borderLight,
           ),
           boxShadow: [
             BoxShadow(
-              color: statusColor.withOpacity(isDark ? 0.15 : 0.08),
-              blurRadius: 12,
-              spreadRadius: 1,
+              color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Row(
-              children: [
-                // Animated status icon
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: statusColor.withOpacity(0.15),
-                  ),
-                  child: Icon(statusIcon, color: statusColor, size: 18),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _bannerTitle(rideState.status),
-                        style: AppTextStyles.titleSmall.copyWith(
-                          color: statusColor,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitle,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+            // Vehicle Image Container
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primaryGold.withOpacity(0.15),
+              ),
+              child: Center(
+                child: Image.asset(
+                  _getVehicleAsset(rideState.ride?.vehicleType),
+                  width: 32,
+                  height: 32,
+                  errorBuilder: (_, __, ___) => const Icon(
+                    Icons.directions_car,
+                    color: AppColors.primaryGold,
+                    size: 24,
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: statusColor,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'View',
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: Theme.of(context).scaffoldBackgroundColor,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_forward_rounded,
-                        color: Theme.of(context).scaffoldBackgroundColor,
-                        size: 14,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
-            // Show destination for context
-            if (dropoff != null && dropoff.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Row(
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(width: 48), // align with text above
-                  Icon(Icons.location_on, color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight, size: 14),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      dropoff,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textMuted,
-                        fontSize: 11,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  Text(
+                    _bannerTitle(rideState.status),
+                    style: AppTextStyles.titleMedium.copyWith(
+                      color: AppColors.primaryGold,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (dropoff != null && dropoff.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          color: isDark ? AppColors.textMuted : AppColors.textMutedLight,
+                          size: 14,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            dropoff,
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: isDark ? AppColors.textMuted : AppColors.textMutedLight,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
-            ],
+            ),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGold,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.arrow_forward_rounded,
+                color: Theme.of(context).scaffoldBackgroundColor,
+                size: 20,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
+  String _getVehicleAsset(String? vehicleType) {
+    return VehicleType.fromApi(vehicleType ?? '').iconPath;
+  }
+
   String _bannerTitle(ActiveRideStatus status) {
     switch (status) {
+      case ActiveRideStatus.scheduled:
+        return 'Ride Scheduled';
+      case ActiveRideStatus.searching:
+        return 'Finding Driver';
       case ActiveRideStatus.driverEnRoute:
         return 'Your Driver is Coming';
       case ActiveRideStatus.driverArrived:
@@ -174,10 +175,31 @@ class ActiveRideBanner extends ConsumerWidget {
     }
   }
 
-  String _statusLabel(ActiveRideStatus status) {
+  String _statusLabel(ActiveRideStatus status, Ride? ride) {
     switch (status) {
+      case ActiveRideStatus.scheduled:
+        if (ride?.scheduledAt != null) {
+          try {
+            final dt = DateTime.parse(ride!.scheduledAt!).toLocal();
+            final now = DateTime.now();
+            final isToday = dt.year == now.year && dt.month == now.month && dt.day == now.day;
+            final pad = (int n) => n.toString().padLeft(2, '0');
+            final timeStr = '${pad(dt.hour)}:${pad(dt.minute)}';
+            if (isToday) {
+              return 'Today at $timeStr';
+            } else {
+              final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+              return '${months[dt.month - 1]} ${dt.day} at $timeStr';
+            }
+          } catch (_) {
+            return 'Scheduled ride';
+          }
+        }
+        return 'Scheduled ride';
+      case ActiveRideStatus.searching:
+        return 'Contacting nearby drivers';
       case ActiveRideStatus.driverEnRoute:
-        return 'En route to pickup';
+        return 'On the way';
       case ActiveRideStatus.driverArrived:
         return 'Waiting at pickup';
       case ActiveRideStatus.inProgress:
@@ -191,6 +213,10 @@ class ActiveRideBanner extends ConsumerWidget {
 
   IconData _statusIcon(ActiveRideStatus status) {
     switch (status) {
+      case ActiveRideStatus.scheduled:
+        return Icons.access_time_rounded;
+      case ActiveRideStatus.searching:
+        return Icons.search_rounded;
       case ActiveRideStatus.driverEnRoute:
         return Icons.directions_car;
       case ActiveRideStatus.driverArrived:
@@ -206,6 +232,10 @@ class ActiveRideBanner extends ConsumerWidget {
 
   Color _statusColor(ActiveRideStatus status) {
     switch (status) {
+      case ActiveRideStatus.scheduled:
+        return AppColors.primaryGold;
+      case ActiveRideStatus.searching:
+        return AppColors.primaryGold;
       case ActiveRideStatus.driverEnRoute:
         return AppColors.primaryGold;
       case ActiveRideStatus.driverArrived:

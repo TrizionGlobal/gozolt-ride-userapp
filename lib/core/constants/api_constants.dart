@@ -3,11 +3,11 @@ abstract final class ApiConstants {
   static const bool useLocal = false;
 
   static const String baseUrl = useLocal 
-      ? 'http://192.168.1.7:3000/v1' // Use physical Mac network IP for local emulator/device testing
+      ? 'http://127.0.0.1:3000/v1' 
       : 'https://gozolt-new-ride-backend-production.up.railway.app/v1';
 
   static const String wsUrl = useLocal
-      ? 'ws://192.168.1.7:3000'
+      ? 'ws://127.0.0.1:3000'
       : 'wss://gozolt-new-ride-backend-production.up.railway.app';
   
 
@@ -87,6 +87,9 @@ abstract final class ApiConstants {
 
   // ── Ride Reschedule ──────────────────────────────────────
   static String rideReschedule(String id) => '/rides/$id/reschedule';
+
+  // ── Ride Extra Fare ──────────────────────────────────────
+  static String rideExtraFare(String id) => '/rides/$id/extra-fare';
 
   // ── Ride Change Destination ─────────────────────────────
   static String rideChangeDestination(String id) => '/rides/$id/change-destination';

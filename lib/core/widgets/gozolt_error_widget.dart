@@ -34,7 +34,7 @@ class GozoltErrorWidget extends StatelessWidget {
           if (onRetry != null)
             TextButton(
               onPressed: onRetry,
-              child: const Text(
+              child: Text(
                 'Retry',
                 style: TextStyle(color: AppColors.primaryGold),
               ),
@@ -62,7 +62,7 @@ class GozoltErrorWidget extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Try Again'),
+                label: Text('Try Again'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.primaryGold,
                   side: const BorderSide(color: AppColors.primaryGold),

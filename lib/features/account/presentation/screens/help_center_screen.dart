@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 
@@ -78,7 +79,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
       category: 'Account',
       question: 'How do I delete my account?',
       answer:
-          'Go to Account > Delete Account. Please note this action is permanent and all your data, GoCoins, and ride history will be deleted. You can download your data first under Account > Download My Data.',
+          'Go to Account > Delete Account. Please note this action is permanent and all your data, GoCoins, and ride history will be deleted.',
     ),
     _FaqItem(
       category: 'Safety',
@@ -138,16 +139,16 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                       Row(
                         children: [
                           GestureDetector(
-                            onTap: () => Navigator.pop(context),
+                            onTap: () => context.pop(),
                             child: Container(
                               width: 36,
                               height: 36,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.2) : Colors.black.withOpacity(0.05),
+                                color: AppColors.backgroundDark.withOpacity(0.15),
                               ),
-                              child: Icon(Icons.arrow_back,
-                                  color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black, size: 20),
+                              child: const Icon(Icons.arrow_back,
+                                  color: AppColors.backgroundDark, size: 20),
                             ),
                           ),
                           const SizedBox(width: 12),

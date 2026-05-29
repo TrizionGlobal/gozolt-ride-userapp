@@ -97,7 +97,7 @@ class _RescheduleBottomSheetState extends State<RescheduleBottomSheet> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('Cancel'),
+                      child: Text('Cancel'),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -122,7 +122,7 @@ class _RescheduleBottomSheetState extends State<RescheduleBottomSheet> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('Confirm',
+                      child: Text('Confirm',
                           style: AppTextStyles.button),
                     ),
                   ),
@@ -200,6 +200,16 @@ class _RescheduleBottomSheetState extends State<RescheduleBottomSheet> {
             colorScheme: const ColorScheme.dark(
               primary: AppColors.primaryGold,
               surface: AppColors.surfaceDark,
+            ),
+            timePickerTheme: const TimePickerThemeData(
+              hourMinuteTextStyle: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+              dayPeriodTextStyle: TextStyle(
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
           child: child!,

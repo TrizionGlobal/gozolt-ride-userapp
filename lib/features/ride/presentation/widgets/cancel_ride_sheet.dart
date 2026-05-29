@@ -6,6 +6,7 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
 import '../providers/active_ride_provider.dart';
 import '../providers/active_ride_state.dart';
+import '../providers/ride_providers.dart';
 
 class CancelRideSheet extends ConsumerStatefulWidget {
   final ActiveRideStatus? currentStatus;
@@ -62,7 +63,7 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Title
           Padding(
@@ -70,11 +71,11 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
             child: Row(
               children: [
                 const Icon(Icons.cancel_outlined,
-                    color: AppColors.error, size: 24),
+                    color: AppColors.error, size: 20),
                 const SizedBox(width: 8),
                 Text('Cancel Ride',
-                    style: AppTextStyles.headlineSmall
-                        .copyWith(color: AppColors.error)),
+                    style: AppTextStyles.titleMedium
+                        .copyWith(color: AppColors.error, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
@@ -175,13 +176,13 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.textPrimary,
+                        foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.textPrimaryLight,
                         side: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text('Keep Ride'),
+                      child: Text('Keep Ride', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -195,18 +196,19 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
                         foregroundColor: Colors.white,
                         disabledBackgroundColor:
                             AppColors.error.withOpacity(0.3),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
                       ),
                       child: _isSubmitting
                           ? const SizedBox(
-                              width: 20,
-                              height: 20,
+                              width: 18,
+                              height: 18,
                               child: CircularProgressIndicator(
                                   strokeWidth: 2, color: Colors.white),
                             )
-                          : const Text('Cancel Ride'),
+                          : Text('Cancel Ride', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold, color: Colors.white)),
                     ),
                   ),
                 ],
@@ -224,13 +226,13 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
       onTap: () => setState(() => _selectedReason = reason),
       child: Container(
         width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        margin: const EdgeInsets.only(bottom: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.error.withOpacity(0.08)
               : Theme.of(context).cardTheme.color,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected ? AppColors.error : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
           ),
@@ -241,17 +243,18 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
               isSelected
                   ? Icons.radio_button_checked
                   : Icons.radio_button_off,
-              size: 20,
+              size: 18,
               color: isSelected ? AppColors.error : AppColors.textMuted,
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 reason,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: isSelected
-                      ? AppColors.textPrimary
-                      : AppColors.textSecondary,
+                style: AppTextStyles.titleSmall.copyWith(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? (isSelected ? Colors.white : AppColors.textSecondary)
+                      : (isSelected ? AppColors.textPrimaryLight : AppColors.textPrimaryLight.withOpacity(0.7)),
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
             ),
@@ -300,55 +303,66 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(context).cardTheme.color,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.check_circle, color: AppColors.success, size: 56),
-            const SizedBox(height: 16),
-            Text(
-              'Ride Cancelled',
-              style: AppTextStyles.headlineSmall
-                  .copyWith(color: AppColors.textPrimary),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Your ride has been cancelled successfully.',
-              style: AppTextStyles.bodyMedium
-                  .copyWith(color: AppColors.textSecondary),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(ctx).pop();
-                    context.goNamed(RouteNames.home);
-                  },
-                  child: const Text('Go to Home',
-                      style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return AlertDialog(
+          backgroundColor: Theme.of(ctx).cardTheme.color,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.check_circle, color: AppColors.success, size: 56),
+              const SizedBox(height: 16),
+              Text(
+                'Ride Cancelled',
+                style: AppTextStyles.headlineSmall.copyWith(
+                  color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
                 ),
-                const SizedBox(width: 12),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(ctx).pop();
-                    context.goNamed(RouteNames.searchDestination);
-                  },
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.primaryGold,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Your ride has been cancelled successfully.',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      ref.read(activeRideProvider.notifier).reset();
+                      ref.read(rideBookingProvider.notifier).reset();
+                      ref.read(isScheduleModeProvider.notifier).state = false;
+                      context.goNamed(RouteNames.home);
+                    },
+                    child: Text('Go to Home',
+                        style: TextStyle(color: isDark ? AppColors.textMuted : AppColors.textMutedLight, fontSize: 13)),
                   ),
-                  child: const Text('Book New Ride',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+                  const SizedBox(width: 12),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(ctx).pop();
+                      ref.read(activeRideProvider.notifier).reset();
+                      ref.read(rideBookingProvider.notifier).reset();
+                      ref.read(isScheduleModeProvider.notifier).state = false;
+                      context.goNamed(RouteNames.searchDestination);
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primaryGold,
+                    ),
+                    child: const Text('Book New Ride',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

@@ -15,6 +15,7 @@ import '../../data/models/saved_payment_method.dart';
 import '../providers/active_ride_state.dart';
 import '../providers/ride_providers.dart';
 import '../providers/ride_booking_provider.dart';
+import 'ride_booking_state.dart';
 
 // ── Active Ride Provider ──────────────────────────────────
 
@@ -28,6 +29,12 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
   Timer? _mockLocationTimer;
   Timer? _mockStatusTimer;
   Timer? _pollingTimer;
+
+  /// Prevents duplicate socket listener setup across multiple calls.
+  bool _socketListenersAttached = false;
+
+  /// Prevents re-entrant calls to initFromSocketEvent for the same ride.
+  bool _isInitializing = false;
 
   ActiveRideNotifier(this._ref) : super(const ActiveRideState());
 
@@ -131,6 +138,30 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
     state = state.copyWith(otpPin: pin);
   }
 
+  void initSearching(String rideId, RideBookingState booking) {
+    state = ActiveRideState(
+      ride: Ride(
+        id: rideId,
+        status: 'REQUESTED',
+        pickupAddress: booking.pickup?.address ?? '',
+        pickupLat: booking.pickup?.latitude ?? 0,
+        pickupLng: booking.pickup?.longitude ?? 0,
+        dropoffAddress: booking.dropoff?.address ?? '',
+        dropoffLat: booking.dropoff?.latitude ?? 0,
+        dropoffLng: booking.dropoff?.longitude ?? 0,
+        vehicleType: booking.vehicleType.name.toUpperCase(),
+        paymentMethod: booking.paymentMethodType.name.toUpperCase(),
+        paymentMethodId: booking.paymentMethodType == PaymentMethodType.card ? booking.selectedCardId : null,
+        estimatedFare: booking.fareEstimate?.estimatedFare ?? 0,
+        createdAt: DateTime.now().toIso8601String(),
+      ),
+      status: ActiveRideStatus.searching,
+      otpPin: booking.createdRideOtp,
+      isLoading: false,
+    );
+    if (!_socketListenersAttached) _listenToSocketUpdates();
+  }
+
   /// Initialize active ride from a socket 'ride:accepted' event.
   /// Fetches full ride details via direct API call.
   Future<void> initFromSocketEvent(Map<String, dynamic> data) async {
@@ -142,6 +173,19 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
       return;
     }
 
+    // ── Guard: skip if already initialized for this ride or currently initializing ──
+    if (_isInitializing) {
+      if (kDebugMode) print('[ActiveRide] SKIP — already initializing');
+      return;
+    }
+    if (state.ride?.id == rideId && !state.isLoading && state.ride?.pickupAddress?.isNotEmpty == true && state.driverInfo != null) {
+      if (kDebugMode) print('[ActiveRide] SKIP — already initialized for ride $rideId with driver info');
+      // Ensure socket listeners are attached (idempotent)
+      if (!_socketListenersAttached) _listenToSocketUpdates();
+      return;
+    }
+
+    _isInitializing = true;
     state = state.copyWith(isLoading: true);
 
     try {
@@ -195,7 +239,7 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
       }
 
       // 4. Parse OTP
-      final otp = json['otp'] as String? ?? data['otp'] as String? ?? '';
+      final otp = json['otp'] as String? ?? data['otp'] as String? ?? '1000';
       if (kDebugMode) print('[ActiveRide] OTP: $otp');
 
       // 5. Calculate initial ETA
@@ -223,33 +267,43 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
         isLoading: false,
       );
       if (kDebugMode) print('[ActiveRide] State set successfully ✓');
+
+      // Attach socket listeners and start polling only once per ride session
+      if (!_socketListenersAttached) _listenToSocketUpdates();
+      if (_pollingTimer == null || !_pollingTimer!.isActive) _startStatusPolling();
     } catch (e, st) {
       if (kDebugMode) print('[ActiveRide] initFromSocketEvent FAILED: $e');
       if (kDebugMode) print('[ActiveRide] Stack trace: $st');
-      // Store a minimal ride object so socket listeners can join the room
-      state = ActiveRideState(
-        ride: Ride(
-          id: rideId,
-          status: 'ACCEPTED',
-          pickupAddress: '',
-          pickupLat: 0,
-          pickupLng: 0,
-          dropoffAddress: '',
-          dropoffLat: 0,
-          dropoffLng: 0,
-          vehicleType: '',
-          paymentMethod: '',
-          createdAt: DateTime.now().toIso8601String(),
-        ),
-        status: ActiveRideStatus.driverEnRoute,
-        etaMinutes: 5,
-        otpPin: data['otp'] as String?,
-        isLoading: false,
-      );
+      // Only set minimal state if we don't already have a valid ride loaded
+      if (state.ride?.id != rideId || state.ride?.pickupAddress?.isEmpty != false) {
+        state = ActiveRideState(
+          ride: Ride(
+            id: rideId,
+            status: 'ACCEPTED',
+            pickupAddress: '',
+            pickupLat: 0,
+            pickupLng: 0,
+            dropoffAddress: '',
+            dropoffLat: 0,
+            dropoffLng: 0,
+            vehicleType: '',
+            paymentMethod: '',
+            createdAt: DateTime.now().toIso8601String(),
+          ),
+          status: ActiveRideStatus.driverEnRoute,
+          etaMinutes: 5,
+          otpPin: data['otp'] as String?,
+          isLoading: false,
+        );
+      } else {
+        // Already have valid state — just clear loading
+        state = state.copyWith(isLoading: false);
+      }
+      // Do NOT call _listenToSocketUpdates on failure if already attached
+      if (!_socketListenersAttached) _listenToSocketUpdates();
+    } finally {
+      _isInitializing = false;
     }
-
-    _listenToSocketUpdates();
-    _startStatusPolling();
   }
 
   StreamSubscription? _socketLocationSub;
@@ -257,8 +311,15 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
   StreamSubscription? _socketCompletedSub;
   StreamSubscription? _socketChatSub;
   StreamSubscription? _socketDestChangeSub;
+  StreamSubscription? _socketAcceptedSub;
 
   void _listenToSocketUpdates() {
+    if (_socketListenersAttached) {
+      if (kDebugMode) print('[ActiveRide] Socket listeners already attached — skipping');
+      return;
+    }
+    _socketListenersAttached = true;
+
     final socketService = _ref.read(socketServiceProvider);
     final rideId = state.ride?.id;
 
@@ -271,6 +332,18 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
       if (kDebugMode) print('[ActiveRide] Joining ride room: $rideId');
       socketService.joinRide(rideId);
     }
+
+    _socketAcceptedSub?.cancel();
+    _socketAcceptedSub = socketService.onRideAccepted.listen((data) async {
+      if (!mounted) return;
+      if (kDebugMode) print('[ActiveRide] Received ride:accepted event!');
+      
+      final otp = state.otpPin ?? '';
+      await initFromSocketEvent({
+        ...data,
+        'otp': otp,
+      });
+    });
 
     _socketLocationSub?.cancel();
     _socketLocationSub = socketService.onDriverLocation.listen((data) {
@@ -313,6 +386,17 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
       final status = data['status'] as String? ?? '';
       if (kDebugMode) print('[Socket] onRideStatusUpdate: status=$status, data keys=${data.keys.toList()}');
       switch (status) {
+        case 'REQUESTED':
+          if (kDebugMode) print('[Socket] → REQUESTED (searching)');
+          state = state.copyWith(status: ActiveRideStatus.searching);
+          break;
+        case 'NO_DRIVER':
+          if (kDebugMode) print('[Socket] → NO_DRIVER');
+          state = state.copyWith(
+            status: ActiveRideStatus.cancelled,
+            cancelReason: 'No drivers available nearby.',
+          );
+          break;
         case 'DRIVER_ARRIVED':
           if (kDebugMode) print('[Socket] → DRIVER_ARRIVED');
           final otp = data['otp'] as String?;
@@ -411,6 +495,8 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
     _socketCompletedSub?.cancel();
     _socketChatSub?.cancel();
     _socketDestChangeSub?.cancel();
+    _socketAcceptedSub?.cancel();
+    _socketListenersAttached = false;
   }
 
   Future<void> cancelRide(String reason) async {
@@ -428,7 +514,8 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
     _stopMockTimers();
     state = state.copyWith(
       status: ActiveRideStatus.cancelled,
-      cancelReason: reason,
+      // Use the actual reason so the UI can distinguish user-cancel vs system-cancel
+      cancelReason: reason.isNotEmpty ? reason : 'You cancelled the ride.',
       isLoading: false,
     );
 
@@ -448,19 +535,31 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
 
   Future<String?> shareRide() async {
     if (state.ride == null) return null;
+
+    // Return cached URL if already generated
+    if (state.shareTrackingUrl != null) return state.shareTrackingUrl;
+
     if (kDebugMode) print('[ActiveRide] shareRide called for ride=${state.ride!.id}');
+
+    // Always build a fallback URL so copy/share works even if API is down
+    final fallbackUrl = 'https://gozolt.com/track/${state.ride!.id}';
+
+    if (AppConstants.kDevBypass) {
+      state = state.copyWith(shareTrackingUrl: fallbackUrl);
+      return fallbackUrl;
+    }
     try {
       final ds = _ref.read(rideRemoteDatasourceProvider);
       final response = await ds.shareRide(state.ride!.id);
       if (kDebugMode) print('[ActiveRide] shareRide response: $response');
-      final url = response['trackingUrl'] as String?;
-      if (url != null) {
-        state = state.copyWith(shareTrackingUrl: url);
-      }
+      final url = response['trackingUrl'] as String? ?? fallbackUrl;
+      state = state.copyWith(shareTrackingUrl: url);
       return url;
     } catch (e) {
-      if (kDebugMode) print('[ActiveRide] Share failed: $e');
-      return null;
+      if (kDebugMode) print('[ActiveRide] Share API failed ($e) — using fallback URL');
+      // Use fallback so the user can still share a link
+      state = state.copyWith(shareTrackingUrl: fallbackUrl);
+      return fallbackUrl;
     }
   }
 
@@ -487,6 +586,33 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
       }
     } catch (_) {
       // Rating failure is non-blocking
+    }
+  }
+
+  Future<void> addExtraFare(double amount) async {
+    if (state.ride == null) return;
+    try {
+      if (!AppConstants.kDevBypass) {
+        final ds = _ref.read(rideRemoteDatasourceProvider);
+        await ds.addExtraFare(state.ride!.id, amount);
+      }
+      // Update local fare display
+      state = state.copyWith(
+        ride: state.ride!.copyWith(
+          estimatedFare: (state.ride!.estimatedFare ?? 0.0) + amount,
+        ),
+        extraFareAdded: (state.extraFareAdded ?? 0.0) + amount,
+      );
+      // Broadcast to ride room so drivers see the extra offer
+      try {
+        final socketService = _ref.read(socketServiceProvider);
+        socketService.emitExtraFare(state.ride!.id, amount);
+        if (kDebugMode) print('[ActiveRide] Extra fare €$amount emitted via socket');
+      } catch (e) {
+        if (kDebugMode) print('[ActiveRide] Socket emit failed: $e');
+      }
+    } catch (_) {
+      // Non-blocking
     }
   }
 
@@ -732,7 +858,7 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
       }
 
       // Parse OTP
-      final otp = json['otp'] as String? ?? '';
+      final otp = json['otp'] as String? ?? '1000';
 
       // Calculate ETA
       int eta = 5;
@@ -759,8 +885,9 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
 
       if (kDebugMode) print('[ActiveRide] Restored active ride: ${ride.id}, status=$status');
 
-      _listenToSocketUpdates();
-      _startStatusPolling();
+      // Only attach socket listeners and start polling if not already running
+      if (!_socketListenersAttached) _listenToSocketUpdates();
+      if (_pollingTimer == null || !_pollingTimer!.isActive) _startStatusPolling();
     } on DioException catch (e) {
       // 404 = no active ride, that's normal
       if (e.response?.statusCode == 404) return;
@@ -773,15 +900,15 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
   void reset() {
     _stopMockTimers();
     _cancelSocketSubs();
+    _isInitializing = false;
     state = const ActiveRideState();
   }
 
   void _startStatusPolling() {
     _pollingTimer?.cancel();
-    // First poll immediately
-    _pollOnce();
-    // Then every 4 seconds
-    _pollingTimer = Timer.periodic(const Duration(seconds: 4), (_) => _pollOnce());
+    // Poll every 30 seconds — socket events handle real-time updates
+    // Polling only acts as a fallback for status sync
+    _pollingTimer = Timer.periodic(const Duration(seconds: 30), (_) => _pollOnce());
   }
 
   Future<void> _pollOnce() async {
@@ -799,13 +926,23 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
 
       // --- Status change ---
       if (newStatus != state.status) {
-        if (kDebugMode) print('[Poll] STATUS CHANGED: ${state.status} → $newStatus');
+        // For scheduled rides: only allow transitions AWAY from scheduled
+        // (e.g., when a driver is actually assigned). Never downgrade back to driverEnRoute.
+        final isScheduledDowngrade = state.status == ActiveRideStatus.scheduled &&
+            newStatus == ActiveRideStatus.driverEnRoute &&
+            apiStatus != 'ACCEPTED' && apiStatus != 'DRIVER_EN_ROUTE';
 
-        if (newStatus == ActiveRideStatus.completed) {
-          completeRide(actualFare: _safeDouble(json['actualFare'], 0));
-          return;
+        if (!isScheduledDowngrade) {
+          if (kDebugMode) print('[Poll] STATUS CHANGED: ${state.status} → $newStatus');
+
+          if (newStatus == ActiveRideStatus.completed) {
+            completeRide(actualFare: _safeDouble(json['actualFare'], 0));
+            return;
+          }
+          state = state.copyWith(status: newStatus);
+        } else {
+          if (kDebugMode) print('[Poll] Ignoring driverEnRoute override of scheduled status (apiStatus=$apiStatus)');
         }
-        state = state.copyWith(status: newStatus);
       }
 
       // --- OTP ---
@@ -896,6 +1033,10 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
 
   ActiveRideStatus _mapApiStatus(String apiStatus) {
     switch (apiStatus) {
+      case 'SCHEDULED':
+        return ActiveRideStatus.scheduled;
+      case 'REQUESTED':
+        return ActiveRideStatus.searching;
       case 'ACCEPTED':
       case 'DRIVER_EN_ROUTE':
         return ActiveRideStatus.driverEnRoute;
@@ -908,7 +1049,8 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
       case 'CANCELLED':
         return ActiveRideStatus.cancelled;
       default:
-        return ActiveRideStatus.driverEnRoute;
+        // Preserve current status for unknown states rather than defaulting to driverEnRoute
+        return state.status;
     }
   }
 
@@ -953,8 +1095,8 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
               etaMinutes: 18,
             );
 
-            // After 15s of in-progress → COMPLETED
-            _mockStatusTimer = Timer(const Duration(seconds: 15), () {
+            // After 10 minutes of in-progress → COMPLETED
+            _mockStatusTimer = Timer(const Duration(minutes: 10), () {
               if (mounted) {
                 completeRide(actualFare: 19.80);
               }

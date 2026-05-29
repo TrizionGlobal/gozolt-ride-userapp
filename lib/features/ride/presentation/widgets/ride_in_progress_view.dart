@@ -6,8 +6,8 @@ class RideInProgressView extends StatelessWidget {
   final int etaMinutes;
   final double? remainingKm;
   final String dropoffAddress;
-  final VoidCallback onSos;
-  final VoidCallback onCancel;
+  final VoidCallback? onSos;
+  final VoidCallback? onCancel;
   final VoidCallback? onChangeDestination;
 
   const RideInProgressView({
@@ -15,8 +15,8 @@ class RideInProgressView extends StatelessWidget {
     required this.etaMinutes,
     this.remainingKm,
     this.dropoffAddress = 'Destination',
-    required this.onSos,
-    required this.onCancel,
+    this.onSos,
+    this.onCancel,
     this.onChangeDestination,
   });
 
@@ -141,36 +141,39 @@ class RideInProgressView extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 14),
-
-        // ── Action buttons ──────────────────────────────
-        Row(
-          children: [
-            // SOS button
-            _ActionButton(
-              icon: Icons.sos,
-              label: 'SOS',
-              color: AppColors.error,
-              onTap: onSos,
-            ),
-            if (onChangeDestination != null) ...[
-              const SizedBox(width: 8),
-              _ActionButton(
-                icon: Icons.edit_location_alt_outlined,
-                label: 'Change',
-                color: AppColors.primaryGold,
-                onTap: onChangeDestination!,
-              ),
+        if (onSos != null || onChangeDestination != null || onCancel != null) ...[
+          const SizedBox(height: 14),
+          // ── Action buttons ──────────────────────────────
+          Row(
+            children: [
+              if (onSos != null)
+                _ActionButton(
+                  icon: Icons.sos,
+                  label: 'SOS',
+                  color: AppColors.error,
+                  onTap: onSos!,
+                ),
+              if (onChangeDestination != null) ...[
+                if (onSos != null) const SizedBox(width: 8),
+                _ActionButton(
+                  icon: Icons.edit_location_alt_outlined,
+                  label: 'Change',
+                  color: AppColors.primaryGold,
+                  onTap: onChangeDestination!,
+                ),
+              ],
+              if (onCancel != null) ...[
+                if (onSos != null || onChangeDestination != null) const SizedBox(width: 8),
+                _ActionButton(
+                  icon: Icons.close_rounded,
+                  label: 'Cancel',
+                  color: AppColors.textMuted,
+                  onTap: onCancel!,
+                ),
+              ],
             ],
-            const SizedBox(width: 8),
-            _ActionButton(
-              icon: Icons.close_rounded,
-              label: 'Cancel',
-              color: AppColors.textMuted,
-              onTap: onCancel,
-            ),
-          ],
-        ),
+          ),
+        ],
       ],
     );
   }

@@ -74,7 +74,7 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: const Text('Card added successfully'),
+                  content: Text('Card added successfully'),
                   backgroundColor: Theme.of(context).cardTheme.color,
                 ),
               );
@@ -132,7 +132,7 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
           data: (methods) => _buildContent(methods, totalFare),
           loading: () => buildShimmerList(
             itemBuilder: () => const ShimmerListTile(),
-            count: 3,
+            count: 2,
           ),
           error: (context, error) => _buildContent([], totalFare),
         ),
@@ -142,14 +142,35 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
   }
 
   Widget _buildContent(List<SavedPaymentMethod> methods, double totalFare) {
-    if (methods.isEmpty && _selectedType == PaymentMethodType.card) {
+    if (methods.isEmpty && _selectedType == PaymentMethodType.card && _selectedCardId != null) {
       _selectedType = PaymentMethodType.cash;
+      _selectedCardId = null;
     }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
+          // Saved Cards
+          ...methods.map((method) {
+            final isSelected = _selectedType == PaymentMethodType.card && _selectedCardId == method.id;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _PaymentOption(
+                leading: PaymentBrandIcon(brand: method.brand),
+                title: method.displayName,
+                subtitle: method.isDefault ? 'Default' : 'Saved card',
+                isSelected: isSelected,
+                onTap: () {
+                  setState(() {
+                    _selectedType = PaymentMethodType.card;
+                    _selectedCardId = method.id;
+                  });
+                },
+              ),
+            );
+          }),
+
           // Cash option
           _PaymentOption(
             leading: Container(
@@ -175,7 +196,7 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
 
           const SizedBox(height: 12),
 
-          // Stripe / Card option (Always visible to promote usage)
+          // Add New Card option
           _PaymentOption(
             leading: Container(
               width: 40,
@@ -184,44 +205,16 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
                 color: Theme.of(context).cardTheme.color,
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const Icon(Icons.credit_card_outlined,
+              child: const Icon(Icons.add_circle_outline,
                   color: AppColors.primaryGold, size: 18),
             ),
-            title: 'Credit / Debit Card',
-            subtitle: 'Pay €${totalFare.toStringAsFixed(2)} securely',
-            isSelected: _selectedType == PaymentMethodType.card && _selectedCardId == null,
+            title: 'Add New Card',
+            subtitle: 'Credit / Debit Card',
+            isSelected: _selectedType == PaymentMethodType.card && _selectedCardId == null && methods.isEmpty,
             onTap: () {
               _addNewPaymentMethod(amount: totalFare);
             },
           ),
-
-
-          const SizedBox(height: 12),
-
-          // UPI Option
-          _PaymentOption(
-            leading: Container(
-              width: 40,
-              height: 28,
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardTheme.color,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Icon(Icons.account_balance_wallet_outlined,
-                  color: AppColors.primaryGold, size: 18),
-            ),
-            title: 'UPI',
-            subtitle: 'Pay via Google Pay, PhonePe, etc.',
-            isSelected: _selectedType == PaymentMethodType.upi,
-            onTap: () {
-              setState(() {
-                _selectedType = PaymentMethodType.upi;
-                _selectedCardId = null;
-              });
-            },
-          ),
-
-          const SizedBox(height: 12),
         ],
       ),
     );

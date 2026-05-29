@@ -37,60 +37,6 @@ class DriverArrivedView extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 20),
-
-        // Ride PIN Section
-        Text(
-          'Your Ride PIN',
-          style: AppTextStyles.titleSmall.copyWith(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Share this PIN with your driver to start the ride',
-          style: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Ride PIN boxes
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: otpPin.split('').map((digit) {
-            return Container(
-              width: 56,
-              height: 64,
-              margin: const EdgeInsets.symmetric(horizontal: 6),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardTheme.color,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: AppColors.primaryGold.withOpacity(0.5),
-                    width: 1.5),
-              ),
-              child: Center(
-                child: Text(
-                  digit,
-                  style: AppTextStyles.headlineLarge.copyWith(
-                    color: AppColors.primaryGold,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 8),
-
-        Text(
-          'Ride PIN Verification',
-          style: AppTextStyles.labelSmall.copyWith(
-            color: AppColors.primaryGold,
-          ),
-        ),
       ],
     );
   }

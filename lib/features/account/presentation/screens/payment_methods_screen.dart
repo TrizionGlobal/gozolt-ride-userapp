@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_text_styles.dart';
@@ -43,23 +44,23 @@ class PaymentMethodsScreen extends ConsumerWidget {
                   child: Row(
                     children: [
                       GestureDetector(
-                        onTap: () => Navigator.pop(context),
+                        onTap: () => context.pop(),
                         child: Container(
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.2) : Colors.black.withOpacity(0.05),
+                            color: AppColors.backgroundDark.withOpacity(0.15),
                           ),
-                          child: Icon(Icons.arrow_back,
-                              color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black, size: 20),
+                          child: const Icon(Icons.arrow_back,
+                              color: AppColors.backgroundDark, size: 20),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Text(
                         'Payment Methods',
                         style: AppTextStyles.headlineSmall.copyWith(
-                          color: Theme.of(context).scaffoldBackgroundColor,
+                          color: AppColors.backgroundDark,
                         ),
                       ),
                     ],
@@ -76,7 +77,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) => const ShimmerListTile(),
-                  childCount: 4,
+                  childCount: 3,
                 ),
               ),
             )
@@ -107,25 +108,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
                         ),
                       )),
 
-                  // UPI Option
-                  _paymentTile(
-                    context,
-                    icon: Icons.account_balance_wallet_outlined,
-                    iconColor: AppColors.info,
-                    title: 'UPI',
-                    subtitle: 'Pay via GPay, PhonePe, or BHIM',
-                    isDefault: false,
-                    onTap: () {
-                      HapticFeedback.lightImpact();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('UPI will be available during ride booking'),
-                          backgroundColor: Theme.of(context).cardTheme.color,
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 8),
+
 
                   // Add new card
                   const SizedBox(height: 8),
@@ -381,7 +364,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text('Remove'),
+            child: Text('Remove'),
           ),
         ],
       ),
@@ -418,7 +401,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
             }
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: const Text('Card added successfully'),
+                content: Text('Card added successfully'),
                 backgroundColor: Theme.of(context).cardTheme.color,
               ),
             );

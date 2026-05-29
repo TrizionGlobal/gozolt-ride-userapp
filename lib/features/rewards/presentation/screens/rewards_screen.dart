@@ -9,6 +9,7 @@ import '../../../../core/constants/asset_paths.dart';
 import '../../../../core/router/route_names.dart';
 import '../../data/models/reward_transaction.dart';
 import '../../data/models/reward_summary.dart';
+import '../../data/models/referral_info.dart';
 import '../providers/rewards_providers.dart';
 import '../widgets/redeem_bottom_sheet.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
@@ -197,7 +198,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
-              child: const Text(
+              child: Text(
                 'AWESOME',
                 style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1),
               ),
@@ -251,7 +252,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                       return Text(
                         value.toStringAsFixed(0),
                         style: const TextStyle(
-                          fontSize: 44,
+                          fontSize: 34,
                           fontWeight: FontWeight.w900,
                           color: AppColors.primaryGold,
                           fontFamily: 'Roboto',
@@ -725,66 +726,74 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
               loading: () => const SizedBox.shrink(),
               error: (context, error) => const SizedBox.shrink(),
               data: (rules) => Text(
-                'Invite friends and earn ${rules.referral.referrerBonus} coins. They get ${rules.referral.newUserBonus} coins after their first completed ride!',
+                'Invite friends and earn ${rules.referral.referrerBonus} coins. Coins are added after both you and your friend complete at least one ride!',
                 style: AppTextStyles.bodySmall.copyWith(
                   color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
                 ),
               ),
             ),
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[100],
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
                       referral.referralCode,
                       style: AppTextStyles.titleMedium.copyWith(
-                        letterSpacing: 2,
+                        letterSpacing: 1.5,
                         fontWeight: FontWeight.w800,
                         color: AppColors.primaryGold,
                       ),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.copy, size: 20),
-                    onPressed: () {
-                      Clipboard.setData(ClipboardData(text: referral.referralCode));
-                      HapticFeedback.lightImpact();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Referral code copied to clipboard!'),
-                          backgroundColor: AppColors.success,
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                    tooltip: 'Copy Code',
-                  ),
-                  Builder(
-                    builder: (context) {
-                      return IconButton(
-                        icon: const Icon(Icons.share, size: 20),
-                        onPressed: () {
-                          HapticFeedback.lightImpact();
-                          final box = context.findRenderObject() as RenderBox?;
-                          final rect = box != null ? box.localToGlobal(Offset.zero) & box.size : null;
-                          Share.share(
-                            'Use my referral code ${referral.referralCode} to get 200 GoCoins on your first Gozolt ride!',
-                            subject: 'Join Gozolt Rewards',
-                            sharePositionOrigin: rect,
-                          );
-                        },
-                        tooltip: 'Share Code',
-                      );
-                    },
-                  ),
-                ],
+                    const SizedBox(width: 16),
+                    IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      icon: const Icon(Icons.copy, size: 18),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: referral.referralCode));
+                        HapticFeedback.lightImpact();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Referral code copied to clipboard!'),
+                            backgroundColor: AppColors.success,
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                      tooltip: 'Copy Code',
+                    ),
+                    const SizedBox(width: 16),
+                    Builder(
+                      builder: (context) {
+                        return IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          icon: const Icon(Icons.share, size: 18),
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            final box = context.findRenderObject() as RenderBox?;
+                            final rect = box != null ? box.localToGlobal(Offset.zero) & box.size : null;
+                            Share.share(
+                              'Use my referral code ${referral.referralCode} to get ${rulesAsync.value?.referral.newUserBonus ?? 100} GoCoins on your first Gozolt ride!',
+                              subject: 'Join Gozolt Rewards',
+                              sharePositionOrigin: rect,
+                            );
+                          },
+                          tooltip: 'Share Code',
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -798,6 +807,17 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                 _referralStat(context, 'Earned', '${referral.earnedPoints} coins'),
               ],
             ),
+            if (referral.referralsList.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 12),
+              Text(
+                'Invited Friends',
+                style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              ...referral.referralsList.map((user) => _buildReferredUserTile(context, user)),
+            ],
           ],
         ),
       ),
@@ -817,6 +837,60 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildReferredUserTile(BuildContext context, ReferredUser user) {
+    IconData icon;
+    Color iconColor;
+
+    if (user.status == 'Completed') {
+      icon = Icons.check_circle;
+      iconColor = AppColors.success;
+    } else if (user.status == 'Awaiting Your Ride') {
+      icon = Icons.hourglass_top;
+      iconColor = AppColors.warning;
+    } else {
+      icon = Icons.pending;
+      iconColor = AppColors.textMuted;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: AppColors.primaryGold.withOpacity(0.1),
+            child: const Icon(Icons.person, color: AppColors.primaryGold, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  user.name,
+                  style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  user.status,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: iconColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(icon, color: iconColor, size: 20),
+        ],
+      ),
     );
   }
 
@@ -875,7 +949,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
               ref.invalidate(rewardSummaryProvider);
               ref.read(rewardHistoryProvider.notifier).load();
             },
-            child: const Text(
+            child: Text(
               'Retry',
               style: TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
             ),
@@ -917,7 +991,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10)),
                 ),
-                child: const Text('Book a Ride'),
+                child: Text('Book a Ride'),
               ),
             ),
           ],
@@ -1064,7 +1138,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
             // 8. Rewards History Title
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                padding: const EdgeInsets.fromLTRB(20, 48, 20, 12),
                 child: Text(
                   'Transaction History',
                   style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold),
@@ -1096,7 +1170,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                         final notifier = ref.read(rewardHistoryProvider.notifier);
                         if (notifier.hasMore) {
                           notifier.loadMore();
-                          return const Padding(
+                          return Padding(
                             padding: EdgeInsets.all(16),
                             child: Center(
                               child: SizedBox(
@@ -1121,7 +1195,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
             ),
 
             const SliverToBoxAdapter(
-              child: SizedBox(height: 80),
+              child: SizedBox(height: 120),
             ),
           ],
         ),
@@ -1309,15 +1383,21 @@ class _TransactionCard extends StatelessWidget {
               children: [
                 Text(
                   transaction.displayType,
-                  style: AppTextStyles.titleSmall,
+                  style: AppTextStyles.titleSmall.copyWith(
+                    color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                  ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  transaction.description,
-                  style: AppTextStyles.bodySmall,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                if (transaction.description.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    transaction.description,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
                 const SizedBox(height: 2),
                 Text(
                   _formatDate(transaction.createdAt),

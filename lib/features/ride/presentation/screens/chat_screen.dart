@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../data/models/chat_message.dart';
 import '../providers/active_ride_provider.dart';
 
@@ -64,7 +65,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         backgroundColor: Theme.of(context).cardTheme.color,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).iconTheme.color ?? AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Row(
@@ -111,13 +112,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.phone, color: AppColors.primaryGold),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Calling ${driver?.name ?? "driver"}...'),
-                  backgroundColor: Theme.of(context).cardTheme.color,
-                ),
-              );
+            onPressed: () async {
+              final phone = driver?.phone;
+              if (phone != null && phone.isNotEmpty) {
+                final uri = Uri.parse('tel:$phone');
+                try {
+                  final launched = await launchUrl(uri);
+                  if (launched) return;
+                } catch (_) {
+                  // Ignore and fallback
+                }
+              }
+              if (mounted) {
+                ScaffoldMessenger.of(context).clearSnackBars();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Calling ${driver?.name ?? "driver"}...'),
+                    backgroundColor: AppColors.primaryGold,
+                  ),
+                );
+              }
             },
           ),
         ],
@@ -160,13 +174,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
           // Quick replies
           Container(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: _quickReplies
                     .map((msg) => Padding(
-                          padding: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.only(right: 12),
                           child: GestureDetector(
                             onTap: () {
                               _messageController.text = msg;
@@ -174,7 +188,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 8),
+                                  horizontal: 16, vertical: 10),
                               decoration: BoxDecoration(
                                 color: Theme.of(context).cardTheme.color,
                                 borderRadius: BorderRadius.circular(20),
@@ -186,8 +200,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                               child: Text(
                                 msg,
                                 style: AppTextStyles.bodySmall.copyWith(
-                                  color: AppColors.textPrimary,
-                                  fontSize: 12,
+                                  color: Theme.of(context).textTheme.bodyLarge?.color ?? AppColors.textPrimary,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ),
@@ -216,6 +231,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       controller: _messageController,
                       style: AppTextStyles.bodyMedium,
                       textCapitalization: TextCapitalization.sentences,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _sendMessage(),
                       maxLines: 3,
                       minLines: 1,
                       maxLength: 500,
@@ -322,7 +339,7 @@ class _ChatBubble extends StatelessWidget {
                     style: AppTextStyles.bodyMedium.copyWith(
                       color: isUser
                           ? Theme.of(context).scaffoldBackgroundColor
-                          : AppColors.textPrimary,
+                          : (Theme.of(context).textTheme.bodyLarge?.color ?? AppColors.textPrimary),
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -334,7 +351,7 @@ class _ChatBubble extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 10,
                           color: isUser
-                              ? Theme.of(context).scaffoldBackgroundColor.withOpacity(0.6)
+                              ? Colors.black54
                               : AppColors.textMuted,
                         ),
                       ),
@@ -346,7 +363,7 @@ class _ChatBubble extends StatelessWidget {
                           child: CircularProgressIndicator(
                             strokeWidth: 1.5,
                             color: isUser
-                                ? Theme.of(context).scaffoldBackgroundColor.withOpacity(0.6)
+                                ? Colors.black54
                                 : AppColors.textMuted,
                           ),
                         ),
@@ -362,7 +379,6 @@ class _ChatBubble extends StatelessWidget {
               ),
             ),
           ),
-          if (isUser) const SizedBox(width: 36),
         ],
       ),
     );

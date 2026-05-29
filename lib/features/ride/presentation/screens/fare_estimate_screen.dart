@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -9,6 +10,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/constants/asset_paths.dart';
+import '../../../rewards/presentation/providers/rewards_providers.dart';
 import '../../../../core/router/route_names.dart';
 import '../../data/models/saved_payment_method.dart';
 import '../providers/ride_booking_state.dart';
@@ -20,6 +22,7 @@ import '../widgets/vehicle_type_selector.dart';
 import '../../../history/presentation/providers/history_providers.dart';
 import '../../../notifications/presentation/providers/notification_providers.dart';
 import '../../../../core/providers/dio_provider.dart';
+import '../providers/active_ride_provider.dart';
 
 class FareEstimateScreen extends ConsumerStatefulWidget {
   const FareEstimateScreen({super.key});
@@ -35,6 +38,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
   Set<Marker> _driverMarkers = {};
   Set<VehicleType> _availableVehicleTypes = {};
   Timer? _driverRefreshTimer;
+  bool _isFocusing = false;
 
   @override
   void initState() {
@@ -42,6 +46,12 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchRoute();
       _fetchNearbyDrivers();
+
+      final isScheduleMode = ref.read(isScheduleModeProvider);
+      final booking = ref.read(rideBookingProvider);
+      if (isScheduleMode && !booking.isScheduled) {
+        _showScheduleSheet();
+      }
     });
     _driverRefreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       _fetchNearbyDrivers();
@@ -206,6 +216,48 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
     );
   }
 
+  /// Focuses the map camera on the user's live GPS, or pickup as fallback.
+  Future<void> _focusOnCurrentLocation() async {
+    if (_mapController == null) return;
+    setState(() => _isFocusing = true);
+    HapticFeedback.lightImpact();
+    try {
+      final permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        _focusFallbackToPickup();
+        return;
+      }
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 5),
+      );
+      await _mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(target: LatLng(pos.latitude, pos.longitude), zoom: 15),
+        ),
+      );
+    } catch (_) {
+      _focusFallbackToPickup();
+    } finally {
+      if (mounted) setState(() => _isFocusing = false);
+    }
+  }
+
+  void _focusFallbackToPickup() {
+    final booking = ref.read(rideBookingProvider);
+    if (booking.pickup != null && _mapController != null) {
+      _mapController!.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: LatLng(booking.pickup!.latitude, booking.pickup!.longitude),
+            zoom: 15,
+          ),
+        ),
+      );
+    }
+  }
+
   static const _darkMapStyle = '''[
     {"elementType":"geometry","stylers":[{"color":"#212121"}]},
     {"elementType":"labels.icon","stylers":[{"visibility":"off"}]},
@@ -261,6 +313,15 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
     final booking = ref.watch(rideBookingProvider);
     final isLoading = booking.status == BookingStatus.estimating;
 
+    final paymentMethodsAsync = ref.watch(paymentMethodsProvider);
+    SavedPaymentMethod? selectedCard;
+    if (booking.paymentMethodType == PaymentMethodType.card && booking.selectedCardId != null) {
+      final methods = paymentMethodsAsync.value ?? [];
+      try {
+        selectedCard = methods.firstWhere((m) => m.id == booking.selectedCardId);
+      } catch (_) {}
+    }
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
@@ -305,7 +366,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                   compassEnabled: false,
                 ),
 
-                // Back button
+                // Back button — consistent with active_ride_screen style
                 Positioned(
                   top: MediaQuery.of(context).padding.top + 10,
                   left: 16,
@@ -318,11 +379,24 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: Theme.of(context).cardTheme.color?.withOpacity(0.9),
+                          color: Theme.of(context).cardTheme.color?.withOpacity(0.95),
                           shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.15),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                        child: Icon(Icons.arrow_back,
-                            color: Theme.of(context).primaryColor, size: 20),
+                        child: Icon(
+                          Icons.arrow_back,
+                          color: Theme.of(context).iconTheme.color ?? AppColors.textPrimary,
+                          size: 20,
+                        ),
                       ),
                     ),
                   ),
@@ -393,6 +467,51 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                ),
+
+                // ── Focus / My Location Button ──────────────────
+                Positioned(
+                  bottom: 14,
+                  right: 12,
+                  child: Semantics(
+                    label: 'Focus on current location',
+                    button: true,
+                    child: GestureDetector(
+                      onTap: _focusOnCurrentLocation,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardTheme.color?.withOpacity(0.95),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.15),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: _isFocusing
+                            ? Padding(
+                                padding: const EdgeInsets.all(11),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryGold),
+                                ),
+                              )
+                            : const Icon(
+                                Icons.my_location,
+                                color: AppColors.primaryGold,
+                                size: 20,
+                              ),
+                      ),
                     ),
                   ),
                 ),
@@ -467,7 +586,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                         child: Column(
                           children: List.generate(
                             3,
-                            (_) => const Padding(
+                            (_) => Padding(
                               padding: EdgeInsets.only(bottom: 10),
                               child: ShimmerWrap(
                                 child: ShimmerBox(
@@ -502,30 +621,8 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                         promoDiscount: booking.promoDiscount,
                         coinsDiscount: booking.coinsDiscount,
                         useCoins: booking.useCoins,
-                      ),
-
-                    // Schedule info
-                    if (booking.isScheduled && booking.scheduledAt != null)
-                      Container(
-                        margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryGold.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.schedule,
-                                color: AppColors.primaryGold, size: 18),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Scheduled for ${_formatSchedule(booking.scheduledAt!)}',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: AppColors.primaryGold,
-                              ),
-                            ),
-                          ],
-                        ),
+                        isScheduled: booking.isScheduled,
+                        scheduledAtText: booking.scheduledAt != null ? _formatSchedule(booking.scheduledAt!) : null,
                       ),
 
                     const SizedBox(height: 100),
@@ -581,7 +678,9 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                           Text(
                             booking.paymentMethodType == PaymentMethodType.cash
                                 ? 'Cash'
-                                : 'Card',
+                                : selectedCard != null
+                                    ? selectedCard.displayName
+                                    : 'Card',
                             style: AppTextStyles.bodySmall.copyWith(
                               color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
                               fontWeight: FontWeight.w600,
@@ -650,34 +749,47 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
             const SizedBox(height: 12),
 
             // Find my Go partner button + schedule icon
-            Row(
-              children: [
-                // Main CTA
-                Expanded(
-                  child: SizedBox(
-                    height: 48,
-                    child: ElevatedButton(
-                      onPressed: booking.fareEstimate != null
-                          ? () => _onSelectRide()
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryGold,
-                        foregroundColor: Theme.of(context).scaffoldBackgroundColor,
-                        disabledBackgroundColor:
-                            AppColors.primaryGold.withOpacity(0.3),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        'Find my Go partner',
-                        style: AppTextStyles.button.copyWith(
-                          color: Theme.of(context).scaffoldBackgroundColor,
+            Builder(
+              builder: (context) {
+                return Row(
+                  children: [
+                    // Main CTA
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: (booking.fareEstimate != null && booking.status != BookingStatus.booking)
+                              ? () => _onSelectRide()
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryGold,
+                            foregroundColor: Theme.of(context).scaffoldBackgroundColor,
+                            disabledBackgroundColor:
+                                AppColors.textMuted.withOpacity(0.3),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: booking.status == BookingStatus.booking
+                              ? SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Theme.of(context).scaffoldBackgroundColor,
+                                    ),
+                                  ),
+                                )
+                              : Text(
+                                  booking.isScheduled ? 'Schedule Ride' : 'Find my Go partner',
+                                  style: AppTextStyles.button.copyWith(
+                                    color: Theme.of(context).scaffoldBackgroundColor,
+                                  ),
+                                ),
                         ),
                       ),
                     ),
-                  ),
-                ),
 
                 const SizedBox(width: 10),
 
@@ -702,7 +814,9 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                   ),
                 ),
               ],
-            ),
+            );
+          },
+        ),
 
             // Total now shown inside fare breakdown card
           ],
@@ -756,20 +870,48 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
     await ref.read(rideBookingProvider.notifier).confirmBooking();
     final updatedBooking = ref.read(rideBookingProvider);
     if (updatedBooking.status == BookingStatus.error) {
-      // Show error instead of navigating
+      // Clear the error state so user can retry without stale error
+      ref.read(rideBookingProvider.notifier).fetchFareEstimate();
       if (mounted) {
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(updatedBooking.errorMessage ?? 'Failed to book ride'),
-            backgroundColor: AppColors.error,
-            duration: const Duration(seconds: 3),
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: AppColors.error, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    updatedBooking.errorMessage ?? 'Failed to book ride. Please try again.',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.textPrimary
+                          : AppColors.textPrimaryLight,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Theme.of(context).cardTheme.color,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: AppColors.error.withOpacity(0.4)),
+            ),
+            duration: const Duration(seconds: 4),
           ),
         );
       }
       return;
     }
-    if (mounted) context.pushNamed(RouteNames.findingDriver);
+    if (mounted) {
+      ref.read(activeRideProvider.notifier).initSearching(
+        updatedBooking.createdRideId!,
+        updatedBooking,
+      );
+      context.pushNamed(RouteNames.rideActive);
+    }
   }
 
   void _showDiscountSheet() {
@@ -838,15 +980,36 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
             backgroundColor: Theme.of(context).dialogBackgroundColor,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
+          timePickerTheme: TimePickerThemeData(
+            hourMinuteTextStyle: const TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+            ),
+            dayPeriodTextStyle: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ),
-        child: child!,
+        child: Transform.scale(
+          scale: 0.85,
+          child: child!,
+        ),
       ),
     );
     if (pickedTime == null || !mounted) return;
 
+    // Round to nearest 5 minutes
+    int roundedMinute = ((pickedTime.minute / 5).round() * 5);
+    int finalHour = pickedTime.hour;
+    if (roundedMinute >= 60) {
+      roundedMinute = 0;
+      finalHour = (finalHour + 1) % 24;
+    }
+
     final scheduledAt = DateTime(
       pickedDate.year, pickedDate.month, pickedDate.day,
-      pickedTime.hour, pickedTime.minute,
+      finalHour, roundedMinute,
     );
 
     if (scheduledAt.isBefore(minDate)) {
@@ -902,7 +1065,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.primaryGold,
                   ),
-                  child: const Text('Confirm',
+                  child: Text('Confirm',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 ),
               ],
@@ -915,28 +1078,9 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
     if (confirmed == true && mounted) {
       HapticFeedback.mediumImpact();
       ref.read(rideBookingProvider.notifier).setScheduled(true, scheduledAt: scheduledAt);
-      // Stay on fare estimate — show scheduled confirmation
-      ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: AppColors.backgroundDark, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Ride scheduled for ${_formatSchedule(scheduledAt)}',
-                  style: const TextStyle(color: AppColors.backgroundDark),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: AppColors.primaryGold,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      
+      // Automatically trigger the booking process which navigates home and shows confirmation
+      await _onSelectRide();
     }
   }
 
@@ -965,78 +1109,26 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
 
 // ── Discount Bottom Sheet (GoCoins + Coupon) ────────────
 
-class _DiscountBottomSheet extends ConsumerStatefulWidget {
+class _DiscountBottomSheet extends ConsumerWidget {
   const _DiscountBottomSheet();
 
   @override
-  ConsumerState<_DiscountBottomSheet> createState() =>
-      _DiscountBottomSheetState();
-}
-
-class _DiscountBottomSheetState extends ConsumerState<_DiscountBottomSheet> {
-  final _couponController = TextEditingController();
-  String? _couponError;
-  String? _appliedCoupon;
-  String? _couponDescription;
-  bool _isValidating = false;
-
-  @override
-  void dispose() {
-    _couponController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _validateCoupon() async {
-    HapticFeedback.lightImpact();
-    final code = _couponController.text.trim();
-    if (code.isEmpty) return;
-
-    setState(() {
-      _isValidating = true;
-      _couponError = null;
-    });
-
-    final booking = ref.read(rideBookingProvider);
-    final fare = booking.fareEstimate?.estimatedFare ?? 0;
-
-    try {
-      final result = await ref.read(
-        promoValidationProvider((code: code, fare: fare)).future,
-      );
-
-      if (!mounted) return;
-
-      if (result.isValid) {
-        setState(() {
-          _appliedCoupon = result.code;
-          _couponDescription = result.description;
-          _isValidating = false;
-        });
-        ref.read(rideBookingProvider.notifier).setPromo(
-              result.code ?? code,
-              result.discountAmount ?? 0,
-              result.description ?? '',
-            );
-      } else {
-        setState(() {
-          _couponError = result.errorMessage ?? 'Invalid coupon code';
-          _isValidating = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _couponError = 'Failed to validate coupon';
-          _isValidating = false;
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final booking = ref.watch(rideBookingProvider);
     final rewardsAsync = ref.watch(userRewardsPointsProvider);
+    final rewardSummaryAsync = ref.watch(rewardSummaryProvider);
+
+    double getTierConversionRate(String tier) {
+      switch (tier.toUpperCase()) {
+        case 'PLATINUM': return 100.0;
+        case 'GOLD': return 133.33;
+        case 'SILVER': return 200.0;
+        default: return 400.0;
+      }
+    }
+
+    final currentTier = rewardSummaryAsync.value?.tier ?? 'BRONZE';
+    final conversionRate = getTierConversionRate(currentTier);
 
     return Padding(
       padding: EdgeInsets.only(
@@ -1086,9 +1178,12 @@ class _DiscountBottomSheetState extends ConsumerState<_DiscountBottomSheet> {
                       const SizedBox(height: 2),
                       rewardsAsync.when(
                         data: (points) {
-                          final eurValue = points / 100.0;
+                          final eurValue = points / conversionRate;
+                          final remainingFare = (booking.fareEstimate?.estimatedFare ?? 0.0) - (booking.promoDiscount ?? 0.0);
+                          final appliedEurValue = eurValue > remainingFare && remainingFare >= 0 ? remainingFare : eurValue;
+
                           return Text(
-                            'save €${eurValue.toStringAsFixed(2)} on your ride',
+                            'save €${appliedEurValue.toStringAsFixed(2)} on your ride',
                             style: AppTextStyles.bodySmall
                                 .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                           );
@@ -1100,150 +1195,46 @@ class _DiscountBottomSheetState extends ConsumerState<_DiscountBottomSheet> {
                   ),
                 ),
                 rewardsAsync.when(
-                  data: (points) => Row(
-                    children: [
-                      Text(
-                        '$points',
-                        style: AppTextStyles.titleSmall
-                            .copyWith(color: AppColors.primaryGold),
-                      ),
-                      const SizedBox(width: 4),
-                      Image.asset(AssetPaths.iconGoCoin,
-                          width: 18, height: 18),
-                      const SizedBox(width: 10),
-                      Transform.scale(
-                        scale: 0.7,
-                        child: Switch(
-                          value: booking.useCoins,
-                          activeColor: AppColors.primaryGold,
-                          activeTrackColor: AppColors.primaryGold.withOpacity(0.5),
-                          inactiveTrackColor: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
-                          onChanged: (val) {
-                            final eurValue = points / 100.0;
-                            ref
-                                .read(rideBookingProvider.notifier)
-                                .toggleUseCoins(val, discount: val ? eurValue : 0);
-                          },
+                  data: (points) {
+                    final eurValue = points / conversionRate;
+                    final remainingFare = (booking.fareEstimate?.estimatedFare ?? 0.0) - (booking.promoDiscount ?? 0.0);
+                    final appliedEurValue = eurValue > remainingFare && remainingFare >= 0 ? remainingFare : eurValue;
+                    final coinsUsed = (appliedEurValue * conversionRate).round();
+                    
+                    return Row(
+                      children: [
+                        Text(
+                          '$coinsUsed',
+                          style: AppTextStyles.titleSmall
+                              .copyWith(color: AppColors.primaryGold),
                         ),
-                      ),
-                    ],
-                  ),
+                        const SizedBox(width: 4),
+                        Image.asset(AssetPaths.iconGoCoin,
+                            width: 18, height: 18),
+                        const SizedBox(width: 10),
+                        Transform.scale(
+                          scale: 0.7,
+                          child: Switch.adaptive(
+                            value: booking.useCoins,
+                            activeTrackColor: AppColors.primaryGold,
+                            inactiveTrackColor: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
+                            onChanged: (val) {
+                              HapticFeedback.selectionClick();
+                              ref
+                                  .read(rideBookingProvider.notifier)
+                                  .toggleUseCoins(val, discount: val ? appliedEurValue : 0);
+                            },
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                   loading: () => const SizedBox.shrink(),
                   error: (_, __) => const SizedBox.shrink(),
                 ),
               ],
             ),
           ),
-
-          const SizedBox(height: 20),
-
-          // ── Apply Coupon ──────────────────────────────
-          Text(
-            'Apply coupon',
-            style: AppTextStyles.titleMedium
-                .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
-          ),
-          const SizedBox(height: 10),
-
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _couponController,
-                  style: AppTextStyles.bodyMedium
-                      .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
-                  decoration: InputDecoration(
-                    hintText: 'Enter Coupon code',
-                    hintStyle: AppTextStyles.bodyMedium
-                        .copyWith(color: AppColors.textMuted),
-                    filled: true,
-                    fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Color(0xFFF1F3F4),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 12),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              SizedBox(
-                width: 80,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: _isValidating ? null : _validateCoupon,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGold,
-                    foregroundColor: AppColors.backgroundDark,
-                    padding: EdgeInsets.zero,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  child: _isValidating
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.backgroundDark,
-                          ),
-                        )
-                      : const Text('APPLY'),
-                ),
-              ),
-            ],
-          ),
-
-          if (_couponError != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              _couponError!,
-              style: AppTextStyles.bodySmall
-                  .copyWith(color: AppColors.error),
-            ),
-          ],
-
-          if (_appliedCoupon != null) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardTheme.color,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: AppColors.success.withOpacity(0.3)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.check_circle,
-                      color: AppColors.success, size: 20),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _appliedCoupon!,
-                          style: AppTextStyles.titleSmall.copyWith(
-                            color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        if (_couponDescription != null)
-                          Text(
-                            _couponDescription!,
-                            style: AppTextStyles.bodySmall
-                                .copyWith(color: AppColors.textSecondary),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
 
           const SizedBox(height: 16),
         ],

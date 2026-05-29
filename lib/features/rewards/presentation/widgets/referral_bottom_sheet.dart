@@ -52,7 +52,7 @@ class ReferralBottomSheet extends ConsumerWidget {
 
               // Referral code
               referralAsync.when(
-                loading: () => const Padding(
+                loading: () => Padding(
                   padding: EdgeInsets.all(20),
                   child: CircularProgressIndicator(
                       color: AppColors.primaryGold, strokeWidth: 2),
@@ -72,7 +72,7 @@ class ReferralBottomSheet extends ConsumerWidget {
                         ScaffoldMessenger.of(context).clearSnackBars();
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: const Text('Copied!'),
+                            content: Text('Copied!'),
                             backgroundColor: Theme.of(context).snackBarTheme.backgroundColor,
                             duration: const Duration(seconds: 1),
                           ),
@@ -139,7 +139,7 @@ class ReferralBottomSheet extends ConsumerWidget {
                             },
 
                             icon: const Icon(Icons.share, size: 18),
-                            label: const Text('Share your code'),
+                            label: Text('Share your code'),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primaryGold,
                               foregroundColor: Theme.of(context).scaffoldBackgroundColor,

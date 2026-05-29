@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class UserProfile {
   final String id;
   final String? phone;
@@ -10,6 +12,7 @@ class UserProfile {
   final String? referralCode;
   final String? status;
   final String? ridePin;
+  final List<Map<String, dynamic>>? emergencyContacts;
 
   const UserProfile({
     required this.id,
@@ -23,6 +26,7 @@ class UserProfile {
     this.referralCode,
     this.status,
     this.ridePin,
+    this.emergencyContacts,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -38,7 +42,46 @@ class UserProfile {
       referralCode: json['referralCode'] as String?,
       status: json['status'] as String?,
       ridePin: json['ridePin'] as String?,
+      emergencyContacts: _parseEmergencyContacts(json['emergencyContacts']),
     );
+  }
+
+  static List<Map<String, dynamic>>? _parseEmergencyContacts(dynamic data) {
+    if (data == null) return null;
+    try {
+      if (data is List) {
+        final result = <Map<String, dynamic>>[];
+        for (final item in data) {
+          if (item is Map) {
+            final name = item['name']?.toString().trim() ?? '';
+            final phone = item['phone']?.toString().trim() ?? '';
+            if (name.isNotEmpty || phone.isNotEmpty) {
+              result.add(Map<String, dynamic>.from(item));
+            }
+          } else if (item is List && item.isNotEmpty && item.first is Map) {
+            // Handle accidental nested array: [[{"name": "...", "phone": "..."}]]
+            for (final nested in item) {
+              if (nested is Map) {
+                final name = nested['name']?.toString().trim() ?? '';
+                final phone = nested['phone']?.toString().trim() ?? '';
+                if (name.isNotEmpty || phone.isNotEmpty) {
+                  result.add(Map<String, dynamic>.from(nested));
+                }
+              }
+            }
+          }
+        }
+        return result.isNotEmpty ? result : null;
+      } else if (data is String) {
+        // If it got stringified somehow
+        final parsed = jsonDecode(data);
+        return _parseEmergencyContacts(parsed);
+      }
+    } catch (e) {
+      // Return null rather than failing the whole profile fetch
+      return null;
+    }
+    return null;
   }
 
   String get displayName {

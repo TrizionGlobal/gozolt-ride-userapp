@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 
 class AuthBackButton extends StatelessWidget {
@@ -9,7 +10,7 @@ class AuthBackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap ?? () => Navigator.of(context).maybePop(),
+      onTap: onTap ?? () => context.pop(),
       child: Container(
         width: 42,
         height: 42,

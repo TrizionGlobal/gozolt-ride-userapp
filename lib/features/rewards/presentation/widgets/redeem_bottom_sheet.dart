@@ -250,7 +250,7 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
                               strokeWidth: 2,
                               color: AppColors.backgroundDark),
                         )
-                      : const Text('Redeem', style: AppTextStyles.button),
+                      : Text('Redeem', style: AppTextStyles.button),
                 ),
               ),
               const SizedBox(height: 8),
@@ -400,7 +400,7 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10)),
                 ),
-                child: const Text('Great!'),
+                child: Text('Great!'),
               ),
             ),
           ],

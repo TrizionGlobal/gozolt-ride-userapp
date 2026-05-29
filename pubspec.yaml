@@ -1,7 +1,7 @@
 name: gozolt_user_app
 description: "Gozolt - The Super App. Ride-hailing user app for Malta/EU."
 publish_to: 'none'
-version: 1.0.0+27
+version: 1.0.1+28
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -73,6 +73,12 @@ dependencies:
   firebase_auth: ^5.5.0
   firebase_app_check: ^0.3.2+10
   flutter_svg: ^2.1.0
+  image_cropper: ^12.2.1
+  google_fonts: ^8.1.0
+  flutter_contacts: ^2.1.0
+  printing: ^5.14.3
+  pdf: ^3.12.0
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:
@@ -94,13 +100,13 @@ flutter_launcher_icons:
   remove_alpha_ios: true
 
 flutter_native_splash:
-  color: "#0D1117"
-  image: "assets/images/Gozolt_User_Icon.png"
+  color: "#F6F8FA"
+  image: "assets/images/light_Gozolt_User_Icon.png"
   color_dark: "#0D1117"
   image_dark: "assets/images/Gozolt_User_Icon.png"
   android_12:
-    color: "#0D1117"
-    image: "assets/images/Gozolt_User_Icon.png"
+    color: "#F6F8FA"
+    image: "assets/images/light_Gozolt_User_Icon.png"
     color_dark: "#0D1117"
     image_dark: "assets/images/Gozolt_User_Icon.png"
 
@@ -109,3 +115,4 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/

@@ -26,6 +26,30 @@ class FareEstimate {
 
   bool get hasSurge => surgeMultiplier > 1.0;
 
+  FareEstimate copyWith({
+    double? baseFare,
+    double? distanceFare,
+    double? timeFare,
+    double? bookingFee,
+    double? surgeMultiplier,
+    double? estimatedFare,
+    double? distanceKm,
+    int? durationMinutes,
+    int? etaMinutes,
+  }) {
+    return FareEstimate(
+      baseFare: baseFare ?? this.baseFare,
+      distanceFare: distanceFare ?? this.distanceFare,
+      timeFare: timeFare ?? this.timeFare,
+      bookingFee: bookingFee ?? this.bookingFee,
+      surgeMultiplier: surgeMultiplier ?? this.surgeMultiplier,
+      estimatedFare: estimatedFare ?? this.estimatedFare,
+      distanceKm: distanceKm ?? this.distanceKm,
+      durationMinutes: durationMinutes ?? this.durationMinutes,
+      etaMinutes: etaMinutes ?? this.etaMinutes,
+    );
+  }
+
   factory FareEstimate.fromJson(Map<String, dynamic> json) {
     return FareEstimate(
       baseFare: (json['baseFare'] as num).toDouble(),

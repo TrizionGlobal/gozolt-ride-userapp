@@ -54,6 +54,19 @@ class NotificationService {
 
   Future<void> updateToken() async {
     try {
+      if (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS) {
+        String? apnsToken = await _fcm.getAPNSToken();
+        if (apnsToken == null) {
+          debugPrint("APNS token not available yet. Waiting 2 seconds...");
+          await Future.delayed(const Duration(seconds: 2));
+          apnsToken = await _fcm.getAPNSToken();
+        }
+        if (apnsToken == null) {
+          debugPrint("Skipping FCM token retrieval: APNS token is null (likely on iOS Simulator).");
+          return;
+        }
+      }
+      
       String? token = await _fcm.getToken();
       if (token != null) {
         debugPrint("FCM Token: $token");
