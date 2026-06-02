@@ -16,6 +16,7 @@ import '../../data/models/complete_profile_request.dart';
 import '../../data/models/country_code.dart';
 import '../providers/auth_provider.dart';
 import '../providers/auth_state.dart';
+import '../../../../core/providers/storage_provider.dart';
 
 class CompleteProfileScreen extends ConsumerStatefulWidget {
   const CompleteProfileScreen({super.key});

@@ -12,6 +12,7 @@ import '../providers/auth_provider.dart';
 import '../providers/auth_state.dart';
 import '../widgets/auth_back_button.dart';
 import '../widgets/otp_input_field.dart';
+import '../../../../core/providers/storage_provider.dart';
 
 class OtpScreen extends ConsumerStatefulWidget {
   const OtpScreen({super.key});
