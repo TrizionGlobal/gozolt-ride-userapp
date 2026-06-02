@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:printing/printing.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/constants/asset_paths.dart';
 import '../../../../core/router/route_names.dart';
@@ -11,6 +12,9 @@ import '../../data/models/saved_payment_method.dart';
 import '../providers/ride_providers.dart';
 import '../providers/active_ride_provider.dart';
 import '../providers/active_ride_state.dart';
+import '../widgets/payment_brand_icon.dart';
+import '../widgets/stripe_add_card_sheet.dart';
+import '../widgets/mock_add_card_sheet.dart';
 import '../../../history/presentation/screens/receipt_screen.dart';
 import '../../../history/data/models/ride_history_item.dart';
 
@@ -51,13 +55,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
     );
     _checkAnimController.forward();
     
-    // Automatically show rating modal if ride is paid and not rated yet
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final rideState = ref.read(activeRideProvider);
-      if (rideState.isPaid && !_hasSubmittedRating) {
-        _showRatingModal();
-      }
-    });
+    // Do NOT auto-show rating on screen open — only show after Pay button is pressed
   }
 
   @override
@@ -70,10 +68,33 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Listen for payment completion to trigger rating modal
+    // Listen for payment completion: show success banner → wait 5s → show rating modal
     ref.listen<ActiveRideState>(activeRideProvider, (prev, next) {
       if (prev != null && !prev.isPaid && next.isPaid && !_hasSubmittedRating) {
-        _showRatingModal();
+        // Show success banner
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Text('Payment Successful! 🎉',
+                    style: AppTextStyles.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+              ],
+            ),
+            backgroundColor: AppColors.success,
+            duration: const Duration(seconds: 5),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+        // Show rating modal after 5 seconds
+        Future.delayed(const Duration(seconds: 5), () {
+          if (mounted && !_hasSubmittedRating) {
+            _showRatingModal();
+          }
+        });
       }
     });
 
@@ -204,36 +225,14 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                         ),
                       ),
                     ],
-                    const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.payments_outlined, color: Colors.green, size: 14),
-                            const SizedBox(width: 4),
-                            Text(
-                              formattedPaymentMethod.toUpperCase(),
-                              style: AppTextStyles.labelSmall.copyWith(
-                                color: Colors.green, 
-                                fontWeight: FontWeight.w900,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    // Payment method is shown in the section below — no duplicate badge here
                   ],
                 ),
               ),
               const SizedBox(height: 16),
 
-              // ── Pay Now Section ──
-              if (!rideState.isPaid && !isCash)
+              // ── Pay Now / Payment Section ──
+              if (!rideState.isPaid)
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
@@ -243,81 +242,119 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                     border: Border.all(color: AppColors.primaryGold.withOpacity(0.2)),
                   ),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Payment Method', style: AppTextStyles.bodyMedium.copyWith(color: textColor, fontWeight: FontWeight.w600)),
-                          Row(
+                      // Tappable payment method row
+                      InkWell(
+                        onTap: () => _showPaymentMethodSheet(),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Icon(
-                                Icons.credit_card,
-                                size: 18,
-                                color: AppColors.primaryGold,
+                              Text('Payment Method',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                      color: textColor,
+                                      fontWeight: FontWeight.w600)),
+                              Row(
+                                children: [
+                                  Icon(
+                                    isCash ? Icons.payments_outlined : Icons.credit_card,
+                                    size: 18,
+                                    color: AppColors.primaryGold,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    isCash ? 'Cash' : formattedPaymentMethod,
+                                    style: AppTextStyles.titleSmall.copyWith(
+                                        color: AppColors.primaryGold),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Icon(Icons.chevron_right,
+                                      size: 18, color: AppColors.primaryGold),
+                                ],
                               ),
-                              const SizedBox(width: 8),
-                              Text(formattedPaymentMethod, style: AppTextStyles.titleSmall.copyWith(color: AppColors.primaryGold)),
                             ],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 44,
-                        child: ElevatedButton(
-                          onPressed: rideState.isPaymentLoading ? null : () => ref.read(activeRideProvider.notifier).checkoutRide(),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryGold,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: rideState.isPaymentLoading
-                            ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-                            : Text('Pay \u20AC${fare.toStringAsFixed(2)} Now', style: AppTextStyles.titleSmall.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
                         ),
                       ),
-                    ],
-                  ),
-                )
-              else if (isCash)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryGold.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.primaryGold.withOpacity(0.2)),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Payment Method', style: AppTextStyles.bodyMedium.copyWith(color: textColor, fontWeight: FontWeight.w600)),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.money,
-                                size: 18,
-                                color: AppColors.primaryGold,
-                              ),
-                              const SizedBox(width: 8),
-                              Text('Cash', style: AppTextStyles.titleSmall.copyWith(color: AppColors.primaryGold)),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 4),
                       Text(
-                        'Please pay the driver directly.',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: secondaryTextColor,
-                          fontStyle: FontStyle.italic,
-                        ),
+                        'Tap to change payment method',
+                        style: AppTextStyles.bodySmall.copyWith(
+                            color: secondaryTextColor, fontSize: 11),
                       ),
+                      if (isCash) ...[
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? Colors.white.withOpacity(0.05)
+                                : Colors.black.withOpacity(0.03),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.info_outline,
+                                  size: 14, color: secondaryTextColor),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Please pay the driver directly in cash.',
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                      color: secondaryTextColor,
+                                      fontStyle: FontStyle.italic),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ] else ...[
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 44,
+                          child: ElevatedButton(
+                            onPressed: rideState.isPaymentLoading
+                                ? null
+                                : () => ref
+                                    .read(activeRideProvider.notifier)
+                                    .checkoutRide(
+                                      paymentMethod: ride?.paymentMethod,
+                                      paymentMethodId: ride?.paymentMethodId,
+                                    ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primaryGold,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 10),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: rideState.isPaymentLoading
+                                ? const CircularProgressIndicator(
+                                    color: Colors.white, strokeWidth: 2)
+                                : Text(
+                                    'Pay \u20AC${fare.toStringAsFixed(2)} Now',
+                                    style: AppTextStyles.titleSmall.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                      ],
+                      if (rideState.errorMessage != null) ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          rideState.errorMessage!,
+                          style: AppTextStyles.bodySmall
+                              .copyWith(color: AppColors.error),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ],
                   ),
                 )
@@ -328,14 +365,18 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                   decoration: BoxDecoration(
                     color: AppColors.success.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.success.withOpacity(0.3)),
+                    border:
+                        Border.all(color: AppColors.success.withOpacity(0.3)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.check_circle, color: AppColors.success, size: 22),
+                      const Icon(Icons.check_circle,
+                          color: AppColors.success, size: 22),
                       const SizedBox(width: 10),
-                      Text('Payment Successful', style: AppTextStyles.titleMedium.copyWith(color: AppColors.success)),
+                      Text('Payment Successful',
+                          style: AppTextStyles.titleMedium
+                              .copyWith(color: AppColors.success)),
                     ],
                   ),
                 ),
@@ -436,7 +477,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            (ride?.pickupAddress?.isNotEmpty == true) ? ride!.pickupAddress : 'Pickup location',
+                            (ride != null && ride.pickupAddress.isNotEmpty) ? ride.pickupAddress : 'Pickup location',
                             style: AppTextStyles.bodyMedium.copyWith(color: textColor, fontWeight: FontWeight.w500, fontSize: 13),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -473,7 +514,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            (ride?.dropoffAddress?.isNotEmpty == true) ? ride!.dropoffAddress : 'Dropoff location',
+                            (ride != null && ride.dropoffAddress.isNotEmpty) ? ride.dropoffAddress : 'Dropoff location',
                             style: AppTextStyles.bodyMedium.copyWith(color: textColor, fontWeight: FontWeight.w500, fontSize: 13),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -653,6 +694,27 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  // ── Payment Method Sheet ──────────────────────────────
+  void _showPaymentMethodSheet() {
+    final rideState = ref.read(activeRideProvider);
+    final ride = rideState.ride;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _PaymentMethodSheet(
+        currentMethod: ride?.paymentMethod ?? 'CASH',
+        currentMethodId: ride?.paymentMethodId,
+        onMethodSelected: (method, {String? methodId}) {
+          ref.read(activeRideProvider.notifier).updateLocalPaymentMethod(
+                method,
+                methodId: methodId,
+              );
+        },
       ),
     );
   }
@@ -938,7 +1000,10 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
     if (_tipAmount <= 0) return;
     HapticFeedback.mediumImpact();
     setState(() => _isSendingTip = true);
-    await ref.read(activeRideProvider.notifier).sendTip(_tipAmount);
+    await Future.wait([
+      ref.read(activeRideProvider.notifier).sendTip(_tipAmount),
+      Future.delayed(const Duration(milliseconds: 800)),
+    ]);
     
     if (!mounted) return;
     setState(() {
@@ -953,10 +1018,14 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
     setState(() => _isSubmittingRating = true);
     
     final comment = _commentController.text.trim();
-    await ref.read(activeRideProvider.notifier).rateRide(
-          _rating,
-          comment: comment.isNotEmpty ? comment : null,
-        );
+    
+    await Future.wait([
+      ref.read(activeRideProvider.notifier).rateRide(
+            _rating,
+            comment: comment.isNotEmpty ? comment : null,
+          ),
+      Future.delayed(const Duration(milliseconds: 800)),
+    ]);
         
     if (!mounted) return;
     Navigator.pop(context);
@@ -1121,6 +1190,427 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Payment Method Selection Sheet
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _PaymentMethodSheet extends ConsumerStatefulWidget {
+  final String currentMethod;
+  final String? currentMethodId;
+  final void Function(String method, {String? methodId}) onMethodSelected;
+
+  const _PaymentMethodSheet({
+    required this.currentMethod,
+    this.currentMethodId,
+    required this.onMethodSelected,
+  });
+
+  @override
+  ConsumerState<_PaymentMethodSheet> createState() =>
+      _PaymentMethodSheetState();
+}
+
+class _PaymentMethodSheetState extends ConsumerState<_PaymentMethodSheet> {
+  late String _selectedMethod;
+  String? _selectedMethodId;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedMethod = widget.currentMethod.toUpperCase();
+    _selectedMethodId = widget.currentMethodId;
+  }
+
+  void _confirm() {
+    widget.onMethodSelected(_selectedMethod, methodId: _selectedMethodId);
+    Navigator.of(context).pop();
+  }
+
+  void _addCard(List<SavedPaymentMethod> existingMethods) {
+    if (AppConstants.kDevBypass) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => MockAddCardSheet(
+          onCardAdded: (cardData) {
+            ref.invalidate(paymentMethodsProvider);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                    '${cardData['brand'].toString().toUpperCase()} ****${cardData['last4']} added'),
+                backgroundColor: AppColors.success,
+              ),
+            );
+          },
+        ),
+      );
+      return;
+    }
+
+    final ds = ref.read(paymentRemoteDatasourceProvider);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => StripeAddCardSheet(
+        datasource: ds,
+        onCardAdded: (paymentMethodId) async {
+          if (paymentMethodId != null) {
+            // Save card to our database via confirm-setup
+            try {
+              await ds.confirmSetupIntent(paymentMethodId);
+            } catch (_) {}
+            // Reload cards
+            ref.invalidate(paymentMethodsProvider);
+            // Select the new card
+            setState(() {
+              _selectedMethod = 'CARD';
+              _selectedMethodId = paymentMethodId;
+            });
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Card saved successfully'),
+                  backgroundColor: AppColors.success,
+                ),
+              );
+            }
+          }
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor =
+        isDark ? AppColors.textPrimary : AppColors.textPrimaryLight;
+    final secondaryTextColor =
+        isDark ? AppColors.textSecondary : AppColors.textSecondaryLight;
+    final cardColor = Theme.of(context).cardTheme.color;
+    final borderColor =
+        Theme.of(context).dividerTheme.color ?? AppColors.borderDark;
+    final paymentMethodsAsync = ref.watch(paymentMethodsProvider);
+
+    return Container(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.only(top: 16, bottom: 20),
+            decoration: BoxDecoration(
+              color: borderColor,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Change Payment Method',
+                  style: AppTextStyles.titleMedium.copyWith(
+                    color: textColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withOpacity(0.1)
+                          : Colors.black.withOpacity(0.05),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.close,
+                        size: 16,
+                        color:
+                            isDark ? Colors.white70 : Colors.black54),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Options
+          paymentMethodsAsync.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(
+                  child: CircularProgressIndicator(
+                      color: AppColors.primaryGold)),
+            ),
+            error: (_, __) => _buildOptionsList([], cardColor, borderColor,
+                textColor, secondaryTextColor, isDark),
+            data: (methods) => _buildOptionsList(methods, cardColor,
+                borderColor, textColor, secondaryTextColor, isDark),
+          ),
+          // Confirm button
+          Padding(
+            padding:
+                const EdgeInsets.fromLTRB(24, 8, 24, 32),
+            child: SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: _confirm,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGold,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
+                child: Text('Confirm',
+                    style: AppTextStyles.titleSmall.copyWith(
+                        color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOptionsList(
+    List<SavedPaymentMethod> methods,
+    Color? cardColor,
+    Color borderColor,
+    Color textColor,
+    Color secondaryTextColor,
+    bool isDark,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        children: [
+          // Cash
+          _buildOption(
+            icon: Icons.payments_outlined,
+            title: 'Cash',
+            subtitle: 'Pay the driver directly',
+            isSelected: _selectedMethod == 'CASH',
+            cardColor: cardColor,
+            borderColor: borderColor,
+            textColor: textColor,
+            secondaryTextColor: secondaryTextColor,
+            onTap: () => setState(() {
+              _selectedMethod = 'CASH';
+              _selectedMethodId = null;
+            }),
+          ),
+          const SizedBox(height: 10),
+          // Saved cards
+          ...methods.map((pm) {
+            final isSelected = _selectedMethod == 'CARD' &&
+                _selectedMethodId == pm.id;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _buildOptionWithBrand(
+                brand: pm.brand,
+                title: pm.displayName,
+                subtitle: pm.isDefault ? 'Default card' : 'Saved card',
+                isSelected: isSelected,
+                cardColor: cardColor,
+                borderColor: borderColor,
+                textColor: textColor,
+                secondaryTextColor: secondaryTextColor,
+                onTap: () => setState(() {
+                  _selectedMethod = 'CARD';
+                  _selectedMethodId = pm.id;
+                }),
+              ),
+            );
+          }),
+          // Add New Card
+          _buildOption(
+            icon: Icons.add_circle_outline,
+            title: 'Add New Card',
+            subtitle: 'Credit / Debit Card',
+            isSelected: false,
+            cardColor: cardColor,
+            borderColor: borderColor,
+            textColor: textColor,
+            secondaryTextColor: secondaryTextColor,
+            onTap: () => _addCard(methods),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool isSelected,
+    required Color? cardColor,
+    required Color borderColor,
+    required Color textColor,
+    required Color secondaryTextColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryGold : borderColor,
+            width: isSelected ? 1.5 : 0.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.primaryGold.withOpacity(0.1)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(icon,
+                  color: isSelected
+                      ? AppColors.primaryGold
+                      : AppColors.textSecondary,
+                  size: 18),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: AppTextStyles.titleSmall.copyWith(
+                          color: textColor)),
+                  Text(subtitle,
+                      style: AppTextStyles.bodySmall
+                          .copyWith(color: secondaryTextColor)),
+                ],
+              ),
+            ),
+            Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color:
+                      isSelected ? AppColors.primaryGold : AppColors.textMuted,
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? Center(
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.primaryGold,
+                        ),
+                      ),
+                    )
+                  : null,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOptionWithBrand({
+    required CardBrand brand,
+    required String title,
+    required String subtitle,
+    required bool isSelected,
+    required Color? cardColor,
+    required Color borderColor,
+    required Color textColor,
+    required Color secondaryTextColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryGold : borderColor,
+            width: isSelected ? 1.5 : 0.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            PaymentBrandIcon(brand: brand),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: AppTextStyles.titleSmall.copyWith(
+                          color: textColor)),
+                  Text(subtitle,
+                      style: AppTextStyles.bodySmall
+                          .copyWith(color: secondaryTextColor)),
+                ],
+              ),
+            ),
+            Container(
+              width: 22,
+              height: 22,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color:
+                      isSelected ? AppColors.primaryGold : AppColors.textMuted,
+                  width: 2,
+                ),
+              ),
+              child: isSelected
+                  ? Center(
+                      child: Container(
+                        width: 12,
+                        height: 12,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.primaryGold,
+                        ),
+                      ),
+                    )
+                  : null,
+            ),
+          ],
+        ),
       ),
     );
   }

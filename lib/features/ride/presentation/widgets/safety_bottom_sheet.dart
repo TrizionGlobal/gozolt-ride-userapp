@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
@@ -27,12 +26,11 @@ class SafetyBottomSheet extends ConsumerWidget {
     final contacts = userProfile?.emergencyContacts;
     
     String alertSubtitle = 'Notify your emergency contacts';
-    String callSubtitle = 'Directly dial local emergency services';
     if (contacts != null && contacts.isNotEmpty) {
       final names = contacts.map((c) => c['name']).join(', ');
       alertSubtitle = 'Alert $names';
-      callSubtitle = 'Call $names';
     }
+    const String callSubtitle = 'Call Malta emergency services (112)';
 
     return Container(
       padding: EdgeInsets.only(

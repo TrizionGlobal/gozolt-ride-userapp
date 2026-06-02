@@ -26,6 +26,8 @@ void main() async {
 
   // Initialize Stripe
   Stripe.publishableKey = AppConstants.stripePublishableKey;
+  Stripe.urlScheme = 'com.gozolt';
+  await Stripe.instance.applySettings();
 
   // Force dark status bar style for splash
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(

@@ -23,7 +23,7 @@ abstract final class AppConstants {
   // ── Stripe ────────────────────────────────────────────
   static const String stripePublishableKey = String.fromEnvironment(
     'STRIPE_PK',
-    defaultValue: 'pk_test_51RYXLLPM5zo65HVyj5vNSB4z2awbPt8oemY8tgJQ7Kepb6SaR1XVd0a5tmbJuqhGgTYH0wnewoSqlcEJXzwhQQht00hpMFVH1g',
+    defaultValue: 'pk_test_51RhyquLppOyXcfaxgEhWZuhDAIPhz6H1bDh9u3hDVdGd1Fd7mboroU1VhXPL1mlSz2ZyPxp5ZLGoNWGGPLQJ2v7100oCnHbogY',
   );
 
   // ── Location Config ───────────────────────────────────

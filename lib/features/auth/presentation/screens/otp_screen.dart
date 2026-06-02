@@ -101,12 +101,19 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     final isRegister = ref.read(isRegisterFlowProvider);
 
     if (AppConstants.kDevBypass) {
-      // In dev mode: register → profile, login → home
-      if (isRegister) {
-        context.goNamed(RouteNames.completeProfile);
-      } else {
-        context.goNamed(RouteNames.home);
-      }
+      // In dev mode: save mock tokens, then register → profile, login → home
+      final storage = ref.read(secureStorageProvider);
+      storage.saveTokens(
+        accessToken: AppConstants.kDevAccessToken,
+        refreshToken: AppConstants.kDevRefreshToken,
+      ).then((_) {
+        if (!mounted) return;
+        if (isRegister) {
+          context.goNamed(RouteNames.completeProfile);
+        } else {
+          context.goNamed(RouteNames.home);
+        }
+      });
       return;
     }
 

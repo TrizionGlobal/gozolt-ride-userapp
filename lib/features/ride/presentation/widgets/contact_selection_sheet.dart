@@ -12,12 +12,14 @@ class ContactSelectionSheet extends StatefulWidget {
   final ContactSelectionMode mode;
   final String locationMessage; // Used for WhatsApp mode
   final List<dynamic>? emergencyContacts;
+  final void Function(String name, String phone)? onContactSelected;
 
   const ContactSelectionSheet({
     super.key,
     required this.mode,
     this.locationMessage = '',
     this.emergencyContacts,
+    this.onContactSelected,
   });
 
   @override
@@ -89,6 +91,10 @@ class _ContactSelectionSheetState extends State<ContactSelectionSheet> {
     String rawPhone = contact.phones.first.number;
     String cleanPhone = rawPhone.replaceAll(RegExp(r'[^\d+]'), '');
 
+    if (widget.onContactSelected != null) {
+      widget.onContactSelected!(contact.displayName ?? 'Unknown', cleanPhone);
+    }
+
     if (widget.mode == ContactSelectionMode.call) {
       final url = Uri.parse("tel:$cleanPhone");
       if (await canLaunchUrl(url)) {
@@ -128,6 +134,11 @@ class _ContactSelectionSheetState extends State<ContactSelectionSheet> {
     if (phone.isEmpty) return;
     
     String cleanPhone = phone.replaceAll(RegExp(r'[^\d+]'), '');
+    final name = emergencyContact['name'] as String? ?? 'Unknown';
+
+    if (widget.onContactSelected != null) {
+      widget.onContactSelected!(name, cleanPhone);
+    }
 
     if (widget.mode == ContactSelectionMode.call) {
       final url = Uri.parse("tel:$cleanPhone");

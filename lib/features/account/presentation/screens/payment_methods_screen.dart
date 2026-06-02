@@ -11,6 +11,7 @@ import '../providers/account_providers.dart';
 import '../../../ride/presentation/providers/ride_providers.dart';
 import '../../../ride/presentation/widgets/mock_add_card_sheet.dart';
 import '../../../ride/presentation/widgets/stripe_add_card_sheet.dart';
+import '../../../ride/presentation/widgets/payment_brand_icon.dart';
 
 class PaymentMethodsScreen extends ConsumerWidget {
   const PaymentMethodsScreen({super.key});
@@ -140,31 +141,6 @@ class PaymentMethodsScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-
-                  const SizedBox(height: 24),
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: AppColors.info.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                          color: AppColors.info.withOpacity(0.2)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.lock_outline,
-                            color: AppColors.info, size: 18),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Your payment information is securely processed by Stripe. We never store your full card details.',
-                            style: AppTextStyles.bodySmall
-                                .copyWith(color: AppColors.info),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ]),
               ),
             ),
@@ -188,7 +164,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.borderDark),
+          border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
         ),
         child: Row(
           children: [
@@ -248,30 +224,12 @@ class PaymentMethodsScreen extends ConsumerWidget {
         border: Border.all(
           color: pm.isDefault
               ? AppColors.primaryGold.withOpacity(0.3)
-              : AppColors.borderDark,
+              : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
         ),
       ),
       child: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: _brandColor(pm.brand).withOpacity(0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Center(
-              child: Text(
-                _brandLetter(pm.brand),
-                style: TextStyle(
-                  fontFamily: 'Roboto',
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: _brandColor(pm.brand),
-                ),
-              ),
-            ),
-          ),
+          PaymentBrandIcon(brand: pm.brand, size: 40),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -313,23 +271,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
     );
   }
 
-  Color _brandColor(CardBrand brand) {
-    return switch (brand) {
-      CardBrand.visa => const Color(0xFF1A1F71),
-      CardBrand.mastercard => const Color(0xFFEB001B),
-      CardBrand.amex => const Color(0xFF2E77BC),
-      CardBrand.unknown => AppColors.textSecondary,
-    };
-  }
 
-  String _brandLetter(CardBrand brand) {
-    return switch (brand) {
-      CardBrand.visa => 'V',
-      CardBrand.mastercard => 'M',
-      CardBrand.amex => 'A',
-      CardBrand.unknown => 'C',
-    };
-  }
 
   void _confirmDelete(
       BuildContext context, WidgetRef ref, SavedPaymentMethod pm) {
@@ -344,27 +286,33 @@ class PaymentMethodsScreen extends ConsumerWidget {
           style: AppTextStyles.bodyMedium
               .copyWith(color: AppColors.textSecondary),
         ),
+        actionsAlignment: MainAxisAlignment.spaceBetween,
+        actionsPadding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child:
-                Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
+            style: TextButton.styleFrom(
+              minimumSize: Size.zero,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: Text('Cancel', style: TextStyle(color: AppColors.textMuted, fontSize: 13, fontWeight: FontWeight.w500)),
           ),
           ElevatedButton(
             onPressed: () {
               HapticFeedback.mediumImpact();
               Navigator.pop(ctx);
-              ref
-                  .read(accountPaymentMethodsProvider.notifier)
-                  .deleteMethod(pm.id);
+              ref.read(accountPaymentMethodsProvider.notifier).deleteMethod(pm.id);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+              minimumSize: Size.zero,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: Text('Remove'),
+            child: const Text('Remove', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -382,8 +330,8 @@ class PaymentMethodsScreen extends ConsumerWidget {
             onCardAdded: (cardData) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('${cardData['brand'].toString().toUpperCase()} ****${cardData['last4']} added'),
-                  backgroundColor: Theme.of(context).cardTheme.color,
+                  content: Text('${cardData['brand'].toString().toUpperCase()} ****${cardData['last4']} added', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
+                  backgroundColor: AppColors.success,
                 ),
               );
               ref.read(accountPaymentMethodsProvider.notifier).load();
@@ -400,9 +348,9 @@ class PaymentMethodsScreen extends ConsumerWidget {
               ref.read(accountPaymentMethodsProvider.notifier).load();
             }
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Card added successfully'),
-                backgroundColor: Theme.of(context).cardTheme.color,
+              const SnackBar(
+                content: Text('Card added successfully', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
+                backgroundColor: AppColors.success,
               ),
             );
           },

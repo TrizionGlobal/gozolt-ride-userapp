@@ -50,8 +50,11 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
             onCardAdded: (cardData) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('${cardData['brand'].toString().toUpperCase()} ****${cardData['last4']} added'),
-                  backgroundColor: Theme.of(context).cardTheme.color,
+                  content: Text(
+                    '${cardData['brand'].toString().toUpperCase()} ****${cardData['last4']} added',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  backgroundColor: AppColors.success,
                 ),
               );
               ref.invalidate(paymentMethodsProvider);
@@ -73,9 +76,12 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
               _confirm(); // Auto-confirm after payment
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Card added successfully'),
-                  backgroundColor: Theme.of(context).cardTheme.color,
+                const SnackBar(
+                  content: Text(
+                    'Card added successfully',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  backgroundColor: AppColors.success,
                 ),
               );
             }
@@ -151,26 +157,6 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          // Saved Cards
-          ...methods.map((method) {
-            final isSelected = _selectedType == PaymentMethodType.card && _selectedCardId == method.id;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _PaymentOption(
-                leading: PaymentBrandIcon(brand: method.brand),
-                title: method.displayName,
-                subtitle: method.isDefault ? 'Default' : 'Saved card',
-                isSelected: isSelected,
-                onTap: () {
-                  setState(() {
-                    _selectedType = PaymentMethodType.card;
-                    _selectedCardId = method.id;
-                  });
-                },
-              ),
-            );
-          }),
-
           // Cash option
           _PaymentOption(
             leading: Container(
@@ -195,6 +181,26 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
           ),
 
           const SizedBox(height: 12),
+
+          // Saved Cards
+          ...methods.map((method) {
+            final isSelected = _selectedType == PaymentMethodType.card && _selectedCardId == method.id;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _PaymentOption(
+                leading: PaymentBrandIcon(brand: method.brand),
+                title: method.displayName,
+                subtitle: method.isDefault ? 'Default' : 'Saved card',
+                isSelected: isSelected,
+                onTap: () {
+                  setState(() {
+                    _selectedType = PaymentMethodType.card;
+                    _selectedCardId = method.id;
+                  });
+                },
+              ),
+            );
+          }),
 
           // Add New Card option
           _PaymentOption(

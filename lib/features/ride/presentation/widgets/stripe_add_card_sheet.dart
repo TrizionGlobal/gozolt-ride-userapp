@@ -22,201 +22,330 @@ class StripeAddCardSheet extends StatefulWidget {
 }
 
 class _StripeAddCardSheetState extends State<StripeAddCardSheet> {
-  bool _isLoading = false;
+  bool _isLoading = true;
+  bool _isSaving = false;
+  bool _isCardComplete = false;
+  String _selectedCardType = 'Credit'; // 'Credit' or 'Debit'
+  Key _cardFieldKey = UniqueKey();
+  final TextEditingController _nameController = TextEditingController();
   String? _error;
   String? _clientSecret;
 
   @override
   void initState() {
     super.initState();
-    // Pre-initialize the payment sheet
-    _initializePaymentSheet();
+    _fetchIntent();
   }
 
-  Future<void> _initializePaymentSheet() async {
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchIntent() async {
+    try {
+      if (widget.amount != null) {
+        final data = await widget.datasource.createPaymentSheet(widget.amount!);
+        _clientSecret = data['paymentIntent'];
+      } else {
+        final data = await widget.datasource.createSetupIntent();
+        _clientSecret = data['clientSecret'];
+      }
+      setState(() => _isLoading = false);
+    } catch (e) {
+      if (kDebugMode) print('[Stripe] Fetch intent error: $e');
+      setState(() {
+        _error = 'Failed to connect to secure server.';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _saveCard() async {
+    if (!_isCardComplete || _clientSecret == null) return;
+    
     setState(() {
-      _isLoading = true;
+      _isSaving = true;
       _error = null;
     });
 
     try {
       if (widget.amount != null) {
-        // ── BOOKING MODE: PaymentIntent + EphemeralKey ──
-        final data = await widget.datasource.createPaymentSheet(widget.amount!);
-        
-        await Stripe.instance.initPaymentSheet(
-          paymentSheetParameters: SetupPaymentSheetParameters(
-            paymentIntentClientSecret: data['paymentIntent'],
-            customerEphemeralKeySecret: data['ephemeralKey'],
-            customerId: data['customer'],
-            merchantDisplayName: 'Gozolt Ride',
-            style: Theme.of(context).brightness == Brightness.dark ? ThemeMode.dark : ThemeMode.light,
-            appearance: _getAppearance(),
+        final paymentIntent = await Stripe.instance.confirmPayment(
+          paymentIntentClientSecret: _clientSecret!,
+          data: PaymentMethodParams.card(
+            paymentMethodData: PaymentMethodData(
+              billingDetails: BillingDetails(
+                name: _nameController.text.trim().isNotEmpty ? _nameController.text.trim() : null,
+              ),
+            ),
           ),
         );
-      } else {
-        // ── SETTINGS MODE: SetupIntent ──
-        final data = await widget.datasource.createSetupIntent();
-        _clientSecret = data['clientSecret'];
-        
-        await Stripe.instance.initPaymentSheet(
-          paymentSheetParameters: SetupPaymentSheetParameters(
-            setupIntentClientSecret: _clientSecret,
-            customerId: data['customerId'],
-            merchantDisplayName: 'Gozolt Ride',
-            style: Theme.of(context).brightness == Brightness.dark ? ThemeMode.dark : ThemeMode.light,
-            appearance: _getAppearance(),
-          ),
-        );
-      }
-
-      setState(() {
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (kDebugMode) print('[Stripe] Init error: $e');
-      setState(() {
-        _error = 'Failed to initialize Stripe. Please try again.';
-        _isLoading = false;
-      });
-    }
-  }
-
-  PaymentSheetAppearance _getAppearance() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return PaymentSheetAppearance(
-      colors: PaymentSheetAppearanceColors(
-        primary: AppColors.primaryGold,
-        background: Theme.of(context).cardTheme.color ?? (isDark ? AppColors.surfaceDark : Colors.white),
-        componentBackground: Theme.of(context).scaffoldBackgroundColor,
-        componentBorder: Theme.of(context).dividerTheme.color ?? (isDark ? AppColors.borderDark : Colors.grey[300]!),
-        componentDivider: Theme.of(context).dividerTheme.color ?? (isDark ? AppColors.borderDark : Colors.grey[300]!),
-        primaryText: isDark ? Colors.white : Colors.black,
-        secondaryText: isDark ? AppColors.textSecondary : Colors.grey[600]!,
-        placeholderText: AppColors.textMuted,
-        icon: AppColors.primaryGold,
-        error: AppColors.error,
-      ),
-    );
-  }
-
-  Future<void> _presentPaymentSheet() async {
-    try {
-      await Stripe.instance.presentPaymentSheet();
-      // 4. Success — notify parent
-      if (mounted) {
-         if (widget.amount == null && _clientSecret != null) {
-          try {
-            final intent = await Stripe.instance.retrieveSetupIntent(_clientSecret!);
-            widget.onCardAdded(intent.paymentMethodId);
-          } catch (e) {
-            widget.onCardAdded(null);
-          }
-        } else {
-          widget.onCardAdded(null);
-        }
         Navigator.of(context).pop();
+        widget.onCardAdded(paymentIntent.paymentMethodId);
+      } else {
+        final setupIntent = await Stripe.instance.confirmSetupIntent(
+          paymentIntentClientSecret: _clientSecret!,
+          params: PaymentMethodParams.card(
+            paymentMethodData: PaymentMethodData(
+              billingDetails: BillingDetails(
+                name: _nameController.text.trim().isNotEmpty ? _nameController.text.trim() : null,
+              ),
+            ),
+          ),
+        );
+        Navigator.of(context).pop();
+        widget.onCardAdded(setupIntent.paymentMethodId);
       }
     } on StripeException catch (e) {
-      if (e.error.code == FailureCode.Canceled) {
-        // User cancelled — ignore
-        return;
+      if (e.error.code != FailureCode.Canceled) {
+        setState(() => _error = e.error.localizedMessage ?? 'Payment failed.');
       }
-      setState(() {
-        _error = e.error.localizedMessage ?? 'Failed to save payment method.';
-      });
     } catch (e) {
-      setState(() {
-        _error = 'Something went wrong. Please try again.';
-      });
+      setState(() => _error = 'An unexpected error occurred.');
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 24,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
       decoration: BoxDecoration(
         color: Theme.of(context).cardTheme.color,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
-              borderRadius: BorderRadius.circular(2),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-          
-          Icon(Icons.payment_rounded, color: AppColors.primaryGold, size: 48),
-          const SizedBox(height: 16),
-          
-          Text(
-            widget.amount != null ? 'Complete Payment' : 'Secure Payment Method',
-            style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            widget.amount != null 
-              ? 'Pay €${widget.amount!.toStringAsFixed(2)} securely via Stripe.'
-              : 'Add your card for seamless ride booking. Your details are encrypted and securely stored by Stripe.',
-            textAlign: TextAlign.center,
-            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
-          ),
-          
-          const SizedBox(height: 32),
-          
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.error.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.error.withOpacity(0.3)),
+            const SizedBox(height: 24),
+            
+            Text(
+              widget.amount != null ? 'Complete Payment' : 'Secure Payment Method',
+              style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.w800),
+            ),
+            
+            const SizedBox(height: 32),
+
+            if (_isLoading)
+              const Padding(
+                padding: EdgeInsets.all(32.0),
+                child: Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
+              )
+            else ...[
+                const SizedBox(height: 20),
+                SizedBox(
+                  height: 42,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _buildTypeSelector(
+                          title: 'Credit Card',
+                          icon: Icons.credit_card,
+                          isSelected: _selectedCardType == 'Credit',
+                          onTap: () {
+                            if (_selectedCardType != 'Credit') {
+                              setState(() {
+                                _selectedCardType = 'Credit';
+                                _cardFieldKey = UniqueKey();
+                                _isCardComplete = false;
+                              });
+                            }
+                          },
+                          isDark: isDark,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildTypeSelector(
+                          title: 'Debit Card',
+                          icon: Icons.account_balance_wallet_outlined,
+                          isSelected: _selectedCardType == 'Debit',
+                          onTap: () {
+                            if (_selectedCardType != 'Debit') {
+                              setState(() {
+                                _selectedCardType = 'Debit';
+                                _cardFieldKey = UniqueKey();
+                                _isCardComplete = false;
+                              });
+                            }
+                          },
+                          isDark: isDark,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.error_outline, color: AppColors.error, size: 20),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(_error!, style: TextStyle(color: AppColors.error, fontSize: 13)),
+            const SizedBox(height: 20),
+
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                border: Border.all(color: isDark ? AppColors.borderDark : Colors.grey[300]!),
+                borderRadius: BorderRadius.circular(20),
+                color: isDark ? AppColors.surfaceDark : const Color(0xFFF9FAFB),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'CARDHOLDER NAME',
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      letterSpacing: 1.2,
+                      fontWeight: FontWeight.w700,
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    height: 46,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: isDark ? Colors.grey[700]! : Colors.grey[300]!, width: 1.2),
+                      borderRadius: BorderRadius.circular(8),
+                      color: isDark ? AppColors.inputDark : Colors.white,
+                    ),
+                    child: Center(
+                      child: TextField(
+                        controller: _nameController,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.white : Colors.black,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textCapitalization: TextCapitalization.words,
+                        decoration: InputDecoration(
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
+                          border: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          errorBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          hintText: 'Name on card',
+                          hintStyle: TextStyle(
+                            color: isDark ? Colors.grey[400] : Colors.grey[400],
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  Text(
+                    'CARD NUMBER & DETAILS',
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      letterSpacing: 1.2,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    height: 48,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: isDark ? Colors.grey[700]! : Colors.grey[300]!, width: 1.2),
+                      borderRadius: BorderRadius.circular(8),
+                      color: isDark ? AppColors.inputDark : Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: isDark ? Colors.black26 : Colors.black.withOpacity(0.04),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        )
+                      ],
+                    ),
+                    child: Center(
+                      child: CardField(
+                        key: _cardFieldKey,
+                        onCardChanged: (card) {
+                          setState(() {
+                            _isCardComplete = card?.complete ?? false;
+                          });
+                        },
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: isDark ? Colors.white : Colors.black,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
+                          border: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          errorBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          hintStyle: TextStyle(
+                            color: isDark ? Colors.grey[400] : Colors.grey[400],
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
 
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _presentPaymentSheet,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryGold,
-                foregroundColor: Theme.of(context).scaffoldBackgroundColor,
-                disabledBackgroundColor: Theme.of(context).dividerTheme.color ?? AppColors.cardDark,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                elevation: 0,
+            const SizedBox(height: 20),
+            
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Text(
+                  _error!,
+                  style: const TextStyle(color: Colors.red, fontSize: 13),
+                  textAlign: TextAlign.center,
+                ),
               ),
-              child: _isLoading
-                  ? SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).scaffoldBackgroundColor),
-                    )
-                  : Text(
-                      widget.amount != null ? 'Pay Now' : 'Open Secure Payment UI',
-                      style: AppTextStyles.button.copyWith(fontWeight: FontWeight.w700),
-                    ),
+
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: ElevatedButton(
+                onPressed: (_isSaving || !_isCardComplete) ? null : _saveCard,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGold,
+                  foregroundColor: Theme.of(context).scaffoldBackgroundColor,
+                  disabledBackgroundColor: Theme.of(context).dividerTheme.color ?? AppColors.cardDark,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 0,
+                ),
+                child: _isSaving
+                    ? SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).scaffoldBackgroundColor),
+                      )
+                    : Text(
+                        widget.amount != null ? 'Pay Now' : 'Save Card',
+                        style: AppTextStyles.button.copyWith(fontWeight: FontWeight.w700),
+                      ),
+              ),
             ),
-          ),
+          ],
           const SizedBox(height: 16),
           Text(
             'Powered by Stripe',
@@ -224,6 +353,47 @@ class _StripeAddCardSheetState extends State<StripeAddCardSheet> {
           ),
           const SizedBox(height: 8),
         ],
+      ),
+      ),
+    );
+  }
+
+  Widget _buildTypeSelector({
+    required String title,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required bool isDark,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? (isDark ? AppColors.primaryGold.withOpacity(0.15) : AppColors.primaryGold.withOpacity(0.05))
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryGold : (isDark ? Colors.grey[800]! : Colors.grey[300]!),
+            width: isSelected ? 1.5 : 1.0,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: isSelected ? AppColors.primaryGold : (isDark ? Colors.grey[400] : Colors.grey[600])),
+            const SizedBox(width: 6),
+            Text(
+              title,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: isSelected ? AppColors.primaryGold : (isDark ? Colors.grey[300] : Colors.grey[800]),
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

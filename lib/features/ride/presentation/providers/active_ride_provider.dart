@@ -397,6 +397,11 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
             cancelReason: 'No drivers available nearby.',
           );
           break;
+        case 'ACCEPTED':
+        case 'DRIVER_EN_ROUTE':
+          if (kDebugMode) print('[Socket] → $status');
+          state = state.copyWith(status: ActiveRideStatus.driverEnRoute);
+          break;
         case 'DRIVER_ARRIVED':
           if (kDebugMode) print('[Socket] → DRIVER_ARRIVED');
           final otp = data['otp'] as String?;
@@ -422,9 +427,15 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
               : cancelledBy == 'USER'
                   ? 'You cancelled the ride.'
                   : 'Your ride has been cancelled.';
+                  
+          // Don't overwrite a system timeout reason with 'You cancelled the ride'
+          final currentReason = state.cancelReason ?? '';
+          final isSystemCancel = currentReason.contains('All of our drivers') || 
+                                 currentReason.contains('No drivers');
+                                 
           state = state.copyWith(
             status: ActiveRideStatus.cancelled,
-            cancelReason: reason,
+            cancelReason: isSystemCancel ? currentReason : reason,
           );
           break;
       }
@@ -580,7 +591,9 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
     if (state.ride == null) return;
 
     try {
-      if (!AppConstants.kDevBypass) {
+      if (AppConstants.kDevBypass) {
+        await Future.delayed(const Duration(seconds: 1));
+      } else {
         final ds = _ref.read(rideRemoteDatasourceProvider);
         await ds.rateRide(state.ride!.id, rating, comment: comment);
       }
@@ -620,12 +633,13 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
   Future<void> sendTip(double amount) async {
     if (state.ride == null) return;
     try {
-      if (!AppConstants.kDevBypass) {
+      if (AppConstants.kDevBypass) {
+        await Future.delayed(const Duration(seconds: 1));
+      } else {
         final ds = _ref.read(rideRemoteDatasourceProvider);
         // TODO: Replace with real API call
         await ds.addTip(state.ride!.id, amount);
       }
-      // Dev bypass: just simulate success
     } catch (_) {
       // Tip failure is non-blocking
     }
@@ -771,21 +785,24 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
     state = state.copyWith(clearError: true);
   }
 
-  Future<void> checkoutRide() async {
+  Future<void> checkoutRide({String? paymentMethod, String? paymentMethodId}) async {
     if (state.ride == null) return;
     state = state.copyWith(isPaymentLoading: true, clearError: true);
 
+    // Determine the final method and card ID to use
+    final method = paymentMethod ?? state.ride!.paymentMethod?.toUpperCase() ?? 'CASH';
+    final cardId = paymentMethodId ?? state.ride!.paymentMethodId;
+
     try {
       final rideId = state.ride!.id;
-      // Get selected payment method from booking state (if available) or ride object
-      final bookingState = _ref.read(rideBookingProvider);
-      final method = bookingState.paymentMethodType.name.toUpperCase();
-      final methodId = bookingState.paymentMethodType == PaymentMethodType.card 
-          ? bookingState.selectedCardId : null;
 
       if (AppConstants.kDevBypass) {
         await Future.delayed(const Duration(seconds: 2));
-        state = state.copyWith(isPaymentLoading: false, isPaid: true);
+        state = state.copyWith(
+          isPaymentLoading: false,
+          isPaid: true,
+          ride: state.ride!.copyWith(paymentMethod: method, paymentMethodId: cardId),
+        );
         return;
       }
 
@@ -793,16 +810,31 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
       await ds.checkoutRide(
         rideId: rideId,
         paymentMethod: method,
-        paymentMethodId: methodId,
+        paymentMethodId: cardId,
       );
 
-      state = state.copyWith(isPaymentLoading: false, isPaid: true);
+      state = state.copyWith(
+        isPaymentLoading: false,
+        isPaid: true,
+        ride: state.ride!.copyWith(paymentMethod: method, paymentMethodId: cardId),
+      );
     } catch (e) {
       state = state.copyWith(
         isPaymentLoading: false,
         errorMessage: 'Payment failed. Please try again.',
       );
     }
+  }
+
+  /// Update the payment method on the local ride state so the UI reflects the change immediately.
+  void updateLocalPaymentMethod(String method, {String? methodId}) {
+    if (state.ride == null) return;
+    state = state.copyWith(
+      ride: state.ride!.copyWith(
+        paymentMethod: method,
+        paymentMethodId: methodId,
+      ),
+    );
   }
 
   /// Check for an active ride on app startup / resume.

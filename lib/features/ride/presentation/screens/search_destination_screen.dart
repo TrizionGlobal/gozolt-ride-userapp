@@ -426,21 +426,19 @@ class _SearchDestinationScreenState
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.warning_amber_rounded, color: Color(0xFFFACC15), size: 20),
+            const Icon(Icons.error_outline, color: Colors.white, size: 20),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 message,
-                style: TextStyle(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white
-                      : AppColors.textPrimaryLight,
+                style: const TextStyle(
+                  color: Colors.white,
                 ),
               ),
             ),
           ],
         ),
-        backgroundColor: Theme.of(context).cardTheme.color,
+        backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),

@@ -50,6 +50,18 @@ final paymentMethodsProvider =
   return ds.getPaymentMethods();
 });
 
+/// Returns the default saved card, or null if user has no saved cards.
+final defaultPaymentMethodProvider =
+    FutureProvider<SavedPaymentMethod?>((ref) async {
+  final methods = await ref.watch(paymentMethodsProvider.future);
+  if (methods.isEmpty) return null;
+  // Prefer the card marked as default; otherwise take the first one.
+  return methods.firstWhere(
+    (m) => m.isDefault,
+    orElse: () => methods.first,
+  );
+});
+
 // ── Recent Searches ─────────────────────────────────────
 
 const _recentSearchesKey = 'gozolt_recent_searches';

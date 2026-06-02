@@ -26,6 +26,7 @@ import '../widgets/ride_details_sheet.dart';
 import '../widgets/share_ride_sheet.dart';
 import '../widgets/safety_bottom_sheet.dart';
 import '../widgets/contact_selection_sheet.dart';
+import '../widgets/malta_emergency_sheet.dart';
 import '../../../home/presentation/providers/home_providers.dart';
 
 class ActiveRideScreen extends ConsumerStatefulWidget {
@@ -66,6 +67,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
   final Random _random = Random();
 
   static final _defaultCenter = LatLng(AppConstants.defaultLat, AppConstants.defaultLng);
+  bool _isMapReady = false;
   BitmapDescriptor? _carIconLight;
   BitmapDescriptor? _carIconDark;
   BitmapDescriptor? _userIcon;
@@ -565,7 +567,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
     // Navigate on completion or cancellation, auto-zoom on status change
     ref.listen<ActiveRideState>(activeRideProvider, (prev, next) {
       if (next.isCompleted && prev?.isCompleted != true) {
-        context.pushReplacementNamed(RouteNames.rideComplete);
+        context.goNamed(RouteNames.rideComplete);
       }
       if (next.isCancelled && prev?.isCancelled != true) {
         final reason = next.cancelReason ?? '';
@@ -584,15 +586,6 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
         if (next.status == ActiveRideStatus.inProgress) {
           _driverToPickupRoute = null;
         }
-        
-        // Navigate to the ride complete screen when the ride finishes
-        if (next.status == ActiveRideStatus.completed) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              context.goNamed(RouteNames.rideComplete);
-            }
-          });
-        }
       }
       // Clear cached route when dropoff changes (destination change accepted)
       if (prev?.ride?.dropoffLat != next.ride?.dropoffLat ||
@@ -605,7 +598,10 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(next.errorMessage!),
+            content: Text(
+              next.errorMessage!,
+              style: const TextStyle(color: Colors.white),
+            ),
             backgroundColor: AppColors.error,
             duration: const Duration(seconds: 4),
           ),
@@ -683,9 +679,14 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
                     if (!_mapController.isCompleted) {
                       _mapController.complete(controller);
                     }
+                    if (mounted) {
+                      setState(() {
+                        _isMapReady = true;
+                      });
+                    }
                   },
-                  markers: _buildMarkers(rideState),
-                  polylines: _buildPolylines(rideState),
+                  markers: _isMapReady ? _buildMarkers(rideState) : {},
+                  polylines: _isMapReady ? _buildPolylines(rideState) : {},
                   myLocationEnabled: true,
                   myLocationButtonEnabled: false,
                   zoomControlsEnabled: false,
@@ -1032,6 +1033,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
   }
 
   void _openChat(BuildContext context) {
+    if (!mounted) return;
     final ride = ref.read(activeRideProvider).ride;
     if (ride == null) return;
     context.pushNamed(RouteNames.rideChat);
@@ -1102,11 +1104,37 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
       backgroundColor: Colors.transparent,
       builder: (_) => SafetyBottomSheet(
         onShareTrip: () => _showWhatsAppShareSheet(context),
-        onCallEmergency: () => _showAlertContactsSheet(context),
-        onAlertContacts: () => _showSosConfirmation(context),
+        onCallEmergency: () => _showMaltaEmergencySheet(context),
+        onAlertContacts: () => _showAlertContactsSheet(context),
         onReportIssue: () {
           final rideId = ref.read(activeRideProvider).ride?.id;
           context.pushNamed(RouteNames.createTicket, extra: rideId);
+        },
+      ),
+    );
+  }
+
+  void _showMaltaEmergencySheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => MaltaEmergencySheet(
+        onCallSelected: (name, phone) async {
+          ref.read(activeRideProvider.notifier).triggerSos(
+                AppConstants.defaultLat,
+                AppConstants.defaultLng,
+              );
+          final url = Uri.parse("tel:$phone");
+          if (await canLaunchUrl(url)) {
+            await launchUrl(url);
+          } else {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Could not launch dialer for $name.')),
+              );
+            }
+          }
         },
       ),
     );
@@ -1123,6 +1151,12 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
       builder: (_) => ContactSelectionSheet(
         mode: ContactSelectionMode.call,
         emergencyContacts: contacts,
+        onContactSelected: (name, phone) {
+          ref.read(activeRideProvider.notifier).triggerSos(
+                AppConstants.defaultLat,
+                AppConstants.defaultLng,
+              );
+        },
       ),
     );
   }
@@ -1147,99 +1181,6 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
     );
   }
 
-  void _showSosConfirmation(BuildContext context) {
-    final userProfile = ref.read(userProfileProvider).valueOrNull;
-    final contacts = userProfile?.emergencyContacts;
-    final hasPersonalContact = contacts != null && contacts.isNotEmpty;
-    final contactName = hasPersonalContact ? contacts.first['name'] : 'Emergency Contact';
-    final contactPhone = hasPersonalContact ? contacts.first['phone'] : '';
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(context).cardTheme.color,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            const Icon(Icons.warning_amber_rounded,
-                color: AppColors.error, size: 28),
-            const SizedBox(width: 8),
-            Text('Emergency SOS',
-                style: AppTextStyles.titleLarge.copyWith(color: AppColors.error)),
-          ],
-        ),
-        content: Text(
-          hasPersonalContact
-              ? 'This will alert the Gozolt safety team. You can choose to call your personal emergency contact ($contactName) or emergency services (112).\n\nAre you sure you want to proceed?'
-              : 'This will alert the Gozolt safety team and allow you to call emergency services (112).\n\nAre you sure you want to proceed?',
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.textSecondary,
-          ),
-        ),
-        actions: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text('Cancel',
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
-              ),
-              const SizedBox(width: 8),
-              if (hasPersonalContact)
-                TextButton(
-                  onPressed: () async {
-                    Navigator.pop(ctx);
-                    ref.read(activeRideProvider.notifier).triggerSos(AppConstants.defaultLat, AppConstants.defaultLng);
-                    final url = Uri.parse("tel:$contactPhone");
-                    if (await canLaunchUrl(url)) {
-                      await launchUrl(url);
-                    } else {
-                      ScaffoldMessenger.of(context).clearSnackBars();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('SOS alert sent. Could not launch dialer for $contactPhone.'),
-                          backgroundColor: AppColors.error,
-                        ),
-                      );
-                    }
-                  },
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.primaryGold,
-                  ),
-                  child: Text('Call $contactName',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                ),
-              if (hasPersonalContact) const SizedBox(width: 8),
-              TextButton(
-                onPressed: () async {
-                  Navigator.pop(ctx);
-                  ref.read(activeRideProvider.notifier).triggerSos(AppConstants.defaultLat, AppConstants.defaultLng);
-                  final url = Uri.parse("tel:112");
-                  if (await canLaunchUrl(url)) {
-                    await launchUrl(url);
-                  } else {
-                    ScaffoldMessenger.of(context).clearSnackBars();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('SOS alert sent. Calling 112...'),
-                        backgroundColor: AppColors.error,
-                      ),
-                    );
-                  }
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.error,
-                ),
-                child: Text('Call 112',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showRideCancelledDialog() {
     final reason = ref.read(activeRideProvider).cancelReason;

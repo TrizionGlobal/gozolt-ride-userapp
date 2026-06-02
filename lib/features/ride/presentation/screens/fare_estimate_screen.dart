@@ -16,6 +16,9 @@ import '../../data/models/saved_payment_method.dart';
 import '../providers/ride_booking_state.dart';
 import '../providers/ride_providers.dart';
 import '../widgets/fare_breakdown_card.dart';
+import '../widgets/payment_brand_icon.dart';
+import '../widgets/mock_add_card_sheet.dart';
+import '../widgets/stripe_add_card_sheet.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../data/models/vehicle_type.dart';
 import '../widgets/vehicle_type_selector.dart';
@@ -40,12 +43,15 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
   Timer? _driverRefreshTimer;
   bool _isFocusing = false;
 
+  bool _isMapReady = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchRoute();
       _fetchNearbyDrivers();
+      _autoSelectDefaultPayment();
 
       final isScheduleMode = ref.read(isScheduleModeProvider);
       final booking = ref.read(rideBookingProvider);
@@ -56,6 +62,19 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
     _driverRefreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       _fetchNearbyDrivers();
     });
+  }
+
+  /// Pre-select the user's default saved card when the screen loads.
+  Future<void> _autoSelectDefaultPayment() async {
+    try {
+      final methods = await ref.read(paymentMethodsProvider.future);
+      if (!mounted) return;
+      await ref
+          .read(rideBookingProvider.notifier)
+          .initDefaultPaymentMethod(methods);
+    } catch (_) {
+      // If cards can't be loaded, leave Cash as the default
+    }
   }
 
   Future<void> _fetchNearbyDrivers() async {
@@ -308,6 +327,26 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
     return LatLng(AppConstants.defaultLat, AppConstants.defaultLng);
   }
 
+  // ── Inline Payment Method Sheet ───────────────────────────
+  void _showPaymentMethodSheet() {
+    final booking = ref.read(rideBookingProvider);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _BookingPaymentSheet(
+        currentType: booking.paymentMethodType,
+        currentCardId: booking.selectedCardId,
+        onConfirm: (type, {String? cardId}) {
+          ref.read(rideBookingProvider.notifier).setPaymentMethod(
+                type,
+                cardId: cardId,
+              );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final booking = ref.watch(rideBookingProvider);
@@ -339,11 +378,15 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                   ),
                   onMapCreated: (controller) {
                     _mapController = controller;
-                    _fitMapToRoute();
+                    if (mounted) {
+                      setState(() {
+                        _isMapReady = true;
+                      });
+                    }
                   },
                   style: Theme.of(context).brightness == Brightness.dark ? _darkMapStyle : null,
-                  markers: _buildMarkers(booking),
-                  polylines: _routePoints.isNotEmpty
+                  markers: _isMapReady ? _buildMarkers(booking) : {},
+                  polylines: _isMapReady && _routePoints.isNotEmpty
                       ? {
                           Polyline(
                             polylineId: const PolylineId('route_glow'),
@@ -654,7 +697,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                   label: 'Select payment method',
                   button: true,
                   child: GestureDetector(
-                    onTap: () => context.pushNamed(RouteNames.paymentMethods),
+                    onTap: () => _showPaymentMethodSheet(),
                     child: Container(
                       padding:
                           const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -849,10 +892,14 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
           SnackBar(
             content: Text(
               'Ride to ${booking.dropoff?.address ?? 'destination'} scheduled!',
-              style: const TextStyle(color: AppColors.backgroundDark),
+              style: const TextStyle(color: Colors.white),
             ),
-            backgroundColor: AppColors.primaryGold,
+            backgroundColor: AppColors.success,
             duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
@@ -871,33 +918,30 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
     final updatedBooking = ref.read(rideBookingProvider);
     if (updatedBooking.status == BookingStatus.error) {
       // Clear the error state so user can retry without stale error
-      ref.read(rideBookingProvider.notifier).fetchFareEstimate();
+      ref.read(rideBookingProvider.notifier).clearError();
       if (mounted) {
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.error_outline, color: AppColors.error, size: 20),
+                const Icon(Icons.error_outline, color: Colors.white, size: 20),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     updatedBooking.errorMessage ?? 'Failed to book ride. Please try again.',
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? AppColors.textPrimary
-                          : AppColors.textPrimaryLight,
+                      color: Colors.white,
                     ),
                   ),
                 ),
               ],
             ),
-            backgroundColor: Theme.of(context).cardTheme.color,
+            backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: AppColors.error.withOpacity(0.4)),
             ),
             duration: const Duration(seconds: 4),
           ),
@@ -1243,3 +1287,400 @@ class _DiscountBottomSheet extends ConsumerWidget {
   }
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Booking Payment Method Sheet
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _BookingPaymentSheet extends ConsumerStatefulWidget {
+  final PaymentMethodType currentType;
+  final String? currentCardId;
+  final void Function(PaymentMethodType type, {String? cardId}) onConfirm;
+
+  const _BookingPaymentSheet({
+    required this.currentType,
+    this.currentCardId,
+    required this.onConfirm,
+  });
+
+  @override
+  ConsumerState<_BookingPaymentSheet> createState() =>
+      _BookingPaymentSheetState();
+}
+
+class _BookingPaymentSheetState extends ConsumerState<_BookingPaymentSheet> {
+  late PaymentMethodType _selectedType;
+  String? _selectedCardId;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedType = widget.currentType;
+    _selectedCardId = widget.currentCardId;
+  }
+
+  void _confirm() {
+    widget.onConfirm(_selectedType, cardId: _selectedCardId);
+    Navigator.of(context).pop();
+  }
+
+  void _addCard() {
+    if (AppConstants.kDevBypass) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => MockAddCardSheet(
+          onCardAdded: (cardData) {
+            ref.invalidate(paymentMethodsProvider);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                    '${cardData['brand'].toString().toUpperCase()} ****${cardData['last4']} added'),
+                backgroundColor: AppColors.success,
+              ),
+            );
+          },
+        ),
+      );
+      return;
+    }
+
+    final ds = ref.read(paymentRemoteDatasourceProvider);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => StripeAddCardSheet(
+        datasource: ds,
+        onCardAdded: (paymentMethodId) async {
+          if (paymentMethodId != null) {
+            try {
+              await ds.confirmSetupIntent(paymentMethodId);
+            } catch (_) {}
+            ref.invalidate(paymentMethodsProvider);
+            setState(() {
+              _selectedType = PaymentMethodType.card;
+              _selectedCardId = paymentMethodId;
+            });
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Card saved successfully'),
+                  backgroundColor: AppColors.success,
+                ),
+              );
+            }
+          }
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor =
+        isDark ? AppColors.textPrimary : AppColors.textPrimaryLight;
+    final secondaryTextColor =
+        isDark ? AppColors.textSecondary : AppColors.textSecondaryLight;
+    final cardColor = Theme.of(context).cardTheme.color;
+    final borderColor =
+        Theme.of(context).dividerTheme.color ?? AppColors.borderDark;
+    final paymentMethodsAsync = ref.watch(paymentMethodsProvider);
+
+    return Container(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.only(top: 16, bottom: 20),
+            decoration: BoxDecoration(
+              color: borderColor,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // Title row
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Payment Method',
+                  style: AppTextStyles.titleMedium.copyWith(
+                    color: textColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withOpacity(0.1)
+                          : Colors.black.withOpacity(0.05),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.close,
+                        size: 16,
+                        color: isDark ? Colors.white70 : Colors.black54),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Options
+          paymentMethodsAsync.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(
+                  child:
+                      CircularProgressIndicator(color: AppColors.primaryGold)),
+            ),
+            error: (_, __) => _buildOptions(
+                [], cardColor, borderColor, textColor, secondaryTextColor),
+            data: (methods) => _buildOptions(
+                methods, cardColor, borderColor, textColor, secondaryTextColor),
+          ),
+
+          // Confirm button
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+            child: SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: _confirm,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGold,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
+                child: Text(
+                  'Confirm',
+                  style: AppTextStyles.titleSmall.copyWith(
+                      color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOptions(
+    List<SavedPaymentMethod> methods,
+    Color? cardColor,
+    Color borderColor,
+    Color textColor,
+    Color secondaryTextColor,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        children: [
+          // Cash option
+          _buildOptionTile(
+            icon: Icons.payments_outlined,
+            title: 'Cash',
+            subtitle: 'Pay the driver directly',
+            isSelected: _selectedType == PaymentMethodType.cash,
+            cardColor: cardColor,
+            borderColor: borderColor,
+            textColor: textColor,
+            secondaryTextColor: secondaryTextColor,
+            onTap: () => setState(() {
+              _selectedType = PaymentMethodType.cash;
+              _selectedCardId = null;
+            }),
+          ),
+          const SizedBox(height: 10),
+
+          // Saved cards
+          ...methods.map((pm) {
+            final isSelected = _selectedType == PaymentMethodType.card &&
+                _selectedCardId == pm.id;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: GestureDetector(
+                onTap: () => setState(() {
+                  _selectedType = PaymentMethodType.card;
+                  _selectedCardId = pm.id;
+                }),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color:
+                          isSelected ? AppColors.primaryGold : borderColor,
+                      width: isSelected ? 1.5 : 0.5,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      PaymentBrandIcon(brand: pm.brand),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(pm.displayName,
+                                style: AppTextStyles.titleSmall
+                                    .copyWith(color: textColor)),
+                            Text(
+                                pm.isDefault ? 'Default card' : 'Saved card',
+                                style: AppTextStyles.bodySmall
+                                    .copyWith(color: secondaryTextColor)),
+                          ],
+                        ),
+                      ),
+                      if (pm.isDefault)
+                        Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGold.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'Default',
+                            style: AppTextStyles.labelSmall.copyWith(
+                                color: AppColors.primaryGold,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      _radioCircle(isSelected),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+
+          // Add New Card
+          _buildOptionTile(
+            icon: Icons.add_circle_outline,
+            title: 'Add New Card',
+            subtitle: 'Credit / Debit Card',
+            isSelected: false,
+            cardColor: cardColor,
+            borderColor: borderColor,
+            textColor: textColor,
+            secondaryTextColor: secondaryTextColor,
+            onTap: _addCard,
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOptionTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool isSelected,
+    required Color? cardColor,
+    required Color borderColor,
+    required Color textColor,
+    required Color secondaryTextColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryGold : borderColor,
+            width: isSelected ? 1.5 : 0.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppColors.primaryGold.withOpacity(0.1)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(icon,
+                  color: isSelected
+                      ? AppColors.primaryGold
+                      : AppColors.textSecondary,
+                  size: 18),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style:
+                          AppTextStyles.titleSmall.copyWith(color: textColor)),
+                  Text(subtitle,
+                      style: AppTextStyles.bodySmall
+                          .copyWith(color: secondaryTextColor)),
+                ],
+              ),
+            ),
+            _radioCircle(isSelected),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _radioCircle(bool isSelected) {
+    return Container(
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: isSelected ? AppColors.primaryGold : AppColors.textMuted,
+          width: 2,
+        ),
+      ),
+      child: isSelected
+          ? Center(
+              child: Container(
+                width: 12,
+                height: 12,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.primaryGold,
+                ),
+              ),
+            )
+          : null,
+    );
+  }
+}

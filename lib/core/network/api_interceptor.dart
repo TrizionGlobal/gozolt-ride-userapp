@@ -120,8 +120,9 @@ class ApiInterceptor extends Interceptor {
         );
         return true;
       }
-    } catch (e) {
-      dev.log('Token refresh failed: $e', name: 'ApiInterceptor');
+    } catch (e, stack) {
+      print('[ApiInterceptor] Token refresh failed: $e');
+      print(stack);
     }
     return false;
   }

@@ -15,6 +15,7 @@ class HomeMapBackground extends ConsumerStatefulWidget {
 
 class _HomeMapBackgroundState extends ConsumerState<HomeMapBackground> {
   final Completer<GoogleMapController> _mapController = Completer();
+  bool _isMapReady = false;
   BitmapDescriptor? _carIcon;
   
   static const _darkMapStyle = '''[
@@ -67,10 +68,25 @@ class _HomeMapBackgroundState extends ConsumerState<HomeMapBackground> {
     }
   }
 
+  Set<Marker> _currentMarkers = {};
+
   @override
   Widget build(BuildContext context) {
     final drivers = ref.watch(nearbyDriversProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // Only update markers when this screen is active AND map is fully initialized
+    final isCurrent = ModalRoute.of(context)?.isCurrent ?? true;
+    if (isCurrent && _isMapReady) {
+      _currentMarkers = drivers.map((d) => Marker(
+        markerId: MarkerId(d.latitude.toString() + d.longitude.toString()),
+        position: LatLng(d.latitude, d.longitude),
+        icon: _carIcon ?? BitmapDescriptor.defaultMarker,
+        rotation: d.heading ?? 0,
+        anchor: const Offset(0.5, 0.5),
+        flat: true,
+      )).toSet();
+    }
 
     return GoogleMap(
       initialCameraPosition: CameraPosition(
@@ -78,15 +94,17 @@ class _HomeMapBackgroundState extends ConsumerState<HomeMapBackground> {
         zoom: 14.5,
       ),
       style: isDark ? _darkMapStyle : null,
-      onMapCreated: (controller) => _mapController.complete(controller),
-      markers: drivers.map((d) => Marker(
-        markerId: MarkerId(d.latitude.toString() + d.longitude.toString()),
-        position: LatLng(d.latitude, d.longitude),
-        icon: _carIcon ?? BitmapDescriptor.defaultMarker,
-        rotation: d.heading ?? 0,
-        anchor: const Offset(0.5, 0.5),
-        flat: true,
-      )).toSet(),
+      onMapCreated: (controller) {
+        if (!_mapController.isCompleted) {
+          _mapController.complete(controller);
+        }
+        if (mounted) {
+          setState(() {
+            _isMapReady = true;
+          });
+        }
+      },
+      markers: _currentMarkers,
       myLocationEnabled: false,
       myLocationButtonEnabled: false,
       zoomControlsEnabled: false,

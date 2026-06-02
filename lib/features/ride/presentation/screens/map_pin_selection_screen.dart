@@ -25,6 +25,8 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
   String? _subtitle;
   bool _isMoving = false;
 
+  bool _isMapReady = false;
+
   @override
   void initState() {
     super.initState();
@@ -96,6 +98,7 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
@@ -103,12 +106,19 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
           // ── Google Map ─────────────────────────────────
           GoogleMap(
             initialCameraPosition: CameraPosition(
-              target: _center,
+              target: LatLng(AppConstants.defaultLat, AppConstants.defaultLng),
               zoom: 15,
             ),
-            style: Theme.of(context).brightness == Brightness.dark ? _darkMapStyle : null,
+            style: isDark ? _darkMapStyle : null,
             onMapCreated: (controller) {
-              _mapController.complete(controller);
+              if (!_mapController.isCompleted) {
+                _mapController.complete(controller);
+              }
+              if (mounted) {
+                setState(() {
+                  _isMapReady = true;
+                });
+              }
             },
             onCameraMove: _onCameraMove,
             onCameraIdle: _onCameraIdle,
@@ -117,6 +127,9 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
             zoomControlsEnabled: false,
             mapToolbarEnabled: false,
             compassEnabled: false,
+            // (Note: we don't need markers here as the center pin is drawn by a Stack overlay)
+            markers: {},
+            polylines: {},
           ),
 
           // ── Center Pin ──────────────────────────────────

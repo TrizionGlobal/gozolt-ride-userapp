@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../data/models/saved_payment_method.dart';
 
 /// Styled widget-based brand icons since no image assets are available.
@@ -10,52 +11,50 @@ class PaymentBrandIcon extends StatelessWidget {
   const PaymentBrandIcon({
     super.key,
     required this.brand,
-    this.size = 24,
+    this.size = 40,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = _getPrimaryColor(brand, isDark);
+
     return Container(
       width: size,
-      height: size * 0.65,
+      height: size,
       decoration: BoxDecoration(
-        color: _bgColor,
-        borderRadius: BorderRadius.circular(4),
+        color: primaryColor.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Center(
-        child: Text(
-          _label,
-          style: TextStyle(
-            color: _textColor,
-            fontSize: size * 0.28,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 0.5,
-          ),
-        ),
+        child: _buildDynamicLogo(primaryColor),
       ),
     );
   }
 
-  Color get _bgColor => switch (brand) {
-        CardBrand.visa => const Color(0xFF1A1F71),
-        CardBrand.mastercard => const Color(0xFF2D2D2D),
-        CardBrand.amex => const Color(0xFF2E77BC),
-        CardBrand.unknown => const Color(0xFF3D3D3D),
-      };
+  Widget _buildDynamicLogo(Color primaryColor) {
+    switch (brand) {
+      case CardBrand.visa:
+        return FaIcon(FontAwesomeIcons.ccVisa, color: primaryColor, size: size * 0.55);
+      case CardBrand.mastercard:
+        return FaIcon(FontAwesomeIcons.ccMastercard, color: primaryColor, size: size * 0.55);
+      case CardBrand.amex:
+        return FaIcon(FontAwesomeIcons.ccAmex, color: primaryColor, size: size * 0.55);
+      default:
+        return Icon(Icons.credit_card, color: primaryColor, size: size * 0.50);
+    }
+  }
 
-  Color get _textColor => switch (brand) {
-        CardBrand.visa => Colors.white,
-        CardBrand.mastercard => const Color(0xFFFF5F00),
-        CardBrand.amex => Colors.white,
-        CardBrand.unknown => Colors.white70,
-      };
+  Color _getPrimaryColor(CardBrand brand, bool isDark) {
+    return switch (brand) {
+      CardBrand.visa => isDark ? const Color(0xFF90CAF9) : const Color(0xFF1A1F71),
+      CardBrand.mastercard => const Color(0xFFFF5F00),
+      CardBrand.amex => isDark ? const Color(0xFF90CAF9) : const Color(0xFF2E77BC),
+      CardBrand.unknown => isDark ? Colors.grey[300]! : Colors.grey[800]!,
+    };
+  }
 
-  String get _label => switch (brand) {
-        CardBrand.visa => 'VISA',
-        CardBrand.mastercard => 'MC',
-        CardBrand.amex => 'AMEX',
-        CardBrand.unknown => 'CARD',
-      };
+
 }
 
 /// Convenience widget for rendering a payment icon from a string brand name.

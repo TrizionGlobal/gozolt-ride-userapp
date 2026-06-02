@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -13,6 +14,7 @@ import '../../data/models/saved_payment_method.dart';
 import '../../data/models/vehicle_type.dart';
 import 'ride_booking_state.dart';
 import '../../../../core/network/socket_service.dart';
+import '../../../../core/network/api_exception.dart';
 
 // Datasource provider defined here to avoid circular imports.
 final rideRemoteDatasourceProvider = Provider<RideRemoteDatasource>((ref) {
@@ -92,6 +94,14 @@ class RideBookingNotifier extends StateNotifier<RideBookingState> {
     );
   }
 
+  /// Auto-select the user's default saved card if no payment method has been
+  /// chosen yet (i.e. still on the initial Cash default).
+  Future<void> initDefaultPaymentMethod(
+      List<SavedPaymentMethod> savedMethods) async {
+    // DO NOT override. Cash should be the default payment method.
+    return;
+  }
+
   void setPromo(String code, double discount, String description) {
     state = state.copyWith(
       promoCode: code,
@@ -153,9 +163,19 @@ class RideBookingNotifier extends StateNotifier<RideBookingState> {
     } catch (e, stack) {
       print('Error in fetchFareEstimate: $e');
       print(stack);
+      String msg = 'Failed to estimate fare. Please try again.';
+      if (e is DioException) {
+        if (e.error is ApiException) {
+          msg = (e.error as ApiException).userMessage;
+        } else {
+          msg = ApiException.fromDioException(e).userMessage;
+        }
+      } else if (e is ApiException) {
+        msg = e.userMessage;
+      }
       state = state.copyWith(
         status: BookingStatus.error,
-        errorMessage: 'Failed to estimate fare: $e',
+        errorMessage: msg,
       );
     }
   }
@@ -248,9 +268,28 @@ class RideBookingNotifier extends StateNotifier<RideBookingState> {
         );
       }
     } catch (e) {
+      String msg = 'Failed to create ride. Please try again.';
+      if (e is DioException) {
+        if (e.error is ApiException) {
+          msg = (e.error as ApiException).userMessage;
+        } else {
+          msg = ApiException.fromDioException(e).userMessage;
+        }
+      } else if (e is ApiException) {
+        msg = e.userMessage;
+      }
       state = state.copyWith(
         status: BookingStatus.error,
-        errorMessage: 'Failed to create ride. Please try again.',
+        errorMessage: msg,
+      );
+    }
+  }
+
+  void clearError() {
+    if (state.status == BookingStatus.error) {
+      state = state.copyWith(
+        status: BookingStatus.estimated,
+        clearError: true,
       );
     }
   }

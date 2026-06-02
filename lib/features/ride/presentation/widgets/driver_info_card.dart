@@ -164,7 +164,8 @@ class DriverInfoCard extends StatelessWidget {
                     child: Container(
                       height: 44,
                       decoration: BoxDecoration(
-                        color: isDark ? AppColors.inputDark : const Color(0xFFF6F8FA),
+                        color: isDark ? AppColors.inputDark : Colors.grey[200],
+                        border: Border.all(color: isDark ? Colors.transparent : Colors.grey[300]!),
                         borderRadius: BorderRadius.circular(22),
                       ),
                       child: Row(
@@ -188,7 +189,8 @@ class DriverInfoCard extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.inputDark : const Color(0xFFF6F8FA),
+                      color: isDark ? AppColors.inputDark : Colors.grey[200],
+                      border: Border.all(color: isDark ? Colors.transparent : Colors.grey[300]!),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.phone, size: 20),
@@ -201,7 +203,8 @@ class DriverInfoCard extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.inputDark : const Color(0xFFF6F8FA),
+                      color: isDark ? AppColors.inputDark : Colors.grey[200],
+                      border: Border.all(color: isDark ? Colors.transparent : Colors.grey[300]!),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.person_outline, size: 22),
@@ -476,7 +479,8 @@ class DriverInfoCard extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           decoration: BoxDecoration(
-                            color: isDark ? AppColors.inputDark : Colors.grey[100],
+                            color: isDark ? AppColors.inputDark : Colors.grey[200],
+                            border: Border.all(color: isDark ? Colors.transparent : Colors.grey[300]!),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: Row(
@@ -508,7 +512,8 @@ class DriverInfoCard extends StatelessWidget {
                         width: 46,
                         height: 46,
                         decoration: BoxDecoration(
-                          color: isDark ? AppColors.inputDark : Colors.grey[100],
+                          color: isDark ? AppColors.inputDark : Colors.grey[200],
+                          border: Border.all(color: isDark ? Colors.transparent : Colors.grey[300]!),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Center(

@@ -20,10 +20,8 @@ class SecureStorageService {
     required String accessToken,
     required String refreshToken,
   }) async {
-    await Future.wait([
-      _storage.write(key: StorageKeys.accessToken, value: accessToken),
-      _storage.write(key: StorageKeys.refreshToken, value: refreshToken),
-    ]);
+    await _storage.write(key: StorageKeys.accessToken, value: accessToken);
+    await _storage.write(key: StorageKeys.refreshToken, value: refreshToken);
   }
 
   Future<String?> getAccessToken() =>
@@ -33,10 +31,8 @@ class SecureStorageService {
       _storage.read(key: StorageKeys.refreshToken);
 
   Future<void> clearTokens() async {
-    await Future.wait([
-      _storage.delete(key: StorageKeys.accessToken),
-      _storage.delete(key: StorageKeys.refreshToken),
-    ]);
+    await _storage.delete(key: StorageKeys.accessToken);
+    await _storage.delete(key: StorageKeys.refreshToken);
   }
 
   Future<bool> hasTokens() async {
@@ -72,10 +68,8 @@ class SecureStorageService {
     required String verificationId,
     required String phone,
   }) async {
-    await Future.wait([
-      _storage.write(key: StorageKeys.verificationId, value: verificationId),
-      _storage.write(key: StorageKeys.pendingPhone, value: phone),
-    ]);
+    await _storage.write(key: StorageKeys.verificationId, value: verificationId);
+    await _storage.write(key: StorageKeys.pendingPhone, value: phone);
   }
 
   Future<String?> getVerificationId() =>
@@ -85,10 +79,8 @@ class SecureStorageService {
       _storage.read(key: StorageKeys.pendingPhone);
 
   Future<void> clearOtpSession() async {
-    await Future.wait([
-      _storage.delete(key: StorageKeys.verificationId),
-      _storage.delete(key: StorageKeys.pendingPhone),
-    ]);
+    await _storage.delete(key: StorageKeys.verificationId);
+    await _storage.delete(key: StorageKeys.pendingPhone);
   }
 
   // ── Clear All ──────────────────────────────────────────
