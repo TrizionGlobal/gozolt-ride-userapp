@@ -76,22 +76,29 @@ class _SearchDestinationScreenState
             style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: Text('Cancel',
-                  style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary)),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                Geolocator.openLocationSettings();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryGold,
-                foregroundColor: Theme.of(context).scaffoldBackgroundColor,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              child: Text('Open Settings'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: Text('Cancel',
+                      style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary)),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Geolocator.openLocationSettings();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGold,
+                    foregroundColor: Theme.of(context).scaffoldBackgroundColor,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    minimumSize: const Size(120, 40),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                  child: const Text('Open Settings'),
+                ),
+              ],
             ),
           ],
         ),
@@ -129,14 +136,13 @@ class _SearchDestinationScreenState
           ),
           actions: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
                   child: Text('Cancel',
                       style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary)),
                 ),
-                const SizedBox(width: 8),
                 ElevatedButton(
                   onPressed: () {
                     Navigator.pop(ctx);
@@ -146,9 +152,10 @@ class _SearchDestinationScreenState
                     backgroundColor: AppColors.primaryGold,
                     foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    minimumSize: const Size(120, 40),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                   ),
-                  child: Text('Open Settings'),
+                  child: const Text('Open Settings'),
                 ),
               ],
             ),

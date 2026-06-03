@@ -35,9 +35,14 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
 
   Future<void> _getCurrentLocation() async {
     try {
-      final permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          return;
+        }
+      }
+      if (permission == LocationPermission.deniedForever) {
         return;
       }
       final position = await Geolocator.getCurrentPosition(

@@ -13,9 +13,12 @@ import 'core/services/notification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/providers/theme_provider.dart';
 
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+
 void main() async {
   try {
-    WidgetsFlutterBinding.ensureInitialized();
+    WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+    FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
     // Initialize Firebase (for Push Notifications, but NOT for Phone Auth now)
     await Firebase.initializeApp(

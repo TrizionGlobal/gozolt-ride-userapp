@@ -959,27 +959,28 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
         // Send Tip button (visible when amount > 0)
         if (_tipAmount > 0)
           SizedBox(
-            width: double.infinity,
+            width: 240,
+            height: 44,
             child: ElevatedButton(
               onPressed: _isSendingTip ? null : _sendTip,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGold,
                 foregroundColor: Colors.white,
                 disabledBackgroundColor: AppColors.primaryGold.withOpacity(0.5),
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                padding: const EdgeInsets.symmetric(vertical: 10),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
               child: _isSendingTip
                   ? const SizedBox(
-                      width: 20,
-                      height: 20,
+                      width: 18,
+                      height: 18,
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white),
                     )
                   : Text(
                       'Send \u20AC${_tipAmount.toStringAsFixed(2)} Tip',
-                      style: AppTextStyles.button,
+                      style: AppTextStyles.titleSmall.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
                     ),
             ),
           ),

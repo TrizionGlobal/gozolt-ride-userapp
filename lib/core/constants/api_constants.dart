@@ -1,6 +1,6 @@
 abstract final class ApiConstants {
   // ── Base URL ───────────────────────────────────────────
-  static const bool useLocal = true;
+  static const bool useLocal = false;
 
   static const String baseUrl = useLocal 
       ? 'http://127.0.0.1:3000/v1' 

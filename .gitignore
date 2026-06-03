@@ -85,3 +85,7 @@ gozolt-new-ride-backend-main*.zip
 # Environment files
 .env
 .env.*
+
+# Android heap dumps
+*.hprof
+java_pid*.hprof

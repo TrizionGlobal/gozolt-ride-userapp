@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../network/dio_client.dart';
 import '../constants/api_constants.dart';
 import '../providers/dio_provider.dart';
+import '../providers/storage_provider.dart';
 
 class NotificationService {
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
@@ -79,6 +80,13 @@ class NotificationService {
 
   Future<void> _saveTokenToBackend(String token) async {
     try {
+      // Don't try to save to backend if user is not logged in
+      final storage = _ref.read(secureStorageProvider);
+      if (!(await storage.hasTokens())) {
+        debugPrint("Skipping FCM token save: User is not logged in.");
+        return;
+      }
+
       final dio = _ref.read(dioProvider);
       await dio.patch(
         '/users/me/fcm-token',

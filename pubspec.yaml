@@ -102,14 +102,14 @@ flutter_launcher_icons:
 
 flutter_native_splash:
   color: "#F6F8FA"
-  image: "assets/images/light_Gozolt_User_Icon.png"
+  image: "assets/images/light_splash_padded.png"
   color_dark: "#0D1117"
-  image_dark: "assets/images/Gozolt_User_Icon.png"
+  image_dark: "assets/images/dark_splash_padded.png"
   android_12:
     color: "#F6F8FA"
-    image: "assets/images/light_Gozolt_User_Icon.png"
+    image: "assets/images/light_splash_padded.png"
     color_dark: "#0D1117"
-    image_dark: "assets/images/Gozolt_User_Icon.png"
+    image_dark: "assets/images/dark_splash_padded.png"
 
 flutter:
   uses-material-design: true

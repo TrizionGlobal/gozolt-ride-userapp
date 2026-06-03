@@ -84,51 +84,52 @@ class TransportGrid extends StatelessWidget {
 
   void _showComingSoon(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      backgroundColor: Colors.transparent,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.all(28),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardTheme.color,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      builder: (ctx) => Dialog(
+        backgroundColor: Theme.of(context).cardTheme.color,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.construction_rounded,
-              size: 48,
-              color: AppColors.primaryGold,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Coming Soon!',
-              style: AppTextStyles.headlineSmall.copyWith(
-                color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.construction_rounded,
+                size: 48,
+                color: AppColors.primaryGold,
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "We're working on bringing you this feature.",
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+              const SizedBox(height: 16),
+              Text(
+                'Coming Soon!',
+                style: AppTextStyles.headlineSmall.copyWith(
+                  color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: 160,
-              child: ElevatedButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: Text('OK'),
+              const SizedBox(height: 8),
+              Text(
+                "We're working on bringing you this feature.",
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-          ],
+              const SizedBox(height: 24),
+              SizedBox(
+                width: 100,
+                height: 36,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                  ),
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('OK', style: TextStyle(fontSize: 14)),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

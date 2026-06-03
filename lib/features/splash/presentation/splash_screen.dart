@@ -11,6 +11,8 @@ import '../../../core/providers/storage_provider.dart';
 import '../../../core/router/route_names.dart';
 import '../../home/presentation/providers/home_providers.dart';
 import '../../../core/services/notification_service.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -20,10 +22,6 @@ class SplashScreen extends ConsumerStatefulWidget {
 
 class _SplashScreenState extends ConsumerState<SplashScreen>
     with TickerProviderStateMixin {
-  late final AnimationController _animController;
-  late final Animation<double> _fadeIn;
-  late final Animation<double> _logoScale;
-
   // Wave fade-out animation
   late final AnimationController _waveController;
   late final Animation<double> _waveProgress;
@@ -33,24 +31,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   void initState() {
     super.initState();
 
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
-
-    _fadeIn = CurvedAnimation(
-      parent: _animController,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-    );
-
-    _logoScale = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animController,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOutBack),
-      ),
-    );
-
-    // Wave fade-out controller
     _waveController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -63,8 +43,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       ),
     );
 
-    _animController.forward();
-    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      FlutterNativeSplash.remove();
+    });
+
     // Initialize notifications here so the UI is ready to handle permission popups
     ref.read(notificationServiceProvider).initialize();
     
@@ -148,7 +130,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   @override
   void dispose() {
-    _animController.dispose();
     _waveController.dispose();
     super.dispose();
   }
@@ -161,35 +142,24 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       body: Stack(
         children: [
           // Main content
-          AnimatedBuilder(
-            animation: _animController,
-            builder: (context, child) {
-              return FadeTransition(
-                opacity: _fadeIn,
-                child: Column(
-                  children: [
-                    const Spacer(flex: 3),
+          Column(
+            children: [
+              const Spacer(flex: 3),
 
-                    // ── Logo with text ─────────────────────
-                    Transform.scale(
-                      scale: _logoScale.value,
-                      child: Image.asset(
-                        isDark ? AssetPaths.gozoltLogoWithText : AssetPaths.gozoltLogoWithTextLight,
-                        width: 340,
-                        fit: BoxFit.contain,
-                      ),
-                    ),
+              // ── Logo with text ─────────────────────
+              Image.asset(
+                isDark ? AssetPaths.gozoltLogoWithText : AssetPaths.gozoltLogoWithTextLight,
+                width: 340,
+                fit: BoxFit.contain,
+              ),
 
-                    const Spacer(flex: 4),
+              const Spacer(flex: 4),
 
-                    // ── Footer ───────────────────────────────
-                    _buildFooter(),
+              // ── Footer ───────────────────────────────
+              _buildFooter(),
 
-                    const SizedBox(height: 40),
-                  ],
-                ),
-              );
-            },
+              const SizedBox(height: 40),
+            ],
           ),
 
           // Wave fade-out overlay
