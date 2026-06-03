@@ -10,7 +10,7 @@ import '../../../core/providers/dio_provider.dart';
 import '../../../core/providers/storage_provider.dart';
 import '../../../core/router/route_names.dart';
 import '../../home/presentation/providers/home_providers.dart';
-
+import '../../../core/services/notification_service.dart';
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
@@ -64,6 +64,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     );
 
     _animController.forward();
+    
+    // Initialize notifications here so the UI is ready to handle permission popups
+    ref.read(notificationServiceProvider).initialize();
+    
     _navigateAfterDelay();
   }
 

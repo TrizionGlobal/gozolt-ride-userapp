@@ -14,42 +14,58 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/providers/theme_provider.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase (for Push Notifications, but NOT for Phone Auth now)
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+    // Initialize Firebase (for Push Notifications, but NOT for Phone Auth now)
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
-  // Set the background messaging handler early on, as a named top-level function
-  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    // Set the background messaging handler early on, as a named top-level function
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-  // Initialize Stripe
-  Stripe.publishableKey = AppConstants.stripePublishableKey;
-  Stripe.urlScheme = 'com.gozolt';
-  await Stripe.instance.applySettings();
+    // Initialize Stripe
+    Stripe.publishableKey = AppConstants.stripePublishableKey;
+    Stripe.urlScheme = 'com.gozolt';
+    await Stripe.instance.applySettings();
 
-  // Force dark status bar style for splash
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.dark,
-    statusBarBrightness: Brightness.light,
-  ));
+    // Force dark status bar style for splash
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
+    ));
 
-  // Initialize SharedPreferences
-  final sharedPrefs = await SharedPreferences.getInstance();
+    // Initialize SharedPreferences
+    final sharedPrefs = await SharedPreferences.getInstance();
 
-  final container = ProviderContainer(
-    overrides: [
-      sharedPrefsProvider.overrideWithValue(sharedPrefs),
-    ],
-  );
-  
-  // Initialize Notification Service
-  await container.read(notificationServiceProvider).initialize();
+    final container = ProviderContainer(
+      overrides: [
+        sharedPrefsProvider.overrideWithValue(sharedPrefs),
+      ],
+    );
 
-  runApp(UncontrolledProviderScope(
-    container: container,
-    child: const GozoltApp(),
-  ));
+    runApp(UncontrolledProviderScope(
+      container: container,
+      child: const GozoltApp(),
+    ));
+  } catch (e, stack) {
+    // If anything fails during startup, show the error on screen instead of freezing the splash!
+    runApp(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'CRASH DURING STARTUP:\n\n$e\n\n$stack',
+                style: const TextStyle(color: Colors.red, fontSize: 12),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
