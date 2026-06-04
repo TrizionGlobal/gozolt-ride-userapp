@@ -17,6 +17,7 @@ class RideDetailsSheet extends ConsumerWidget {
     final rideState = ref.watch(activeRideProvider);
     final ride = rideState.ride;
     final driver = rideState.driverInfo;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       decoration: BoxDecoration(
@@ -268,13 +269,13 @@ class RideDetailsSheet extends ConsumerWidget {
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).brightness == Brightness.dark ? AppColors.cardDark : Colors.black,
-                    foregroundColor: Colors.white,
+                    backgroundColor: isDark ? AppColors.cardDark : Colors.grey[200],
+                    foregroundColor: isDark ? Colors.white : AppColors.textPrimaryLight,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     elevation: 0,
                   ),
-                  child: Text('Close', style: AppTextStyles.titleSmall.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: Text('Close', style: AppTextStyles.titleSmall.copyWith(color: isDark ? Colors.white : AppColors.textPrimaryLight, fontWeight: FontWeight.bold)),
                 ),
               ),
             ],

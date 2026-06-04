@@ -11,6 +11,7 @@ class DriverInfoCard extends StatelessWidget {
   final String pickupAddress;
   final String dropoffAddress;
   final String paymentMethod;
+  final VoidCallback? onCancel;
 
   const DriverInfoCard({
     super.key,
@@ -20,6 +21,7 @@ class DriverInfoCard extends StatelessWidget {
     required this.pickupAddress,
     required this.dropoffAddress,
     required this.paymentMethod,
+    this.onCancel,
   });
 
   @override
@@ -343,6 +345,35 @@ class DriverInfoCard extends StatelessWidget {
               ],
             ),
           ),
+          if (onCancel != null) ...[
+            Divider(
+              height: 1, 
+              thickness: 1, 
+              color: Theme.of(context).dividerTheme.color ?? AppColors.borderLight.withOpacity(0.5),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: onCancel,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.error,
+                    side: const BorderSide(color: AppColors.error),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: Text(
+                    'Cancel Ride',
+                    style: AppTextStyles.titleSmall.copyWith(
+                      color: AppColors.error,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -587,6 +618,34 @@ class DriverInfoCard extends StatelessWidget {
               ),
 
               const SizedBox(height: 16),
+              if (onCancel != null) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        onCancel!();
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.error,
+                        side: const BorderSide(color: AppColors.error),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      child: Text(
+                        'Cancel Ride',
+                        style: AppTextStyles.titleSmall.copyWith(
+                          color: AppColors.error,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
               // Close button
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -595,13 +654,13 @@ class DriverInfoCard extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isDark ? AppColors.cardDark : Colors.black,
-                      foregroundColor: Colors.white,
+                      backgroundColor: isDark ? AppColors.cardDark : Colors.grey[200],
+                      foregroundColor: isDark ? Colors.white : AppColors.textPrimaryLight,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       elevation: 0,
                     ),
-                    child: Text('Close', style: AppTextStyles.titleSmall.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: Text('Close', style: AppTextStyles.titleSmall.copyWith(color: isDark ? Colors.white : AppColors.textPrimaryLight, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ),

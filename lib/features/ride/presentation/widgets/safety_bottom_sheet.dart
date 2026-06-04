@@ -9,14 +9,14 @@ class SafetyBottomSheet extends ConsumerWidget {
   final VoidCallback onShareTrip;
   final VoidCallback onCallEmergency;
   final VoidCallback onAlertContacts;
-  final VoidCallback onReportIssue;
+  final VoidCallback onContactSupport;
 
   const SafetyBottomSheet({
     super.key,
     required this.onShareTrip,
     required this.onCallEmergency,
     required this.onAlertContacts,
-    required this.onReportIssue,
+    required this.onContactSupport,
   });
 
   @override
@@ -106,16 +106,7 @@ class SafetyBottomSheet extends ConsumerWidget {
             title: 'Contact Support',
             subtitle: 'Get help from our 24/7 team',
             iconColor: AppColors.info,
-            onTap: onReportIssue,
-            isDark: isDark,
-          ),
-          
-          _SafetyOption(
-            icon: Icons.report_problem_rounded,
-            title: 'Report Safety Issue',
-            subtitle: 'Report a driver or safety concern',
-            iconColor: AppColors.textSecondary,
-            onTap: onReportIssue,
+            onTap: onContactSupport,
             isDark: isDark,
             showDivider: false,
           ),

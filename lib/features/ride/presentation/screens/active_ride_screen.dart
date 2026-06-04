@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -887,6 +888,10 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
                             pickupAddress: rideState.ride?.pickupAddress ?? '',
                             dropoffAddress: rideState.ride?.dropoffAddress ?? '',
                             paymentMethod: formattedPaymentMethod,
+                            onCancel: (rideState.status == ActiveRideStatus.driverEnRoute ||
+                                    rideState.status == ActiveRideStatus.driverArrived)
+                                ? () => _showCancelSheet(context)
+                                : null,
                           ),
                         ],
                       ),
@@ -1106,7 +1111,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
         onShareTrip: () => _showWhatsAppShareSheet(context),
         onCallEmergency: () => _showMaltaEmergencySheet(context),
         onAlertContacts: () => _showAlertContactsSheet(context),
-        onReportIssue: () {
+        onContactSupport: () {
           final rideId = ref.read(activeRideProvider).ride?.id;
           context.pushNamed(RouteNames.createTicket, extra: rideId);
         },
@@ -1161,24 +1166,81 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
     );
   }
 
-  void _showWhatsAppShareSheet(BuildContext context) {
+  void _showWhatsAppShareSheet(BuildContext context) async {
     final rideState = ref.read(activeRideProvider);
-    final vehicle = rideState.ride?.vehicleType ?? 'a Gozolt ride';
     final destination = rideState.ride?.dropoffAddress ?? 'my destination';
-    final message = "I'm on $vehicle heading to $destination. Follow my ride!";
+    final driver = rideState.driverInfo;
+    final driverName = driver?.name ?? 'my driver';
+    final plate = driver?.formattedPlate ?? '';
+    final vehicleColor = driver?.vehicleColor ?? '';
+    final vehicleDesc = driver?.vehicleDescription ?? '';
+    final vehicleType = driver?.vehicleType ?? '';
+    final rating = driver?.rating != null ? driver!.rating.toStringAsFixed(1) : '';
+
+    // Get the cached tracking URL if already generated, else fetch it
+    final trackingUrl = rideState.shareTrackingUrl;
     final userProfile = ref.read(userProfileProvider).valueOrNull;
     final contacts = userProfile?.emergencyContacts;
-    
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => ContactSelectionSheet(
-        mode: ContactSelectionMode.whatsapp,
-        locationMessage: message,
-        emergencyContacts: contacts,
-      ),
-    );
+
+    // Get current GPS location for a Google Maps link
+    String currentLocationLine = '';
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+      );
+      final lat = position.latitude;
+      final lng = position.longitude;
+      currentLocationLine =
+          '\n📍 My current location: https://maps.google.com/?q=$lat,$lng';
+    } catch (_) {
+      // If GPS fails, skip the current location line
+    }
+
+    if (!mounted) return;
+
+    void openContactSheet(String? url) {
+      // Build driver details block
+      final driverDetails = StringBuffer();
+      driverDetails.write('👤 Driver: $driverName');
+      if (rating.isNotEmpty) driverDetails.write(' ⭐ $rating');
+      driverDetails.write('\n');
+      if (vehicleDesc.isNotEmpty) driverDetails.write('🚗 Vehicle: $vehicleDesc');
+      if (vehicleColor.isNotEmpty) driverDetails.write(' ($vehicleColor)');
+      if (vehicleType.isNotEmpty) driverDetails.write(' [$vehicleType]');
+      if (plate.isNotEmpty) driverDetails.write('\n🔤 Plate: $plate');
+
+      // Build tracking link
+      final trackingLine = url != null && url.isNotEmpty
+          ? '\n🔗 Live tracking: $url'
+          : '';
+
+      final message =
+          '🚖 I\'m on a Gozolt ride!\n'
+          '${driverDetails.toString()}\n'
+          '📌 Heading to: $destination'
+          '$currentLocationLine'
+          '$trackingLine';
+
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => ContactSelectionSheet(
+          mode: ContactSelectionMode.whatsapp,
+          locationMessage: message,
+          emergencyContacts: contacts,
+        ),
+      );
+    }
+
+    if (trackingUrl != null) {
+      openContactSheet(trackingUrl);
+    } else {
+      // Generate the tracking link first, then open the contact sheet
+      ref.read(activeRideProvider.notifier).shareRide().then((url) {
+        if (mounted) openContactSheet(url);
+      });
+    }
   }
 
 

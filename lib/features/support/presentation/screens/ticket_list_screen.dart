@@ -123,8 +123,8 @@ class TicketListScreen extends ConsumerWidget {
                       OutlinedButton.icon(
                         onPressed: () =>
                             context.pushNamed(RouteNames.createTicket),
-                        icon: const Icon(Icons.add, size: 18),
-                        label: Text('Create a Ticket'),
+                        icon: const Icon(Icons.add, size: 16),
+                        label: const Text('Create a Ticket', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.primaryGold,
                           side:
@@ -132,7 +132,7 @@ class TicketListScreen extends ConsumerWidget {
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 12),
+                              horizontal: 16, vertical: 8),
                         ),
                       ),
                     ],
