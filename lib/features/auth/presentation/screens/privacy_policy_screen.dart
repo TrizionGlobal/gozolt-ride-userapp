@@ -209,9 +209,24 @@ class PrivacyPolicyScreen extends StatelessWidget {
         Row(
           children: [
             Text('Support: ', style: AppTextStyles.bodyMedium.copyWith(color: textColor, height: 1.6)),
-            GestureDetector(
-              onTap: () => launchUrl(Uri.parse('mailto:support@gozolt.com.mt')),
-              child: Text('support@gozolt.com.mt', style: AppTextStyles.bodyMedium.copyWith(color: linkColor, height: 1.6)),
+            Expanded(
+              child: GestureDetector(
+                onTap: () => launchUrl(Uri.parse('mailto:support@gozolt.com.mt')),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Text(
+                    'support@gozolt.com.mt',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: linkColor,
+                      fontWeight: FontWeight.w600,
+                      height: 1.6,
+                    ),
+                    maxLines: 1,
+                    softWrap: false,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -219,9 +234,24 @@ class PrivacyPolicyScreen extends StatelessWidget {
           Row(
             children: [
               Text('Privacy: ', style: AppTextStyles.bodyMedium.copyWith(color: textColor, height: 1.6)),
-              GestureDetector(
-                onTap: () => launchUrl(Uri.parse('mailto:privacy@gozolt.com.mt')),
-                child: Text('privacy@gozolt.com.mt', style: AppTextStyles.bodyMedium.copyWith(color: linkColor, height: 1.6)),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => launchUrl(Uri.parse('mailto:privacy@gozolt.com.mt')),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    child: Text(
+                      'privacy@gozolt.com.mt',
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: linkColor,
+                        fontWeight: FontWeight.w600,
+                        height: 1.6,
+                      ),
+                      maxLines: 1,
+                      softWrap: false,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -232,7 +262,20 @@ class PrivacyPolicyScreen extends StatelessWidget {
             Expanded(
               child: GestureDetector(
                 onTap: () => launchUrl(Uri.parse(isTerms ? 'https://sites.google.com/view/gozoltlegal/terms-of-service' : 'https://sites.google.com/view/gozoltlegal/privacy-policy')),
-                child: Text(isTerms ? 'https://sites.google.com/view/gozoltlegal/terms-of-service' : 'https://sites.google.com/view/gozoltlegal/privacy-policy', style: AppTextStyles.bodyMedium.copyWith(color: linkColor, height: 1.6)),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Text(
+                    isTerms ? 'https://sites.google.com/view/gozoltlegal/terms-of-service' : 'https://sites.google.com/view/gozoltlegal/privacy-policy',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: linkColor,
+                      fontWeight: FontWeight.w600,
+                      height: 1.6,
+                    ),
+                    maxLines: 1,
+                    softWrap: false,
+                  ),
+                ),
               ),
             ),
           ],
