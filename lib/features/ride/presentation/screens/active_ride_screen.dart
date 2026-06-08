@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -382,59 +383,71 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
     if (mounted) setState(() {});
   }
 
-  /// Small white car icon for driver (Uber-style, ~48px)
+  /// Top-down 2D car icon asset (Uber-style) for driver location
   Future<BitmapDescriptor> _createCarIcon({required bool isDark}) async {
-    const size = 48.0;
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
+    try {
+      final ByteData data = await rootBundle.load('assets/images/map_navigator_icon.png');
+      final ui.Codec codec = await ui.instantiateImageCodec(
+        data.buffer.asUint8List(),
+        targetWidth: 50,
+      );
+      final ui.FrameInfo fi = await codec.getNextFrame();
+      final bytes = (await fi.image.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List();
+      return BitmapDescriptor.bytes(bytes);
+    } catch (e) {
+      debugPrint('Error loading custom car marker asset: $e');
+      const size = 48.0;
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
 
-    // Subtle shadow
-    canvas.drawCircle(
-      const Offset(size / 2, size / 2),
-      16,
-      Paint()
-        ..color = Colors.black.withOpacity(isDark ? 0.4 : 0.2)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
-    );
+      // Subtle shadow
+      canvas.drawCircle(
+        const Offset(size / 2, size / 2),
+        16,
+        Paint()
+          ..color = Colors.black.withOpacity(isDark ? 0.4 : 0.2)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+      );
 
-    // White circle (Dark background for dark mode)
-    canvas.drawCircle(
-      const Offset(size / 2, size / 2),
-      14,
-      Paint()..color = isDark ? const Color(0xFF1E1E1E) : Colors.white,
-    );
+      // White circle (Dark background for dark mode)
+      canvas.drawCircle(
+        const Offset(size / 2, size / 2),
+        14,
+        Paint()..color = isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      );
 
-    // Car body (top-down)
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(center: const Offset(size / 2, size / 2), width: 12, height: 18),
-        const Radius.circular(3),
-      ),
-      Paint()..color = isDark ? Colors.white : const Color(0xFF2C2C2C),
-    );
+      // Car body (top-down)
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: const Offset(size / 2, size / 2), width: 12, height: 18),
+          const Radius.circular(3),
+        ),
+        Paint()..color = isDark ? Colors.white : const Color(0xFF2C2C2C),
+      );
 
-    // Windshield
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(center: const Offset(size / 2, size / 2 - 4), width: 8, height: 4),
-        const Radius.circular(1.5),
-      ),
-      Paint()..color = const Color(0xFF5BA3E0),
-    );
+      // Windshield
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: const Offset(size / 2, size / 2 - 4), width: 8, height: 4),
+          const Radius.circular(1.5),
+        ),
+        Paint()..color = const Color(0xFF5BA3E0),
+      );
 
-    // Rear window
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(center: const Offset(size / 2, size / 2 + 5), width: 7, height: 3),
-        const Radius.circular(1),
-      ),
-      Paint()..color = const Color(0xFF5BA3E0),
-    );
+      // Rear window
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: const Offset(size / 2, size / 2 + 5), width: 7, height: 3),
+          const Radius.circular(1),
+        ),
+        Paint()..color = const Color(0xFF5BA3E0),
+      );
 
-    final picture = recorder.endRecording();
-    final img = await picture.toImage(size.toInt(), size.toInt());
-    final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
-    return BitmapDescriptor.bytes(byteData!.buffer.asUint8List());
+      final picture = recorder.endRecording();
+      final img = await picture.toImage(size.toInt(), size.toInt());
+      final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
+      return BitmapDescriptor.bytes(byteData!.buffer.asUint8List());
+    }
   }
 
   /// Small golden arrowhead for user (~40px)

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -39,32 +40,49 @@ class _HomeMapBackgroundState extends ConsumerState<HomeMapBackground> {
   }
 
   Future<void> _loadMarkerIcon() async {
-    const size = 36.0; // Smaller icon for home screen
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
+    try {
+      final ByteData data = await rootBundle.load('assets/images/map_navigator_icon.png');
+      final ui.Codec codec = await ui.instantiateImageCodec(
+        data.buffer.asUint8List(),
+        targetWidth: 40,
+      );
+      final ui.FrameInfo fi = await codec.getNextFrame();
+      final bytes = (await fi.image.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List();
+      
+      if (mounted) {
+        setState(() {
+          _carIcon = BitmapDescriptor.bytes(bytes);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading custom car marker asset: $e');
+      const size = 36.0; // Fallback to custom vector car
+      final recorder = ui.PictureRecorder();
+      final canvas = Canvas(recorder);
 
-    canvas.drawCircle(
-      const Offset(size / 2, size / 2),
-      10,
-      Paint()..color = Colors.white,
-    );
+      canvas.drawCircle(
+        const Offset(size / 2, size / 2),
+        10,
+        Paint()..color = Colors.white,
+      );
 
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(center: const Offset(size / 2, size / 2), width: 8, height: 14),
-        const Radius.circular(2),
-      ),
-      Paint()..color = const Color(0xFF2C2C2C),
-    );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(center: const Offset(size / 2, size / 2), width: 8, height: 14),
+          const Radius.circular(2),
+        ),
+        Paint()..color = const Color(0xFF2C2C2C),
+      );
 
-    final picture = recorder.endRecording();
-    final img = await picture.toImage(size.toInt(), size.toInt());
-    final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
-    
-    if (mounted) {
-      setState(() {
-        _carIcon = BitmapDescriptor.bytes(byteData!.buffer.asUint8List());
-      });
+      final picture = recorder.endRecording();
+      final img = await picture.toImage(size.toInt(), size.toInt());
+      final byteData = await img.toByteData(format: ui.ImageByteFormat.png);
+      
+      if (mounted) {
+        setState(() {
+          _carIcon = BitmapDescriptor.bytes(byteData!.buffer.asUint8List());
+        });
+      }
     }
   }
 
