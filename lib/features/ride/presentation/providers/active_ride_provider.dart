@@ -26,8 +26,6 @@ final activeRideProvider =
 
 class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
   final Ref _ref;
-  Timer? _mockLocationTimer;
-  Timer? _mockStatusTimer;
   Timer? _pollingTimer;
 
   /// Prevents duplicate socket listener setup across multiple calls.
@@ -522,7 +520,7 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
       // Cancel locally even if API fails
     }
 
-    _stopMockTimers();
+    _stopTimers();
     state = state.copyWith(
       status: ActiveRideStatus.cancelled,
       // Use the actual reason so the UI can distinguish user-cancel vs system-cancel
@@ -747,7 +745,7 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
     if (kDebugMode) print('[ActiveRide] completeRide called, actualFare=$actualFare');
     _pollingTimer?.cancel();
     _cancelSocketSubs();
-    _stopMockTimers();
+    _stopTimers();
     state = state.copyWith(
       status: ActiveRideStatus.completed,
       ride: actualFare != null && actualFare > 0 && state.ride != null
@@ -930,7 +928,7 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
   }
 
   void reset() {
-    _stopMockTimers();
+    _stopTimers();
     _cancelSocketSubs();
     _isInitializing = false;
     state = const ActiveRideState();
@@ -1086,68 +1084,13 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
     }
   }
 
-  // ── Mock helpers for dev ────────────────────────────────
-
-  void _startMockLocationUpdates() {
-    _mockLocationTimer?.cancel();
-    double lat = AppConstants.defaultLat + 0.005;
-    double lng = AppConstants.defaultLng + 0.005;
-    _mockLocationTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-      lat -= 0.0003;
-      lng += 0.0001;
-      if (mounted) {
-        state = state.copyWith(
-          driverLocation: DriverLocation(
-            latitude: lat,
-            longitude: lng,
-            heading: 180,
-            speed: 35,
-            timestamp: DateTime.now().toIso8601String(),
-          ),
-        );
-      }
-    });
-  }
-
-  void _startMockStatusProgression() {
-    _mockStatusTimer?.cancel();
-    // After 8s → DRIVER_ARRIVED
-    _mockStatusTimer = Timer(const Duration(seconds: 8), () {
-      if (mounted) {
-        state = state.copyWith(
-          status: ActiveRideStatus.driverArrived,
-          etaMinutes: 0,
-        );
-
-        // After another 10s → IN_PROGRESS
-        _mockStatusTimer = Timer(const Duration(seconds: 10), () {
-          if (mounted) {
-            state = state.copyWith(
-              status: ActiveRideStatus.inProgress,
-              etaMinutes: 18,
-            );
-
-            // After 10 minutes of in-progress → COMPLETED
-            _mockStatusTimer = Timer(const Duration(minutes: 10), () {
-              if (mounted) {
-                completeRide(actualFare: 19.80);
-              }
-            });
-          }
-        });
-      }
-    });
-  }
-
-  void _stopMockTimers() {
-    _mockLocationTimer?.cancel();
-    _mockStatusTimer?.cancel();
+  void _stopTimers() {
     _pollingTimer?.cancel();
   }
 
   @override
   void dispose() {
-    _stopMockTimers();
+    _stopTimers();
     _cancelSocketSubs();
     super.dispose();
   }
