@@ -95,8 +95,6 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
           surgeMultiplier: 1.2,
         );
 
-        _startMockLocationUpdates();
-        _startMockStatusProgression();
         return;
       }
 
