@@ -41,63 +41,6 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      if (AppConstants.kDevBypass) {
-        await Future.delayed(const Duration(milliseconds: 500));
-
-        final mockRide = Ride(
-          id: rideId,
-          status: 'DRIVER_EN_ROUTE',
-          pickupAddress: AppConstants.isTestMode ? 'Hitech City, Hyderabad' : '14 Republic Street, Valletta',
-          pickupLat: AppConstants.defaultLat,
-          pickupLng: AppConstants.defaultLng,
-          dropoffAddress: AppConstants.isTestMode ? 'Rajiv Gandhi Intl Airport' : 'Malta International Airport',
-          dropoffLat: AppConstants.defaultLat - 0.04,
-          dropoffLng: AppConstants.defaultLng - 0.04,
-          vehicleType: 'STANDARD',
-          paymentMethod: 'CASH',
-          estimatedFare: 19.80,
-          createdAt: DateTime.now().toIso8601String(),
-        );
-
-        final mockDriver = const DriverInfo(
-          id: 'driver-001',
-          name: 'Marco Borg',
-          phone: '+35679001234',
-          rating: 4.8,
-          totalRides: 1247,
-          vehicleMake: 'Toyota',
-          vehicleModel: 'Camry',
-          vehicleColor: 'White',
-          plateNumber: 'GZL 042',
-          vehicleType: 'Standard',
-          memberSince: 'January 2024',
-        );
-
-        final mockLocation = DriverLocation(
-          latitude: AppConstants.defaultLat + 0.005,
-          longitude: AppConstants.defaultLng + 0.005,
-          heading: 180,
-          speed: 30,
-        );
-
-        state = ActiveRideState(
-          ride: mockRide,
-          driverInfo: mockDriver,
-          driverLocation: mockLocation,
-          status: ActiveRideStatus.driverEnRoute,
-          etaMinutes: 4,
-          otpPin: '4829',
-          isLoading: false,
-          baseFare: 8.50,
-          distanceFare: 4.50,
-          timeFare: 2.00,
-          bookingFee: 1.50,
-          surgeMultiplier: 1.2,
-        );
-
-        return;
-      }
-
       // Real implementation: fetch ride + driver info from API
       final ds = _ref.read(rideRemoteDatasourceProvider);
       final ride = await ds.getActiveRide();
@@ -551,10 +494,7 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
     // Always build a fallback URL so copy/share works even if API is down
     final fallbackUrl = 'https://gozolt.com/track/${state.ride!.id}';
 
-    if (AppConstants.kDevBypass) {
-      state = state.copyWith(shareTrackingUrl: fallbackUrl);
-      return fallbackUrl;
-    }
+
     try {
       final ds = _ref.read(rideRemoteDatasourceProvider);
       final response = await ds.shareRide(state.ride!.id);
@@ -574,10 +514,8 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
     if (state.ride == null) return;
 
     try {
-      if (!AppConstants.kDevBypass) {
         final ds = _ref.read(rideRemoteDatasourceProvider);
         await ds.triggerSos(state.ride!.id, lat, lng);
-      }
     } catch (_) {
       // SOS should still allow calling 112 even if API fails
     }
@@ -587,12 +525,8 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
     if (state.ride == null) return;
 
     try {
-      if (AppConstants.kDevBypass) {
-        await Future.delayed(const Duration(seconds: 1));
-      } else {
         final ds = _ref.read(rideRemoteDatasourceProvider);
         await ds.rateRide(state.ride!.id, rating, comment: comment);
-      }
     } catch (_) {
       // Rating failure is non-blocking
     }
@@ -601,10 +535,8 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
   Future<void> addExtraFare(double amount) async {
     if (state.ride == null) return;
     try {
-      if (!AppConstants.kDevBypass) {
         final ds = _ref.read(rideRemoteDatasourceProvider);
         await ds.addExtraFare(state.ride!.id, amount);
-      }
       // Update local fare display
       state = state.copyWith(
         ride: state.ride!.copyWith(
@@ -629,13 +561,8 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
   Future<void> sendTip(double amount) async {
     if (state.ride == null) return;
     try {
-      if (AppConstants.kDevBypass) {
-        await Future.delayed(const Duration(seconds: 1));
-      } else {
         final ds = _ref.read(rideRemoteDatasourceProvider);
-        // TODO: Replace with real API call
         await ds.addTip(state.ride!.id, amount);
-      }
     } catch (_) {
       // Tip failure is non-blocking
     }
@@ -649,48 +576,7 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
   }) async {
     state = state.copyWith(isDestinationChangePending: true);
 
-    if (AppConstants.kDevBypass) {
-      final currentFare = state.ride?.estimatedFare ?? 19.80;
-      final newFare = currentFare + 4.70;
 
-      state = state.copyWith(
-        pendingNewDropoffAddress: newAddress,
-        pendingNewFare: newFare,
-      );
-
-      // Simulate driver response after 3 seconds
-      Timer(const Duration(seconds: 3), () {
-        if (mounted && state.isDestinationChangePending) {
-          // Mock: 80% accept, 20% reject
-          final accepted = DateTime.now().second % 5 != 0;
-          if (accepted) {
-            state = state.copyWith(
-              ride: state.ride != null
-                  ? Ride(
-                      id: state.ride!.id,
-                      status: state.ride!.status,
-                      pickupAddress: state.ride!.pickupAddress,
-                      pickupLat: state.ride!.pickupLat,
-                      pickupLng: state.ride!.pickupLng,
-                      dropoffAddress: newAddress,
-                      dropoffLat: newLat,
-                      dropoffLng: newLng,
-                      vehicleType: state.ride!.vehicleType,
-                      paymentMethod: state.ride!.paymentMethod,
-                      estimatedFare: newFare,
-                      actualFare: state.ride!.actualFare,
-                      createdAt: state.ride!.createdAt,
-                    )
-                  : null,
-              clearPendingDestination: true,
-            );
-          } else {
-            state = state.copyWith(clearPendingDestination: true);
-          }
-        }
-      });
-      return;
-    }
 
     // Production: POST /rides/:id/change-destination
     // This creates a PENDING request — driver must accept/reject.
@@ -728,10 +614,8 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
     if (!state.isDestinationChangePending || state.ride == null) return;
 
     try {
-      if (!AppConstants.kDevBypass) {
         final ds = _ref.read(rideRemoteDatasourceProvider);
         await ds.cancelDestinationChange(state.ride!.id);
-      }
     } catch (e) {
       if (kDebugMode) print('[ActiveRide] cancelDestinationChange error: $e');
     }
@@ -792,15 +676,7 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
     try {
       final rideId = state.ride!.id;
 
-      if (AppConstants.kDevBypass) {
-        await Future.delayed(const Duration(seconds: 2));
-        state = state.copyWith(
-          isPaymentLoading: false,
-          isPaid: true,
-          ride: state.ride!.copyWith(paymentMethod: method, paymentMethodId: cardId),
-        );
-        return;
-      }
+
 
       final ds = _ref.read(paymentRemoteDatasourceProvider);
       await ds.checkoutRide(

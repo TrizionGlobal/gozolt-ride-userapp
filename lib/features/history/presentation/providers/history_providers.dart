@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/dio_provider.dart';
 import '../../data/datasources/history_remote_datasource.dart';
 import '../../data/models/ride_history_item.dart';
@@ -24,13 +23,6 @@ final rideHistoryProvider =
 /// Selected ride for detail view.
 final selectedRideDetailProvider =
     FutureProvider.family<RideHistoryItem, String>((ref, rideId) async {
-  if (AppConstants.kDevBypass) {
-    final history = ref.read(rideHistoryProvider);
-    final match = history.rides.where((r) => r.id == rideId);
-    if (match.isNotEmpty) return match.first;
-    return _mockRides.firstWhere((r) => r.id == rideId,
-        orElse: () => _mockRides.first);
-  }
   final ds = ref.read(historyRemoteDatasourceProvider);
   return ds.getRideDetail(rideId);
 });
@@ -79,20 +71,6 @@ class RideHistoryNotifier extends StateNotifier<RideHistoryState> {
   Future<void> load() async {
     state = state.copyWith(isLoading: true, error: null);
 
-    if (AppConstants.kDevBypass) {
-      await Future.delayed(const Duration(milliseconds: 300));
-      final filtered = _filter == null
-          ? _mockRides
-          : _mockRides.where((r) => r.status == _filter).toList();
-      state = RideHistoryState(
-        rides: filtered,
-        isLoading: false,
-        hasMore: false,
-        page: 1,
-      );
-      return;
-    }
-
     try {
       final rides = await _ds.getRideHistory(status: _filter, page: 1);
       state = RideHistoryState(
@@ -133,13 +111,6 @@ class RideHistoryNotifier extends StateNotifier<RideHistoryState> {
   }
 
   Future<void> cancelScheduledRide(String rideId) async {
-    if (AppConstants.kDevBypass) {
-      state = state.copyWith(
-        rides: state.rides.where((r) => r.id != rideId).toList(),
-      );
-      return;
-    }
-
     try {
       await _ds.cancelRide(rideId, 'User cancelled scheduled ride');
       
@@ -169,22 +140,6 @@ class RideHistoryNotifier extends StateNotifier<RideHistoryState> {
   }
 
   Future<void> rescheduleRide(String rideId, DateTime newTime) async {
-    if (AppConstants.kDevBypass) {
-      state = state.copyWith(
-        rides: state.rides.map<RideHistoryItem>((r) {
-          if (r.id == rideId) {
-            return r.copyWith(
-              isScheduled: true,
-              scheduledAt: newTime.toUtc().toIso8601String(),
-            );
-          }
-          return r;
-        }).toList(),
-
-      );
-      return;
-    }
-
     try {
       await _ds.rescheduleRide(rideId, newTime);
       
@@ -207,129 +162,3 @@ class RideHistoryNotifier extends StateNotifier<RideHistoryState> {
   }
 
 }
-
-// ── Dev mock data ─────────────────────────────────────────────
-final _mockRides = [
-  RideHistoryItem(
-    id: 'ride-001',
-    status: 'COMPLETED',
-    pickupAddress: '24 Luxury Towers, Sliema',
-    dropoffAddress: 'Valletta Bus Station, Valletta',
-    pickupLat: 35.9117,
-    pickupLng: 14.5050,
-    dropoffLat: 35.8978,
-    dropoffLng: 14.5148,
-    vehicleType: 'STANDARD',
-    estimatedFare: 12.50,
-    actualFare: 11.80,
-    paymentMethod: 'visa',
-    createdAt: '2025-05-20T14:30:00Z',
-    driverName: 'Marco Borg',
-    driverRating: 4.8,
-    driverVehicle: 'Toyota Camry',
-    driverPlate: 'GZL 001',
-    distanceKm: 5.2,
-    durationMinutes: 14,
-    rating: 5,
-    goCoinsEarned: 5,
-  ),
-  RideHistoryItem(
-    id: 'ride-002',
-    status: 'COMPLETED',
-    pickupAddress: 'Malta International Airport',
-    dropoffAddress: 'Hilton Malta, Portomaso',
-    pickupLat: 35.8575,
-    pickupLng: 14.4775,
-    dropoffLat: 35.9228,
-    dropoffLng: 14.4932,
-    vehicleType: 'PREMIUM',
-    estimatedFare: 25.00,
-    actualFare: 23.50,
-    paymentMethod: 'mastercard',
-    createdAt: '2025-05-18T09:15:00Z',
-    driverName: 'Josef Camilleri',
-    driverRating: 4.9,
-    driverVehicle: 'Mercedes E-Class',
-    driverPlate: 'GZL 042',
-    distanceKm: 12.8,
-    durationMinutes: 22,
-    rating: 5,
-    goCoinsEarned: 10,
-  ),
-  RideHistoryItem(
-    id: 'ride-003',
-    status: 'CANCELLED',
-    pickupAddress: 'University of Malta, Msida',
-    dropoffAddress: 'Bugibba Square, Bugibba',
-    pickupLat: 35.9036,
-    pickupLng: 14.4847,
-    dropoffLat: 35.9505,
-    dropoffLng: 14.4152,
-    vehicleType: 'STANDARD',
-    estimatedFare: 15.00,
-    paymentMethod: 'cash',
-    createdAt: '2025-05-17T18:45:00Z',
-    cancelReason: 'Driver asked me to cancel',
-  ),
-  RideHistoryItem(
-    id: 'ride-004',
-    status: 'SCHEDULED',
-    pickupAddress: '24 Luxury Towers, Sliema',
-    dropoffAddress: 'Malta International Airport',
-    pickupLat: 35.9117,
-    pickupLng: 14.5050,
-    dropoffLat: 35.8575,
-    dropoffLng: 14.4775,
-    vehicleType: 'PREMIUM',
-    estimatedFare: 22.00,
-    paymentMethod: 'visa',
-    createdAt: '2025-05-22T06:00:00Z',
-    isScheduled: true,
-    scheduledAt: '2025-05-25T06:00:00Z',
-  ),
-  RideHistoryItem(
-    id: 'ride-005',
-    status: 'COMPLETED',
-    pickupAddress: 'Spinola Bay, St. Julians',
-    dropoffAddress: 'The Point Shopping Mall, Sliema',
-    pickupLat: 35.9190,
-    pickupLng: 14.4886,
-    dropoffLat: 35.9098,
-    dropoffLng: 14.5045,
-    vehicleType: 'STANDARD',
-    estimatedFare: 8.00,
-    actualFare: 7.50,
-    paymentMethod: 'visa',
-    createdAt: '2025-05-15T12:00:00Z',
-    driverName: 'Anna Vella',
-    driverRating: 4.7,
-    driverVehicle: 'Hyundai Ioniq',
-    driverPlate: 'GZL 018',
-    distanceKm: 3.1,
-    durationMinutes: 8,
-    rating: 4,
-    goCoinsEarned: 3,
-  ),
-  RideHistoryItem(
-    id: 'ride-006',
-    status: 'COMPLETED',
-    pickupAddress: 'Mdina Gate, Mdina',
-    dropoffAddress: 'Golden Bay Beach',
-    pickupLat: 35.8855,
-    pickupLng: 14.4033,
-    dropoffLat: 35.9341,
-    dropoffLng: 14.3472,
-    vehicleType: 'XL',
-    estimatedFare: 18.00,
-    actualFare: 19.20,
-    paymentMethod: 'mastercard',
-    createdAt: '2025-05-12T16:30:00Z',
-    driverName: 'David Grech',
-    driverRating: 4.6,
-    driverVehicle: 'VW Transporter',
-    driverPlate: 'GZL 077',
-    distanceKm: 8.4,
-    durationMinutes: 18,
-    goCoinsEarned: 8,
-  ),
-];

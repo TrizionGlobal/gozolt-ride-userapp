@@ -9,7 +9,7 @@ import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../ride/data/models/saved_payment_method.dart';
 import '../providers/account_providers.dart';
 import '../../../ride/presentation/providers/ride_providers.dart';
-import '../../../ride/presentation/widgets/mock_add_card_sheet.dart';
+import '../../../ride/presentation/widgets/add_card_sheet.dart';
 import '../../../ride/presentation/widgets/stripe_add_card_sheet.dart';
 import '../../../ride/presentation/widgets/payment_brand_icon.dart';
 
@@ -325,19 +325,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) {
-        if (AppConstants.kDevBypass) {
-          return MockAddCardSheet(
-            onCardAdded: (cardData) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${cardData['brand'].toString().toUpperCase()} ****${cardData['last4']} added', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
-                  backgroundColor: AppColors.success,
-                ),
-              );
-              ref.read(accountPaymentMethodsProvider.notifier).load();
-            },
-          );
-        }
+        
         final ds = ref.read(paymentRemoteDatasourceProvider);
         return StripeAddCardSheet(
           datasource: ds,

@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/dio_provider.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../data/datasources/ride_remote_datasource.dart';
@@ -132,16 +131,6 @@ class RideBookingNotifier extends StateNotifier<RideBookingState> {
     state = state.copyWith(status: BookingStatus.estimating, clearError: true);
 
     try {
-      if (AppConstants.kDevBypass) {
-        await Future.delayed(const Duration(milliseconds: 800));
-        final mockEstimate = _mockFareEstimate(state.vehicleType);
-        state = state.copyWith(
-          fareEstimate: mockEstimate,
-          status: BookingStatus.estimated,
-        );
-        return;
-      }
-
       final ds = _ref.read(rideRemoteDatasourceProvider);
       final stops = state.stops
           .map((s) => {'latitude': s.latitude, 'longitude': s.longitude})
@@ -229,22 +218,6 @@ class RideBookingNotifier extends StateNotifier<RideBookingState> {
         promoCode: state.promoCode,
       );
 
-      if (AppConstants.kDevBypass) {
-        await Future.delayed(const Duration(seconds: 1));
-        if (state.isScheduled) {
-          state = state.copyWith(
-            status: BookingStatus.scheduled,
-            createdRideId: 'dev-ride-${DateTime.now().millisecondsSinceEpoch}',
-          );
-        } else {
-          state = state.copyWith(
-            status: BookingStatus.findingDriver,
-            createdRideId: 'dev-ride-${DateTime.now().millisecondsSinceEpoch}',
-          );
-        }
-        return;
-      }
-
       // Use raw dio.post to capture OTP from response
       final dio = _ref.read(dioProvider);
       final response = await dio.post(ApiConstants.rides, data: request.toJson());
@@ -298,13 +271,11 @@ class RideBookingNotifier extends StateNotifier<RideBookingState> {
     if (state.createdRideId == null) return;
 
     try {
-      if (!AppConstants.kDevBypass) {
-        final ds = _ref.read(rideRemoteDatasourceProvider);
-        await ds.cancelRide(
-          state.createdRideId!,
-          'Cancelled before driver assigned',
-        );
-      }
+      final ds = _ref.read(rideRemoteDatasourceProvider);
+      await ds.cancelRide(
+        state.createdRideId!,
+        'Cancelled before driver assigned',
+      );
     } catch (_) {
       // Ignore cancel errors
     }
@@ -318,10 +289,8 @@ class RideBookingNotifier extends StateNotifier<RideBookingState> {
   Future<void> addExtraFare(double amount) async {
     if (state.createdRideId == null) return;
     try {
-      if (!AppConstants.kDevBypass) {
-        final ds = _ref.read(rideRemoteDatasourceProvider);
-        await ds.addExtraFare(state.createdRideId!, amount);
-      }
+      final ds = _ref.read(rideRemoteDatasourceProvider);
+      await ds.addExtraFare(state.createdRideId!, amount);
       if (state.fareEstimate != null) {
         state = state.copyWith(
           fareEstimate: state.fareEstimate!.copyWith(
@@ -336,30 +305,5 @@ class RideBookingNotifier extends StateNotifier<RideBookingState> {
 
   void reset() {
     state = const RideBookingState().copyWith(clearRideId: true);
-  }
-
-  FareEstimate _mockFareEstimate(VehicleType type) {
-    final basePrices = {
-      VehicleType.go: 6.50,
-      VehicleType.standard: 8.50,
-      VehicleType.comfort: 10.00,
-      VehicleType.green: 9.00,
-      VehicleType.prime: 12.00,
-      VehicleType.premiumXl: 15.00,
-      VehicleType.van: 20.00,
-      VehicleType.chauffeur: 25.00,
-    };
-    final base = basePrices[type] ?? 8.50;
-    return FareEstimate(
-      baseFare: base,
-      distanceFare: 4.50,
-      timeFare: 2.00,
-      bookingFee: 1.50,
-      surgeMultiplier: 1.2,
-      estimatedFare: (base + 4.50 + 2.00 + 1.50) * 1.2,
-      distanceKm: 8.4,
-      durationMinutes: 18,
-      etaMinutes: 3,
-    );
   }
 }

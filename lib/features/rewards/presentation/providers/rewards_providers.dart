@@ -17,24 +17,7 @@ final rewardsRemoteDatasourceProvider =
 // ── Reward Summary ──────────────────────────────────────
 
 final rewardSummaryProvider = FutureProvider.autoDispose<RewardSummary>((ref) async {
-  if (AppConstants.kDevBypass) {
-    await Future.delayed(const Duration(milliseconds: 400));
-    return const RewardSummary(
-      tier: 'GOLD',
-      totalPoints: 5620,
-      currentPoints: 2450,
-      earningMultiplier: 1.0,
-      discountCap: 99999,
-      completedRides: 55,
-      nextTierAt: 100,
-      ridesRemaining: 45,
-      progress: RewardProgress(
-        nextTier: 'PLATINUM',
-        pointsNeeded: 45,
-        progressPercent: 10.0,
-      ),
-    );
-  }
+  
   try {
     final ds = ref.read(rewardsRemoteDatasourceProvider);
     return await ds.getRewardSummary();
@@ -60,83 +43,7 @@ final rewardSummaryProvider = FutureProvider.autoDispose<RewardSummary>((ref) as
 // ── Reward Rules (cached) ───────────────────────────────
 
 final rewardRulesProvider = FutureProvider<RewardRules>((ref) async {
-  if (AppConstants.kDevBypass) {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return const RewardRules(
-      earning: EarningRules(
-        pointsPerEur: 10,
-        firstRideBonus: 0,
-        fiveStarRatingBonus: 0,
-        scheduledRideBonus: 0,
-        weeklyStreakThreshold: 9999,
-        weeklyStreakBonus: 0,
-      ),
-      referral: ReferralRules(
-        newUserBonus: 200,
-        referrerBonus: 200,
-      ),
-      redemption: RedemptionRules(
-        minimumPoints: 200,
-        pointsToEurRatio: 400,
-        description:
-            '400 GoCoins = €1 wallet credit. Redeem coins directly to your wallet.',
-      ),
-      tiers: [
-        TierInfo(
-          tier: 'BRONZE',
-          minPoints: 0,
-          minRides: 0,
-          multiplier: 1.0,
-          maxDiscount: 99999,
-          benefits: [
-            'Earn 10 coins for every €1 spent on rides',
-            'Bronze loyalty status',
-          ],
-        ),
-        TierInfo(
-          tier: 'SILVER',
-          minPoints: 25,
-          minRides: 25,
-          multiplier: 1.0,
-          maxDiscount: 99999,
-          benefits: [
-            'Earn 10 coins for every €1 spent on rides',
-            'Silver loyalty status',
-            'Redemption rate: 100 Coins = €0.50',
-          ],
-        ),
-        TierInfo(
-          tier: 'GOLD',
-          minPoints: 50,
-          minRides: 50,
-          multiplier: 1.0,
-          maxDiscount: 99999,
-          benefits: [
-            'Earn 10 coins for every €1 spent on rides',
-            'Gold loyalty status',
-            'Redemption rate: 100 Coins = €0.75',
-          ],
-        ),
-        TierInfo(
-          tier: 'PLATINUM',
-          minPoints: 100,
-          minRides: 100,
-          multiplier: 1.0,
-          maxDiscount: 99999,
-          benefits: [
-            'Earn 10 coins for every €1 spent on rides',
-            'Platinum loyalty status',
-            'Redemption rate: 100 Coins = €1.00',
-          ],
-        ),
-      ],
-      expiry: ExpiryRules(
-        inactivityMonths: 6,
-        description:
-            'Coins expire after 6 months of account inactivity.',
-      ),
-    );
-  }
+  
   try {
     final ds = ref.read(rewardsRemoteDatasourceProvider);
     return await ds.getRewardRules();
@@ -277,16 +184,7 @@ class RewardHistoryNotifier
 // ── Referral Info ───────────────────────────────────────
 
 final referralInfoProvider = FutureProvider<ReferralInfo>((ref) async {
-  if (AppConstants.kDevBypass) {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return const ReferralInfo(
-      referralCode: 'GOCOIN-MRK42',
-      totalReferrals: 8,
-      completedReferrals: 5,
-      earnedPoints: 250,
-      referralsList: [],
-    );
-  }
+  
   try {
     final ds = ref.read(rewardsRemoteDatasourceProvider);
     return await ds.getReferralInfo();

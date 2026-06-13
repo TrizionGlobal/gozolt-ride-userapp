@@ -101,22 +101,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     final phone = ref.read(phoneNumberProvider);
     final isRegister = ref.read(isRegisterFlowProvider);
 
-    if (AppConstants.kDevBypass) {
-      // In dev mode: save mock tokens, then register → profile, login → home
-      final storage = ref.read(secureStorageProvider);
-      storage.saveTokens(
-        accessToken: AppConstants.kDevAccessToken,
-        refreshToken: AppConstants.kDevRefreshToken,
-      ).then((_) {
-        if (!mounted) return;
-        if (isRegister) {
-          context.goNamed(RouteNames.completeProfile);
-        } else {
-          context.goNamed(RouteNames.home);
-        }
-      });
-      return;
-    }
+    
 
     ref.read(authProvider.notifier).verifyOtp(
           phoneInput: phone,

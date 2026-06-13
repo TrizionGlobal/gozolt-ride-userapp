@@ -339,11 +339,7 @@ class _TicketDetailScreenState extends ConsumerState<TicketDetailScreen> {
   // ── Linked Ride Card ───────────────────────────────────
   Widget _linkedRideCard(BuildContext context, String rideId) {
     RideHistoryItem? ride;
-    if (AppConstants.kDevBypass) {
-      final historyState = ref.watch(rideHistoryProvider);
-      final match = historyState.rides.where((r) => r.id == rideId);
-      if (match.isNotEmpty) ride = match.first;
-    }
+    
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 

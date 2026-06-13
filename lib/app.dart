@@ -22,15 +22,6 @@ class GozoltApp extends ConsumerWidget {
       themeMode: themeMode,
       routerConfig: router,
       builder: (context, child) {
-        // DEV MODE banner overlay
-        if (AppConstants.kDevBypass) {
-          return Banner(
-            message: 'DEV',
-            location: BannerLocation.topStart,
-            color: Colors.red,
-            child: child ?? const SizedBox.shrink(),
-          );
-        }
         return child ?? const SizedBox.shrink();
       },
     );

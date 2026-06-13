@@ -86,17 +86,7 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
       return;
     }
 
-    if (AppConstants.kDevBypass) {
-      final storage = ref.read(secureStorageProvider);
-      storage.saveTokens(
-        accessToken: AppConstants.kDevAccessToken,
-        refreshToken: AppConstants.kDevRefreshToken,
-      ).then((_) {
-        if (!mounted) return;
-        context.goNamed(RouteNames.home);
-      });
-      return;
-    }
+    
 
     final request = CompleteProfileRequest(
       firstName: _firstNameController.text.trim(),

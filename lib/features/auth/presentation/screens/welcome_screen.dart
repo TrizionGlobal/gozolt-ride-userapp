@@ -93,28 +93,6 @@ class WelcomeScreen extends ConsumerWidget {
 
               const Spacer(),
 
-              // ── Dev bypass button ──────────────────────────
-              if (AppConstants.kDevBypass)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: TextButton(
-                    onPressed: () async {
-                      final storage = ref.read(secureStorageProvider);
-                      await storage.saveTokens(
-                        accessToken: AppConstants.kDevAccessToken,
-                        refreshToken: AppConstants.kDevRefreshToken,
-                      );
-                      if (!context.mounted) return;
-                      context.goNamed(RouteNames.home);
-                    },
-                    child: Text(
-                      'Skip to Home (DEV)',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.warning,
-                      ),
-                    ),
-                  ),
-                ),
 
               // ── Footer ────────────────────────────────────
               RichText(

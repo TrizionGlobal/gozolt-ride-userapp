@@ -27,25 +27,7 @@ final rideBookingProvider =
 
 final paymentMethodsProvider =
     FutureProvider<List<SavedPaymentMethod>>((ref) async {
-  if (AppConstants.kDevBypass) {
-    return const [
-      SavedPaymentMethod(
-        id: 'card-1',
-        brand: CardBrand.visa,
-        last4: '4345',
-        expMonth: 12,
-        expYear: 2026,
-        isDefault: true,
-      ),
-      SavedPaymentMethod(
-        id: 'card-2',
-        brand: CardBrand.mastercard,
-        last4: '5567',
-        expMonth: 6,
-        expYear: 2027,
-      ),
-    ];
-  }
+  
   final ds = ref.read(paymentRemoteDatasourceProvider);
   return ds.getPaymentMethods();
 });
@@ -104,24 +86,7 @@ class RecentSearchesNotifier extends StateNotifier<List<LocationData>> {
 final promoValidationProvider =
     FutureProvider.family<PromoValidation, ({String code, double fare})>(
         (ref, params) async {
-  if (AppConstants.kDevBypass) {
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (params.code.toUpperCase() == 'GOZOLTSUPERAPP26') {
-      return PromoValidation(
-        isValid: true,
-        code: 'GOZOLTSUPERAPP26',
-        description: '10% off on 1 ride',
-        discountPercent: 10,
-        maxDiscount: 25.0,
-        discountAmount: (params.fare * 0.1).clamp(0, 25.0),
-        validUntil: '2026-03-01',
-      );
-    }
-    return const PromoValidation(
-      isValid: false,
-      errorMessage: 'Invalid coupon code',
-    );
-  }
+  
   final ds = ref.read(rideRemoteDatasourceProvider);
   return ds.validatePromo(code: params.code, rideFare: params.fare);
 });
@@ -129,8 +94,7 @@ final promoValidationProvider =
 // ── User Rewards (for GoCoins) ──────────────────────────
 
 final userRewardsPointsProvider = FutureProvider.autoDispose<int>((ref) async {
-  if (AppConstants.kDevBypass) return 60;
-  try {
+    try {
     final dio = ref.read(dioProvider);
     final response = await dio.get('/users/me/rewards');
     final data = response.data as Map<String, dynamic>;

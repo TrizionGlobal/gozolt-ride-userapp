@@ -79,20 +79,6 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
   Future<void> load() async {
     state = state.copyWith(isLoading: true, error: null);
 
-    if (AppConstants.kDevBypass) {
-      await Future.delayed(const Duration(milliseconds: 300));
-      final filtered = _filter == null
-          ? _mockNotifications
-          : _mockNotifications.where((n) => n.type == _filter).toList();
-      state = NotificationsState(
-        notifications: filtered,
-        isLoading: false,
-        hasMore: false,
-        page: 1,
-      );
-      return;
-    }
-
     try {
       var items = await _ds.getNotifications(type: _filter, page: 1);
       // If API returned empty, show default notifications
@@ -138,11 +124,9 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
               ))
           .toList(),
     );
-    if (!AppConstants.kDevBypass) {
-      try {
-        await _ds.markAsRead(all: true);
-      } catch (_) {}
-    }
+    try {
+      await _ds.markAsRead(all: true);
+    } catch (_) {}
   }
 
   static List<NotificationItem> _defaultNotifications() {
@@ -226,11 +210,9 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
               : n)
           .toList(),
     );
-    if (!AppConstants.kDevBypass) {
-      try {
-        await _ds.markAsRead(notificationIds: [id]);
-      } catch (_) {}
-    }
+    try {
+      await _ds.markAsRead(notificationIds: [id]);
+    } catch (_) {}
   }
 }
 
@@ -245,7 +227,6 @@ class NotificationPreferencesNotifier
   }
 
   Future<void> _load() async {
-    if (AppConstants.kDevBypass) return;
     try {
       final prefs = await _ds.getPreferences();
       state = prefs;
@@ -254,79 +235,6 @@ class NotificationPreferencesNotifier
 
   Future<void> update(NotificationPreference newPrefs) async {
     state = newPrefs;
-    if (!AppConstants.kDevBypass) {
-      await _ds.updatePreferences(newPrefs);
-    }
+    await _ds.updatePreferences(newPrefs);
   }
 }
-
-// ── Dev mock data ─────────────────────────────────────────
-final _mockNotifications = [
-  const NotificationItem(
-    id: 'notif-001',
-    type: 'RIDE_UPDATE',
-    title: 'Thank you for riding with us!',
-    body: 'Your trip to Valletta Bus Station is complete. View your trip details in the My Rides section.',
-    data: {'subtype': 'ride_completed', 'rideId': 'ride-001'},
-    read: false,
-    createdAt: '2025-05-20T14:50:00Z',
-  ),
-  const NotificationItem(
-    id: 'notif-002',
-    type: 'PROMOTION',
-    title: 'Weekend Special!',
-    body: 'Get 2x GoCoins on all rides this weekend. Book now and earn more!',
-    read: false,
-    createdAt: '2025-05-19T10:00:00Z',
-  ),
-  const NotificationItem(
-    id: 'notif-003',
-    type: 'RIDE_UPDATE',
-    title: 'Ride Scheduled Successfully',
-    body: 'Your ride to Malta International Airport is confirmed for 25/5/2025 at 06:00. You can manage your scheduled rides in the My Rides section.',
-    data: {
-      'subtype': 'scheduled_ride',
-      'pickup': '24 Luxury Towers, Sliema',
-      'dropoff': 'Malta International Airport',
-      'scheduledAt': '2025-05-25T06:00:00Z',
-      'fare': '€22.00',
-      'vehicleType': 'PREMIUM',
-    },
-    read: false,
-    createdAt: '2025-05-18T08:00:00Z',
-  ),
-  const NotificationItem(
-    id: 'notif-004',
-    type: 'RIDE_UPDATE',
-    title: 'Thank you for riding with us!',
-    body: 'Your trip to Hilton Malta, Portomaso is complete. View your trip details in the My Rides section.',
-    data: {'subtype': 'ride_completed', 'rideId': 'ride-002'},
-    read: true,
-    createdAt: '2025-05-18T09:40:00Z',
-  ),
-  const NotificationItem(
-    id: 'notif-005',
-    type: 'RIDE_UPDATE',
-    title: 'Ride Cancelled',
-    body: 'Your ride to Bugibba Square, Bugibba has been cancelled. You can book a new ride anytime.',
-    data: {'subtype': 'ride_cancelled', 'rideId': 'ride-003'},
-    read: true,
-    createdAt: '2025-05-17T18:50:00Z',
-  ),
-  const NotificationItem(
-    id: 'notif-006',
-    type: 'PROMOTION',
-    title: 'Refer & Earn',
-    body: 'Share your referral code and earn GoCoins for every friend who joins Gozolt!',
-    read: true,
-    createdAt: '2025-05-16T14:00:00Z',
-  ),
-  const NotificationItem(
-    id: 'notif-007',
-    type: 'SYSTEM',
-    title: 'Welcome to Gozolt!',
-    body: 'Thank you for joining Gozolt — The Super App. Book your first ride and earn 100 bonus GoCoins!',
-    read: true,
-    createdAt: '2025-05-10T09:00:00Z',
-  ),
-];

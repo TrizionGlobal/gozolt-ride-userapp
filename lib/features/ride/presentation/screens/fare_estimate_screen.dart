@@ -17,7 +17,7 @@ import '../providers/ride_booking_state.dart';
 import '../providers/ride_providers.dart';
 import '../widgets/fare_breakdown_card.dart';
 import '../widgets/payment_brand_icon.dart';
-import '../widgets/mock_add_card_sheet.dart';
+import '../widgets/add_card_sheet.dart';
 import '../widgets/stripe_add_card_sheet.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../data/models/vehicle_type.dart';
@@ -1325,26 +1325,7 @@ class _BookingPaymentSheetState extends ConsumerState<_BookingPaymentSheet> {
   }
 
   void _addCard() {
-    if (AppConstants.kDevBypass) {
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (_) => MockAddCardSheet(
-          onCardAdded: (cardData) {
-            ref.invalidate(paymentMethodsProvider);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                    '${cardData['brand'].toString().toUpperCase()} ****${cardData['last4']} added'),
-                backgroundColor: AppColors.success,
-              ),
-            );
-          },
-        ),
-      );
-      return;
-    }
+    
 
     final ds = ref.read(paymentRemoteDatasourceProvider);
     showModalBottomSheet(

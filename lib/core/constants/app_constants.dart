@@ -1,12 +1,4 @@
 abstract final class AppConstants {
-  // ── Dev Bypass ─────────────────────────────────────────
-  /// Set to `true` to skip OTP verification and use a hardcoded test token.
-  /// MUST be `false` before any release build.
-  static const bool kDevBypass = bool.fromEnvironment('DEV_BYPASS', defaultValue: false);
-  static const String kDevAccessToken = 'dev-token-placeholder';
-  static const String kDevRefreshToken = 'dev-refresh-placeholder';
-  static const String kDevPhone = '+35699000001';
-
   // ── Google Maps API ────────────────────────────────────
   static const String googleMapsApiKey = 'AIzaSyCSwSCRQUTql_5bowO2-GiBMl4H8No0ZY4';
 
@@ -27,11 +19,9 @@ abstract final class AppConstants {
   );
 
   // ── Location Config ───────────────────────────────────
-  /// Set to false before Malta production launch. One-line switch.
-  static const bool isTestMode = false;
-  static const double defaultLat = isTestMode ? 17.385 : 35.8989;
-  static const double defaultLng = isTestMode ? 78.4867 : 14.5146;
-  static const String defaultCity = isTestMode ? 'Hyderabad' : 'Valletta';
+  static const double defaultLat = 35.8989;
+  static const double defaultLng = 14.5146;
+  static const String defaultCity = 'Valletta';
 
   // ── App Info ───────────────────────────────────────────
   static const String appName = 'Gozolt';

@@ -3,19 +3,19 @@ import 'package:flutter/services.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 
-/// Mock "Add Card" bottom sheet that simulates a Stripe PaymentSheet.
-/// Collects card number (last 4), expiry, and brand — no real payment processing.
-class MockAddCardSheet extends StatefulWidget {
+/// "Add Card" bottom sheet for collecting card info.
+/// Collects card number (last 4), expiry, and brand.
+class AddCardSheet extends StatefulWidget {
   /// Returns a map with keys: brand, last4, expMonth, expYear
   final ValueChanged<Map<String, dynamic>> onCardAdded;
 
-  const MockAddCardSheet({super.key, required this.onCardAdded});
+  const AddCardSheet({super.key, required this.onCardAdded});
 
   @override
-  State<MockAddCardSheet> createState() => _MockAddCardSheetState();
+  State<AddCardSheet> createState() => _AddCardSheetState();
 }
 
-class _MockAddCardSheetState extends State<MockAddCardSheet> {
+class _AddCardSheetState extends State<AddCardSheet> {
   final _numberController = TextEditingController();
   final _expiryController = TextEditingController();
   final _cvvController = TextEditingController();
@@ -72,12 +72,7 @@ class _MockAddCardSheetState extends State<MockAddCardSheet> {
                       style: AppTextStyles.headlineSmall),
                 ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Mock mode \u2022 No real charges',
-                style: AppTextStyles.bodySmall
-                    .copyWith(color: AppColors.textMuted),
-              ),
+
               const SizedBox(height: 20),
 
               // Brand selector
@@ -235,8 +230,6 @@ class _MockAddCardSheetState extends State<MockAddCardSheet> {
     HapticFeedback.mediumImpact();
     setState(() => _isSaving = true);
 
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 800));
 
     final parts = expiry.split('/');
     final expMonth = int.tryParse(parts[0]) ?? 12;

@@ -43,7 +43,7 @@ class _CreateTicketScreenState extends ConsumerState<CreateTicketScreen> {
 
     // Try to find linked ride data
     RideHistoryItem? linkedRide;
-    if (widget.rideId != null && AppConstants.kDevBypass) {
+    if (widget.rideId != null) {
       final historyState = ref.watch(rideHistoryProvider);
       final match =
           historyState.rides.where((r) => r.id == widget.rideId);

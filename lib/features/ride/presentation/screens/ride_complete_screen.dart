@@ -14,7 +14,7 @@ import '../providers/active_ride_provider.dart';
 import '../providers/active_ride_state.dart';
 import '../widgets/payment_brand_icon.dart';
 import '../widgets/stripe_add_card_sheet.dart';
-import '../widgets/mock_add_card_sheet.dart';
+import '../widgets/add_card_sheet.dart';
 import '../../../history/presentation/screens/receipt_screen.dart';
 import '../../../history/data/models/ride_history_item.dart';
 
@@ -1233,26 +1233,7 @@ class _PaymentMethodSheetState extends ConsumerState<_PaymentMethodSheet> {
   }
 
   void _addCard(List<SavedPaymentMethod> existingMethods) {
-    if (AppConstants.kDevBypass) {
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (_) => MockAddCardSheet(
-          onCardAdded: (cardData) {
-            ref.invalidate(paymentMethodsProvider);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                    '${cardData['brand'].toString().toUpperCase()} ****${cardData['last4']} added'),
-                backgroundColor: AppColors.success,
-              ),
-            );
-          },
-        ),
-      );
-      return;
-    }
+    
 
     final ds = ref.read(paymentRemoteDatasourceProvider);
     showModalBottomSheet(

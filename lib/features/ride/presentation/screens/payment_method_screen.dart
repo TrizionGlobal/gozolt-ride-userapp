@@ -8,7 +8,7 @@ import '../../data/models/saved_payment_method.dart';
 import '../providers/ride_providers.dart';
 import '../widgets/payment_brand_icon.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
-import '../widgets/mock_add_card_sheet.dart';
+import '../widgets/add_card_sheet.dart';
 import '../widgets/stripe_add_card_sheet.dart';
 
 class PaymentMethodScreen extends ConsumerStatefulWidget {
@@ -45,22 +45,7 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) {
-        if (AppConstants.kDevBypass) {
-          return MockAddCardSheet(
-            onCardAdded: (cardData) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    '${cardData['brand'].toString().toUpperCase()} ****${cardData['last4']} added',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                  backgroundColor: AppColors.success,
-                ),
-              );
-              ref.invalidate(paymentMethodsProvider);
-            },
-          );
-        }
+        
         final ds = ref.read(paymentRemoteDatasourceProvider);
         return StripeAddCardSheet(
           datasource: ds,

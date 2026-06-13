@@ -39,10 +39,7 @@ class ApiInterceptor extends Interceptor {
     if (!isPublic) {
       String? token = await _storage.getAccessToken();
 
-      // Dev bypass: use hardcoded token when no real token exists
-      if (token == null && AppConstants.kDevBypass) {
-        token = AppConstants.kDevAccessToken;
-      }
+
 
       if (token != null) {
         options.headers['Authorization'] = 'Bearer $token';
