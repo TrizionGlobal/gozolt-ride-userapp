@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -77,8 +78,22 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
           next.status == AuthStatus.otpSent) {
         context.pushNamed(RouteNames.otp);
       } else if (next.status == AuthStatus.authenticated) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Logged in successfully!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
         context.goNamed(RouteNames.home);
+      } else if (next.status == AuthStatus.needsPhoneLink) {
+        context.pushNamed(RouteNames.linkPhone);
       } else if (next.status == AuthStatus.needsProfile) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Account created successfully!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
         context.pushNamed(RouteNames.completeProfile);
       } else if (next.status == AuthStatus.error && next.errorMessage != null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -128,7 +143,9 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
               // ── Title ──────────────────────────────────────
               Center(
                 child: Text(
-                  'Enter Your Phone Number',
+                  ref.watch(isRegisterFlowProvider)
+                      ? 'Create Your Account'
+                      : 'Welcome Back',
                   style: AppTextStyles.headlineMedium,
                 ),
               ),
@@ -138,7 +155,9 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
               // ── Subtitle ───────────────────────────────────
               Center(
                 child: Text(
-                  "We'll send you a verification code",
+                  ref.watch(isRegisterFlowProvider)
+                      ? 'Enter your phone number to register'
+                      : 'Enter your phone number to log in',
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -197,7 +216,9 @@ static const String _googleSvg = '''
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'or sign in with',
+                ref.watch(isRegisterFlowProvider)
+                    ? 'or register with'
+                    : 'or sign in with',
                 style: AppTextStyles.bodySmall.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -218,11 +239,13 @@ static const String _googleSvg = '''
               onTap: () => _handleSocial('GOOGLE'),
               isGoogle: true,
             ),
-            const SizedBox(width: 24),
-            _buildSocialIcon(
-              iconData: Icons.apple,
-              onTap: () => _handleSocial('APPLE'),
-            ),
+            if (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS) ...[
+              const SizedBox(width: 24),
+              _buildSocialIcon(
+                iconData: Icons.apple,
+                onTap: () => _handleSocial('APPLE'),
+              ),
+            ],
           ],
         ),
       ],

@@ -69,51 +69,44 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final curveColor = isDark ? AppColors.cardDark : const Color(0xFF0C1B30);
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: isDark
-                ? [
-                    const Color(0xFF0A0A0A),
-                    const Color(0xFF051C34),
-                  ]
-                : [
-                    AppColors.backgroundLight,
-                    const Color(0xFFE6EBF1),
-                  ],
-            stops: const [0.0, 1.0],
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: CustomPaint(
+              painter: OnboardingBackgroundPainter(color: curveColor),
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // ── Top Row: Logo + Skip ───────────────────
-              _buildTopBar(isDark),
+          SafeArea(
+            child: Column(
+              children: [
+                // ── Top Row: Logo + Skip ───────────────────
+                _buildTopBar(isDark),
 
-              // ── Page View ──────────────────────────────
-              Expanded(
-                child: PageView.builder(
-                  controller: _pageController,
-                  itemCount: AppConstants.onboardingPageCount,
-                  onPageChanged: _onPageChanged,
-                  physics: const BouncingScrollPhysics(),
-                  itemBuilder: (context, index) {
-                    return OnboardingPageWidget(data: onboardingPages[index]);
-                  },
+                // ── Page View ──────────────────────────────
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: AppConstants.onboardingPageCount,
+                    onPageChanged: _onPageChanged,
+                    physics: const BouncingScrollPhysics(),
+                    itemBuilder: (context, index) {
+                      return OnboardingPageWidget(data: onboardingPages[index]);
+                    },
+                  ),
                 ),
-              ),
 
-              // ── Bottom Controls ────────────────────────
-              _buildBottomControls(isDark),
+                // ── Bottom Controls ────────────────────────
+                _buildBottomControls(isDark),
 
-              SizedBox(height: bottomPadding),
-            ],
+                SizedBox(height: bottomPadding),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -198,7 +191,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 dotWidth: 10,
                 dotHeight: 10,
                 spacing: 12,
-                dotColor: isDark ? AppColors.borderDark : AppColors.borderLight,
+                dotColor: isDark ? Colors.white24 : Colors.white54,
                 activeDotColor: AppColors.primaryGold,
               ),
             ),
@@ -228,7 +221,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               dotWidth: 10,
               dotHeight: 10,
               spacing: 12,
-              dotColor: isDark ? AppColors.borderDark : AppColors.borderLight,
+              dotColor: isDark ? Colors.white24 : Colors.white54,
               activeDotColor: AppColors.primaryGold,
             ),
           ),
@@ -256,27 +249,60 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       child: GestureDetector(
         onTap: visible ? onTap : null,
         child: Container(
-          width: 48,
-          height: 48,
+          width: 52,
+          height: 52,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: isDark ? Colors.transparent : Colors.white.withOpacity(0.8),
-            border: Border.all(
-              color: AppColors.primaryGold,
-              width: 1.5,
-            ),
-            boxShadow: isDark ? null : [
+            color: AppColors.primaryGold,
+            boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
+                color: AppColors.primaryGold.withOpacity(0.3),
+                blurRadius: 12,
                 offset: const Offset(0, 4),
               ),
             ],
           ),
-          child: Icon(icon, color: AppColors.primaryGold, size: 28),
+          child: Icon(
+            icon, 
+            color: isDark ? AppColors.backgroundDark : Colors.white, 
+            size: 28,
+          ),
         ),
       ),
     );
   }
 
+}
+
+class OnboardingBackgroundPainter extends CustomPainter {
+  final Color color;
+
+  OnboardingBackgroundPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final double startHeight = size.height * 0.48; // Starts lower at the edges
+    final double peakHeight = size.height * 0.36;  // Peaks higher in the center (convex)
+
+    final path = Path();
+    path.moveTo(0, startHeight);
+    path.quadraticBezierTo(
+      size.width / 2,
+      peakHeight,
+      size.width,
+      startHeight,
+    );
+    path.lineTo(size.width, size.height);
+    path.lineTo(0, size.height);
+    path.close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

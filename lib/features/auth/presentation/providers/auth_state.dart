@@ -6,6 +6,7 @@ enum AuthStatus {
   otpSent,
   authenticated,
   needsProfile,
+  needsPhoneLink,
   unauthenticated,
   error,
 }

@@ -70,7 +70,7 @@ class OnboardingPageWidget extends StatelessWidget {
                     data.subtitle,
                     textAlign: TextAlign.center,
                     style: AppTextStyles.onboardingSubtitle.copyWith(
-                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                 ),
@@ -135,7 +135,7 @@ class OnboardingPageWidget extends StatelessWidget {
       textAlign: TextAlign.center,
       text: TextSpan(
         style: AppTextStyles.onboardingTitle.copyWith(
-          color: Theme.of(context).textTheme.headlineLarge?.color,
+          color: AppColors.textPrimary,
         ),
         children: [
           TextSpan(text: data.title),

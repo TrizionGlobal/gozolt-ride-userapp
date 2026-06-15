@@ -1,3 +1,4 @@
+import '../../../../core/network/api_exception.dart';
 import '../../../../core/storage/secure_storage_service.dart';
 import '../datasources/auth_remote_datasource.dart';
 import '../models/auth_response.dart';
@@ -67,4 +68,23 @@ class AuthRepository {
   }
 
   Future<bool> hasTokens() => _storage.hasTokens();
+
+  Future<void> linkPhone(String phone) async {
+    try {
+      await _remote.linkPhone(phone);
+    } catch (e) {
+      throw e is ApiException ? e : ApiException(message: e.toString());
+    }
+  }
+
+  Future<void> verifyLinkPhone({
+    required String phone,
+    required String otp,
+  }) async {
+    try {
+      await _remote.verifyLinkPhone(phone: phone, otp: otp);
+    } catch (e) {
+      throw e is ApiException ? e : ApiException(message: e.toString());
+    }
+  }
 }

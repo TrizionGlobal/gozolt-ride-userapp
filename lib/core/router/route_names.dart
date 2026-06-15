@@ -5,8 +5,9 @@ abstract final class RouteNames {
   static const String login = 'login';
   static const String phoneEntry = 'phone-entry';
   static const String otp = 'otp';
+  static const String linkPhone = 'link-phone';
+  static const String verifyLinkPhone = 'verify-link-phone';
   static const String completeProfile = 'complete-profile';
-  // linkPhone: handled via bottom sheet, not a route
 
   // Shell tabs
   static const String home = 'home';

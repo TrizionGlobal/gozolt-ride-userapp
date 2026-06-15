@@ -26,7 +26,10 @@ void main() async {
     );
 
     // Set the background messaging handler early on, as a named top-level function
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    // Skip on iOS in debug mode to prevent "FlutterEngine already invoked" hot restart crashes
+    if (!kDebugMode || defaultTargetPlatform != TargetPlatform.iOS) {
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    }
 
     // Initialize Stripe
     Stripe.publishableKey = AppConstants.stripePublishableKey;

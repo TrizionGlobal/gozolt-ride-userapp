@@ -164,7 +164,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
         firstName: firstName,
         lastName: lastName,
       );
-      if (response.isNewUser) {
+
+      if (_isRegisterFlow && !response.isNewUser) {
+        await _repo.logout(); // Clear the mistakenly saved tokens
+        state = AuthState.errorMessage('Already registered with this account. Please log in.');
+        return;
+      }
+
+      if (!_isRegisterFlow && response.isNewUser) {
+        await _repo.logout(); // Clear the mistakenly saved tokens
+        state = AuthState.errorMessage('No account found. Please register first.');
+        return;
+      }
+
+      if (response.phoneLinkRequired) {
+        state = state.copyWith(
+          status: AuthStatus.needsPhoneLink,
+          isNewUser: response.isNewUser,
+        );
+      } else if (response.isNewUser) {
         state = state.copyWith(
           status: AuthStatus.needsProfile,
           isNewUser: true,
@@ -179,6 +197,41 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = AuthState.error(e);
     } catch (_) {
       state = AuthState.errorMessage('Sign in failed. Please try again.');
+    }
+  }
+
+  Future<void> linkPhone(String phoneInput) async {
+    final phone = phoneInput.replaceAll(' ', '');
+    state = state.copyWith(status: AuthStatus.loading, phone: phone);
+    try {
+      await _repo.linkPhone(phone);
+      state = state.copyWith(status: AuthStatus.otpSent, phone: phone);
+    } on ApiException catch (e) {
+      state = AuthState.error(e);
+    } catch (_) {
+      state = AuthState.errorMessage('Failed to send OTP. Please try again.');
+    }
+  }
+
+  Future<void> verifyLinkPhone({
+    required String phoneInput,
+    required String otp,
+  }) async {
+    final phone = phoneInput.replaceAll(' ', '');
+    state = state.copyWith(status: AuthStatus.loading);
+    try {
+      await _repo.verifyLinkPhone(phone: phone, otp: otp);
+      
+      // After linking phone, check if profile is still needed
+      if (state.isNewUser) {
+        state = state.copyWith(status: AuthStatus.needsProfile);
+      } else {
+        state = state.copyWith(status: AuthStatus.authenticated);
+      }
+    } on ApiException catch (e) {
+      state = AuthState.errorMessage(e.message ?? 'Invalid code. Please try again.');
+    } catch (_) {
+      state = AuthState.errorMessage('Verification failed. Please try again.');
     }
   }
 

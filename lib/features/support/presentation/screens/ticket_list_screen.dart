@@ -126,13 +126,14 @@ class TicketListScreen extends ConsumerWidget {
                         icon: const Icon(Icons.add, size: 16),
                         label: const Text('Create a Ticket', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
                         style: OutlinedButton.styleFrom(
+                          minimumSize: Size.zero,
                           foregroundColor: AppColors.primaryGold,
                           side:
                               const BorderSide(color: AppColors.primaryGold),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
+                              horizontal: 20, vertical: 10),
                         ),
                       ),
                     ],

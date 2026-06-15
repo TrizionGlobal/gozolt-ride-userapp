@@ -77,6 +77,33 @@ class AuthRemoteDatasource {
     }
   }
 
+  /// Send OTP to link phone to social account.
+  Future<void> linkPhone(String phone) async {
+    try {
+      await _dio.post(
+        ApiConstants.linkPhone,
+        data: {'phone': phone},
+      );
+    } on DioException catch (e) {
+      throw _mapDioError(e);
+    }
+  }
+
+  /// Verify OTP and link phone number.
+  Future<void> verifyLinkPhone({
+    required String phone,
+    required String otp,
+  }) async {
+    try {
+      await _dio.post(
+        ApiConstants.verifyLinkPhone,
+        data: {'phone': phone, 'otp': otp},
+      );
+    } on DioException catch (e) {
+      throw _mapDioError(e);
+    }
+  }
+
   /// Complete profile for new users.
   Future<void> completeProfile(CompleteProfileRequest request) async {
     try {

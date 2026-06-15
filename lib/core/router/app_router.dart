@@ -6,6 +6,8 @@ import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/auth/presentation/screens/welcome_screen.dart';
 import '../../features/auth/presentation/screens/phone_entry_screen.dart';
 import '../../features/auth/presentation/screens/otp_screen.dart';
+import '../../features/auth/presentation/screens/link_phone_screen.dart';
+import '../../features/auth/presentation/screens/verify_link_phone_screen.dart';
 import '../../features/auth/presentation/screens/complete_profile_screen.dart';
 import '../../features/auth/presentation/screens/privacy_policy_screen.dart';
 import '../../features/home/presentation/screens/navigation_shell.dart';
@@ -142,6 +144,48 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => CustomTransitionPage(
           key: state.pageKey,
           child: const OtpScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+              SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeInOut,
+            )),
+            child: child,
+          ),
+        ),
+      ),
+
+      // ── Link Phone ─────────────────────────────────────
+      GoRoute(
+        path: '/link-phone',
+        name: RouteNames.linkPhone,
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const LinkPhoneScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+              SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeInOut,
+            )),
+            child: child,
+          ),
+        ),
+      ),
+
+      // ── Verify Link Phone ──────────────────────────────
+      GoRoute(
+        path: '/verify-link-phone',
+        name: RouteNames.verifyLinkPhone,
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const VerifyLinkPhoneScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) =>
               SlideTransition(
             position: Tween<Offset>(

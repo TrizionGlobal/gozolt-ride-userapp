@@ -1397,10 +1397,60 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // Animated Radar/Pulse Graphic
+        Center(
+          child: SizedBox(
+            height: 120,
+            width: 120,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Pulsing rings
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(seconds: 2),
+                  builder: (context, value, child) {
+                    return Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        _buildRadarRipple((value + 0.0) % 1.0),
+                        _buildRadarRipple((value + 0.33) % 1.0),
+                        _buildRadarRipple((value + 0.66) % 1.0),
+                      ],
+                    );
+                  },
+                  onEnd: () {
+                    // This forces the tween to rebuild and loop
+                    setState(() {});
+                  },
+                ),
+                // Center Icon
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.surfaceDark : Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(Icons.search, color: AppColors.primaryGold, size: 28),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
         Text(
           'Finding drivers nearby',
           style: AppTextStyles.headlineSmall.copyWith(
             color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+            fontWeight: FontWeight.bold,
           ),
           textAlign: TextAlign.center,
         ),
@@ -1620,7 +1670,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
         // Cancel button
         SizedBox(
           width: double.infinity,
-          height: 50,
+          height: 44,
           child: OutlinedButton(
             onPressed: () => _showCancelSheet(context),
             style: OutlinedButton.styleFrom(

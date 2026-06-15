@@ -12,16 +12,15 @@ import '../providers/auth_provider.dart';
 import '../providers/auth_state.dart';
 import '../widgets/auth_back_button.dart';
 import '../widgets/otp_input_field.dart';
-import '../../../../core/providers/storage_provider.dart';
 
-class OtpScreen extends ConsumerStatefulWidget {
-  const OtpScreen({super.key});
+class VerifyLinkPhoneScreen extends ConsumerStatefulWidget {
+  const VerifyLinkPhoneScreen({super.key});
 
   @override
-  ConsumerState<OtpScreen> createState() => _OtpScreenState();
+  ConsumerState<VerifyLinkPhoneScreen> createState() => _VerifyLinkPhoneScreenState();
 }
 
-class _OtpScreenState extends ConsumerState<OtpScreen> {
+class _VerifyLinkPhoneScreenState extends ConsumerState<VerifyLinkPhoneScreen> {
   final _otpKey = GlobalKey<OtpInputFieldState>();
   Timer? _resendTimer;
   int _resendSeconds = AppConstants.otpResendSeconds;
@@ -99,11 +98,8 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     HapticFeedback.mediumImpact();
 
     final phone = ref.read(phoneNumberProvider);
-    final isRegister = ref.read(isRegisterFlowProvider);
 
-    
-
-    ref.read(authProvider.notifier).verifyOtp(
+    ref.read(authProvider.notifier).verifyLinkPhone(
           phoneInput: phone,
           otp: _currentOtp,
         );
@@ -113,9 +109,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
     if (!_canResend) return;
     HapticFeedback.lightImpact();
     final phone = ref.read(phoneNumberProvider);
-    // Use resendOtp (not sendOtp) to avoid triggering otpSent state
-    // which would push a new OTP screen from the phone entry listener.
-    ref.read(authProvider.notifier).resendOtp(phone);
+    ref.read(authProvider.notifier).linkPhone(phone); // Calling linkPhone again sends OTP
     // Clear input and error, restart timer
     _otpKey.currentState?.clear();
     setState(() {
@@ -135,7 +129,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: Text('Cancel Verification?', style: AppTextStyles.titleMedium),
           content: Text(
-            'If you exit now, this OTP will be invalidated and you will need to request a new one.',
+            'If you exit now, this OTP will be invalidated.',
             style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
           ),
           actions: [
@@ -145,7 +139,6 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
             ),
             TextButton(
               onPressed: () {
-                ref.read(authProvider.notifier).reset(); // Invalidates local state
                 Navigator.pop(context, true);
               },
               child: Text('Exit', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error, fontWeight: FontWeight.bold)),
@@ -186,8 +179,6 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
 
-    final isRegister = ref.watch(isRegisterFlowProvider);
-
     ref.listen<AuthState>(authProvider, (prev, next) {
       if (next.status == AuthStatus.authenticated) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -196,16 +187,11 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
             backgroundColor: AppColors.success,
           ),
         );
-        // Login flow → go home. Register flow → complete profile.
-        if (isRegister) {
-          context.goNamed(RouteNames.completeProfile);
-        } else {
-          context.goNamed(RouteNames.home);
-        }
+        context.goNamed(RouteNames.home);
       } else if (next.status == AuthStatus.needsProfile) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Phone verified successfully!'),
+            content: Text('Phone linked successfully!'),
             backgroundColor: AppColors.success,
           ),
         );
@@ -253,7 +239,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
               // ── Title ──────────────────────────────────────
               Center(
                 child: Text(
-                  'Verify Your Number',
+                  'Verify Phone Link',
                   style: AppTextStyles.headlineMedium,
                 ),
               ),
