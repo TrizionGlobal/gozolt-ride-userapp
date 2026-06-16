@@ -9,8 +9,8 @@ abstract final class ApiConstants {
   static const String wsUrl = useLocal
       ? 'ws://127.0.0.1:3000'
       : 'wss://gozolt-new-ride-backend-production.up.railway.app';
-  
 
+  
 
   // ── Auth ───────────────────────────────────────────────
   static const String checkPhone = '/auth/user/check-phone';

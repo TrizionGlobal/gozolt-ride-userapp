@@ -389,16 +389,13 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                   polylines: _isMapReady && _routePoints.isNotEmpty
                       ? {
                           Polyline(
-                            polylineId: const PolylineId('route_glow'),
-                            points: _routePoints,
-                            color: const Color(0x4DFACC15),
-                            width: 8,
-                          ),
-                          Polyline(
                             polylineId: const PolylineId('route'),
                             points: _routePoints,
-                            color: const Color(0xFFFACC15),
-                            width: 4,
+                            color: AppColors.primaryGold,
+                            width: 5,
+                            jointType: JointType.round,
+                            startCap: Cap.roundCap,
+                            endCap: Cap.roundCap,
                           ),
                         }
                       : {},
@@ -668,7 +665,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                         scheduledAtText: booking.scheduledAt != null ? _formatSchedule(booking.scheduledAt!) : null,
                       ),
 
-                    const SizedBox(height: 100),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),

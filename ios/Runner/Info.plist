@@ -66,6 +66,11 @@
 			<string>tel</string>
 			<string>whatsapp</string>
 		</array>
+		<key>NSAppTransportSecurity</key>
+		<dict>
+			<key>NSAllowsArbitraryLoads</key>
+			<true/>
+		</dict>
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>Gozolt needs your location to find nearby drivers and track your ride.</string>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>

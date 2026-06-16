@@ -21,7 +21,7 @@ class InputValidators {
   static bool isValidEmail(String value) {
     final trimmed = value.trim();
     if (trimmed.isEmpty) return true; // email is optional
-    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(trimmed);
+    return RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(trimmed);
   }
 
   /// Allows only valid decimal amounts (up to 2 decimal places)

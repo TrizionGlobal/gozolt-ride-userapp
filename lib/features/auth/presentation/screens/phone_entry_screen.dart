@@ -77,32 +77,34 @@ class _PhoneEntryScreenState extends ConsumerState<PhoneEntryScreen> {
       if (prev?.status == AuthStatus.loading &&
           next.status == AuthStatus.otpSent) {
         context.pushNamed(RouteNames.otp);
-      } else if (next.status == AuthStatus.authenticated) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Logged in successfully!'),
-            backgroundColor: AppColors.success,
-          ),
-        );
-        context.goNamed(RouteNames.home);
-      } else if (next.status == AuthStatus.needsPhoneLink) {
-        context.pushNamed(RouteNames.linkPhone);
-      } else if (next.status == AuthStatus.needsProfile) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Account created successfully!'),
-            backgroundColor: AppColors.success,
-          ),
-        );
-        context.pushNamed(RouteNames.completeProfile);
-      } else if (next.status == AuthStatus.error && next.errorMessage != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(next.errorMessage!),
-            backgroundColor: AppColors.error,
-          ),
-        );
-        ref.read(authProvider.notifier).clearError();
+      } else if (ModalRoute.of(context)?.isCurrent == true) {
+        if (next.status == AuthStatus.authenticated) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Logged in successfully!'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+          context.goNamed(RouteNames.home);
+        } else if (next.status == AuthStatus.needsPhoneLink) {
+          context.pushNamed(RouteNames.linkPhone);
+        } else if (next.status == AuthStatus.needsProfile) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Account created successfully!'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+          context.pushNamed(RouteNames.completeProfile);
+        } else if (next.status == AuthStatus.error && next.errorMessage != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(next.errorMessage!),
+              backgroundColor: AppColors.error,
+            ),
+          );
+          ref.read(authProvider.notifier).clearError();
+        }
       }
     });
 

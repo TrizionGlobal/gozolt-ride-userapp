@@ -456,6 +456,18 @@ class TripSummaryScreen extends ConsumerWidget {
           if (ride.estimatedFare != null)
             _detailRow('Estimated Fare',
                 '\u20AC${ride.estimatedFare!.toStringAsFixed(2)}'),
+          if (ride.baseFare != null)
+            _detailRow('Base Fare', '\u20AC${ride.baseFare!.toStringAsFixed(2)}'),
+          if (ride.distanceFare != null)
+            _detailRow('Distance', '\u20AC${ride.distanceFare!.toStringAsFixed(2)}'),
+          if (ride.waitTimeFee != null && ride.waitTimeFee! > 0)
+            _detailRow('Wait Time Fee', '\u20AC${ride.waitTimeFee!.toStringAsFixed(2)}'),
+          if (ride.bookingFee != null)
+            _detailRow('Booking Fee', '\u20AC${ride.bookingFee!.toStringAsFixed(2)}'),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Divider(height: 1),
+          ),
           if (ride.actualFare != null)
             _detailRow('Final Fare',
                 '\u20AC${ride.actualFare!.toStringAsFixed(2)}',

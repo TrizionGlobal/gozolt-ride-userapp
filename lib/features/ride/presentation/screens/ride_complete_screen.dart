@@ -623,7 +623,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                         paymentMethod: rideState.ride!.paymentMethod,
                         baseFare: rideState.ride!.baseFare,
                         distanceFare: rideState.ride!.distanceFare,
-                        timeFare: rideState.ride!.timeFare,
+                        waitTimeFee: rideState.ride!.waitTimeFee,
                         bookingFee: rideState.ride!.bookingFee,
                         tipAmount: rideState.ride!.tipAmount,
                         extraFare: rideState.ride!.extraFare,
@@ -721,11 +721,11 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
 
   // ── Fare Breakdown (Change 3) ──────────────────────────
   Widget _buildFareBreakdown(dynamic rideState) {
-    final base = rideState.baseFare as double?;
-    final distance = rideState.distanceFare as double?;
-    final time = rideState.timeFare as double?;
-    final booking = rideState.bookingFee as double?;
-    final surge = rideState.surgeMultiplier as double?;
+    final base = rideState.ride?.baseFare as double?;
+    final distance = rideState.ride?.distanceFare as double?;
+    final waitTime = rideState.ride?.waitTimeFee as double?;
+    final booking = rideState.ride?.bookingFee as double?;
+    final surge = rideState.ride?.surgeMultiplier as double?;
 
     if (base == null && distance == null) return const SizedBox.shrink();
 
@@ -748,8 +748,8 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
             _fareRow('Base Fare', '\u20AC${base.toStringAsFixed(2)}'),
           if (distance != null)
             _fareRow('Distance', '\u20AC${distance.toStringAsFixed(2)}'),
-          if (time != null)
-            _fareRow('Time', '\u20AC${time.toStringAsFixed(2)}'),
+          if (waitTime != null && waitTime > 0)
+            _fareRow('Wait Time Fee', '\u20AC${waitTime.toStringAsFixed(2)}'),
           if (booking != null)
             _fareRow('Booking Fee', '\u20AC${booking.toStringAsFixed(2)}'),
           if (surge != null && surge > 1.0)

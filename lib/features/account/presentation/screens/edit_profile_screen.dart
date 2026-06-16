@@ -12,6 +12,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import '../providers/account_providers.dart';
 import '../../../home/presentation/providers/home_providers.dart';
+import '../../../auth/data/models/country_code.dart';
+import '../../../auth/presentation/widgets/country_code_picker.dart';
+import '../../../auth/presentation/widgets/phone_input_field.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -24,16 +27,21 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  CountryCode _selectedCountry = supportedCountryCodes.first;
+  String? _phoneError;
   bool _isLoading = false;
   bool _initialized = false;
   final _picker = ImagePicker();
   String? _avatarPath;
+  bool _removeAvatar = false;
 
   @override
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -47,6 +55,27 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         _firstNameController.text = profile.firstName ?? '';
         _lastNameController.text = profile.lastName ?? '';
         _emailController.text = profile.email ?? '';
+        
+        if (profile.phone != null && profile.phone!.isNotEmpty) {
+          final phoneStr = profile.phone!;
+          bool matched = false;
+          // Sort by length descending to match +356 before +35 etc.
+          final sortedCodes = List<CountryCode>.from(supportedCountryCodes)
+            ..sort((a, b) => b.dialCode.length.compareTo(a.dialCode.length));
+            
+          for (final country in sortedCodes) {
+            if (phoneStr.startsWith(country.dialCode)) {
+              _selectedCountry = country;
+              _phoneController.text = phoneStr.substring(country.dialCode.length);
+              matched = true;
+              break;
+            }
+          }
+          if (!matched) {
+            _phoneController.text = phoneStr;
+          }
+        }
+        
         _initialized = true;
       }
     });
@@ -130,7 +159,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                                   backgroundColor: AppColors.primaryGold
                                       .withOpacity(0.15),
                                 )
-                              : (profile?.avatarUrl != null && profile!.avatarUrl!.isNotEmpty)
+                              : (profile?.avatarUrl != null && profile!.avatarUrl!.isNotEmpty && !_removeAvatar)
                                   ? ClipOval(
                                       child: Image.network(
                                         ApiConstants.fullUrl(profile.avatarUrl!),
@@ -207,44 +236,23 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Phone (read-only)
+                // Phone
                 _inputLabel('Phone'),
                 const SizedBox(height: 6),
-                profileAsync.when(
-                  loading: () => const SizedBox.shrink(),
-                  error: (context, error) => const SizedBox.shrink(),
-                  data: (profile) => Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark.withOpacity(0.5) : Colors.grey[200],
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            profile.phone ?? 'Not set',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                        ),
-                        const Icon(Icons.lock_outline,
-                            color: AppColors.textMuted, size: 16),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Phone number cannot be changed',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.textMuted,
-                    fontSize: 11,
-                  ),
+                PhoneInputField(
+                  controller: _phoneController,
+                  selectedCountry: _selectedCountry,
+                  fillColor: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[200],
+                  onCountryTap: () {
+                    CountryCodePicker.show(
+                      context,
+                      selected: _selectedCountry,
+                      onSelected: (country) {
+                        setState(() => _selectedCountry = country);
+                      },
+                    );
+                  },
+                  errorText: _phoneError,
                 ),
 
                 const SizedBox(height: 32),
@@ -298,14 +306,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     required String hint,
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
+    String? errorText,
+    Function(String)? onChanged,
   }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
+      onChanged: onChanged,
       style: AppTextStyles.bodyMedium,
       decoration: InputDecoration(
         hintText: hint,
+        errorText: errorText,
+        errorStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
         hintStyle:
             AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted),
         filled: true,
@@ -321,6 +334,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.primaryGold),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.error),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.error),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -378,7 +399,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                         .copyWith(color: AppColors.error)),
                 onTap: () {
                   Navigator.pop(context);
-                  setState(() => _avatarPath = null);
+                  setState(() {
+                    _avatarPath = null;
+                    _removeAvatar = true;
+                  });
                 },
               ),
             ],
@@ -416,7 +440,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           ],
         );
         if (croppedFile != null) {
-          setState(() => _avatarPath = croppedFile.path);
+          setState(() {
+            _avatarPath = croppedFile.path;
+            _removeAvatar = false;
+          });
         }
       }
     } catch (e) {
@@ -453,6 +480,15 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       _snackBar('Please enter a valid last name', isError: true);
       return;
     }
+    
+    final phoneDigits = _phoneController.text.trim();
+    if (phoneDigits.isNotEmpty && (phoneDigits.length < 7 || phoneDigits.length > 12)) {
+      setState(() => _phoneError = 'Please enter a valid phone number');
+      _snackBar('Please enter a valid phone number', isError: true);
+      return;
+    } else {
+      setState(() => _phoneError = null);
+    }
 
     HapticFeedback.mediumImpact();
     setState(() => _isLoading = true);
@@ -460,8 +496,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     try {
       final ds = ref.read(accountRemoteDatasourceProvider);
 
-      // Upload avatar if user selected a new image
-      if (_avatarPath != null) {
+      // Handle avatar updates
+      if (_removeAvatar) {
+        await ds.deleteAvatar();
+      } else if (_avatarPath != null) {
         await ds.uploadAvatar(_avatarPath!);
       }
 
@@ -473,6 +511,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       final email = _emailController.text.trim();
       if (email.isNotEmpty) {
         updates['email'] = email;
+      }
+      
+      if (phoneDigits.isNotEmpty) {
+        updates['phone'] = '${_selectedCountry.dialCode}$phoneDigits';
       }
 
       await ds.updateProfile(updates);

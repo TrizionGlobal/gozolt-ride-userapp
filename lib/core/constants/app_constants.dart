@@ -33,6 +33,6 @@ abstract final class AppConstants {
   static const String currencySymbol = '€';
 
   // ── Timeouts ───────────────────────────────────────────
-  static const Duration connectTimeout = Duration(seconds: 15);
-  static const Duration receiveTimeout = Duration(seconds: 15);
+  static const Duration connectTimeout = Duration(seconds: 60);
+  static const Duration receiveTimeout = Duration(seconds: 60);
 }

@@ -236,7 +236,10 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
         polylineId: const PolylineId('driverToPickup'),
         points: routePoints,
         color: AppColors.primaryGold,
-        width: 4,
+        width: 5,
+        jointType: JointType.round,
+        startCap: Cap.roundCap,
+        endCap: Cap.roundCap,
         patterns: [PatternItem.dash(20), PatternItem.gap(10)],
       ));
       // Fetch route if not cached
@@ -249,8 +252,11 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
       polylines.add(Polyline(
         polylineId: const PolylineId('toDropoff'),
         points: routePoints,
-        color: const Color(0xFF4CAF50),
-        width: 4,
+        color: AppColors.primaryGold,
+        width: 5,
+        jointType: JointType.round,
+        startCap: Cap.roundCap,
+        endCap: Cap.roundCap,
       ));
       // Fetch route if not cached
       if (_driverToDropoffRoute == null) {

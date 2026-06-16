@@ -10,6 +10,7 @@ class PhoneInputField extends StatelessWidget {
   final VoidCallback onCountryTap;
   final String? errorText;
   final FocusNode? focusNode;
+  final Color? fillColor;
 
   const PhoneInputField({
     super.key,
@@ -18,6 +19,7 @@ class PhoneInputField extends StatelessWidget {
     required this.onCountryTap,
     this.errorText,
     this.focusNode,
+    this.fillColor,
   });
 
   @override
@@ -28,7 +30,7 @@ class PhoneInputField extends StatelessWidget {
         Container(
           height: 56,
           decoration: BoxDecoration(
-            color: Theme.of(context).cardTheme.color,
+            color: fillColor ?? Theme.of(context).cardTheme.color,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: errorText != null
@@ -96,6 +98,8 @@ class PhoneInputField extends StatelessWidget {
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
+                    filled: true,
+                    fillColor: Colors.transparent,
                   ),
                 ),
               ),

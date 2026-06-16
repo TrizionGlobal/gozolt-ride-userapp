@@ -10,7 +10,7 @@ Future<Uint8List> generateInvoicePdf(RideHistoryItem ride) async {
   final actualFare = ride.actualFare ?? ride.estimatedFare ?? 0.0;
   final baseFare = ride.baseFare ?? 0.0;
   final distanceFare = ride.distanceFare ?? 0.0;
-  final timeFare = ride.timeFare ?? 0.0;
+  final timeFare = ride.waitTimeFee ?? 0.0;
   final bookingFee = ride.bookingFee ?? 0.0;
   final tip = ride.tipAmount ?? 0.0;
   final extraFare = ride.extraFare ?? 0.0;
@@ -145,8 +145,10 @@ Future<Uint8List> generateInvoicePdf(RideHistoryItem ride) async {
                           pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [pw.Text('Base Fare'), pw.Text('EUR ${baseFare.toStringAsFixed(2)}')]),
                           pw.SizedBox(height: 8),
                           pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [pw.Text('Distance Charges'), pw.Text('EUR ${distanceFare.toStringAsFixed(2)}')]),
-                          pw.SizedBox(height: 8),
-                          pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [pw.Text('Time Charges'), pw.Text('EUR ${timeFare.toStringAsFixed(2)}')]),
+                          if (timeFare > 0) ...[
+                            pw.SizedBox(height: 8),
+                            pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [pw.Text('Wait Time Fee'), pw.Text('EUR ${timeFare.toStringAsFixed(2)}')]),
+                          ],
                           pw.SizedBox(height: 8),
                           pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [pw.Text('Booking Fee'), pw.Text('EUR ${bookingFee.toStringAsFixed(2)}')]),
                           
