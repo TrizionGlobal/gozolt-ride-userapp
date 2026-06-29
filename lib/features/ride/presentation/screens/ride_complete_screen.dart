@@ -627,7 +627,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                         bookingFee: rideState.ride!.bookingFee,
                         tipAmount: rideState.ride!.tipAmount,
                         extraFare: rideState.ride!.extraFare,
-                        goCoinsEarned: rideState.ride!.actualFare != null ? (rideState.ride!.actualFare! * 10).toInt() : 0, // Mock for invoice UI
+                        goCoinsEarned: 0,
                       );
                       final bytes = await generateInvoicePdf(rideItem);
                       if (context.mounted) Navigator.pop(context); // close loading
