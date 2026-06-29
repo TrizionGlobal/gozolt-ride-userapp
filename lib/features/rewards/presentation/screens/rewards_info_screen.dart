@@ -17,66 +17,60 @@ class RewardsInfoScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
+      body: Column(
+        children: [
           // ── Gold Header ─────────────────────────────────
-          SliverToBoxAdapter(
-            child: Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFFD4A843), Color(0xFFF5C518)],
-                ),
-                borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(24)),
+          Container(
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFFD4A843), Color(0xFFF5C518)],
               ),
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 20, 24),
-                  child: Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => context.pop(),
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppColors.backgroundDark
-                                .withOpacity(0.15),
-                          ),
-                          child: const Icon(Icons.arrow_back,
-                              color: AppColors.backgroundDark, size: 20),
+              borderRadius:
+                  BorderRadius.vertical(bottom: Radius.circular(24)),
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 20, 24),
+                child: Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => context.pop(),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.backgroundDark
+                              .withOpacity(0.15),
                         ),
+                        child: const Icon(Icons.arrow_back,
+                            color: AppColors.backgroundDark, size: 20),
                       ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Rewards Info',
-                        style: AppTextStyles.headlineSmall.copyWith(
-                          color: AppColors.backgroundDark,
-                        ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Rewards Info',
+                      style: AppTextStyles.headlineSmall.copyWith(
+                        color: AppColors.backgroundDark,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
 
           // ── Body ────────────────────────────────────────
-          rulesAsync.when(
-            loading: () => const SliverFillRemaining(
-              child: Center(
-                child:
-                    CircularProgressIndicator(color: AppColors.primaryGold),
+          Expanded(
+            child: rulesAsync.when(
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: AppColors.primaryGold),
               ),
-            ),
-            error: (e, _) => SliverFillRemaining(
-              child: Center(
+              error: (e, _) => Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -95,14 +89,14 @@ class RewardsInfoScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-            ),
-            data: (rules) {
-              final currentTier =
-                  summaryAsync.value?.tier ?? 'BRONZE';
-              return SliverPadding(
-                padding: const EdgeInsets.all(20),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
+              data: (rules) {
+                final currentTier = summaryAsync.value?.tier ?? 'BRONZE';
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
                     // Section 1: How to Earn
                     _sectionTitle('Collect coins on every ride and turn them into wallet cash'),
                     const SizedBox(height: 16),
@@ -141,17 +135,38 @@ class RewardsInfoScreen extends ConsumerWidget {
                               const Icon(Icons.people,
                                   color: AppColors.primaryGold, size: 20),
                               const SizedBox(width: 8),
-                              Text('Invite friends and earn!',
-                                  style: AppTextStyles.titleSmall),
+                              Expanded(
+                                child: Text('Invite friends and earn!',
+                                    style: AppTextStyles.titleSmall),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  ScaffoldMessenger.of(context).clearSnackBars();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'You have received ${rules.referral.newUserBonus} coins and coins credited to your wallet once you complete a ride',
+                                        style: AppTextStyles.bodySmall.copyWith(color: Colors.white),
+                                      ),
+                                      backgroundColor: AppColors.backgroundDark,
+                                      behavior: SnackBarBehavior.floating,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                    ),
+                                  );
+                                },
+                                child: const Icon(Icons.info_outline,
+                                    color: AppColors.textMuted, size: 18),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 12),
                           _bulletPoint(
                               context,
-                              'You get: ${rules.referral.referrerBonus} coins when your friend completes their first ride'),
+                              'Both the invited user and the existing user will receive ${rules.referral.referrerBonus} coins.'),
                           _bulletPoint(
                               context,
-                              'They get: ${rules.referral.newUserBonus} coins as a welcome bonus'),
+                              'The coins will be credited to their wallet only when completes their rides.'),
                         ],
                       ),
                     ),
@@ -225,10 +240,11 @@ class RewardsInfoScreen extends ConsumerWidget {
                     ),
 
                     const SizedBox(height: 32),
-                  ]),
+                  ],
                 ),
               );
             },
+          ),
           ),
         ],
       ),

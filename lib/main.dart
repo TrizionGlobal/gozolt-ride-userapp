@@ -52,6 +52,9 @@ void main() async {
       ],
     );
 
+    // Initialize notifications early so they work even if splash screen is bypassed
+    container.read(notificationServiceProvider).initialize();
+
     runApp(UncontrolledProviderScope(
       container: container,
       child: const GozoltApp(),

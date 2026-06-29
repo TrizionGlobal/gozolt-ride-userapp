@@ -319,10 +319,6 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
             ref.read(activeRideProvider.notifier).cancelRide('All of our drivers are currently busy. Please try booking again in a few minutes.');
             return;
           }
-
-          setState(() {
-            _searchingMessageIndex = (_searchingMessageIndex + 1) % _searchingMessages.length;
-          });
         } else {
           // Reset timer counter if status is no longer searching
           _elapsedSearchTime = 0;
@@ -549,11 +545,6 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
     }
 
     if (rideState.ride == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          context.goNamed(RouteNames.home);
-        }
-      });
       return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(),
@@ -591,14 +582,19 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
       }
       if (next.isCancelled && prev?.isCancelled != true) {
         final reason = next.cancelReason ?? '';
-        if (reason == 'You cancelled the ride.' || reason.isEmpty) {
-          // User pressed cancel — go straight home, no dialog needed
-          ref.read(activeRideProvider.notifier).reset();
-          context.goNamed(RouteNames.home);
-        } else {
+        
+        // System cancellation reasons
+        final isSystemCancel = reason.contains('driver cancelled') || 
+                               reason.contains('has been cancelled.') ||
+                               reason.contains('No drivers') ||
+                               reason.contains('All of our drivers');
+
+        if (isSystemCancel) {
           // System cancellation (no drivers, timeout, driver cancelled) — show dialog
           _showRideCancelledDialog();
         }
+        // If the user cancelled it locally, the `cancel_ride_sheet.dart` will show the success dialog.
+        // We shouldn't automatically navigate to Home or show another dialog here.
       }
       // Clear cached route when status changes so new route is fetched
       if (prev?.status != next.status) {
@@ -801,7 +797,8 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
           ),
 
           // Bottom panel
-          Container(
+          if (!rideState.isCancelled && rideState.status != ActiveRideStatus.completed)
+            Container(
             decoration: BoxDecoration(
               color: Theme.of(context).scaffoldBackgroundColor,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -1403,54 +1400,6 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Animated Radar/Pulse Graphic
-        Center(
-          child: SizedBox(
-            height: 120,
-            width: 120,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                // Pulsing rings
-                TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0.0, end: 1.0),
-                  duration: const Duration(seconds: 2),
-                  builder: (context, value, child) {
-                    return Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        _buildRadarRipple((value + 0.0) % 1.0),
-                        _buildRadarRipple((value + 0.33) % 1.0),
-                        _buildRadarRipple((value + 0.66) % 1.0),
-                      ],
-                    );
-                  },
-                  onEnd: () {
-                    // This forces the tween to rebuild and loop
-                    setState(() {});
-                  },
-                ),
-                // Center Icon
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.surfaceDark : Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        spreadRadius: 2,
-                      ),
-                    ],
-                  ),
-                  child: const Icon(Icons.search, color: AppColors.primaryGold, size: 28),
-                ),
-              ],
-            ),
-          ),
-        ),
         const SizedBox(height: 16),
         Text(
           'Finding drivers nearby',
@@ -1461,15 +1410,27 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 500),
-          child: Text(
-            _searchingMessages[_searchingMessageIndex],
-            key: ValueKey<int>(_searchingMessageIndex),
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
-            ),
-            textAlign: TextAlign.center,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 40),
+          child: Column(
+            children: [
+              Text(
+                'Requesting drivers in your area...',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  backgroundColor: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryGold),
+                  minHeight: 4,
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 20),

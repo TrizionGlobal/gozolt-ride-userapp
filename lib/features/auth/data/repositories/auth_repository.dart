@@ -64,7 +64,8 @@ class AuthRepository {
 
   Future<void> logout() async {
     await _remote.logout();
-    await _storage.clearAll();
+    await _storage.clearTokens();
+    await _storage.clearOtpSession();
   }
 
   Future<bool> hasTokens() => _storage.hasTokens();

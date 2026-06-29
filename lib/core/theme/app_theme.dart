@@ -34,7 +34,7 @@ abstract final class AppTheme {
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primaryGold,
             foregroundColor: AppColors.backgroundDark,
-            minimumSize: const Size(double.infinity, 52),
+            minimumSize: const Size(88, 48),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(25),
             ),
@@ -48,7 +48,7 @@ abstract final class AppTheme {
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.primaryGold,
-            minimumSize: const Size(double.infinity, 52),
+            minimumSize: const Size(88, 48),
             side: const BorderSide(color: AppColors.primaryGold, width: 1.5),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(25),
@@ -129,6 +129,9 @@ abstract final class AppTheme {
           bodySmall: AppTextStyles.bodySmall,
           labelLarge: AppTextStyles.labelLarge,
           labelSmall: AppTextStyles.labelSmall,
+        ).apply(
+          bodyColor: AppColors.textPrimary,
+          displayColor: AppColors.textPrimary,
         ),
       );
 
@@ -163,7 +166,7 @@ abstract final class AppTheme {
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.primaryGold,
             foregroundColor: AppColors.backgroundDark,
-            minimumSize: const Size(double.infinity, 52),
+            minimumSize: const Size(88, 48),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(25),
             ),
@@ -178,7 +181,7 @@ abstract final class AppTheme {
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
             foregroundColor: AppColors.primaryGold,
-            minimumSize: const Size(double.infinity, 52),
+            minimumSize: const Size(88, 48),
             side: const BorderSide(color: AppColors.primaryGold, width: 1.5),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(25),
@@ -249,6 +252,9 @@ abstract final class AppTheme {
           bodySmall: AppTextStyles.bodySmall,
           labelLarge: AppTextStyles.labelLarge,
           labelSmall: AppTextStyles.labelSmall,
+        ).apply(
+          bodyColor: AppColors.textPrimaryLight,
+          displayColor: AppColors.textPrimaryLight,
         ),
       );
 }

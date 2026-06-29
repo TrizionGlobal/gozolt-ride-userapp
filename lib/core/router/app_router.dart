@@ -34,6 +34,7 @@ import '../../features/support/presentation/screens/create_ticket_screen.dart';
 import '../../features/support/presentation/screens/ticket_detail_screen.dart';
 import '../providers/auth_redirect_provider.dart';
 import '../providers/storage_provider.dart';
+import '../providers/theme_provider.dart';
 import 'route_names.dart';
 
 
@@ -41,8 +42,11 @@ final routerProvider = Provider<GoRouter>((ref) {
   final redirectNotifier = ref.watch(authRedirectProvider);
   final storage = ref.read(secureStorageProvider);
 
-  return GoRouter(
-    initialLocation: '/',
+  final prefs = ref.read(sharedPrefsProvider);
+  final lastRoute = prefs.getString('last_route');
+
+  final router = GoRouter(
+    initialLocation: lastRoute ?? '/',
     restorationScopeId: 'router',
     debugLogDiagnostics: true,
     refreshListenable: redirectNotifier,
@@ -672,4 +676,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+
+  router.routerDelegate.addListener(() {
+    final location = router.routerDelegate.currentConfiguration.uri.toString();
+    // Don't save transient/auth routes
+    if (location != '/' &&
+        location != '/welcome' &&
+        location != '/login' &&
+        location != '/phone-entry' &&
+        location != '/otp' &&
+        location != '/onboarding' &&
+        location != '/complete-profile') {
+      prefs.setString('last_route', location);
+    }
+  });
+
+  return router;
 });

@@ -330,11 +330,17 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
           state = state.copyWith(status: ActiveRideStatus.searching);
           break;
         case 'NO_DRIVER':
-          if (kDebugMode) print('[Socket] → NO_DRIVER');
-          state = state.copyWith(
-            status: ActiveRideStatus.cancelled,
-            cancelReason: 'No drivers available nearby.',
-          );
+        case 'NO_DRIVERS':
+          if (kDebugMode) print('[Socket] → NO_DRIVERS');
+          
+          Future.delayed(const Duration(seconds: 3), () {
+            if (mounted) {
+              state = state.copyWith(
+                status: ActiveRideStatus.cancelled,
+                cancelReason: 'No drivers available nearby.',
+              );
+            }
+          });
           break;
         case 'ACCEPTED':
         case 'DRIVER_EN_ROUTE':

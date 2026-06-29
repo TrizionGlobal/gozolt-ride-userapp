@@ -47,9 +47,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       FlutterNativeSplash.remove();
     });
 
-    // Initialize notifications here so the UI is ready to handle permission popups
-    ref.read(notificationServiceProvider).initialize();
-    
     _navigateAfterDelay();
   }
 

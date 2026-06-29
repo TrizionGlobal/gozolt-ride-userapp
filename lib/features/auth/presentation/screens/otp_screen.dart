@@ -176,10 +176,18 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
 
   String get _maskedPhone {
     final phone = ref.read(phoneNumberProvider);
-    if (phone.length > 6) {
-      return '${phone.substring(0, phone.length - 4)} ${phone.substring(phone.length - 4)}';
+    final dialCode = ref.read(selectedDialCodeProvider);
+    String formattedPhone = phone;
+    
+    if (dialCode.isNotEmpty && phone.startsWith(dialCode)) {
+      final numberPart = phone.substring(dialCode.length).trim();
+      formattedPhone = '$dialCode $numberPart';
     }
-    return phone;
+
+    if (formattedPhone.length > 6) {
+      return '${formattedPhone.substring(0, formattedPhone.length - 4)} ${formattedPhone.substring(formattedPhone.length - 4)}';
+    }
+    return formattedPhone;
   }
 
   @override

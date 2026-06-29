@@ -7,11 +7,10 @@ class InputValidators {
   static final nameInputFormatter =
       FilteringTextInputFormatter.allow(RegExp(r"[a-zA-ZÀ-ÿ\s\-']"));
 
-  /// Rejects empty, numbers-only, single-char, or special-chars-only names
+  /// Rejects empty, numbers-only, or special-chars-only names
   static bool isValidName(String value) {
     final trimmed = value.trim();
     if (trimmed.isEmpty) return false;
-    if (trimmed.length < 2) return false;
     if (RegExp(r'^[\d\s]+$').hasMatch(trimmed)) return false;
     if (RegExp(r"^[^a-zA-ZÀ-ÿ]+$").hasMatch(trimmed)) return false;
     return true;

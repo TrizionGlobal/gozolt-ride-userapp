@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/constants/asset_paths.dart';
 import '../../../../core/router/route_names.dart';
+import '../../../ride/presentation/providers/active_ride_provider.dart';
+import '../../../ride/presentation/providers/active_ride_state.dart';
 
 class GoPlacesSection extends StatelessWidget {
   const GoPlacesSection({super.key});
@@ -55,16 +58,23 @@ class _PlaceData {
   const _PlaceData({required this.name, required this.imagePath});
 }
 
-class _PlaceCard extends StatelessWidget {
+class _PlaceCard extends ConsumerWidget {
   final _PlaceData data;
 
   const _PlaceCard({required this.data});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
+        
+        final activeState = ref.read(activeRideProvider);
+        if (activeState.ride != null && activeState.status != ActiveRideStatus.cancelled) {
+          context.pushNamed(RouteNames.rideActive);
+          return;
+        }
+
         context.pushNamed(
           RouteNames.searchDestination,
           queryParameters: {'destination': data.name},

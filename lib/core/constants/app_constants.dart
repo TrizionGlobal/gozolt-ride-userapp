@@ -3,7 +3,7 @@ abstract final class AppConstants {
   static const String googleMapsApiKey = 'AIzaSyCSwSCRQUTql_5bowO2-GiBMl4H8No0ZY4';
 
   // ── Splash ─────────────────────────────────────────────
-  static const Duration splashDuration = Duration(milliseconds: 2500);
+  static const Duration splashDuration = Duration(milliseconds: 1700);
 
   // ── Onboarding ─────────────────────────────────────────
   static const int onboardingPageCount = 3;

@@ -305,62 +305,68 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
       barrierDismissible: false,
       builder: (ctx) {
         final isDark = Theme.of(ctx).brightness == Brightness.dark;
-        return AlertDialog(
-          backgroundColor: Theme.of(ctx).cardTheme.color,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.check_circle, color: AppColors.success, size: 56),
-              const SizedBox(height: 16),
-              Text(
-                'Ride Cancelled',
-                style: AppTextStyles.headlineSmall.copyWith(
-                  color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Your ride has been cancelled successfully.',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+        return Consumer(
+          builder: (ctx, ref, _) {
+            return AlertDialog(
+              backgroundColor: Theme.of(ctx).cardTheme.color,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(ctx).pop();
-                      ref.read(activeRideProvider.notifier).reset();
-                      ref.read(rideBookingProvider.notifier).reset();
-                      ref.read(isScheduleModeProvider.notifier).state = false;
-                      context.goNamed(RouteNames.home);
-                    },
-                    child: Text('Go to Home',
-                        style: TextStyle(color: isDark ? AppColors.textMuted : AppColors.textMutedLight, fontSize: 13)),
-                  ),
-                  const SizedBox(width: 12),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(ctx).pop();
-                      ref.read(activeRideProvider.notifier).reset();
-                      ref.read(rideBookingProvider.notifier).reset();
-                      ref.read(isScheduleModeProvider.notifier).state = false;
-                      context.goNamed(RouteNames.searchDestination);
-                    },
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.primaryGold,
+                  const Icon(Icons.check_circle, color: AppColors.success, size: 56),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Ride Cancelled',
+                    style: AppTextStyles.headlineSmall.copyWith(
+                      color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
                     ),
-                    child: const Text('Book New Ride',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Your ride has been cancelled successfully.',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          final router = GoRouter.of(ctx);
+                          Navigator.of(ctx).pop();
+                          ref.read(activeRideProvider.notifier).reset();
+                          ref.read(rideBookingProvider.notifier).reset();
+                          ref.read(isScheduleModeProvider.notifier).state = false;
+                          router.goNamed(RouteNames.home);
+                        },
+                        child: Text('Go to Home',
+                            style: TextStyle(color: isDark ? AppColors.textMuted : AppColors.textMutedLight, fontSize: 13)),
+                      ),
+                      const SizedBox(width: 12),
+                      TextButton(
+                        onPressed: () {
+                          final router = GoRouter.of(ctx);
+                          Navigator.of(ctx).pop();
+                          ref.read(activeRideProvider.notifier).reset();
+                          ref.read(rideBookingProvider.notifier).reset();
+                          ref.read(isScheduleModeProvider.notifier).state = false;
+                          router.goNamed(RouteNames.searchDestination);
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.primaryGold,
+                        ),
+                        child: const Text('Book New Ride',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
+            );
+          }
         );
       },
     );

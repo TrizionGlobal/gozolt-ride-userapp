@@ -6,6 +6,8 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../ride/presentation/providers/ride_providers.dart';
+import '../../../ride/presentation/providers/active_ride_provider.dart';
+import '../../../ride/presentation/providers/active_ride_state.dart';
 
 class BookScheduleButtons extends ConsumerStatefulWidget {
   const BookScheduleButtons({super.key});
@@ -32,6 +34,12 @@ class _BookScheduleButtonsState extends ConsumerState<BookScheduleButtons> {
               label: 'Book a ride',
               isSelected: _isBookSelected,
               onTap: () {
+                final activeState = ref.read(activeRideProvider);
+                if (activeState.ride != null && activeState.status != ActiveRideStatus.cancelled) {
+                  context.pushNamed(RouteNames.rideActive);
+                  return;
+                }
+
                 setState(() => _isBookSelected = true);
                 ref.read(isScheduleModeProvider.notifier).state = false;
                 context.pushNamed(RouteNames.searchDestination);
@@ -47,6 +55,12 @@ class _BookScheduleButtonsState extends ConsumerState<BookScheduleButtons> {
               label: 'Schedule ride',
               isSelected: !_isBookSelected,
               onTap: () {
+                final activeState = ref.read(activeRideProvider);
+                if (activeState.ride != null && activeState.status != ActiveRideStatus.cancelled) {
+                  context.pushNamed(RouteNames.rideActive);
+                  return;
+                }
+
                 setState(() => _isBookSelected = false);
                 ref.read(isScheduleModeProvider.notifier).state = true;
                 context.pushNamed(RouteNames.searchDestination);

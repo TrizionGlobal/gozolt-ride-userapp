@@ -119,7 +119,11 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
         backgroundColor: Theme.of(context).cardTheme.color,
         title: Text(
           'Accept Terms',
-          style: AppTextStyles.titleLarge.copyWith(color: AppColors.textPrimary),
+          style: AppTextStyles.titleLarge.copyWith(
+            color: Theme.of(context).brightness == Brightness.dark 
+                ? AppColors.textPrimary 
+                : AppColors.textPrimaryLight,
+          ),
         ),
         content: Text(
           'You must accept the Terms of Service & Privacy Policy to continue.',
@@ -418,16 +422,7 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
 
                     const SizedBox(height: 16),
 
-                    // ── Skip for now ─────────────────────────
-                    GestureDetector(
-                      onTap: isLoading ? null : _onSkip,
-                      child: Text(
-                        'Skip for now',
-                        style: AppTextStyles.titleSmall.copyWith(
-                          color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
-                        ),
-                      ),
-                    ),
+                    // ── Skip for now removed per user request ────────────────
 
                     const SizedBox(height: 40),
                   ],

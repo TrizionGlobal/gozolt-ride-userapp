@@ -62,38 +62,55 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: RefreshIndicator(
-        color: AppColors.primaryGold,
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        onRefresh: () async {
-          _profileRetryCount = 0; // reset retry cap on manual refresh
-          ref.invalidate(userProfileProvider);
-          await Future.delayed(const Duration(milliseconds: 300));
-        },
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
-          ),
-          slivers: [
+      body: Column(
+        children: [
           // ── Gold Header with Profile ────────────────
-          SliverToBoxAdapter(
-            child: Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFFD4A843), Color(0xFFF5C518)],
-                ),
-                borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(24)),
+          Container(
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFFD4A843), Color(0xFFF5C518)],
               ),
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                  child: profileAsync.when(
-                    loading: () => SizedBox(
+              borderRadius:
+                  BorderRadius.vertical(bottom: Radius.circular(24)),
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                child: profileAsync.when(
+                  loading: () => SizedBox(
+                    height: 64,
+                    child: ShimmerWrap(
+                      child: Row(
+                        children: [
+                          const ShimmerCircle(radius: 30),
+                          const SizedBox(width: 14),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              ShimmerText(width: 120, height: 14),
+                              SizedBox(height: 8),
+                              ShimmerText(width: 160, height: 10),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  error: (error, __) {
+                    if (_profileRetryCount < _maxProfileRetries) {
+                      _profileRetryCount++;
+                      final delays = [3, 10, 30];
+                      final delaySecs = delays[(_profileRetryCount - 1).clamp(0, delays.length - 1)];
+                      Future.delayed(Duration(seconds: delaySecs), () {
+                        if (mounted) ref.invalidate(userProfileProvider);
+                      });
+                    }
+                    return SizedBox(
                       height: 64,
                       child: ShimmerWrap(
                         child: Row(
@@ -112,100 +129,60 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                           ],
                         ),
                       ),
-                    ),
-                    error: (error, __) {
-                      // Auto-retry with exponential backoff, capped at _maxProfileRetries.
-                      // When the server is completely unreachable we stop retrying to
-                      // avoid hammering the network with an infinite loop.
-                      if (_profileRetryCount < _maxProfileRetries) {
-                        _profileRetryCount++;
-                        // Backoff: 3s → 10s → 30s
-                        final delays = [3, 10, 30];
-                        final delaySecs = delays[(_profileRetryCount - 1).clamp(0, delays.length - 1)];
-                        Future.delayed(Duration(seconds: delaySecs), () {
-                          if (mounted) ref.invalidate(userProfileProvider);
-                        });
-                      }
-                      // Show shimmer while waiting for retry — no broken UI shown
-                      return SizedBox(
-                        height: 64,
-                        child: ShimmerWrap(
-                          child: Row(
-                            children: [
-                              const ShimmerCircle(radius: 30),
-                              const SizedBox(width: 14),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
-                                  ShimmerText(width: 120, height: 14),
-                                  SizedBox(height: 8),
-                                  ShimmerText(width: 160, height: 10),
-                                ],
+                    );
+                  },
+                  data: (profile) => Row(
+                    children: [
+                      (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty)
+                          ? ClipOval(
+                              child: Image.network(
+                                ApiConstants.fullUrl(profile.avatarUrl!),
+                                width: 60,
+                                height: 60,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => _buildAvatarPlaceholder(profile, 60),
                               ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-
-                    data: (profile) => Row(
-                      children: [
-                        (profile.avatarUrl != null && profile.avatarUrl!.isNotEmpty)
-                            ? ClipOval(
-                                child: Image.network(
-                                  ApiConstants.fullUrl(profile.avatarUrl!),
-                                  width: 60,
-                                  height: 60,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => _buildAvatarPlaceholder(profile, 60),
-                                ),
-                              )
-                            : _buildAvatarPlaceholder(profile, 60),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${profile.firstName ?? ''} ${profile.lastName ?? ''}'
-                                    .trim(),
-                                style: AppTextStyles.headlineSmall.copyWith(
-                                  color: AppColors.backgroundDark,
-                                ),
+                            )
+                          : _buildAvatarPlaceholder(profile, 60),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${profile.firstName ?? ''} ${profile.lastName ?? ''}'.trim(),
+                              style: AppTextStyles.headlineSmall.copyWith(
+                                color: AppColors.backgroundDark,
                               ),
-                              if (profile.phone != null)
-                                Text(
-                                  profile.phone!,
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    color: AppColors.backgroundDark
-                                        .withOpacity(0.7),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        Semantics(
-                          label: 'Edit profile',
-                          button: true,
-                          child: GestureDetector(
-                            onTap: () =>
-                                context.pushNamed(RouteNames.editProfile),
-                            child: Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: AppColors.backgroundDark
-                                    .withOpacity(0.15),
-                              ),
-                              child: const Icon(Icons.edit,
-                                  color: AppColors.backgroundDark, size: 18),
                             ),
+                            if (profile.phone != null)
+                              Text(
+                                profile.phone!,
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.backgroundDark.withOpacity(0.7),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      Semantics(
+                        label: 'Edit profile',
+                        button: true,
+                        child: GestureDetector(
+                          onTap: () => context.pushNamed(RouteNames.editProfile),
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppColors.backgroundDark.withOpacity(0.15),
+                            ),
+                            child: const Icon(Icons.edit,
+                                color: AppColors.backgroundDark, size: 18),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -213,10 +190,23 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
           ),
 
           // ── Menu Items ─────────────────────────────
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
+          Expanded(
+            child: RefreshIndicator(
+              color: AppColors.primaryGold,
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              onRefresh: () async {
+                _profileRetryCount = 0; // reset retry cap on manual refresh
+                ref.invalidate(userProfileProvider);
+                await Future.delayed(const Duration(milliseconds: 300));
+              },
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics(),
+                ),
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
                 // Section: Account
                 _sectionLabel('Account'),
                 _menuItem(
@@ -387,11 +377,12 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                     ),
                   ),
                 ),
-              ]),
+              ],
             ),
           ),
-        ],
         ),
+        ),
+      ],
       ),
     );
   }
@@ -616,7 +607,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   }
 
   Future<void> _openWhatsApp() async {
-    final uri = Uri.parse('https://wa.me/35612345678');
+    final uri = Uri.parse('https://wa.me/35677979979');
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {

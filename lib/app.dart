@@ -4,6 +4,7 @@ import 'core/constants/app_constants.dart';
 import 'core/providers/theme_provider.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 class GozoltApp extends ConsumerWidget {
   const GozoltApp({super.key});
@@ -22,6 +23,9 @@ class GozoltApp extends ConsumerWidget {
       themeMode: themeMode,
       routerConfig: router,
       builder: (context, child) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          FlutterNativeSplash.remove();
+        });
         return child ?? const SizedBox.shrink();
       },
     );
