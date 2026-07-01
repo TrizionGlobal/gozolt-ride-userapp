@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/splash/presentation/splash_screen.dart';
+import '../../features/splash/presentation/force_update_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
 import '../../features/auth/presentation/screens/welcome_screen.dart';
 import '../../features/auth/presentation/screens/phone_entry_screen.dart';
@@ -35,11 +36,13 @@ import '../../features/support/presentation/screens/ticket_detail_screen.dart';
 import '../providers/auth_redirect_provider.dart';
 import '../providers/storage_provider.dart';
 import '../providers/theme_provider.dart';
+import '../router/startup_provider.dart';
 import 'route_names.dart';
 
 
 final routerProvider = Provider<GoRouter>((ref) {
   final redirectNotifier = ref.watch(authRedirectProvider);
+  final startupNotifier = ref.watch(startupProvider);
   final storage = ref.read(secureStorageProvider);
 
   final prefs = ref.read(sharedPrefsProvider);
@@ -49,8 +52,23 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: lastRoute ?? '/',
     restorationScopeId: 'router',
     debugLogDiagnostics: true,
-    refreshListenable: redirectNotifier,
+    refreshListenable: startupNotifier,
     redirect: (context, state) async {
+      final isInitialized = startupNotifier.value;
+      final isGoingToSplash = state.uri.path == '/';
+
+      if (!isInitialized && !isGoingToSplash) {
+        // If not initialized and trying to go somewhere else (like when OS restores app),
+        // intercept and go to splash, remembering where they wanted to go.
+        return '/?from=${state.uri.path}';
+      }
+
+      if (!isInitialized) return null;
+
+      if (state.matchedLocation == '/force-update') {
+        return null;
+      }
+
       final hasTokens = await storage.hasTokens();
       final hasSeenOnboarding = await storage.hasSeenOnboarding();
 
@@ -83,29 +101,30 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.splash,
         builder: (context, state) => const SplashScreen(),
       ),
+      GoRoute(
+        path: '/force-update',
+        name: 'forceUpdate',
+        builder: (context, state) {
+          final extras = state.extra as Map<String, dynamic>? ?? {};
+          return ForceUpdateScreen(
+            iosStoreUrl: extras['iosStoreUrl'] ?? '',
+            androidStoreUrl: extras['androidStoreUrl'] ?? '',
+          );
+        },
+      ),
 
       // ── Onboarding ─────────────────────────────────────
       GoRoute(
         path: '/onboarding',
         name: RouteNames.onboarding,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const OnboardingScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) =>
-              FadeTransition(opacity: animation, child: child),
-        ),
+        builder: (context, state) => const OnboardingScreen(),
       ),
 
       // ── Welcome ────────────────────────────────────────
       GoRoute(
         path: '/welcome',
         name: RouteNames.welcome,
-        pageBuilder: (context, state) => CustomTransitionPage(
-          key: state.pageKey,
-          child: const WelcomeScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) =>
-              FadeTransition(opacity: animation, child: child),
-        ),
+        builder: (context, state) => const WelcomeScreen(),
       ),
 
       // ── Login (alias → welcome) ────────────────────────

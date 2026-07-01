@@ -8,6 +8,7 @@ class FareEstimate {
   final double distanceKm;
   final int durationMinutes;
   final int etaMinutes;
+  final int? goCoinsEarned;
 
   const FareEstimate({
     required this.baseFare,
@@ -19,6 +20,7 @@ class FareEstimate {
     required this.distanceKm,
     required this.durationMinutes,
     required this.etaMinutes,
+    this.goCoinsEarned,
   });
 
   double get surgeAmount =>
@@ -36,6 +38,7 @@ class FareEstimate {
     double? distanceKm,
     int? durationMinutes,
     int? etaMinutes,
+    int? goCoinsEarned,
   }) {
     return FareEstimate(
       baseFare: baseFare ?? this.baseFare,
@@ -47,6 +50,7 @@ class FareEstimate {
       distanceKm: distanceKm ?? this.distanceKm,
       durationMinutes: durationMinutes ?? this.durationMinutes,
       etaMinutes: etaMinutes ?? this.etaMinutes,
+      goCoinsEarned: goCoinsEarned ?? this.goCoinsEarned,
     );
   }
 
@@ -61,6 +65,7 @@ class FareEstimate {
       distanceKm: (json['distanceKm'] as num).toDouble(),
       durationMinutes: (json['durationMinutes'] as num).toInt(),
       etaMinutes: (json['etaMinutes'] as num).toInt(),
+      goCoinsEarned: json['goCoinsEarned'] != null ? (json['goCoinsEarned'] as num).toInt() : null,
     );
   }
 }

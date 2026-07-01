@@ -620,42 +620,33 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                     const SizedBox(height: 14),
 
                     // Vehicle selector
-                    if (isLoading)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Column(
-                          children: List.generate(
-                            3,
-                            (_) => Padding(
-                              padding: EdgeInsets.only(bottom: 10),
-                              child: ShimmerWrap(
-                                child: ShimmerBox(
-                                  width: double.infinity,
-                                  height: 80,
-                                  borderRadius: 14,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                    else
-                      VehicleTypeSelector(
-                        selected: booking.vehicleType,
-                        estimate: booking.fareEstimate,
-                        availableTypes: _availableVehicleTypes.isNotEmpty
-                            ? _availableVehicleTypes
-                            : null,
-                        onSelect: (type) {
-                          HapticFeedback.selectionClick();
-                          ref.read(rideBookingProvider.notifier).setVehicleType(type);
-                        },
-                      ),
+                    VehicleTypeSelector(
+                      selected: booking.vehicleType,
+                      allEstimates: booking.allEstimates,
+                      availableTypes: _availableVehicleTypes.isNotEmpty
+                          ? _availableVehicleTypes
+                          : null,
+                      onSelect: (type) {
+                        HapticFeedback.selectionClick();
+                        ref.read(rideBookingProvider.notifier).setVehicleType(type);
+                      },
+                    ),
 
                     const SizedBox(height: 16),
 
                     // Fare breakdown
-                    if (booking.fareEstimate != null)
+                    if (isLoading)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: ShimmerWrap(
+                          child: ShimmerBox(
+                            width: double.infinity,
+                            height: 160,
+                            borderRadius: 14,
+                          ),
+                        ),
+                      )
+                    else if (booking.fareEstimate != null)
                       FareBreakdownCard(
                         estimate: booking.fareEstimate!,
                         promoDiscount: booking.promoDiscount,

@@ -81,6 +81,7 @@ dependencies:
   path_provider: ^2.1.5
   font_awesome_flutter: ^11.0.0
   flutter_local_notifications: ^22.0.1
+  package_info_plus: ^9.0.1
 
 dev_dependencies:
   flutter_test:
@@ -108,8 +109,8 @@ flutter_native_splash:
   image_dark: "assets/images/dark_splash_padded.png"
   android_12:
     color: "#F6F8FA"
-    image: "assets/images/light_splash_padded.png"
     color_dark: "#0D1117"
+    image: "assets/images/light_splash_padded.png"
     image_dark: "assets/images/dark_splash_padded.png"
 
 flutter:

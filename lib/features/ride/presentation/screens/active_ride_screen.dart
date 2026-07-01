@@ -1323,7 +1323,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
               // Action Buttons
               SizedBox(
                 width: double.infinity,
-                height: 54,
+                height: 48,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryGold,
@@ -1348,7 +1348,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
-                height: 54,
+                height: 48,
                 child: TextButton(
                   onPressed: () {
                     Navigator.pop(ctx);

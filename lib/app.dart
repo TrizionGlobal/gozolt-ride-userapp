@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/constants/app_constants.dart';
 import 'core/providers/theme_provider.dart';
@@ -26,6 +27,20 @@ class GozoltApp extends ConsumerWidget {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           FlutterNativeSplash.remove();
         });
+
+        final brightness = Theme.of(context).brightness;
+        
+        SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+        SystemChrome.setSystemUIOverlayStyle(
+          SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            systemNavigationBarColor: Colors.transparent,
+            systemNavigationBarDividerColor: Colors.transparent,
+            statusBarIconBrightness: brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+            systemNavigationBarIconBrightness: brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+          ),
+        );
+
         return child ?? const SizedBox.shrink();
       },
     );

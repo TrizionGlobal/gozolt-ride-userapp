@@ -3,18 +3,19 @@ import '../../../../core/constants/api_constants.dart';
 import '../models/fare_estimate.dart';
 import '../models/promo_validation.dart';
 import '../models/ride.dart';
+import '../models/vehicle_type.dart';
 
 class RideRemoteDatasource {
   final Dio _dio;
 
   RideRemoteDatasource(this._dio);
 
-  Future<FareEstimate> estimateFare({
+  Future<Map<VehicleType, FareEstimate>> estimateFare({
     required double pickupLat,
     required double pickupLng,
     required double dropoffLat,
     required double dropoffLng,
-    required String vehicleType,
+    String? vehicleType,
     List<Map<String, dynamic>>? stops,
   }) async {
     final body = <String, dynamic>{
@@ -22,12 +23,25 @@ class RideRemoteDatasource {
       'pickupLng': pickupLng,
       'dropoffLat': dropoffLat,
       'dropoffLng': dropoffLng,
-      'vehicleType': vehicleType,
     };
+    if (vehicleType != null && vehicleType.isNotEmpty) {
+      body['vehicleType'] = vehicleType;
+    }
     if (stops != null && stops.isNotEmpty) body['stops'] = stops;
 
     final response = await _dio.post(ApiConstants.rideEstimate, data: body);
-    return FareEstimate.fromJson(response.data as Map<String, dynamic>);
+    
+    final Map<VehicleType, FareEstimate> estimates = {};
+    if (response.data is Map<String, dynamic>) {
+      final data = response.data as Map<String, dynamic>;
+      data.forEach((key, value) {
+        try {
+          final type = VehicleType.fromApi(key);
+          estimates[type] = FareEstimate.fromJson(value as Map<String, dynamic>);
+        } catch (_) {}
+      });
+    }
+    return estimates;
   }
 
   Future<Ride> createRide(Map<String, dynamic> data) async {

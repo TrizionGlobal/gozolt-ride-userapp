@@ -80,63 +80,59 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       }
     });
 
+    final double statusBarHeight = MediaQuery.of(context).padding.top;
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
+      body: Column(
+        children: [
           // ── Header ─────────────────────────────────
-          SliverToBoxAdapter(
-            child: Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0xFFD4A843), Color(0xFFF5C518)],
-                ),
-                borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(24)),
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.fromLTRB(16, 8 + statusBarHeight, 20, 20),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFFD4A843), Color(0xFFF5C518)],
               ),
-              child: SafeArea(
-                bottom: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 20, 20),
-                  child: Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => context.pop(),
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: AppColors.backgroundDark
-                                .withOpacity(0.15),
-                          ),
-                          child: const Icon(Icons.arrow_back,
-                              color: AppColors.backgroundDark, size: 20),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'Edit Profile',
-                        style: AppTextStyles.headlineSmall.copyWith(
-                          color: AppColors.backgroundDark,
-                        ),
-                      ),
-                    ],
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+            ),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () => context.pop(),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.backgroundDark.withOpacity(0.15),
+                    ),
+                    child: const Icon(Icons.arrow_back,
+                        color: AppColors.backgroundDark, size: 20),
                   ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                Text(
+                  'Edit Profile',
+                  style: AppTextStyles.headlineSmall.copyWith(
+                    color: AppColors.backgroundDark,
+                  ),
+                ),
+              ],
             ),
           ),
 
           // ── Form ───────────────────────────────────
-          SliverPadding(
-            padding: const EdgeInsets.all(20),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
+          Expanded(
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.all(20),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
                 // Avatar
                 Center(
                   child: Builder(
@@ -288,8 +284,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+    ],
+   ),
+  );
+ }
 
   Widget _inputLabel(String text) {
     return Text(

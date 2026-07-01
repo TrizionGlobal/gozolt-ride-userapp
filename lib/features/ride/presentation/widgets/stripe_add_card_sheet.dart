@@ -34,6 +34,9 @@ class _StripeAddCardSheetState extends State<StripeAddCardSheet> {
   @override
   void initState() {
     super.initState();
+    _nameController.addListener(() {
+      setState(() {});
+    });
     _fetchIntent();
   }
 
@@ -325,7 +328,7 @@ class _StripeAddCardSheetState extends State<StripeAddCardSheet> {
               width: double.infinity,
               height: 46,
               child: ElevatedButton(
-                onPressed: (_isSaving || !_isCardComplete) ? null : _saveCard,
+                onPressed: (_isSaving || !_isCardComplete || _nameController.text.trim().isEmpty) ? null : _saveCard,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGold,
                   foregroundColor: Theme.of(context).scaffoldBackgroundColor,

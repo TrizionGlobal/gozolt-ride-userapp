@@ -28,7 +28,7 @@ class RideBookingState {
   final double? coinsDiscount;
   final bool isScheduled;
   final DateTime? scheduledAt;
-  final FareEstimate? fareEstimate;
+  final Map<VehicleType, FareEstimate>? allEstimates;
   final BookingStatus status;
   final String? errorMessage;
   final String? createdRideId;
@@ -49,7 +49,7 @@ class RideBookingState {
     this.coinsDiscount,
     this.isScheduled = false,
     this.scheduledAt,
-    this.fareEstimate,
+    this.allEstimates,
     this.status = BookingStatus.idle,
     this.errorMessage,
     this.createdRideId,
@@ -58,6 +58,8 @@ class RideBookingState {
   });
 
   bool get hasLocations => pickup != null && dropoff != null;
+
+  FareEstimate? get fareEstimate => allEstimates?[vehicleType];
 
   double get totalFare {
     if (fareEstimate == null) return 0;
@@ -82,7 +84,7 @@ class RideBookingState {
     double? coinsDiscount,
     bool? isScheduled,
     DateTime? scheduledAt,
-    FareEstimate? fareEstimate,
+    Map<VehicleType, FareEstimate>? allEstimates,
     BookingStatus? status,
     String? errorMessage,
     String? createdRideId,
@@ -108,7 +110,7 @@ class RideBookingState {
       coinsDiscount: coinsDiscount ?? this.coinsDiscount,
       isScheduled: clearSchedule ? false : (isScheduled ?? this.isScheduled),
       scheduledAt: clearSchedule ? null : (scheduledAt ?? this.scheduledAt),
-      fareEstimate: fareEstimate ?? this.fareEstimate,
+      allEstimates: allEstimates ?? this.allEstimates,
       status: status ?? this.status,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       createdRideId: clearRideId ? null : (createdRideId ?? this.createdRideId),

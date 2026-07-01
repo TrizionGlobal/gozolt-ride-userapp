@@ -81,8 +81,7 @@ class RideBookingNotifier extends StateNotifier<RideBookingState> {
   }
 
   void setVehicleType(VehicleType type) {
-    state = state.copyWith(vehicleType: type, fareEstimate: null);
-    fetchFareEstimate();
+    state = state.copyWith(vehicleType: type);
   }
 
   void setPaymentMethod(PaymentMethodType type, {String? cardId}) {
@@ -136,17 +135,16 @@ class RideBookingNotifier extends StateNotifier<RideBookingState> {
           .map((s) => {'latitude': s.latitude, 'longitude': s.longitude})
           .toList();
 
-      final estimate = await ds.estimateFare(
+      final estimates = await ds.estimateFare(
         pickupLat: state.pickup!.latitude,
         pickupLng: state.pickup!.longitude,
         dropoffLat: state.dropoff!.latitude,
         dropoffLng: state.dropoff!.longitude,
-        vehicleType: state.vehicleType.apiValue,
         stops: stops.isEmpty ? null : stops,
       );
 
       state = state.copyWith(
-        fareEstimate: estimate,
+        allEstimates: estimates,
         status: BookingStatus.estimated,
       );
     } catch (e, stack) {
@@ -291,12 +289,12 @@ class RideBookingNotifier extends StateNotifier<RideBookingState> {
     try {
       final ds = _ref.read(rideRemoteDatasourceProvider);
       await ds.addExtraFare(state.createdRideId!, amount);
-      if (state.fareEstimate != null) {
-        state = state.copyWith(
-          fareEstimate: state.fareEstimate!.copyWith(
-            estimatedFare: state.fareEstimate!.estimatedFare + amount,
-          ),
+      if (state.allEstimates != null && state.fareEstimate != null) {
+        final newEstimates = Map<VehicleType, FareEstimate>.from(state.allEstimates!);
+        newEstimates[state.vehicleType] = state.fareEstimate!.copyWith(
+          estimatedFare: state.fareEstimate!.estimatedFare + amount,
         );
+        state = state.copyWith(allEstimates: newEstimates);
       }
     } catch (e) {
       print('Error adding extra fare: $e');
