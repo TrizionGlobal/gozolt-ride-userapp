@@ -9,6 +9,7 @@ import '../../../../core/providers/storage_provider.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/widgets/gozolt_button.dart';
 import '../providers/auth_provider.dart';
+import 'package:flutter/services.dart';
 
 class WelcomeScreen extends ConsumerWidget {
   const WelcomeScreen({super.key});
@@ -16,122 +17,130 @@ class WelcomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? Theme.of(context).scaffoldBackgroundColor
-          : Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            children: [
-              const Spacer(flex: 3),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Column(
+                      children: [
+                        const Spacer(flex: 3),
 
-              // ── Logo with text ─────────────────────────────
-              Image.asset(
-                Theme.of(context).brightness == Brightness.dark
-                    ? AssetPaths.gozoltLogoWithText
-                    : AssetPaths.gozoltLogoWithTextLight,
-                width: 240,
-                fit: BoxFit.contain,
-              ),
+                        // ── Logo with text ─────────────────────────────
+                        Image.asset(
+                          Theme.of(context).brightness == Brightness.dark
+                              ? AssetPaths.gozoltLogoWithText
+                              : AssetPaths.gozoltLogoWithTextLight,
+                          width: 240,
+                          fit: BoxFit.contain,
+                        ),
 
-              const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-              // ── Tagline ────────────────────────────────────
-              Text(
-                'Together shaping the future of convenience',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: Theme.of(context).textTheme.bodyMedium?.color,
-                ),
-              ),
+                        // ── Tagline ────────────────────────────────────
+                        Text(
+                          'Together shaping the future of convenience',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: Theme.of(context).textTheme.bodyMedium?.color,
+                          ),
+                        ),
 
-              const Spacer(flex: 2),
+                        const Spacer(flex: 2),
 
-              // ── Log In button (filled gold) ────────────────
-              GozoltButton(
-                label: 'Log In',
-                width: double.infinity,
-                onPressed: () {
-                  ref.read(isRegisterFlowProvider.notifier).state = false;
-                  context.pushNamed(RouteNames.phoneEntry);
-                },
-              ),
+                        // ── Log In button (filled gold) ────────────────
+                        GozoltButton(
+                          label: 'Log In',
+                          width: double.infinity,
+                          onPressed: () {
+                            ref.read(isRegisterFlowProvider.notifier).state = false;
+                            context.pushNamed(RouteNames.phoneEntry);
+                          },
+                        ),
 
-              const SizedBox(height: 14),
+                        const SizedBox(height: 14),
 
-              // ── "or" divider ─────────────────────────────────
-              Row(
-                children: [
-                  Expanded(
-                    child: Divider(color: Theme.of(context).dividerTheme.color, thickness: 0.5),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text(
-                      'or',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                        // ── "or" divider ─────────────────────────────────
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Divider(color: Theme.of(context).dividerTheme.color, thickness: 0.5),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Text(
+                                'or',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Divider(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, thickness: 0.5),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        // ── Register button (outlined) ─────────────────
+                        GozoltButton(
+                          label: 'Register',
+                          width: double.infinity,
+                          isOutlined: true,
+                          onPressed: () {
+                            ref.read(isRegisterFlowProvider.notifier).state = true;
+                            context.pushNamed(RouteNames.phoneEntry);
+                          },
+                        ),
+
+                        const Spacer(),
+
+                        // ── Footer ────────────────────────────────────
+                        RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: 'All rights reserved ©️ ',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: Theme.of(context).textTheme.bodySmall?.color,
+                                  fontSize: 11,
+                                ),
+                              ),
+                              TextSpan(
+                                text: 'Primooo Global Ltd 2024',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.primaryGold,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 4),
+
+                        Text(
+                          'v1.0.1',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.5) ?? Colors.grey,
+                            fontSize: 10,
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+                      ],
                     ),
                   ),
-                  Expanded(
-                    child: Divider(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, thickness: 0.5),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 14),
-
-              // ── Register button (outlined) ─────────────────
-              GozoltButton(
-                label: 'Register',
-                width: double.infinity,
-                isOutlined: true,
-                onPressed: () {
-                  ref.read(isRegisterFlowProvider.notifier).state = true;
-                  context.pushNamed(RouteNames.phoneEntry);
-                },
-              ),
-
-              const Spacer(),
-
-
-              // ── Footer ────────────────────────────────────
-              RichText(
-                text: TextSpan(
-                  children: [
-                    TextSpan(
-                      text: 'All rights reserved ©️ ',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: Theme.of(context).textTheme.bodySmall?.color,
-                        fontSize: 11,
-                      ),
-                    ),
-                    TextSpan(
-                      text: 'Primooo Global Ltd 2024',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.primaryGold,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
                 ),
               ),
-
-              const SizedBox(height: 4),
-
-              Text(
-                'Version 1.0.1',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.5) ?? Colors.grey,
-                  fontSize: 10,
-                ),
-              ),
-
-              const SizedBox(height: 20),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

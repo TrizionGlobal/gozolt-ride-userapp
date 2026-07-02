@@ -137,10 +137,10 @@ class VehicleTypeSelector extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.monetization_on,
-                            size: 10,
-                            color: AppColors.primaryGold,
+                          Image.asset(
+                            AssetPaths.iconGoCoin,
+                            width: 12,
+                            height: 12,
                           ),
                           const SizedBox(width: 2),
                           Text(

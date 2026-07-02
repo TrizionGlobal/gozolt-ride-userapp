@@ -241,11 +241,13 @@ static const String _googleSvg = '''
               onTap: () => _handleSocial('GOOGLE'),
               isGoogle: true,
             ),
-            const SizedBox(width: 24),
-            _buildSocialIcon(
-              iconData: Icons.apple,
-              onTap: () => _handleSocial('APPLE'),
-            ),
+            if (Theme.of(context).platform == TargetPlatform.iOS) ...[
+              const SizedBox(width: 24),
+              _buildSocialIcon(
+                iconData: Icons.apple,
+                onTap: () => _handleSocial('APPLE'),
+              ),
+            ],
           ],
         ),
       ],
@@ -354,16 +356,15 @@ static const String _googleSvg = '''
         lastName: credential.familyName,
       );
     } catch (e) {
-      // Fallback/Mock for Simulator or Android testing
-      debugPrint('Native Apple Sign-In failed or unsupported. Using fallback mock. Error: $e');
-      final mockIdToken = 'mock_apple_token_${DateTime.now().millisecondsSinceEpoch}';
-      
-      ref.read(authProvider.notifier).socialLogin(
-        provider: 'APPLE',
-        idToken: mockIdToken,
-        firstName: 'Apple',
-        lastName: 'User',
-      );
+      debugPrint('Apple Sign-In failed: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Apple Sign-In failed or is not supported on this device/simulator.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }

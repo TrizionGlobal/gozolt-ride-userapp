@@ -20,16 +20,74 @@
             "package_name": "com.gozolt.gozolt_app",
             "certificate_hash": "f3a45442befe78532c6b3f1dfeae8861bc84eab4"
           }
+        },
+        {
+          "client_id": "715853709143-003i867cfpfbnn49j38fk08mrvgodd1u.apps.googleusercontent.com",
+          "client_type": 3
         }
       ],
       "api_key": [
         {
           "current_key": "AIzaSyDridqV09-x8J8EdVSsrQElGsCbBWRJJcc"
+        },
+        {
+          "current_key": "AIzaSyCC82fzyu0GZRsc6jAqkQztoHelNnwgA_0"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "715853709143-003i867cfpfbnn49j38fk08mrvgodd1u.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "715853709143-3h3srudfsknjpf43ii5t7r6jfbgcih77.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.gozolt.gozoltUserApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:715853709143:android:d7f74c83a40fa245494812",
+        "android_client_info": {
+          "package_name": "com.gozolt.gozolt_driver"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "715853709143-003i867cfpfbnn49j38fk08mrvgodd1u.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDridqV09-x8J8EdVSsrQElGsCbBWRJJcc"
+        },
+        {
+          "current_key": "AIzaSyCC82fzyu0GZRsc6jAqkQztoHelNnwgA_0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "715853709143-003i867cfpfbnn49j38fk08mrvgodd1u.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "715853709143-3h3srudfsknjpf43ii5t7r6jfbgcih77.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.gozolt.gozoltUserApp"
+              }
+            }
+          ]
         }
       }
     }
