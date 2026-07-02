@@ -17,7 +17,9 @@ class WelcomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark 
+          ? Theme.of(context).scaffoldBackgroundColor 
+          : Colors.white,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
