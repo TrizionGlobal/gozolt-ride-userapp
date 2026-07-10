@@ -1318,7 +1318,35 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
                   height: 1.5,
                 ),
               ),
-              const SizedBox(height: 32),
+              if (reason != null && (reason.toLowerCase().contains('no driver') || reason.toLowerCase().contains('all of our drivers')) && ref.read(activeRideProvider).ride?.paymentMethod == 'card') ...[
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF233227) : const Color(0xFFF1F8F2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.success.withOpacity(0.4)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.check_circle_outline, color: AppColors.success, size: 24),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Your pre-authorization hold has been successfully cancelled. The debited amount will be credited back to your account shortly.',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: isDark ? Colors.white70 : AppColors.textPrimaryLight,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ] else ...[
+                const SizedBox(height: 32),
+              ],
 
               // Action Buttons
               SizedBox(

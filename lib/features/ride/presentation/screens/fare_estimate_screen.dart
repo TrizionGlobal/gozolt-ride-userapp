@@ -908,32 +908,36 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
       // Clear the error state so user can retry without stale error
       ref.read(rideBookingProvider.notifier).clearError();
       if (mounted) {
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white, size: 20),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    updatedBooking.errorMessage ?? 'Failed to book ride. Please try again.',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: Colors.white,
+        if (updatedBooking.paymentMethodType == PaymentMethodType.card) {
+          _showPaymentErrorSheet(updatedBooking.errorMessage ?? 'Your card was declined or has insufficient funds.');
+        } else {
+          ScaffoldMessenger.of(context).clearSnackBars();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      updatedBooking.errorMessage ?? 'Failed to book ride. Please try again.',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Colors.white,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
+              backgroundColor: AppColors.error,
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              duration: const Duration(seconds: 4),
             ),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            duration: const Duration(seconds: 4),
-          ),
-        );
+          );
+        }
       }
       return;
     }
@@ -944,6 +948,93 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
       );
       context.pushNamed(RouteNames.rideActive);
     }
+  }
+
+  void _showPaymentErrorSheet(String errorMessage) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark 
+          ? AppColors.surfaceDark 
+          : AppColors.surfaceLight,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(24.0).copyWith(bottom: MediaQuery.of(context).padding.bottom + 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.error.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.credit_card_off, color: AppColors.error, size: 40),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Payment Declined',
+              style: AppTextStyles.headlineMedium.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              errorMessage.contains('proceeding without hold') 
+                  ? 'Your card was declined or has insufficient funds.' 
+                  : errorMessage,
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7)),
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  ref.read(rideBookingProvider.notifier).setPaymentMethod(PaymentMethodType.cash);
+                  // Give it a brief moment to update state before retrying
+                  Future.delayed(const Duration(milliseconds: 300), () {
+                    if (mounted) _onSelectRide();
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGold,
+                  foregroundColor: Theme.of(context).scaffoldBackgroundColor,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text(
+                  'Switch to Cash & Retry',
+                  style: AppTextStyles.button.copyWith(color: Theme.of(context).scaffoldBackgroundColor),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: OutlinedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _showPaymentMethodSheet();
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Theme.of(context).textTheme.bodyLarge?.color,
+                  side: BorderSide(color: Theme.of(context).dividerColor),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text(
+                  'Use a Different Card',
+                  style: AppTextStyles.button.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showDiscountSheet() {
@@ -1428,6 +1519,35 @@ class _BookingPaymentSheetState extends ConsumerState<_BookingPaymentSheet> {
                 methods, cardColor, borderColor, textColor, secondaryTextColor),
           ),
 
+          if (_selectedType == PaymentMethodType.card)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGold.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.info_outline, color: AppColors.primaryGold, size: 18),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'A temporary pre-authorization hold will be placed on your card for the estimated amount to verify funds. The actual amount will be charged only after the ride completes.',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: textColor,
+                          height: 1.3,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          
           // Confirm button
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),

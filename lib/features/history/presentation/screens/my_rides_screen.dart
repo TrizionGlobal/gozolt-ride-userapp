@@ -28,18 +28,10 @@ class MyRidesScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: RefreshIndicator(
-        color: AppColors.primaryGold,
-        backgroundColor: Theme.of(context).cardTheme.color,
-        onRefresh: () => ref.read(rideHistoryProvider.notifier).load(),
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(
-            parent: BouncingScrollPhysics(),
-          ),
-          slivers: [
-            // ── Header ─────────────────────────────────
-            SliverToBoxAdapter(
-              child: Container(
+      body: Column(
+        children: [
+          // ── Header ─────────────────────────────────
+          Container(
                 width: double.infinity,
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
@@ -63,12 +55,10 @@ class MyRidesScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-            ),
 
             // ── Filter Tabs ────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -114,11 +104,20 @@ class MyRidesScreen extends ConsumerWidget {
                   ),
                 ),
               ),
-            ),
 
             // ── Content ────────────────────────────────
-            if (historyState.isLoading && historyState.rides.isEmpty)
-              SliverToBoxAdapter(
+            Expanded(
+              child: RefreshIndicator(
+                color: AppColors.primaryGold,
+                backgroundColor: Theme.of(context).cardTheme.color,
+                onRefresh: () => ref.read(rideHistoryProvider.notifier).load(),
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
+                  ),
+                  slivers: [
+                    if (historyState.isLoading && historyState.rides.isEmpty)
+                      SliverToBoxAdapter(
                 child: buildShimmerList(
                   itemBuilder: () => const ShimmerRideCard(),
                   count: 4,
@@ -254,8 +253,11 @@ class MyRidesScreen extends ConsumerWidget {
           ],
         ),
       ),
-    );
-  }
+      ),
+     ],
+    ),
+  );
+}
 
   void _showRescheduleSheet(
       BuildContext context, WidgetRef ref, RideHistoryItem ride) {

@@ -16,7 +16,7 @@ class TripSummaryScreen extends ConsumerWidget {
     final rideAsync = ref.watch(selectedRideDetailProvider(rideId));
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundDark,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: rideAsync.when(
         loading: () => Center(
           child: CircularProgressIndicator(color: AppColors.primaryGold),
@@ -25,12 +25,12 @@ class TripSummaryScreen extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.error_outline,
-                  color: AppColors.textMuted, size: 48),
+              Icon(Icons.error_outline,
+                  color: (Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight), size: 48),
               const SizedBox(height: 12),
               Text('Failed to load ride details',
                   style: AppTextStyles.bodyMedium
-                      .copyWith(color: AppColors.textSecondary)),
+                      .copyWith(color: (Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight))),
               TextButton(
                 onPressed: () => ref.invalidate(selectedRideDetailProvider(rideId)),
                 child: Text('Retry',
@@ -45,12 +45,10 @@ class TripSummaryScreen extends ConsumerWidget {
   }
 
   Widget _buildContent(BuildContext context, RideHistoryItem ride) {
-    return CustomScrollView(
-      physics: const BouncingScrollPhysics(),
-      slivers: [
+    return Column(
+      children: [
         // ── Gold Header ──────────────────────────────
-        SliverToBoxAdapter(
-          child: Container(
+        Container(
             width: double.infinity,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -77,18 +75,18 @@ class TripSummaryScreen extends ConsumerWidget {
                             height: 36,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: AppColors.backgroundDark
+                              color: Theme.of(context).scaffoldBackgroundColor
                                   .withOpacity(0.15),
                             ),
                             child: const Icon(Icons.arrow_back,
-                                color: AppColors.backgroundDark, size: 20),
+                                color: Colors.black, size: 20),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Text(
                           'Trip Summary',
                           style: AppTextStyles.headlineSmall.copyWith(
-                            color: AppColors.backgroundDark,
+                            color: Colors.black,
                           ),
                         ),
                       ],
@@ -104,7 +102,7 @@ class TripSummaryScreen extends ConsumerWidget {
                               fontFamily: 'Roboto',
                               fontSize: 36,
                               fontWeight: FontWeight.w900,
-                              color: AppColors.backgroundDark,
+                              color: Colors.black,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -113,13 +111,13 @@ class TripSummaryScreen extends ConsumerWidget {
                                 horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
                               color:
-                                  AppColors.backgroundDark.withOpacity(0.15),
+                                  Theme.of(context).scaffoldBackgroundColor.withOpacity(0.15),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               ride.displayStatus,
                               style: AppTextStyles.labelSmall.copyWith(
-                                color: AppColors.backgroundDark,
+                                color: Colors.black,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -132,13 +130,16 @@ class TripSummaryScreen extends ConsumerWidget {
               ),
             ),
           ),
-        ),
 
         // ── Body ─────────────────────────────────────
-        SliverPadding(
-          padding: const EdgeInsets.all(20),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate([
+        Expanded(
+          child: CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.all(20),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
               // GoCoins earned
               if (ride.goCoinsEarned != null && ride.goCoinsEarned! > 0) ...[
                 Container(
@@ -169,44 +170,44 @@ class TripSummaryScreen extends ConsumerWidget {
               ],
 
               // Route card
-              _sectionTitle('Route'),
+              _sectionTitle(context, 'Route'),
               const SizedBox(height: 10),
-              _routeCard(ride),
+              _routeCard(context, ride),
               const SizedBox(height: 24),
 
               // Ride details
-              _sectionTitle('Ride Details'),
+              _sectionTitle(context, 'Ride Details'),
               const SizedBox(height: 10),
-              _detailsCard(ride),
+              _detailsCard(context, ride),
               const SizedBox(height: 24),
 
               // Driver info
               if (ride.driverName != null) ...[
-                _sectionTitle('Driver'),
+                _sectionTitle(context, 'Driver'),
                 const SizedBox(height: 10),
-                _driverCard(ride),
+                _driverCard(context, ride),
                 const SizedBox(height: 24),
               ],
 
               // Payment breakdown
-              _sectionTitle('Payment'),
+              _sectionTitle(context, 'Payment'),
               const SizedBox(height: 10),
-              _paymentCard(ride),
+              _paymentCard(context, ride),
               const SizedBox(height: 24),
 
               // Rating
               if (ride.isCompleted && ride.rating != null) ...[
-                _sectionTitle('Your Rating'),
+                _sectionTitle(context, 'Your Rating'),
                 const SizedBox(height: 10),
-                _ratingCard(ride),
+                _ratingCard(context, ride),
                 const SizedBox(height: 24),
               ],
 
               // Cancellation reason
               if (ride.isCancelled && ride.cancelReason != null) ...[
-                _sectionTitle('Cancellation'),
+                _sectionTitle(context, 'Cancellation'),
                 const SizedBox(height: 10),
-                _cancelCard(ride),
+                _cancelCard(context, ride),
                 const SizedBox(height: 24),
               ],
 
@@ -225,8 +226,8 @@ class TripSummaryScreen extends ConsumerWidget {
                         icon: const Icon(Icons.receipt_long, size: 18),
                         label: Text('Receipt'),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.textSecondary,
-                          side: const BorderSide(color: AppColors.borderDark),
+                          foregroundColor: (Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
+                          side: BorderSide(color: (Theme.of(context).dividerTheme.color ?? AppColors.borderDark)),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10)),
                           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -245,8 +246,8 @@ class TripSummaryScreen extends ConsumerWidget {
                         icon: const Icon(Icons.flag_outlined, size: 18),
                         label: Text('Report'),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.textSecondary,
-                          side: const BorderSide(color: AppColors.borderDark),
+                          foregroundColor: (Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
+                          side: BorderSide(color: (Theme.of(context).dividerTheme.color ?? AppColors.borderDark)),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10)),
                           padding: const EdgeInsets.symmetric(vertical: 12),
@@ -266,33 +267,36 @@ class TripSummaryScreen extends ConsumerWidget {
                     label: Text('Book Same Route'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,
-                      foregroundColor: AppColors.backgroundDark,
+                      foregroundColor: Theme.of(context).scaffoldBackgroundColor,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 40),
               ],
             ]),
           ),
         ),
       ],
-    );
+    ),
+  ),
+],
+);
+}
+
+  Widget _sectionTitle(BuildContext context, String text) {
+    return Text(text, style: AppTextStyles.titleLarge.copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight));
   }
 
-  Widget _sectionTitle(String text) {
-    return Text(text, style: AppTextStyles.titleLarge);
-  }
-
-  Widget _routeCard(RideHistoryItem ride) {
+  Widget _routeCard(BuildContext context, RideHistoryItem ride) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(color: (Theme.of(context).dividerTheme.color ?? AppColors.borderDark)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -313,7 +317,7 @@ class TripSummaryScreen extends ConsumerWidget {
                   ),
                 ),
                 Container(
-                    width: 2, height: 28, color: AppColors.borderDark),
+                    width: 2, height: 28, color: (Theme.of(context).dividerTheme.color ?? AppColors.borderDark)),
                 Container(
                   width: 12,
                   height: 12,
@@ -335,13 +339,13 @@ class TripSummaryScreen extends ConsumerWidget {
               children: [
                 Text('Pickup',
                     style: AppTextStyles.labelSmall
-                        .copyWith(color: AppColors.textMuted, fontSize: 10)),
-                Text(ride.pickupAddress, style: AppTextStyles.bodyMedium),
+                        .copyWith(color: (Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight), fontSize: 10)),
+                Text(ride.pickupAddress, style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight)),
                 const SizedBox(height: 16),
                 Text('Drop-off',
                     style: AppTextStyles.labelSmall
-                        .copyWith(color: AppColors.textMuted, fontSize: 10)),
-                Text(ride.dropoffAddress, style: AppTextStyles.bodyMedium),
+                        .copyWith(color: (Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight), fontSize: 10)),
+                Text(ride.dropoffAddress, style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight)),
               ],
             ),
           ),
@@ -350,37 +354,36 @@ class TripSummaryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _detailsCard(RideHistoryItem ride) {
+  Widget _detailsCard(BuildContext context, RideHistoryItem ride) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(color: (Theme.of(context).dividerTheme.color ?? AppColors.borderDark)),
       ),
       child: Column(
         children: [
-          _detailRow('Ride ID', ride.id),
-          _detailRow('Vehicle', ride.displayVehicle),
-          _detailRow('Date', _formatDate(ride.createdAt)),
+          _detailRow(context, 'Vehicle', ride.displayVehicle),
+          _detailRow(context, 'Date', _formatDate(ride.createdAt)),
           if (ride.distanceKm != null)
-            _detailRow('Distance', '${ride.distanceKm!.toStringAsFixed(1)} km'),
+            _detailRow(context, 'Distance', '${ride.distanceKm!.toStringAsFixed(1)} km'),
           if (ride.durationMinutes != null)
-            _detailRow('Duration', '${ride.durationMinutes} min'),
+            _detailRow(context, 'Duration', '${ride.durationMinutes} min'),
           if (ride.isScheduled && ride.scheduledAt != null)
-            _detailRow('Scheduled For', _formatDate(ride.scheduledAt!)),
+            _detailRow(context, 'Scheduled For', _formatDate(ride.scheduledAt!)),
         ],
       ),
     );
   }
 
-  Widget _driverCard(RideHistoryItem ride) {
+  Widget _driverCard(BuildContext context, RideHistoryItem ride) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(color: (Theme.of(context).dividerTheme.color ?? AppColors.borderDark)),
       ),
       child: Row(
         children: [
@@ -398,7 +401,7 @@ class TripSummaryScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(ride.driverName ?? '', style: AppTextStyles.titleSmall),
+                Text(ride.driverName ?? '', style: AppTextStyles.titleSmall.copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight)),
                 const SizedBox(height: 2),
                 Row(
                   children: [
@@ -443,49 +446,51 @@ class TripSummaryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _paymentCard(RideHistoryItem ride) {
+  Widget _paymentCard(BuildContext context, RideHistoryItem ride) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(color: (Theme.of(context).dividerTheme.color ?? AppColors.borderDark)),
       ),
       child: Column(
         children: [
           if (ride.estimatedFare != null)
-            _detailRow('Estimated Fare',
+            _detailRow(context, 'Estimated Fare',
                 '\u20AC${ride.estimatedFare!.toStringAsFixed(2)}'),
           if (ride.baseFare != null)
-            _detailRow('Base Fare', '\u20AC${ride.baseFare!.toStringAsFixed(2)}'),
+            _detailRow(context, 'Base Fare', '\u20AC${ride.baseFare!.toStringAsFixed(2)}'),
           if (ride.distanceFare != null)
-            _detailRow('Distance', '\u20AC${ride.distanceFare!.toStringAsFixed(2)}'),
+            _detailRow(context, 'Distance', '\u20AC${ride.distanceFare!.toStringAsFixed(2)}'),
           if (ride.waitTimeFee != null && ride.waitTimeFee! > 0)
-            _detailRow('Wait Time Fee', '\u20AC${ride.waitTimeFee!.toStringAsFixed(2)}'),
+            _detailRow(context, 'Wait Time Fee', '\u20AC${ride.waitTimeFee!.toStringAsFixed(2)}'),
           if (ride.bookingFee != null)
-            _detailRow('Booking Fee', '\u20AC${ride.bookingFee!.toStringAsFixed(2)}'),
+            _detailRow(context, 'Booking Fee', '\u20AC${ride.bookingFee!.toStringAsFixed(2)}'),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 8),
             child: Divider(height: 1),
           ),
           if (ride.actualFare != null)
-            _detailRow('Final Fare',
+            _detailRow(context, 'Final Fare',
                 '\u20AC${ride.actualFare!.toStringAsFixed(2)}',
                 highlight: true),
           if (ride.paymentMethod != null)
-            _detailRow('Payment Method', _formatPayment(ride.paymentMethod!)),
+            _detailRow(context, 'Payment Method', _formatPayment(ride.paymentMethod!)),
+          if (ride.paymentStatus != null)
+            _detailRow(context, 'Payment Status', _formatPaymentStatus(ride.paymentStatus!)),
         ],
       ),
     );
   }
 
-  Widget _ratingCard(RideHistoryItem ride) {
+  Widget _ratingCard(BuildContext context, RideHistoryItem ride) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardDark,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderDark),
+        border: Border.all(color: (Theme.of(context).dividerTheme.color ?? AppColors.borderDark)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -500,7 +505,7 @@ class TripSummaryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _cancelCard(RideHistoryItem ride) {
+  Widget _cancelCard(BuildContext context, RideHistoryItem ride) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -524,7 +529,7 @@ class TripSummaryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _detailRow(String label, String value, {bool highlight = false}) {
+  Widget _detailRow(BuildContext context, String label, String value, {bool highlight = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
@@ -532,13 +537,13 @@ class TripSummaryScreen extends ConsumerWidget {
         children: [
           Text(label,
               style: AppTextStyles.bodySmall
-                  .copyWith(color: AppColors.textMuted)),
+                  .copyWith(color: (Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight))),
           Flexible(
             child: Text(
               value,
               style: AppTextStyles.bodyMedium.copyWith(
                 fontWeight: highlight ? FontWeight.w700 : FontWeight.w500,
-                color: highlight ? AppColors.primaryGold : AppColors.textPrimary,
+                color: highlight ? AppColors.primaryGold : (Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
               ),
               textAlign: TextAlign.end,
             ),
@@ -571,8 +576,29 @@ class TripSummaryScreen extends ConsumerWidget {
         return 'Mastercard ****';
       case 'cash':
         return 'Cash';
+      case 'card':
+        return 'Card';
       default:
-        return method;
+        return method.substring(0, 1).toUpperCase() + method.substring(1).toLowerCase();
+    }
+  }
+
+  String _formatPaymentStatus(String status) {
+    switch (status.toUpperCase()) {
+      case 'COMPLETED':
+        return 'Completed';
+      case 'PENDING':
+        return 'Pending';
+      case 'FAILED':
+        return 'Failed';
+      case 'REFUNDED':
+        return 'Refunded';
+      case 'CANCELLED':
+        return 'Cancelled';
+      case 'HOLD':
+        return 'Hold / Pre-auth';
+      default:
+        return status;
     }
   }
 }

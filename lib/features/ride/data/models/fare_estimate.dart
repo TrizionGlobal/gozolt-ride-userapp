@@ -9,6 +9,7 @@ class FareEstimate {
   final int durationMinutes;
   final int etaMinutes;
   final int? goCoinsEarned;
+  final double? outstandingPenaltyFee;
 
   const FareEstimate({
     required this.baseFare,
@@ -21,6 +22,7 @@ class FareEstimate {
     required this.durationMinutes,
     required this.etaMinutes,
     this.goCoinsEarned,
+    this.outstandingPenaltyFee,
   });
 
   double get surgeAmount =>
@@ -39,6 +41,7 @@ class FareEstimate {
     int? durationMinutes,
     int? etaMinutes,
     int? goCoinsEarned,
+    double? outstandingPenaltyFee,
   }) {
     return FareEstimate(
       baseFare: baseFare ?? this.baseFare,
@@ -51,6 +54,7 @@ class FareEstimate {
       durationMinutes: durationMinutes ?? this.durationMinutes,
       etaMinutes: etaMinutes ?? this.etaMinutes,
       goCoinsEarned: goCoinsEarned ?? this.goCoinsEarned,
+      outstandingPenaltyFee: outstandingPenaltyFee ?? this.outstandingPenaltyFee,
     );
   }
 
@@ -66,6 +70,7 @@ class FareEstimate {
       durationMinutes: (json['durationMinutes'] as num).toInt(),
       etaMinutes: (json['etaMinutes'] as num).toInt(),
       goCoinsEarned: json['goCoinsEarned'] != null ? (json['goCoinsEarned'] as num).toInt() : null,
+      outstandingPenaltyFee: (json['outstandingPenaltyFee'] as num?)?.toDouble(),
     );
   }
 }

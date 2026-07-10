@@ -55,7 +55,17 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
     );
     _checkAnimController.forward();
     
-    // Do NOT auto-show rating on screen open — only show after Pay button is pressed
+    // Auto-show rating on screen open if payment is already completed (e.g., Card auto-capture)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final rideState = ref.read(activeRideProvider);
+      if (rideState.isPaid) {
+        Future.delayed(const Duration(milliseconds: 1000), () {
+          if (mounted && !_hasSubmittedRating) {
+            _showRatingModal();
+          }
+        });
+      }
+    });
   }
 
   @override
@@ -336,8 +346,12 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                                   borderRadius: BorderRadius.circular(12)),
                             ),
                             child: rideState.isPaymentLoading
-                                ? const CircularProgressIndicator(
-                                    color: Colors.white, strokeWidth: 2)
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white, strokeWidth: 2),
+                                  )
                                 : Text(
                                     'Pay \u20AC${fare.toStringAsFixed(2)} Now',
                                     style: AppTextStyles.titleSmall.copyWith(
@@ -368,15 +382,39 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                     border:
                         Border.all(color: AppColors.success.withOpacity(0.3)),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const Icon(Icons.check_circle,
-                          color: AppColors.success, size: 22),
-                      const SizedBox(width: 10),
-                      Text('Payment Successful',
-                          style: AppTextStyles.titleMedium
-                              .copyWith(color: AppColors.success)),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.check_circle,
+                              color: AppColors.success, size: 22),
+                          const SizedBox(width: 10),
+                          Text('Payment Completed',
+                              style: AppTextStyles.titleMedium
+                                  .copyWith(color: AppColors.success, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            isCash ? Icons.payments_outlined : Icons.credit_card,
+                            size: 16,
+                            color: AppColors.success.withOpacity(0.8),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Paid securely via ${isCash ? 'Cash' : formattedPaymentMethod}',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.success.withOpacity(0.8),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),

@@ -201,7 +201,7 @@ class _SplashContent extends StatelessWidget {
       isDark
           ? 'assets/images/gozolt_logo_with_text.png'
           : 'assets/images/light_gozolt_logo_with_text.png',
-      width: 350,
+      width: 250,
       fit: BoxFit.contain,
     );
   }

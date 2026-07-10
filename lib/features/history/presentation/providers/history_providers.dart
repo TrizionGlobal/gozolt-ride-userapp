@@ -73,21 +73,25 @@ class RideHistoryNotifier extends StateNotifier<RideHistoryState> {
 
     try {
       final rides = await _ds.getRideHistory(status: _filter, page: 1);
-      state = RideHistoryState(
-        rides: rides,
-        isLoading: false,
-        hasMore: rides.length >= 10,
-        page: 1,
-      );
+      if (mounted) {
+        state = RideHistoryState(
+          rides: rides,
+          isLoading: false,
+          hasMore: rides.length >= 10,
+          page: 1,
+        );
+      }
     } catch (e) {
       // For new users or API errors, show empty list instead of error
       if (kDebugMode) print('[RideHistory] load error: $e');
-      state = RideHistoryState(
-        rides: const [],
-        isLoading: false,
-        hasMore: false,
-        page: 1,
-      );
+      if (mounted) {
+        state = RideHistoryState(
+          rides: const [],
+          isLoading: false,
+          hasMore: false,
+          page: 1,
+        );
+      }
     }
   }
 
@@ -99,14 +103,20 @@ class RideHistoryNotifier extends StateNotifier<RideHistoryState> {
       final nextPage = state.page + 1;
       final rides =
           await _ds.getRideHistory(status: _filter, page: nextPage);
-      state = state.copyWith(
-        rides: [...state.rides, ...rides],
-        isLoading: false,
-        hasMore: rides.length >= 10,
-        page: nextPage,
-      );
+      
+      if (mounted) {
+        state = RideHistoryState(
+          rides: [...state.rides, ...rides],
+          isLoading: false,
+          hasMore: rides.length >= 10,
+          page: nextPage,
+        );
+      }
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      if (kDebugMode) print('[RideHistory] loadMore error: $e');
+      if (mounted) {
+        state = state.copyWith(isLoading: false, error: e.toString());
+      }
     }
   }
 

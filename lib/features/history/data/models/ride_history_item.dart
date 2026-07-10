@@ -11,6 +11,7 @@ class RideHistoryItem {
   final double? estimatedFare;
   final double? actualFare;
   final String? paymentMethod;
+  final String? paymentStatus;
   final String createdAt;
   final bool isScheduled;
   final String? scheduledAt;
@@ -47,6 +48,7 @@ class RideHistoryItem {
     this.estimatedFare,
     this.actualFare,
     this.paymentMethod,
+    this.paymentStatus,
     required this.createdAt,
     this.isScheduled = false,
     this.scheduledAt,
@@ -84,6 +86,7 @@ class RideHistoryItem {
     double? estimatedFare,
     double? actualFare,
     String? paymentMethod,
+    String? paymentStatus,
     String? createdAt,
     bool? isScheduled,
     String? scheduledAt,
@@ -120,6 +123,7 @@ class RideHistoryItem {
       estimatedFare: estimatedFare ?? this.estimatedFare,
       actualFare: actualFare ?? this.actualFare,
       paymentMethod: paymentMethod ?? this.paymentMethod,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
       createdAt: createdAt ?? this.createdAt,
       isScheduled: isScheduled ?? this.isScheduled,
       scheduledAt: scheduledAt ?? this.scheduledAt,
@@ -192,6 +196,7 @@ class RideHistoryItem {
     // Parse nested payment
     final pay = json['payment'] as Map<String, dynamic>?;
     final payMethod = pay?['method'] as String? ?? json['paymentMethod'] as String?;
+    final payStatus = pay?['status'] as String? ?? json['paymentStatus'] as String?;
 
     // Parse user rating
     final ratings = json['ratings'] as List<dynamic>?;
@@ -213,6 +218,7 @@ class RideHistoryItem {
       estimatedFare: _toDouble(json['estimatedFare']),
       actualFare: _toDouble(json['actualFare']),
       paymentMethod: payMethod,
+      paymentStatus: payStatus,
       createdAt: json['createdAt'] as String? ?? '',
       isScheduled: json['isScheduled'] as bool? ?? false,
       scheduledAt: json['scheduledAt'] as String?,
@@ -263,6 +269,8 @@ class RideHistoryItem {
         return 'In Progress';
       case 'PENDING':
         return 'Pending';
+      case 'NO_DRIVERS':
+        return 'No Drivers';
       default:
         return status;
     }

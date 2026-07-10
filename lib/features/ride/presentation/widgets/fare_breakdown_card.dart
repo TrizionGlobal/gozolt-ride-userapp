@@ -96,6 +96,12 @@ class FareBreakdownCard extends StatelessWidget {
               color: AppColors.success,
             ),
           _FareLine(label: 'Booking Fee', amount: estimate.bookingFee),
+          if (estimate.outstandingPenaltyFee != null && estimate.outstandingPenaltyFee! > 0)
+            _FareLine(
+              label: 'Previous Cancellation Fee',
+              amount: estimate.outstandingPenaltyFee!,
+              color: const Color(0xFFE53935), // Red
+            ),
 
           const SizedBox(height: 6),
           Divider(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark, height: 1),

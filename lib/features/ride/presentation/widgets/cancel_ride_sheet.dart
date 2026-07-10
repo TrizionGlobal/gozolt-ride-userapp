@@ -90,32 +90,47 @@ class _CancelRideSheetState extends ConsumerState<CancelRideSheet> {
             ),
           ),
           // Cancellation fee warning
-          if (widget.currentStatus == ActiveRideStatus.driverArrived ||
+          if (widget.currentStatus == ActiveRideStatus.driverEnRoute ||
+              widget.currentStatus == ActiveRideStatus.driverArrived ||
               widget.currentStatus == ActiveRideStatus.inProgress)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.warning.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  color: Theme.of(context).brightness == Brightness.dark 
+                      ? const Color(0xFF3A2D2C) // subtle dark red/brown tint
+                      : const Color(0xFFFFF4F4), // light red tint
+                  borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color: AppColors.warning.withOpacity(0.3)),
+                      color: AppColors.error.withOpacity(0.3)),
                 ),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.warning_amber_rounded,
-                        color: AppColors.warning, size: 20),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        widget.currentStatus == ActiveRideStatus.inProgress
-                            ? 'A cancellation fee of \u20AC8.00 will apply since the ride is in progress.'
-                            : 'A cancellation fee of \u20AC5.00 may apply since the driver has arrived.',
-                        style: AppTextStyles.bodySmall
-                            .copyWith(color: AppColors.warning),
-                      ),
+                    Row(
+                      children: [
+                        const Icon(Icons.info_outline,
+                            color: AppColors.error, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Cancellation Penalty May Apply',
+                          style: AppTextStyles.titleSmall
+                              .copyWith(color: AppColors.error, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'If you cancel now, a penalty fee of up to \u20AC5.00 will be debited from your pre-authorization hold. The remaining amount will be automatically refunded to your original payment method.',
+                      style: AppTextStyles.bodySmall
+                          .copyWith(
+                            color: Theme.of(context).brightness == Brightness.dark 
+                                ? Colors.white70 
+                                : Colors.black87,
+                            height: 1.4,
+                          ),
                     ),
                   ],
                 ),
