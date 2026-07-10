@@ -34,6 +34,8 @@ class RideHistoryItem {
   final double? surgeMultiplier;
   final double? tipAmount;
   final double? extraFare;
+  final double? cancellationFee;
+  final String? cancelledBy;
 
   const RideHistoryItem({
     required this.id,
@@ -71,6 +73,8 @@ class RideHistoryItem {
     this.surgeMultiplier,
     this.tipAmount,
     this.extraFare,
+    this.cancellationFee,
+    this.cancelledBy,
   });
 
   RideHistoryItem copyWith({
@@ -109,6 +113,8 @@ class RideHistoryItem {
     double? surgeMultiplier,
     double? tipAmount,
     double? extraFare,
+    double? cancellationFee,
+    String? cancelledBy,
   }) {
     return RideHistoryItem(
       id: id ?? this.id,
@@ -146,6 +152,8 @@ class RideHistoryItem {
       surgeMultiplier: surgeMultiplier ?? this.surgeMultiplier,
       tipAmount: tipAmount ?? this.tipAmount,
       extraFare: extraFare ?? this.extraFare,
+      cancellationFee: cancellationFee ?? this.cancellationFee,
+      cancelledBy: cancelledBy ?? this.cancelledBy,
     );
   }
 
@@ -192,6 +200,13 @@ class RideHistoryItem {
     // Parse nested cancellation
     final cancel = json['cancellation'] as Map<String, dynamic>?;
     final cancelReason = cancel?['reason'] as String? ?? json['cancelReason'] as String?;
+    
+    double? parsedCancelFee;
+    if (json['cancellationFee'] != null) {
+      parsedCancelFee = _toDouble(json['cancellationFee']);
+    } else if (cancel != null && cancel['fee'] != null) {
+      parsedCancelFee = _toDouble(cancel['fee']);
+    }
 
     // Parse nested payment
     final pay = json['payment'] as Map<String, dynamic>?;
@@ -231,6 +246,8 @@ class RideHistoryItem {
       durationMinutes: _toInt(json['durationMinutes']),
       rating: userRating ?? _toInt(json['rating']),
       cancelReason: cancelReason,
+      cancellationFee: parsedCancelFee,
+      cancelledBy: cancel?['cancelledBy'] as String? ?? json['cancelledBy'] as String?,
       goCoinsEarned: _toInt(json['goCoinsEarned']),
       otpPin: json['otpPin'] as String? ?? json['otp'] as String?,
       baseFare: _toDouble(json['baseFare']),
@@ -244,7 +261,15 @@ class RideHistoryItem {
     );
   }
 
-  double get displayFare => actualFare ?? estimatedFare ?? 0;
+  double get displayFare {
+    if (isCancelled) {
+      if (cancelledBy == 'USER' && (cancellationFee ?? 0) > 0) {
+        return cancellationFee!;
+      }
+      return 0.0;
+    }
+    return actualFare ?? estimatedFare ?? 0.0;
+  }
 
   bool get isCompleted => status == 'COMPLETED';
   bool get isCancelled => status == 'CANCELLED';

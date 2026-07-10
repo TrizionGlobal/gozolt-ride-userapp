@@ -35,7 +35,7 @@ class RideHistoryCard extends StatelessWidget {
                   style: AppTextStyles.bodySmall
                       .copyWith(color: AppColors.textMuted),
                 ),
-                _StatusBadge(status: ride.status),
+                _StatusBadge(ride: ride),
               ],
             ),
             const SizedBox(height: 12),
@@ -127,12 +127,34 @@ class RideHistoryCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  Text(
-                    '\u20AC${ride.displayFare.toStringAsFixed(2)}',
-                    style: AppTextStyles.titleSmall.copyWith(
-                      color: AppColors.primaryGold,
+                  if (ride.isCancelled && ride.cancelledBy == 'USER' && (ride.cancellationFee ?? 0) > 0)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Penalty',
+                          style: AppTextStyles.labelSmall.copyWith(color: AppColors.error),
+                        ),
+                        Text(
+                          '\u20AC${ride.displayFare.toStringAsFixed(2)}',
+                          style: AppTextStyles.titleSmall.copyWith(color: AppColors.error),
+                        ),
+                      ],
+                    )
+                  else if (ride.isCancelled)
+                    Text(
+                      '\u20AC0.00',
+                      style: AppTextStyles.titleSmall.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    )
+                  else
+                    Text(
+                      '\u20AC${ride.displayFare.toStringAsFixed(2)}',
+                      style: AppTextStyles.titleSmall.copyWith(
+                        color: AppColors.primaryGold,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -218,12 +240,12 @@ class RideHistoryCard extends StatelessWidget {
 }
 
 class _StatusBadge extends StatelessWidget {
-  final String status;
-  const _StatusBadge({required this.status});
+  final RideHistoryItem ride;
+  const _StatusBadge({required this.ride});
 
   @override
   Widget build(BuildContext context) {
-    final (Color bg, Color fg, String label) = _statusStyle(status);
+    final (Color bg, Color fg, String label) = _statusStyle(ride);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
@@ -241,8 +263,8 @@ class _StatusBadge extends StatelessWidget {
     );
   }
 
-  (Color, Color, String) _statusStyle(String status) {
-    switch (status) {
+  (Color, Color, String) _statusStyle(RideHistoryItem ride) {
+    switch (ride.status) {
       case 'COMPLETED':
         return (
           AppColors.success.withOpacity(0.15),
@@ -250,6 +272,19 @@ class _StatusBadge extends StatelessWidget {
           'Completed',
         );
       case 'CANCELLED':
+        if (ride.cancelledBy == 'USER') {
+          return (
+            AppColors.error.withOpacity(0.15),
+            AppColors.error,
+            'Cancelled by You',
+          );
+        } else if (ride.cancelledBy == 'DRIVER') {
+          return (
+            AppColors.warning.withOpacity(0.15),
+            AppColors.warning,
+            'Cancelled by Driver',
+          );
+        }
         return (
           AppColors.error.withOpacity(0.15),
           AppColors.error,
@@ -271,7 +306,7 @@ class _StatusBadge extends StatelessWidget {
         return (
           AppColors.textMuted.withOpacity(0.15),
           AppColors.textMuted,
-          status,
+          ride.status,
         );
     }
   }

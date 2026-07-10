@@ -506,24 +506,77 @@ class TripSummaryScreen extends ConsumerWidget {
   }
 
   Widget _cancelCard(BuildContext context, RideHistoryItem ride) {
+    final bool isUserCancel = ride.cancelledBy == 'USER';
+    final bool isDriverCancel = ride.cancelledBy == 'DRIVER';
+    final String cancelTitle = isDriverCancel 
+        ? 'Cancelled by Driver' 
+        : isUserCancel 
+            ? 'Cancelled by You' 
+            : 'Ride Cancelled';
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.error.withOpacity(0.08),
+        color: isDriverCancel 
+            ? AppColors.warning.withOpacity(0.15) 
+            : AppColors.error.withOpacity(0.15),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.error.withOpacity(0.2)),
+        border: Border.all(
+          color: isDriverCancel 
+              ? AppColors.warning.withOpacity(0.3) 
+              : AppColors.error.withOpacity(0.3),
+        ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.cancel_outlined, color: AppColors.error, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              ride.cancelReason ?? 'Ride was cancelled',
-              style: AppTextStyles.bodyMedium
-                  .copyWith(color: AppColors.error),
+          Row(
+            children: [
+              Icon(
+                isDriverCancel ? Icons.info_outline : Icons.cancel_outlined, 
+                color: isDriverCancel ? AppColors.warning : AppColors.error, 
+                size: 20
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  cancelTitle,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: isDriverCancel ? AppColors.warning : AppColors.error,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            ride.cancelReason ?? 'No reason provided',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: isDriverCancel ? AppColors.warning : AppColors.error,
             ),
           ),
+          if ((ride.cancellationFee ?? 0) > 0 && isUserCancel) ...[
+            const SizedBox(height: 12),
+            Divider(color: AppColors.error.withOpacity(0.5)),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Cancellation Penalty',
+                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error),
+                ),
+                Text(
+                  '€${ride.cancellationFee!.toStringAsFixed(2)}',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: AppColors.error,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );
