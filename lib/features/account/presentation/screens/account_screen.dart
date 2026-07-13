@@ -426,7 +426,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
+          border: Border.all(color: Colors.transparent),
         ),
         child: Row(
           children: [
@@ -477,7 +477,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
+        border: Border.all(color: Colors.transparent),
       ),
       child: Row(
         children: [
