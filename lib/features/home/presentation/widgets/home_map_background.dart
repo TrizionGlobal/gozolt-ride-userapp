@@ -41,17 +41,15 @@ class _HomeMapBackgroundState extends ConsumerState<HomeMapBackground> {
 
   Future<void> _loadMarkerIcon() async {
     try {
-      final ByteData data = await rootBundle.load('assets/images/map_navigator_icon.png');
-      final ui.Codec codec = await ui.instantiateImageCodec(
-        data.buffer.asUint8List(),
-        targetWidth: 40,
+      final icon = await BitmapDescriptor.asset(
+        const ImageConfiguration(size: Size(45, 45)),
+        'assets/images/map_navigator_icon.png',
+        width: 45,
       );
-      final ui.FrameInfo fi = await codec.getNextFrame();
-      final bytes = (await fi.image.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List();
       
       if (mounted) {
         setState(() {
-          _carIcon = BitmapDescriptor.bytes(bytes);
+          _carIcon = icon;
         });
       }
     } catch (e) {
@@ -86,6 +84,31 @@ class _HomeMapBackgroundState extends ConsumerState<HomeMapBackground> {
     }
   }
 
+  Future<void> _getCurrentLocation(GoogleMapController controller) async {
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) return;
+      }
+      if (permission == LocationPermission.deniedForever) return;
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 5),
+        ),
+      );
+      
+      controller.moveCamera(CameraUpdate.newLatLngZoom(
+        LatLng(position.latitude, position.longitude),
+        14.5,
+      ));
+    } catch (_) {
+      // Keep default location if failed
+    }
+  }
+
   Set<Marker> _currentMarkers = {};
 
   @override
@@ -115,6 +138,7 @@ class _HomeMapBackgroundState extends ConsumerState<HomeMapBackground> {
       onMapCreated: (controller) {
         if (!_mapController.isCompleted) {
           _mapController.complete(controller);
+          _getCurrentLocation(controller);
         }
         if (mounted) {
           setState(() {

@@ -54,7 +54,7 @@ class _MapPinSelectionScreenState extends State<MapPinSelectionScreen> {
       final newCenter = LatLng(position.latitude, position.longitude);
       setState(() => _center = newCenter);
       final controller = await _mapController.future;
-      controller.animateCamera(CameraUpdate.newLatLng(newCenter));
+      controller.moveCamera(CameraUpdate.newLatLngZoom(newCenter, 14.5));
     } catch (_) {
       // Use default location
     }

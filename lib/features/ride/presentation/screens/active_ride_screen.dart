@@ -388,14 +388,11 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
   /// Top-down 2D car icon asset (Uber-style) for driver location
   Future<BitmapDescriptor> _createCarIcon({required bool isDark}) async {
     try {
-      final ByteData data = await rootBundle.load('assets/images/map_navigator_icon.png');
-      final ui.Codec codec = await ui.instantiateImageCodec(
-        data.buffer.asUint8List(),
-        targetWidth: 50,
+      return await BitmapDescriptor.asset(
+        const ImageConfiguration(size: Size(45, 45)),
+        'assets/images/map_navigator_icon.png',
+        width: 45,
       );
-      final ui.FrameInfo fi = await codec.getNextFrame();
-      final bytes = (await fi.image.toByteData(format: ui.ImageByteFormat.png))!.buffer.asUint8List();
-      return BitmapDescriptor.bytes(bytes);
     } catch (e) {
       debugPrint('Error loading custom car marker asset: $e');
       const size = 48.0;

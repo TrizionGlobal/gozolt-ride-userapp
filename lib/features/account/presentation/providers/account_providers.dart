@@ -1,4 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../../core/network/api_client.dart';
+import '../../../../../core/network/api_exception.dart';
+import 'package:dio/dio.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/dio_provider.dart';
 import '../../../home/data/models/user_address.dart';
@@ -147,13 +150,21 @@ class AccountPaymentMethodsNotifier
     load();
   }
 
-  Future<void> confirmSetup(String paymentMethodId) async {
+  Future<bool> confirmSetup(String paymentMethodId) async {
     state = state.copyWith(isLoading: true);
     try {
       await _ds.confirmSetupIntent(paymentMethodId);
       await load();
+      return true;
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      String msg = e.toString();
+      if (e is DioException && e.error is ApiException) {
+        msg = (e.error as ApiException).userMessage;
+      } else if (e is DioException) {
+        msg = ApiException.fromDioException(e).userMessage;
+      }
+      state = state.copyWith(isLoading: false, error: msg);
+      return false;
     }
   }
 }

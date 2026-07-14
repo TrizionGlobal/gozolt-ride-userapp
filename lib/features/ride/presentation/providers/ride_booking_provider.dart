@@ -14,6 +14,7 @@ import '../../data/models/vehicle_type.dart';
 import 'ride_booking_state.dart';
 import '../../../../core/network/socket_service.dart';
 import '../../../../core/network/api_exception.dart';
+import 'package:flutter_stripe/flutter_stripe.dart' hide PaymentMethodType;
 
 // Datasource provider defined here to avoid circular imports.
 final rideRemoteDatasourceProvider = Provider<RideRemoteDatasource>((ref) {
@@ -222,6 +223,37 @@ class RideBookingNotifier extends StateNotifier<RideBookingState> {
       final responseData = response.data as Map<String, dynamic>;
       final rideId = responseData['id'] as String;
       final otp = responseData['otp'] as String?;
+      final requiresAction = responseData['requiresAction'] == true;
+
+      if (requiresAction) {
+        final clientSecret = responseData['clientSecret'] as String?;
+        if (clientSecret != null) {
+          try {
+            await Stripe.instance.handleNextAction(clientSecret);
+            // 3DS successful, notify backend to start matching
+            final ds = _ref.read(rideRemoteDatasourceProvider);
+            await ds.confirmRidePayment(rideId);
+          } on StripeException catch (e) {
+            state = state.copyWith(
+              status: BookingStatus.error,
+              errorMessage: 'Payment authentication failed: ${e.error.localizedMessage}',
+            );
+            return;
+          } catch (e) {
+            state = state.copyWith(
+              status: BookingStatus.error,
+              errorMessage: 'Failed to complete payment authentication.',
+            );
+            return;
+          }
+        } else {
+          state = state.copyWith(
+            status: BookingStatus.error,
+            errorMessage: 'Payment requires authentication but no token was provided.',
+          );
+          return;
+        }
+      }
 
       _startListening();
 

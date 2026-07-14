@@ -91,6 +91,10 @@ class RideRemoteDatasource {
     }
   }
 
+  Future<void> confirmRidePayment(String rideId) async {
+    await _dio.post(ApiConstants.paymentConfirmRide(rideId));
+  }
+
   Future<Map<String, dynamic>> shareRide(String rideId) async {
     final response = await _dio.post(ApiConstants.rideShare(rideId));
     return response.data as Map<String, dynamic>;

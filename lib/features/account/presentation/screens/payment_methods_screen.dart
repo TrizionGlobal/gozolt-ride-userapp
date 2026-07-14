@@ -18,6 +18,20 @@ class PaymentMethodsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen<AccountPaymentMethodsState>(accountPaymentMethodsProvider, (previous, next) {
+      if (next.error != null && (previous == null || previous.error != next.error)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              next.error!,
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+            ),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    });
+
     final pmState = ref.watch(accountPaymentMethodsProvider);
 
     return Scaffold(
@@ -329,18 +343,20 @@ class PaymentMethodsScreen extends ConsumerWidget {
         final ds = ref.read(paymentRemoteDatasourceProvider);
         return StripeAddCardSheet(
           datasource: ds,
-          onCardAdded: (paymentMethodId) {
+          onCardAdded: (paymentMethodId) async {
             if (paymentMethodId != null) {
-              ref.read(accountPaymentMethodsProvider.notifier).confirmSetup(paymentMethodId);
+              final success = await ref.read(accountPaymentMethodsProvider.notifier).confirmSetup(paymentMethodId);
+              if (success && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Card added successfully', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
+                    backgroundColor: AppColors.success,
+                  ),
+                );
+              }
             } else {
               ref.read(accountPaymentMethodsProvider.notifier).load();
             }
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Card added successfully', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
-                backgroundColor: AppColors.success,
-              ),
-            );
           },
         );
       },

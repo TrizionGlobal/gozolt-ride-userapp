@@ -145,12 +145,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         intendedRoute = RouteNames.home;
       }
       _navigate(intendedRoute ?? RouteNames.home);
-    } else if (hasSeenOnboarding) {
-      // User has seen onboarding but is logged out → show login/register
-      _navigate(RouteNames.welcome);
     } else {
-      // First-time user → show onboarding
-      _navigate(RouteNames.onboarding);
+      String? intendedRoute = GoRouterState.of(context).uri.queryParameters['from'];
+      if (intendedRoute != null && intendedRoute != '/force-update') {
+        _navigate(intendedRoute);
+      } else if (hasSeenOnboarding) {
+        // User has seen onboarding but is logged out → show login/register
+        _navigate(RouteNames.welcome);
+      } else {
+        // First-time user → show onboarding
+        _navigate(RouteNames.onboarding);
+      }
     }
   }
 

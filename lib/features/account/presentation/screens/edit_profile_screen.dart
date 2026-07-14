@@ -15,7 +15,8 @@ import '../../../home/presentation/providers/home_providers.dart';
 import '../../../auth/data/models/country_code.dart';
 import '../../../auth/presentation/widgets/country_code_picker.dart';
 import '../../../auth/presentation/widgets/phone_input_field.dart';
-
+import '../../../../core/network/api_exception.dart';
+import 'package:dio/dio.dart';
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -527,7 +528,19 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
-        _snackBar('Failed to update profile: ${e.toString()}', isError: true);
+        String msg = 'Failed to update profile. Please try again.';
+        if (e is ApiException) {
+          msg = e.userMessage;
+        } else if (e is DioException) {
+          if (e.error is ApiException) {
+            msg = (e.error as ApiException).userMessage;
+          } else {
+            msg = ApiException.fromDioException(e).userMessage;
+          }
+        } else {
+          msg = e.toString();
+        }
+        _snackBar(msg, isError: true);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
