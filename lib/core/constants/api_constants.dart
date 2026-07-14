@@ -43,6 +43,7 @@ abstract final class ApiConstants {
   static const String rides = '/rides';
   static const String activeRide = '/rides/active';
   static const String rideHistory = '/rides/history';
+  static String paymentConfirmRide(String rideId) => '/rides/$rideId/confirm-payment';
 
   // ride actions use: /rides/:id/cancel, /rides/:id/stops, etc.
   static String rideById(String id) => '/rides/$id';
