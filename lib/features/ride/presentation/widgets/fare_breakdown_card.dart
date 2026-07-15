@@ -23,6 +23,14 @@ class FareBreakdownCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final subtotal = estimate.baseFare + 
+        estimate.distanceFare + 
+        estimate.timeFare + 
+        estimate.bookingFee + 
+        (estimate.hasSurge ? estimate.surgeAmount : 0) +
+        (estimate.outstandingPenaltyFee ?? 0);
+    final minFareAdjustment = estimate.estimatedFare - subtotal;
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
@@ -101,6 +109,11 @@ class FareBreakdownCard extends StatelessWidget {
               label: 'Previous Cancellation Fee',
               amount: estimate.outstandingPenaltyFee!,
               color: const Color(0xFFE53935), // Red
+            ),
+          if (minFareAdjustment > 0.01)
+            _FareLine(
+              label: 'Minimum Fare Adj.',
+              amount: minFareAdjustment,
             ),
 
           const SizedBox(height: 6),

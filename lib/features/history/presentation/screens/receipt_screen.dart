@@ -18,6 +18,10 @@ Future<Uint8List> generateInvoicePdf(RideHistoryItem ride, {String? passengerNam
   final distanceFare = ride.distanceFare ?? 0.0;
   final timeFare = ride.waitTimeFee ?? 0.0;
   final bookingFee = ride.bookingFee ?? 0.0;
+  final cancellationFee = ride.cancellationFee ?? 0.0;
+  final subtotal = baseFare + distanceFare + timeFare + bookingFee + cancellationFee;
+  final minFareAdjustment = (actualFare - subtotal) > 0.01 ? (actualFare - subtotal) : 0.0;
+
   final tip = ride.tipAmount ?? 0.0;
   final extraFare = ride.extraFare ?? 0.0;
   final totalPaid = actualFare;
@@ -176,6 +180,10 @@ Future<Uint8List> generateInvoicePdf(RideHistoryItem ride, {String? passengerNam
                           ],
                           pw.SizedBox(height: 8),
                           pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [pw.Text('Booking Fee'), pw.Text('EUR ${bookingFee.toStringAsFixed(2)}')]),
+                          if (minFareAdjustment > 0) ...[
+                            pw.SizedBox(height: 8),
+                            pw.Row(mainAxisAlignment: pw.MainAxisAlignment.spaceBetween, children: [pw.Text('Minimum Fare Adj.'), pw.Text('EUR ${minFareAdjustment.toStringAsFixed(2)}')]),
+                          ],
                           
                           if (tip > 0) ...[
                             pw.SizedBox(height: 8),

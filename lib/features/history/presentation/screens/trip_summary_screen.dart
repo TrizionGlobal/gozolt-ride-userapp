@@ -456,9 +456,7 @@ class TripSummaryScreen extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          if (ride.estimatedFare != null)
-            _detailRow(context, 'Estimated Fare',
-                '\u20AC${ride.estimatedFare!.toStringAsFixed(2)}'),
+
           if (ride.baseFare != null)
             _detailRow(context, 'Base Fare', '\u20AC${ride.baseFare!.toStringAsFixed(2)}'),
           if (ride.distanceFare != null)
@@ -467,6 +465,25 @@ class TripSummaryScreen extends ConsumerWidget {
             _detailRow(context, 'Wait Time Fee', '\u20AC${ride.waitTimeFee!.toStringAsFixed(2)}'),
           if (ride.bookingFee != null)
             _detailRow(context, 'Booking Fee', '\u20AC${ride.bookingFee!.toStringAsFixed(2)}'),
+          
+          Builder(
+            builder: (context) {
+              final subtotal = (ride.baseFare ?? 0) +
+                  (ride.distanceFare ?? 0) +
+                  (ride.timeFare ?? 0) +
+                  (ride.bookingFee ?? 0) +
+                  (ride.waitTimeFee ?? 0) +
+                  (ride.cancellationFee ?? 0);
+              final finalFare = ride.actualFare ?? ride.estimatedFare ?? 0;
+              final minFareAdjustment = finalFare - subtotal;
+              
+              if (minFareAdjustment > 0.01) {
+                return _detailRow(context, 'Minimum Fare Adj.', '\u20AC${minFareAdjustment.toStringAsFixed(2)}');
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 8),
             child: Divider(height: 1),
