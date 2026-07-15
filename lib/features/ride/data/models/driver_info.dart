@@ -11,6 +11,7 @@ class DriverInfo {
   final String plateNumber;
   final String vehicleType;
   final String? memberSince;
+  final bool hasBankDetails;
 
   const DriverInfo({
     required this.id,
@@ -25,6 +26,7 @@ class DriverInfo {
     required this.plateNumber,
     required this.vehicleType,
     this.memberSince,
+    this.hasBankDetails = false,
   });
 
   String get vehicleDescription => '$vehicleMake $vehicleModel';
@@ -32,6 +34,11 @@ class DriverInfo {
 
   factory DriverInfo.fromJson(Map<String, dynamic> json) {
     final vehicle = json['vehicle'] as Map<String, dynamic>? ?? {};
+    final stripeAccountId = json['stripeAccountId'] as String?;
+    final payoutAccountNumber = json['payoutAccountNumber'] as String?;
+    final hasBank = (stripeAccountId != null && stripeAccountId.isNotEmpty) ||
+        (payoutAccountNumber != null && payoutAccountNumber.isNotEmpty);
+        
     return DriverInfo(
       id: json['driverId'] as String? ?? json['id'] as String? ?? '',
       name: json['driverName'] as String? ?? json['name'] as String? ?? 'Driver',
@@ -47,6 +54,7 @@ class DriverInfo {
       plateNumber: vehicle['plateNumber'] as String? ?? json['plateNumber'] as String? ?? '',
       vehicleType: vehicle['type'] as String? ?? json['vehicleType'] as String? ?? 'Car Go',
       memberSince: json['memberSince'] as String?,
+      hasBankDetails: hasBank,
     );
   }
 }

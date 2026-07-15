@@ -1,11 +1,17 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:intl/intl.dart';
+import 'package:printing/printing.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/ride_history_item.dart';
+import '../../presentation/providers/history_providers.dart';
+import '../../../home/presentation/providers/home_providers.dart';
 
-Future<Uint8List> generateInvoicePdf(RideHistoryItem ride) async {
+Future<Uint8List> generateInvoicePdf(RideHistoryItem ride, {String? passengerName}) async {
   final format = PdfPageFormat.a4;
   final actualFare = ride.actualFare ?? ride.estimatedFare ?? 0.0;
   final baseFare = ride.baseFare ?? 0.0;
@@ -69,7 +75,7 @@ Future<Uint8List> generateInvoicePdf(RideHistoryItem ride) async {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text('Hi there,', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
+                    pw.Text(passengerName != null && passengerName.isNotEmpty ? 'Hi $passengerName,' : 'Hi there,', style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold)),
                     pw.SizedBox(height: 8),
                     pw.Text('Here is your invoice for your recent ride. We hope you had a great experience with GOZOLT.', style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey700)),
                     pw.SizedBox(height: 24),
@@ -97,6 +103,25 @@ Future<Uint8List> generateInvoicePdf(RideHistoryItem ride) async {
                               ],
                             ),
                           ),
+                          if (ride.driverName != null && ride.driverName!.isNotEmpty) ...[
+                            pw.Divider(color: PdfColors.grey300, height: 1),
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.all(12),
+                              child: pw.Row(
+                                children: [
+                                  pw.Expanded(child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+                                    pw.Text('Driver', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
+                                    pw.Text(ride.driverName!, style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                                  ])),
+                                  if (ride.driverVehicle != null || ride.driverPlate != null)
+                                    pw.Expanded(child: pw.Column(crossAxisAlignment: pw.CrossAxisAlignment.start, children: [
+                                      pw.Text('Vehicle', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
+                                      pw.Text('${ride.driverVehicle ?? ''} ${ride.driverPlate != null ? '(${ride.driverPlate})' : ''}'.trim(), style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold)),
+                                    ])),
+                                ],
+                              ),
+                            ),
+                          ],
                           pw.Divider(color: PdfColors.grey300, height: 1),
                           pw.Padding(
                             padding: const pw.EdgeInsets.all(12),
@@ -236,16 +261,73 @@ Future<Uint8List> generateInvoicePdf(RideHistoryItem ride) async {
   return pdf.save();
 }
 
-class ReceiptScreen extends StatelessWidget {
+class ReceiptScreen extends ConsumerWidget {
   final String rideId;
 
   const ReceiptScreen({super.key, required this.rideId});
 
   @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: CircularProgressIndicator(),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rideDetailAsync = ref.watch(selectedRideDetailProvider(rideId));
+    final profile = ref.watch(userProfileProvider).valueOrNull;
+    final passengerName = profile != null ? '${profile.firstName} ${profile.lastName}'.trim() : null;
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: const Text('Ride Receipt'),
+        elevation: 0,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+      ),
+      body: rideDetailAsync.when(
+        data: (ride) {
+          return PdfPreview(
+            build: (format) => generateInvoicePdf(ride, passengerName: passengerName),
+            canDebug: false,
+            allowPrinting: true,
+            allowSharing: true,
+            pdfFileName: 'Gozolt_Invoice_${ride.id.substring(0, 8)}.pdf',
+          );
+        },
+        loading: () => const Center(
+          child: CircularProgressIndicator(color: AppColors.primaryGold),
+        ),
+        error: (err, stack) => Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 64, color: AppColors.error),
+                const SizedBox(height: 16),
+                Text(
+                  'Error loading receipt details',
+                  style: AppTextStyles.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  err.toString(),
+                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: 200,
+                  height: 45,
+                  child: ElevatedButton(
+                    onPressed: () => ref.refresh(selectedRideDetailProvider(rideId)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGold,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('Retry'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

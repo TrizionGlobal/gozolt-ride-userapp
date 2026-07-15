@@ -196,6 +196,11 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
       final status = _mapApiStatus(json['status'] as String? ?? 'DRIVER_EN_ROUTE');
       if (kDebugMode) print('[ActiveRide] Mapped status: $status');
 
+      // 7. Check if already paid
+      final payment = json['payment'] as Map<String, dynamic>?;
+      final isPaid = payment != null && payment['status'] == 'COMPLETED';
+      if (kDebugMode) print('[ActiveRide] isPaid: $isPaid');
+
       state = ActiveRideState(
         ride: ride,
         driverInfo: driverInfo,
@@ -203,6 +208,7 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
         status: status,
         etaMinutes: eta,
         otpPin: otp.isNotEmpty ? otp : null,
+        isPaid: isPaid,
         isLoading: false,
       );
       if (kDebugMode) print('[ActiveRide] State set successfully ✓');
@@ -359,6 +365,8 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
         case 'IN_PROGRESS':
           if (kDebugMode) print('[Socket] → IN_PROGRESS');
           state = state.copyWith(status: ActiveRideStatus.inProgress);
+          // Poll immediately to fetch payment status updates
+          _pollOnce();
           break;
         case 'COMPLETED':
           if (kDebugMode) print('[Socket] → COMPLETED');
@@ -783,6 +791,9 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
 
       final status = _mapApiStatus(apiStatus);
 
+      final payment = json['payment'] as Map<String, dynamic>?;
+      final isPaid = payment != null && payment['status'] == 'COMPLETED';
+
       state = ActiveRideState(
         ride: ride,
         driverInfo: driverInfo,
@@ -790,6 +801,7 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
         status: status,
         etaMinutes: eta,
         otpPin: otp.isNotEmpty ? otp : null,
+        isPaid: isPaid,
         isLoading: false,
       );
 
@@ -833,6 +845,12 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
       final apiStatus = json['status'] as String? ?? '';
       final newStatus = _mapApiStatus(apiStatus);
       if (kDebugMode) print('[Poll] apiStatus=$apiStatus → $newStatus (current=${state.status})');
+
+      final payment = json['payment'] as Map<String, dynamic>?;
+      final isPaid = payment != null && payment['status'] == 'COMPLETED';
+      if (isPaid && !state.isPaid) {
+        state = state.copyWith(isPaid: true);
+      }
 
       // --- Status change ---
       if (newStatus != state.status) {
@@ -1040,6 +1058,7 @@ class ChatNotifier extends StateNotifier<List<ChatMessage>> {
   }
 
   void addIncomingMessage(ChatMessage message) {
+    if (message.id.isNotEmpty && state.any((m) => m.id == message.id)) return;
     state = [...state, message];
   }
 }

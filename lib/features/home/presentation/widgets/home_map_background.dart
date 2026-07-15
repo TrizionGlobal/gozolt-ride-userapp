@@ -132,7 +132,7 @@ class _HomeMapBackgroundState extends ConsumerState<HomeMapBackground> {
     return GoogleMap(
       initialCameraPosition: CameraPosition(
         target: LatLng(AppConstants.defaultLat, AppConstants.defaultLng),
-        zoom: 14.5,
+        zoom: 10.5,
       ),
       style: isDark ? _darkMapStyle : null,
       onMapCreated: (controller) {

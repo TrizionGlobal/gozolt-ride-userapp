@@ -168,7 +168,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         horizontal: 16, vertical: 12),
                     itemCount: messages.length,
                     itemBuilder: (_, index) =>
-                        _ChatBubble(message: messages[index]),
+                        _ChatBubble(message: messages[index], avatarUrl: driver?.avatarUrl),
                   ),
           ),
 
@@ -291,12 +291,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
 class _ChatBubble extends StatelessWidget {
   final ChatMessage message;
+  final String? avatarUrl;
 
-  const _ChatBubble({required this.message});
+  const _ChatBubble({required this.message, this.avatarUrl});
 
   @override
   Widget build(BuildContext context) {
     final isUser = message.isUser;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -312,10 +314,18 @@ class _ChatBubble extends StatelessWidget {
               height: 28,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppColors.cardDark,
+                color: isDark ? AppColors.cardDark : Colors.grey[200],
                 border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
+                image: avatarUrl != null
+                    ? DecorationImage(
+                        image: NetworkImage(avatarUrl!),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
               ),
-              child: const Icon(Icons.person, size: 16, color: AppColors.textMuted),
+              child: avatarUrl == null
+                  ? Icon(Icons.person, size: 16, color: isDark ? AppColors.textMuted : Colors.grey[600])
+                  : null,
             ),
             const SizedBox(width: 8),
           ],

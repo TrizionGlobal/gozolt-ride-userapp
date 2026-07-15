@@ -1315,7 +1315,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
                   height: 1.5,
                 ),
               ),
-              if (reason != null && (reason.toLowerCase().contains('no driver') || reason.toLowerCase().contains('all of our drivers')) && ref.read(activeRideProvider).ride?.paymentMethod == 'card') ...[
+              if (reason != null && (reason.toLowerCase().contains('no driver') || reason.toLowerCase().contains('all of our drivers')) && ref.read(activeRideProvider).ride?.paymentMethod?.toUpperCase() == 'CARD') ...[
                 const SizedBox(height: 20),
                 Container(
                   padding: const EdgeInsets.all(14),

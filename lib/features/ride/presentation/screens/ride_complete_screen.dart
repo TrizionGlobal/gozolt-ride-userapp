@@ -17,6 +17,7 @@ import '../widgets/stripe_add_card_sheet.dart';
 import '../widgets/add_card_sheet.dart';
 import '../../../history/presentation/screens/receipt_screen.dart';
 import '../../../history/data/models/ride_history_item.dart';
+import '../../../home/presentation/providers/home_providers.dart';
 
 class RideCompleteScreen extends ConsumerStatefulWidget {
   const RideCompleteScreen({super.key});
@@ -594,8 +595,9 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
               ],
 
 
-              // Tip Your Driver section (Hidden for cash payments)
-              if (!isCash && !_hasSentTip && !_tipSkipped) _buildTipSection(driver?.name),
+              // Tip Your Driver section (Hidden for cash payments, or if driver has no bank details)
+              if (!isCash && !_hasSentTip && !_tipSkipped && (driver?.hasBankDetails ?? false))
+                _buildTipSection(driver?.name),
               if (_hasSentTip)
                 Container(
                   width: double.infinity,
@@ -649,6 +651,9 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                       builder: (_) => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
                     );
                     try {
+                      final profile = ref.read(userProfileProvider).valueOrNull;
+                      final passengerName = profile != null ? '${profile.firstName} ${profile.lastName}'.trim() : null;
+
                       final rideItem = RideHistoryItem(
                         id: rideState.ride!.id,
                         status: rideState.ride!.status,
@@ -666,8 +671,11 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                         tipAmount: rideState.ride!.tipAmount,
                         extraFare: rideState.ride!.extraFare,
                         goCoinsEarned: 0,
+                        driverName: rideState.driverInfo?.name,
+                        driverVehicle: rideState.driverInfo?.vehicleDescription,
+                        driverPlate: rideState.driverInfo?.plateNumber,
                       );
-                      final bytes = await generateInvoicePdf(rideItem);
+                      final bytes = await generateInvoicePdf(rideItem, passengerName: passengerName);
                       if (context.mounted) Navigator.pop(context); // close loading
                       await Printing.sharePdf(bytes: bytes, filename: 'Gozolt_Invoice_${rideState.ride!.id.substring(0, 8)}.pdf');
                     } catch (e) {
