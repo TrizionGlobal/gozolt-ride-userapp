@@ -416,9 +416,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     try {
       final picked = await _picker.pickImage(
         source: source,
-        maxWidth: 512,
-        maxHeight: 512,
-        imageQuality: 80,
+        maxWidth: 400,
+        maxHeight: 400,
+        imageQuality: 50,
       );
       if (picked != null) {
         final croppedFile = await ImageCropper().cropImage(
