@@ -14,6 +14,7 @@ class CreateRideRequest {
   final bool isScheduled;
   final String? scheduledAt;
   final String? promoCode;
+  final double? walletAmountUsed;
 
   const CreateRideRequest({
     required this.pickupAddress,
@@ -29,6 +30,7 @@ class CreateRideRequest {
     this.isScheduled = false,
     this.scheduledAt,
     this.promoCode,
+    this.walletAmountUsed,
   });
 
   Map<String, dynamic> toJson() {
@@ -51,6 +53,7 @@ class CreateRideRequest {
       if (scheduledAt != null) map['scheduledAt'] = scheduledAt;
     }
     if (promoCode != null) map['promoCode'] = promoCode;
+    if (walletAmountUsed != null) map['walletAmountUsed'] = walletAmountUsed;
     return map;
   }
 }

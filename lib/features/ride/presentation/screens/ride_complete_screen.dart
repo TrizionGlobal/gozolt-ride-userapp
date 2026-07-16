@@ -138,19 +138,66 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        ref.read(activeRideProvider.notifier).reset();
+                        context.goNamed(RouteNames.home);
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Theme.of(context).textTheme.bodyLarge?.color ?? AppColors.textPrimary,
+                        side: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: Text('Home', style: AppTextStyles.titleSmall),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        ref.read(activeRideProvider.notifier).reset();
+                        context.goNamed(RouteNames.searchDestination);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGold,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      child: Text('Book Again', style: AppTextStyles.titleSmall.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             children: [
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
 
               // Checkmark animation
               ScaleTransition(
                 scale: _checkScale,
                 child: Container(
-                  width: 80,
-                  height: 80,
+                  width: 60,
+                  height: 60,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: AppColors.success.withOpacity(0.15),
@@ -162,7 +209,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                       color: AppColors.success, size: 40),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
 
               Text('Ride Complete!',
                   style: AppTextStyles.headlineMedium.copyWith(color: textColor)),
@@ -171,12 +218,12 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                 'You have arrived at your destination',
                 style: AppTextStyles.bodyMedium.copyWith(color: secondaryTextColor),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
               // Total fare
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 24),
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 decoration: BoxDecoration(
                   color: cardColor,
                   borderRadius: BorderRadius.circular(20),
@@ -195,13 +242,13 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                       ride?.actualFare != null ? 'Total Fare' : 'Estimated Fare',
                       style: AppTextStyles.bodyMedium.copyWith(color: secondaryTextColor),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Text(
                       '\u20AC${fare.toStringAsFixed(2)}',
                       style: AppTextStyles.displayLarge.copyWith(
                         color: AppColors.primaryGold,
-                        fontSize: 36,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 30,
+                        fontWeight: FontWeight.w300,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -240,7 +287,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               // ── Pay Now / Payment Section ──
               if (!rideState.isPaid)
@@ -420,67 +467,116 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                   ),
                 ),
               if ((rideState.isPaid || isCash) && !_hasSubmittedRating) ...[
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  height: 44,
-                  child: OutlinedButton.icon(
-                    onPressed: _showRatingModal,
-                    icon: const Icon(Icons.star_outline, color: AppColors.primaryGold, size: 20),
-                    label: Text('Rate Driver', style: AppTextStyles.titleSmall.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold)),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.primaryGold),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 16),
-
-              // Fare Breakdown (Change 3)
-              _buildFareBreakdown(rideState),
-              const SizedBox(height: 16),
-
-              // GoCoins earned badge
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.primaryGold.withOpacity(0.15),
-                      AppColors.primaryGold.withOpacity(0.05),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primaryGold.withOpacity(0.3)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                const SizedBox(height: 12),
+                Row(
                   children: [
-                    Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.primaryGold.withOpacity(0.2),
-                      ),
-                      child: Center(
-                        child: Image.asset(AssetPaths.iconGoCoin, width: 16, height: 16),
+                    Expanded(
+                      flex: 1,
+                      child: SizedBox(
+                        height: 44,
+                        child: OutlinedButton.icon(
+                          onPressed: _showRatingModal,
+                          icon: const Icon(Icons.star_outline, color: AppColors.primaryGold, size: 18),
+                          label: Text('Rate', style: AppTextStyles.titleSmall.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold, fontSize: 13)),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.primaryGold),
+                            padding: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Text(
-                      '+${(fare * 10).floor()} GoCoins Earned!',
-                      style: AppTextStyles.titleSmall.copyWith(
-                        color: AppColors.primaryGold,
-                        fontWeight: FontWeight.bold,
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 1,
+                      child: Container(
+                        height: 44,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.primaryGold.withOpacity(0.15),
+                              AppColors.primaryGold.withOpacity(0.05),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.primaryGold.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: AppColors.primaryGold.withOpacity(0.2),
+                              ),
+                              child: Center(
+                                child: Image.asset(AssetPaths.iconGoCoin, width: 12, height: 12),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                '+${(fare * 10).floor()} Coins',
+                                style: AppTextStyles.titleSmall.copyWith(
+                                  color: AppColors.primaryGold,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
+              ] else ...[
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  height: 44,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.primaryGold.withOpacity(0.15),
+                        AppColors.primaryGold.withOpacity(0.05),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.primaryGold.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 20,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.primaryGold.withOpacity(0.2),
+                        ),
+                        child: Center(
+                          child: Image.asset(AssetPaths.iconGoCoin, width: 12, height: 12),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '+${(fare * 10).floor()} GoCoins Earned!',
+                        style: AppTextStyles.titleSmall.copyWith(
+                          color: AppColors.primaryGold,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 24),
 
               // Route summary
@@ -596,9 +692,9 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
 
 
               // Tip Your Driver section (Hidden for cash payments, or if driver has no bank details)
-              if (!isCash && !_hasSentTip && !_tipSkipped && (driver?.hasBankDetails ?? false))
-                _buildTipSection(driver?.name),
-              if (_hasSentTip)
+              // if (!isCash && !_hasSentTip && !_tipSkipped && (driver?.hasBankDetails ?? false))
+              //   _buildTipSection(driver?.name),
+              // if (_hasSentTip)
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(
@@ -623,120 +719,18 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                     ],
                   ),
                 ),
-              const SizedBox(height: 24),
-
+              const SizedBox(height: 16),
+              
               // Report an issue
               TextButton.icon(
                 onPressed: () {
-                  context.pushNamed(
-                    RouteNames.createTicket,
-                    extra: rideState.ride?.id,
-                  );
+                  context.pushNamed(RouteNames.createTicket, extra: rideState.ride?.id);
                 },
                 icon: const Icon(Icons.flag_outlined, size: 18),
                 label: Text('Report an Issue'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.textSecondary,
-                ),
-              ),
-
-              // View Receipt (Change 6)
-              TextButton.icon(
-                onPressed: () async {
-                  if (rideState.ride != null) {
-                    // Show loading
-                    showDialog(
-                      context: context,
-                      barrierDismissible: false,
-                      builder: (_) => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
-                    );
-                    try {
-                      final profile = ref.read(userProfileProvider).valueOrNull;
-                      final passengerName = profile != null ? '${profile.firstName} ${profile.lastName}'.trim() : null;
-
-                      final rideItem = RideHistoryItem(
-                        id: rideState.ride!.id,
-                        status: rideState.ride!.status,
-                        pickupAddress: rideState.ride!.pickupAddress,
-                        dropoffAddress: rideState.ride!.dropoffAddress,
-                        vehicleType: rideState.ride!.vehicleType,
-                        createdAt: rideState.ride!.createdAt,
-                        estimatedFare: rideState.ride!.estimatedFare,
-                        actualFare: rideState.ride!.actualFare,
-                        paymentMethod: rideState.ride!.paymentMethod,
-                        baseFare: rideState.ride!.baseFare,
-                        distanceFare: rideState.ride!.distanceFare,
-                        waitTimeFee: rideState.ride!.waitTimeFee,
-                        bookingFee: rideState.ride!.bookingFee,
-                        tipAmount: rideState.ride!.tipAmount,
-                        extraFare: rideState.ride!.extraFare,
-                        goCoinsEarned: 0,
-                        driverName: rideState.driverInfo?.name,
-                        driverVehicle: rideState.driverInfo?.vehicleDescription,
-                        driverPlate: rideState.driverInfo?.plateNumber,
-                      );
-                      final bytes = await generateInvoicePdf(rideItem, passengerName: passengerName);
-                      if (context.mounted) Navigator.pop(context); // close loading
-                      await Printing.sharePdf(bytes: bytes, filename: 'Gozolt_Invoice_${rideState.ride!.id.substring(0, 8)}.pdf');
-                    } catch (e) {
-                      if (context.mounted) Navigator.pop(context); // close loading
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to generate PDF: $e')));
-                      }
-                    }
-                  }
-                },
-                icon: const Icon(Icons.share, size: 16),
-                label: Text('Download & Share Receipt', style: AppTextStyles.titleSmall.copyWith(color: AppColors.primaryGold)),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.primaryGold,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Action buttons
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: ElevatedButton(
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    ref.read(activeRideProvider.notifier).reset();
-                    context.goNamed(RouteNames.searchDestination);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGold,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Text('Book Another Ride',
-                      style: AppTextStyles.titleSmall.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
-                ),
+                style: TextButton.styleFrom(foregroundColor: AppColors.textSecondary),
               ),
               const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: OutlinedButton(
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    ref.read(activeRideProvider.notifier).reset();
-                    context.goNamed(RouteNames.home);
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Theme.of(context).textTheme.bodyLarge?.color ?? AppColors.textPrimary,
-                    side: BorderSide(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Text('Go to Home Screen', style: AppTextStyles.titleSmall),
-                ),
-              ),
-              const SizedBox(height: 24),
             ],
           ),
         ),

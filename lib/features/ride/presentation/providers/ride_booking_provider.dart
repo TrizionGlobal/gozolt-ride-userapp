@@ -215,6 +215,7 @@ class RideBookingNotifier extends StateNotifier<RideBookingState> {
         isScheduled: state.isScheduled,
         scheduledAt: state.scheduledAt?.toUtc().toIso8601String(),
         promoCode: state.promoCode,
+        walletAmountUsed: state.useCoins ? state.coinsDiscount : null,
       );
 
       // Use raw dio.post to capture OTP from response

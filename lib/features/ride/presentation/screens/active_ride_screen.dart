@@ -12,6 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/utils/map_utils.dart';
 import '../../../../core/router/route_names.dart';
 import '../../data/models/saved_payment_method.dart';
 import '../providers/ride_providers.dart';
@@ -232,9 +233,10 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
     if (rideState.status == ActiveRideStatus.driverEnRoute) {
       final pickupPos = LatLng(ride.pickupLat, ride.pickupLng);
       final routePoints = _driverToPickupRoute ?? [driverPos, pickupPos];
+      final trimmedPoints = MapUtils.trimPolyline(routePoints, driverPos);
       polylines.add(Polyline(
         polylineId: const PolylineId('driverToPickup'),
-        points: routePoints,
+        points: trimmedPoints,
         color: AppColors.primaryGold,
         width: 5,
         jointType: JointType.round,
@@ -249,9 +251,10 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
     } else if (rideState.status == ActiveRideStatus.inProgress) {
       final dropoffPos = LatLng(ride.dropoffLat, ride.dropoffLng);
       final routePoints = _driverToDropoffRoute ?? [driverPos, dropoffPos];
+      final trimmedPoints = MapUtils.trimPolyline(routePoints, driverPos);
       polylines.add(Polyline(
         polylineId: const PolylineId('toDropoff'),
-        points: routePoints,
+        points: trimmedPoints,
         color: AppColors.primaryGold,
         width: 5,
         jointType: JointType.round,
@@ -653,6 +656,17 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> with Ticker
           _oldRot = _newRot;
           _newRot = nextRot;
           _rotController.forward(from: 0);
+
+          // Dynamically re-frame the camera to keep both driver and destination in view
+          if (next.ride != null && _isMapReady) {
+            LatLng target;
+            if (next.status == ActiveRideStatus.driverEnRoute || next.status == ActiveRideStatus.driverArrived) {
+              target = LatLng(next.ride!.pickupLat, next.ride!.pickupLng);
+            } else {
+              target = LatLng(next.ride!.dropoffLat, next.ride!.dropoffLng);
+            }
+            _animateToBounds(nextPos, target);
+          }
         }
       }
     });
