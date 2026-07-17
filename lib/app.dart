@@ -28,20 +28,22 @@ class GozoltApp extends ConsumerWidget {
           FlutterNativeSplash.remove();
         });
 
-        final brightness = Theme.of(context).brightness;
+        final isDark = themeMode == ThemeMode.dark || 
+            (themeMode == ThemeMode.system && MediaQuery.platformBrightnessOf(context) == Brightness.dark);
+        final iconBrightness = isDark ? Brightness.light : Brightness.dark;
         
         SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-        SystemChrome.setSystemUIOverlayStyle(
-          SystemUiOverlayStyle(
+        
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
             systemNavigationBarColor: Colors.transparent,
             systemNavigationBarDividerColor: Colors.transparent,
-            statusBarIconBrightness: brightness == Brightness.dark ? Brightness.light : Brightness.dark,
-            systemNavigationBarIconBrightness: brightness == Brightness.dark ? Brightness.light : Brightness.dark,
+            statusBarIconBrightness: iconBrightness,
+            systemNavigationBarIconBrightness: iconBrightness,
           ),
+          child: child ?? const SizedBox.shrink(),
         );
-
-        return child ?? const SizedBox.shrink();
       },
     );
   }

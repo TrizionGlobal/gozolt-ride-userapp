@@ -36,12 +36,16 @@ void main() async {
     Stripe.urlScheme = 'com.gozolt';
     await Stripe.instance.applySettings();
 
-    // Force dark status bar style for splash
+    // Force dark status bar style and transparent navigation bar
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.dark,
       statusBarBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarDividerColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.dark,
     ));
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
     // Initialize SharedPreferences
     final sharedPrefs = await SharedPreferences.getInstance();

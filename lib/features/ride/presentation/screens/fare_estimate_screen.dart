@@ -1164,9 +1164,8 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
               _formatSchedule(scheduledAt),
               style: AppTextStyles.titleMedium.copyWith(color: AppColors.primaryGold),
             ),
-            const SizedBox(height: 8),
             Text(
-              'A scheduling fee of €2.00 applies\nYou\'ll be notified 15 minutes before your ride',
+              'You\'ll be notified 15 minutes before your ride',
               style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
