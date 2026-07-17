@@ -623,9 +623,6 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
                     VehicleTypeSelector(
                       selected: booking.vehicleType,
                       allEstimates: booking.allEstimates,
-                      availableTypes: _availableVehicleTypes.isNotEmpty
-                          ? _availableVehicleTypes
-                          : null,
                       onSelect: (type) {
                         HapticFeedback.selectionClick();
                         ref.read(rideBookingProvider.notifier).setVehicleType(type);
