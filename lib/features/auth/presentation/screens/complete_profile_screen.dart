@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_text_styles.dart';
@@ -197,7 +198,40 @@ class _CompleteProfileScreenState extends ConsumerState<CompleteProfileScreen> {
         imageQuality: 50,
       );
       if (picked != null) {
-        setState(() => _profileImage = File(picked.path));
+        final croppedFile = await ImageCropper().cropImage(
+          sourcePath: picked.path,
+          aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+          uiSettings: [
+            AndroidUiSettings(
+              toolbarTitle: 'Crop Photo',
+              toolbarColor: AppColors.primaryGold,
+              toolbarWidgetColor: Colors.white,
+              initAspectRatio: CropAspectRatioPreset.square,
+              lockAspectRatio: true,
+            ),
+            IOSUiSettings(
+              title: 'Crop Photo',
+              aspectRatioLockEnabled: true,
+              resetAspectRatioEnabled: false,
+            ),
+          ],
+        );
+        if (croppedFile != null) {
+          final file = File(croppedFile.path);
+          final fileSize = await file.length();
+          if (fileSize > 5 * 1024 * 1024) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Image size must be less than 5MB'),
+                  backgroundColor: AppColors.error,
+                ),
+              );
+            }
+            return;
+          }
+          setState(() => _profileImage = file);
+        }
       }
     } catch (_) {
       if (mounted) {

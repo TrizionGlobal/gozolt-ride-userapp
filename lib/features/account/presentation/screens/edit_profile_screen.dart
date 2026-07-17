@@ -440,6 +440,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
           ],
         );
         if (croppedFile != null) {
+          final file = File(croppedFile.path);
+          final fileSize = await file.length();
+          if (fileSize > 5 * 1024 * 1024) {
+            _snackBar('Image size must be less than 5MB', isError: true);
+            return;
+          }
           setState(() {
             _avatarPath = croppedFile.path;
             _removeAvatar = false;

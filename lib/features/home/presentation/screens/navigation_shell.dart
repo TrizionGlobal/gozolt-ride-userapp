@@ -101,44 +101,48 @@ class _NavigationShellState extends ConsumerState<NavigationShell> {
               ),
           ],
         ),
-        bottomNavigationBar: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
+        bottomNavigationBar: ClipRect(
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-            child: Container(
-              margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              decoration: BoxDecoration(
-                color: isDark 
-                    ? AppColors.surfaceDark.withOpacity(0.7) 
-                    : AppColors.surfaceLight.withOpacity(0.85),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: isDark 
-                      ? AppColors.primaryGold.withOpacity(0.15)
-                      : AppColors.primaryGold.withOpacity(0.3),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: isDark 
-                        ? Colors.black.withOpacity(0.3)
-                        : Colors.black.withOpacity(0.1),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
+            child: SafeArea(
+              bottom: true,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: List.generate(_tabs.length, (index) {
-                    final isSelected = currentIndex == index;
-                    return _buildNavItem(
-                      tab: _tabs[index],
-                      index: index,
-                      isSelected: isSelected,
-                    );
-                  }),
+                padding: const EdgeInsets.only(left: 8, right: 8, bottom: 6),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isDark 
+                        ? AppColors.surfaceDark.withOpacity(0.7) 
+                        : AppColors.surfaceLight.withOpacity(0.85),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: isDark 
+                          ? AppColors.primaryGold.withOpacity(0.15)
+                          : AppColors.primaryGold.withOpacity(0.3),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: isDark 
+                            ? Colors.black.withOpacity(0.3)
+                            : Colors.black.withOpacity(0.1),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: List.generate(_tabs.length, (index) {
+                        final isSelected = currentIndex == index;
+                        return _buildNavItem(
+                          tab: _tabs[index],
+                          index: index,
+                          isSelected: isSelected,
+                        );
+                      }),
+                    ),
+                  ),
                 ),
               ),
             ),
