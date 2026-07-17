@@ -41,8 +41,8 @@ import 'route_names.dart';
 
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final redirectNotifier = ref.watch(authRedirectProvider);
-  final startupNotifier = ref.watch(startupProvider);
+  final redirectNotifier = ref.read(authRedirectProvider);
+  final startupNotifier = ref.read(startupProvider);
   final storage = ref.read(secureStorageProvider);
 
   final prefs = ref.read(sharedPrefsProvider);
@@ -52,7 +52,7 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: lastRoute ?? '/',
     restorationScopeId: 'router',
     debugLogDiagnostics: true,
-    refreshListenable: startupNotifier,
+    refreshListenable: Listenable.merge([startupNotifier, redirectNotifier]),
     redirect: (context, state) async {
       final isInitialized = startupNotifier.value;
       final isGoingToSplash = state.uri.path == '/';

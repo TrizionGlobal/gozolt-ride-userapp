@@ -20,6 +20,7 @@ class Ride {
   final String? driverId;
   final String? promoCode;
   final String createdAt;
+  final String? updatedAt;
   final double? baseFare;
   final double? distanceFare;
   final double? timeFare;
@@ -51,6 +52,7 @@ class Ride {
     this.driverId,
     this.promoCode,
     required this.createdAt,
+    this.updatedAt,
     this.baseFare,
     this.distanceFare,
     this.timeFare,
@@ -85,6 +87,9 @@ class Ride {
   }
 
   factory Ride.fromJson(Map<String, dynamic> json) {
+    print('DEBUG JSON PARSING: ${json.keys.toList()}');
+    print('DEBUG JSON pickupAddress: ${json['pickupAddress']}');
+    print('DEBUG JSON actualFare: ${json['actualFare']}');
     return Ride(
       id: json['id'] as String,
       status: json['status'] as String,
@@ -108,6 +113,7 @@ class Ride {
       driverId: json['driverId'] as String?,
       promoCode: json['promoCode'] as String?,
       createdAt: json['createdAt'] as String? ?? '',
+      updatedAt: json['updatedAt'] as String?,
       baseFare: _toDoubleOrNull(json['baseFare']),
       distanceFare: _toDoubleOrNull(json['distanceFare']),
       timeFare: _toDoubleOrNull(json['timeFare']),
@@ -142,7 +148,6 @@ class Ride {
     String? promoCode,
     String? createdAt,
     double? baseFare,
-    double? distanceFare,
     double? timeFare,
     double? waitTimeFee,
     double? bookingFee,
@@ -172,6 +177,7 @@ class Ride {
       driverId: driverId ?? this.driverId,
       promoCode: promoCode ?? this.promoCode,
       createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
       baseFare: baseFare ?? this.baseFare,
       distanceFare: distanceFare ?? this.distanceFare,
       timeFare: timeFare ?? this.timeFare,

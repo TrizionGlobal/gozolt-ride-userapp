@@ -111,6 +111,12 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
 
     final rideState = ref.watch(activeRideProvider);
     final ride = rideState.ride;
+    
+    print('DEBUG RIDE COMPLETE SCREEN: ride is null? ${ride == null}');
+    if (ride != null) {
+      print('DEBUG RIDE COMPLETE SCREEN: pickupAddress=${ride.pickupAddress}, actualFare=${ride.actualFare}, status=${ride.status}');
+    }
+
     final driver = rideState.driverInfo;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? AppColors.textPrimary : AppColors.textPrimaryLight;
@@ -692,9 +698,9 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
 
 
               // Tip Your Driver section (Hidden for cash payments, or if driver has no bank details)
-              // if (!isCash && !_hasSentTip && !_tipSkipped && (driver?.hasBankDetails ?? false))
-              //   _buildTipSection(driver?.name),
-              // if (_hasSentTip)
+              if (!isCash && !_hasSentTip && !_tipSkipped && (driver?.hasBankDetails ?? false))
+                _buildTipSection(driver?.name),
+              if (_hasSentTip)
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(

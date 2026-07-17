@@ -13,6 +13,7 @@ import '../../data/models/ride.dart';
 import '../../../notifications/presentation/providers/notification_providers.dart';
 import '../../data/models/saved_payment_method.dart';
 import '../providers/active_ride_state.dart';
+import '../../../../core/providers/storage_provider.dart';
 import '../providers/ride_providers.dart';
 import '../providers/ride_booking_provider.dart';
 import 'ride_booking_state.dart';
@@ -735,81 +736,10 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
       final json = response.data as Map<String, dynamic>;
       final apiStatus = json['status'] as String? ?? '';
 
-      // Skip completed/cancelled
+      // Skip completed/cancelled for active rides endpoint
       if (apiStatus == 'COMPLETED' || apiStatus == 'CANCELLED') return;
 
-      if (kDebugMode) print('[ActiveRide] checkForActiveRide: found ride ${json['id']}, status=$apiStatus');
-
-      // Parse ride
-      final ride = Ride.fromJson(json);
-
-      // Parse driver info
-      DriverInfo? driverInfo;
-      final d = json['driver'] as Map<String, dynamic>?;
-      if (d != null) {
-        final va = d['vehicleAssignment'] as Map<String, dynamic>?;
-        final v = va?['vehicle'] as Map<String, dynamic>? ?? {};
-        final name = '${d['firstName'] ?? ''} ${d['lastName'] ?? ''}'.trim();
-        driverInfo = DriverInfo(
-          id: d['driverId'] as String? ?? d['id'] as String? ?? '',
-          name: name.isNotEmpty ? name : 'Driver',
-          phone: d['phone'] as String? ?? '',
-          rating: _safeDouble(d['avgRating'], 5.0),
-          totalRides: _safeInt(d['totalRides'], 0),
-          vehicleMake: v['make'] as String? ?? '',
-          vehicleModel: v['model'] as String? ?? '',
-          vehicleColor: v['color'] as String? ?? '',
-          plateNumber: v['plateNumber'] as String? ?? '',
-          vehicleType: v['type'] as String? ?? ride.vehicleType,
-        );
-      }
-
-      // Parse driver location
-      DriverLocation? driverLocation;
-      final dl = json['driverLocation'] as Map<String, dynamic>?;
-      if (dl != null) {
-        final lat = _safeDouble(dl['lat'], 0);
-        final lng = _safeDouble(dl['lng'], 0);
-        if (lat != 0 || lng != 0) {
-          driverLocation = DriverLocation(latitude: lat, longitude: lng);
-        }
-      }
-
-      // Parse OTP
-      final otp = json['otp'] as String? ?? '1000';
-
-      // Calculate ETA
-      int eta = 5;
-      if (driverLocation != null) {
-        final tLat = apiStatus == 'IN_PROGRESS' ? ride.dropoffLat : ride.pickupLat;
-        final tLng = apiStatus == 'IN_PROGRESS' ? ride.dropoffLng : ride.pickupLng;
-        final dist = _haversineKm(
-          driverLocation.latitude, driverLocation.longitude, tLat, tLng,
-        );
-        eta = (dist / 30 * 60).round().clamp(1, 120);
-      }
-
-      final status = _mapApiStatus(apiStatus);
-
-      final payment = json['payment'] as Map<String, dynamic>?;
-      final isPaid = payment != null && payment['status'] == 'COMPLETED';
-
-      state = ActiveRideState(
-        ride: ride,
-        driverInfo: driverInfo,
-        driverLocation: driverLocation,
-        status: status,
-        etaMinutes: eta,
-        otpPin: otp.isNotEmpty ? otp : null,
-        isPaid: isPaid,
-        isLoading: false,
-      );
-
-      if (kDebugMode) print('[ActiveRide] Restored active ride: ${ride.id}, status=$status');
-
-      // Only attach socket listeners and start polling if not already running
-      if (!_socketListenersAttached) _listenToSocketUpdates();
-      if (_pollingTimer == null || !_pollingTimer!.isActive) _startStatusPolling();
+      await _restoreRideFromJson(json);
     } on DioException catch (e) {
       // 404 = no active ride, that's normal
       if (e.response?.statusCode == 404) return;
@@ -819,7 +749,80 @@ class ActiveRideNotifier extends StateNotifier<ActiveRideState> {
     }
   }
 
+  Future<void> _restoreRideFromJson(Map<String, dynamic> json) async {
+    final apiStatus = json['status'] as String? ?? '';
+    if (kDebugMode) print('[ActiveRide] Restoring ride: ${json['id']}, status=$apiStatus');
+
+    final ride = Ride.fromJson(json);
+
+    DriverInfo? driverInfo;
+    final d = json['driver'] as Map<String, dynamic>?;
+    if (d != null) {
+      final va = d['vehicleAssignment'] as Map<String, dynamic>?;
+      final v = va?['vehicle'] as Map<String, dynamic>? ?? {};
+      final name = '${d['firstName'] ?? ''} ${d['lastName'] ?? ''}'.trim();
+      driverInfo = DriverInfo(
+        id: d['driverId'] as String? ?? d['id'] as String? ?? '',
+        name: name.isNotEmpty ? name : 'Driver',
+        phone: d['phone'] as String? ?? '',
+        rating: _safeDouble(d['avgRating'], 5.0),
+        totalRides: _safeInt(d['totalRides'], 0),
+        vehicleMake: v['make'] as String? ?? '',
+        vehicleModel: v['model'] as String? ?? '',
+        vehicleColor: v['color'] as String? ?? '',
+        plateNumber: v['plateNumber'] as String? ?? '',
+        vehicleType: v['type'] as String? ?? ride.vehicleType,
+      );
+    }
+
+    DriverLocation? driverLocation;
+    final dl = json['driverLocation'] as Map<String, dynamic>?;
+    if (dl != null) {
+      final lat = _safeDouble(dl['lat'], 0);
+      final lng = _safeDouble(dl['lng'], 0);
+      if (lat != 0 || lng != 0) {
+        driverLocation = DriverLocation(latitude: lat, longitude: lng);
+      }
+    }
+
+    final otp = json['otp'] as String? ?? '1000';
+
+    int eta = 5;
+    if (driverLocation != null) {
+      final tLat = apiStatus == 'IN_PROGRESS' ? ride.dropoffLat : ride.pickupLat;
+      final tLng = apiStatus == 'IN_PROGRESS' ? ride.dropoffLng : ride.pickupLng;
+      final dist = _haversineKm(
+        driverLocation.latitude, driverLocation.longitude, tLat, tLng,
+      );
+      eta = (dist / 30 * 60).round().clamp(1, 120);
+    }
+
+    final status = _mapApiStatus(apiStatus);
+
+    final payment = json['payment'] as Map<String, dynamic>?;
+    final isPaid = payment != null && payment['status'] == 'COMPLETED';
+
+    state = ActiveRideState(
+      ride: ride,
+      driverInfo: driverInfo,
+      driverLocation: driverLocation,
+      status: status,
+      etaMinutes: eta,
+      otpPin: otp.isNotEmpty ? otp : null,
+      isPaid: isPaid,
+      isLoading: false,
+    );
+
+    if (kDebugMode) print('[ActiveRide] Restored active ride: ${ride.id}, status=$status');
+
+    if (status != ActiveRideStatus.completed && status != ActiveRideStatus.cancelled) {
+      if (!_socketListenersAttached) _listenToSocketUpdates();
+      if (_pollingTimer == null || !_pollingTimer!.isActive) _startStatusPolling();
+    }
+  }
+
   void reset() {
+    _ref.read(secureStorageProvider).clearPendingCompletedRide();
     _stopTimers();
     _cancelSocketSubs();
     _isInitializing = false;

@@ -63,6 +63,16 @@ class SecureStorageService {
   Future<String?> getLanguage() =>
       _storage.read(key: StorageKeys.language);
 
+  // ── Pending Completed Ride ─────────────────────────────
+  Future<void> savePendingCompletedRide(String rideId) =>
+      _storage.write(key: StorageKeys.pendingCompletedRide, value: rideId);
+
+  Future<String?> getPendingCompletedRide() =>
+      _storage.read(key: StorageKeys.pendingCompletedRide);
+
+  Future<void> clearPendingCompletedRide() =>
+      _storage.delete(key: StorageKeys.pendingCompletedRide);
+
   // ── OTP Session ─────────────────────────────────────────
   Future<void> saveOtpSession({
     required String verificationId,

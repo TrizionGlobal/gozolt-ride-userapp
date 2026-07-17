@@ -6,4 +6,5 @@ abstract final class StorageKeys {
   static const String language = 'language';
   static const String verificationId = 'verification_id';
   static const String pendingPhone = 'pending_phone';
+  static const String pendingCompletedRide = 'pending_completed_ride';
 }
