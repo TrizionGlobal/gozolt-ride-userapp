@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/network/api_exception.dart';
+import 'package:dio/dio.dart';
 import '../../data/datasources/payment_remote_datasource.dart';
 
 class StripeAddCardSheet extends StatefulWidget {
@@ -57,9 +59,15 @@ class _StripeAddCardSheetState extends State<StripeAddCardSheet> {
       }
       setState(() => _isLoading = false);
     } catch (e) {
+      String msg = 'Failed to connect to secure server.';
+      if (e is DioException && e.error is ApiException) {
+        msg = (e.error as ApiException).userMessage;
+      } else if (e is DioException) {
+        msg = ApiException.fromDioException(e).userMessage;
+      }
       if (kDebugMode) print('[Stripe] Fetch intent error: $e');
       setState(() {
-        _error = 'Failed to connect to secure server.';
+        _error = msg;
         _isLoading = false;
       });
     }

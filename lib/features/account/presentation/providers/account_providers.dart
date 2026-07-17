@@ -72,7 +72,13 @@ class AccountAddressesNotifier extends StateNotifier<AccountAddressesState> {
       final addresses = await _ds.getAddresses();
       state = AccountAddressesState(addresses: addresses);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      String msg = e.toString();
+      if (e is DioException && e.error is ApiException) {
+        msg = (e.error as ApiException).userMessage;
+      } else if (e is DioException) {
+        msg = ApiException.fromDioException(e).userMessage;
+      }
+      state = state.copyWith(isLoading: false, error: msg);
     }
   }
 
@@ -139,14 +145,29 @@ class AccountPaymentMethodsNotifier
       final methods = await _ds.getPaymentMethods();
       state = AccountPaymentMethodsState(methods: methods);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      String msg = e.toString();
+      if (e is DioException && e.error is ApiException) {
+        msg = (e.error as ApiException).userMessage;
+      } else if (e is DioException) {
+        msg = ApiException.fromDioException(e).userMessage;
+      }
+      state = state.copyWith(isLoading: false, error: msg);
     }
   }
 
   Future<void> deleteMethod(String id) async {
-    
-    await _ds.deletePaymentMethod(id);
-    load();
+    try {
+      await _ds.deletePaymentMethod(id);
+      load();
+    } catch (e) {
+      String msg = e.toString();
+      if (e is DioException && e.error is ApiException) {
+        msg = (e.error as ApiException).userMessage;
+      } else if (e is DioException) {
+        msg = ApiException.fromDioException(e).userMessage;
+      }
+      state = state.copyWith(isLoading: false, error: msg);
+    }
   }
 
   Future<bool> confirmSetup(String paymentMethodId) async {
