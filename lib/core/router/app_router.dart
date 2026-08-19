@@ -33,6 +33,14 @@ import '../../features/account/presentation/screens/help_center_screen.dart';
 import '../../features/support/presentation/screens/ticket_list_screen.dart';
 import '../../features/support/presentation/screens/create_ticket_screen.dart';
 import '../../features/support/presentation/screens/ticket_detail_screen.dart';
+import '../../features/car_rental/presentation/screens/car_rental_search_screen.dart';
+import '../../features/car_rental/presentation/screens/car_rental_list_screen.dart';
+import '../../features/car_rental/presentation/screens/car_rental_details_screen.dart';
+import '../../features/car_rental/presentation/screens/car_rental_packages_screen.dart';
+import '../../features/car_rental/presentation/screens/car_rental_addons_screen.dart';
+import '../../features/car_rental/presentation/screens/car_rental_review_screen.dart';
+import '../../features/car_rental/presentation/screens/car_rental_confirmation_screen.dart';
+import '../../features/car_rental/domain/models/car_model.dart';
 import '../providers/auth_redirect_provider.dart';
 import '../providers/storage_provider.dart';
 import '../providers/theme_provider.dart';
@@ -690,6 +698,139 @@ final routerProvider = Provider<GoRouter>((ref) {
               )),
               child: child,
             ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/car-rental-search',
+        name: RouteNames.carRentalSearch,
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const CarRentalSearchScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+              SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeInOut,
+            )),
+            child: child,
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/car-rental-list',
+        name: RouteNames.carRentalList,
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const CarRentalListScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+              SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeInOut,
+            )),
+            child: child,
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/car-rental-details',
+        name: RouteNames.carRentalDetails,
+        pageBuilder: (context, state) {
+          final car = state.extra as CarModel?;
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: CarRentalDetailsScreen(car: car),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+                FadeTransition(opacity: animation, child: child),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/car-rental-packages',
+        name: RouteNames.carRentalPackages,
+        pageBuilder: (context, state) {
+          final car = state.extra as CarModel?;
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: CarRentalPackagesScreen(car: car),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+                SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeInOutCubic,
+              )),
+              child: child,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/car-rental-addons',
+        name: RouteNames.carRentalAddons,
+        pageBuilder: (context, state) {
+          final car = state.extra as CarModel?;
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: CarRentalAddonsScreen(car: car),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+                SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeInOutCubic,
+              )),
+              child: child,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/car-rental-review',
+        name: RouteNames.carRentalReview,
+        pageBuilder: (context, state) {
+          final car = state.extra as CarModel?;
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: CarRentalReviewScreen(car: car),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+                SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeInOutCubic,
+              )),
+              child: child,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/car-rental-confirmation',
+        name: RouteNames.carRentalConfirmation,
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final car = extra['car'] as CarModel?;
+          final bookingId = extra['bookingId'] as String?;
+          
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: CarRentalConfirmationScreen(car: car, bookingId: bookingId),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+                FadeTransition(opacity: animation, child: child),
           );
         },
       ),

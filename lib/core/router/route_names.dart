@@ -53,4 +53,13 @@ abstract final class RouteNames {
   // Trip Summary & Receipt
   static const String tripSummary = 'trip-summary';
   static const String receipt = 'receipt';
+
+  // Car Rental
+  static const String carRentalSearch = 'car-rental-search';
+  static const String carRentalList = 'car-rental-list';
+  static const String carRentalDetails = 'car-rental-details';
+  static const String carRentalPackages = 'car-rental-packages';
+  static const String carRentalAddons = 'car-rental-addons';
+  static const String carRentalReview = 'car-rental-review';
+  static const String carRentalConfirmation = 'car-rental-confirmation';
 }

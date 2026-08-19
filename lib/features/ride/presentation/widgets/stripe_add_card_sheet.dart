@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
@@ -9,14 +10,16 @@ import '../../data/datasources/payment_remote_datasource.dart';
 
 class StripeAddCardSheet extends StatefulWidget {
   final PaymentRemoteDatasource datasource;
-  final void Function(String? paymentMethodId) onCardAdded;
+  final FutureOr<void> Function(String? paymentMethodId) onCardAdded;
   final double? amount;
+  final bool simulatePayment;
 
   const StripeAddCardSheet({
     super.key,
     required this.datasource,
     required this.onCardAdded,
     this.amount,
+    this.simulatePayment = false,
   });
 
   @override
@@ -50,6 +53,13 @@ class _StripeAddCardSheetState extends State<StripeAddCardSheet> {
 
   Future<void> _fetchIntent() async {
     try {
+      if (widget.simulatePayment) {
+        // Simulate a tiny delay and succeed
+        await Future.delayed(const Duration(milliseconds: 500));
+        setState(() => _isLoading = false);
+        return;
+      }
+      
       if (widget.amount != null) {
         final data = await widget.datasource.createPaymentSheet(widget.amount!);
         _clientSecret = data['paymentIntent'];
@@ -74,7 +84,7 @@ class _StripeAddCardSheetState extends State<StripeAddCardSheet> {
   }
 
   Future<void> _saveCard() async {
-    if (!_isCardComplete || _clientSecret == null) return;
+    if (!_isCardComplete || (!widget.simulatePayment && _clientSecret == null)) return;
     
     setState(() {
       _isSaving = true;
@@ -82,6 +92,19 @@ class _StripeAddCardSheetState extends State<StripeAddCardSheet> {
     });
 
     try {
+      if (widget.simulatePayment) {
+        await Future.delayed(const Duration(seconds: 2));
+        try {
+          await widget.onCardAdded('simulated_payment_method_id');
+          if (mounted && Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          }
+        } catch (e) {
+          if (mounted) setState(() => _error = e.toString().replaceAll('Exception: ', ''));
+        }
+        return;
+      }
+
       if (widget.amount != null) {
         final paymentIntent = await Stripe.instance.confirmPayment(
           paymentIntentClientSecret: _clientSecret!,
@@ -93,8 +116,14 @@ class _StripeAddCardSheetState extends State<StripeAddCardSheet> {
             ),
           ),
         );
-        Navigator.of(context).pop();
-        widget.onCardAdded(paymentIntent.paymentMethodId);
+        try {
+          await widget.onCardAdded(paymentIntent.paymentMethodId);
+          if (mounted && Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          }
+        } catch (e) {
+          if (mounted) setState(() => _error = e.toString().replaceAll('Exception: ', ''));
+        }
       } else {
         final setupIntent = await Stripe.instance.confirmSetupIntent(
           paymentIntentClientSecret: _clientSecret!,
@@ -106,8 +135,14 @@ class _StripeAddCardSheetState extends State<StripeAddCardSheet> {
             ),
           ),
         );
-        Navigator.of(context).pop();
-        widget.onCardAdded(setupIntent.paymentMethodId);
+        try {
+          await widget.onCardAdded(setupIntent.paymentMethodId);
+          if (mounted && Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          }
+        } catch (e) {
+          if (mounted) setState(() => _error = e.toString().replaceAll('Exception: ', ''));
+        }
       }
     } on StripeException catch (e) {
       if (e.error.code != FailureCode.Canceled) {
@@ -351,7 +386,9 @@ class _StripeAddCardSheetState extends State<StripeAddCardSheet> {
                         child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).scaffoldBackgroundColor),
                       )
                     : Text(
-                        widget.amount != null ? 'Pay Now' : 'Save Card',
+                        widget.amount != null 
+                            ? (widget.simulatePayment ? 'Pay & Book' : 'Pay Now') 
+                            : 'Save Card',
                         style: AppTextStyles.button.copyWith(fontWeight: FontWeight.w700),
                       ),
               ),

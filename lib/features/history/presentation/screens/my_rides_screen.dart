@@ -10,6 +10,7 @@ import '../../data/models/ride_history_item.dart';
 import '../providers/history_providers.dart';
 import '../widgets/reschedule_bottom_sheet.dart';
 import '../widgets/ride_history_card.dart';
+import 'car_rentals_history_view.dart';
 
 class MyRidesScreen extends ConsumerWidget {
   const MyRidesScreen({super.key});
@@ -25,36 +26,109 @@ class MyRidesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentFilter = ref.watch(rideHistoryFilterProvider);
     final historyState = ref.watch(rideHistoryProvider);
+    final selectedTab = ref.watch(historyTabSelectionProvider);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Column(
-        children: [
-          // ── Header ─────────────────────────────────
-          Container(
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Color(0xFFD4A843), Color(0xFFF5C518)],
-                  ),
-                  borderRadius:
-                      BorderRadius.vertical(bottom: Radius.circular(24)),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: Column(
+          children: [
+            // ── Header ─────────────────────────────────
+            Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFFD4A843), Color(0xFFF5C518)],
                 ),
-                child: SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                    child: Text(
-                      'My Rides',
-                      style: AppTextStyles.headlineMedium.copyWith(
-                        color: AppColors.backgroundDark,
+                borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+              ),
+              child: SafeArea(
+                bottom: false,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                      child: Text(
+                        'History',
+                        style: AppTextStyles.headlineMedium.copyWith(
+                          color: AppColors.backgroundDark,
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
+            ),
+
+            // ── Tab Toggle ────────────────────────────
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.backgroundLight,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.borderLight),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          ref.read(historyTabSelectionProvider.notifier).state = 0;
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                            color: selectedTab == 0 ? AppColors.primaryGold : Colors.transparent,
+                            borderRadius: BorderRadius.circular(11),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'My Rides',
+                              style: AppTextStyles.titleSmall.copyWith(
+                                color: selectedTab == 0 ? AppColors.backgroundDark : AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          ref.read(historyTabSelectionProvider.notifier).state = 1;
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                            color: selectedTab == 1 ? AppColors.primaryGold : Colors.transparent,
+                            borderRadius: BorderRadius.circular(11),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'Car Rentals',
+                              style: AppTextStyles.titleSmall.copyWith(
+                                color: selectedTab == 1 ? AppColors.backgroundDark : AppColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // ── Content ────────────────────────────────
+            Expanded(
+              child: selectedTab == 0
+                  ? Column(
+                      children: [
 
             // ── Filter Tabs ────────────────────────────
             Padding(
@@ -249,15 +323,19 @@ class MyRidesScreen extends ConsumerWidget {
                         (historyState.hasMore ? 1 : 0),
                   ),
                 ),
-              ),
-          ],
-        ),
-      ),
-      ),
-     ],
-    ),
-  );
-}
+              ), // closes SliverPadding
+          ], // closes slivers
+        ), // closes CustomScrollView
+      ), // closes RefreshIndicator
+    ), // closes Expanded
+  ], // closes Column children
+) // closes Column
+: const CarRentalsHistoryView(),
+            ), // closes Expanded
+          ], // closes Column children
+        ), // closes Column
+      ); // closes Scaffold
+  } // closes build()
 
   void _showRescheduleSheet(
       BuildContext context, WidgetRef ref, RideHistoryItem ride) {

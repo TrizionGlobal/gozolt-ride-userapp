@@ -12,6 +12,9 @@ final historyRemoteDatasourceProvider =
 /// Filter for the history tab: null = All
 final rideHistoryFilterProvider = StateProvider<String?>((ref) => null);
 
+/// Selected history tab: 0 = My Rides, 1 = Car Rentals
+final historyTabSelectionProvider = StateProvider<int>((ref) => 0);
+
 /// Paginated ride history.
 final rideHistoryProvider =
     StateNotifierProvider<RideHistoryNotifier, RideHistoryState>((ref) {
