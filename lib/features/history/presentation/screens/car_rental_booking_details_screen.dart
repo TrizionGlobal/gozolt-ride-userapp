@@ -261,24 +261,54 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                   ),
                 ],
 
-                if (booking['status'] == 'ACTIVE') ...[
-                  const SizedBox(height: 32),
-                  Center(
-                    child: SizedBox(
-                      width: 320,
-                      height: 42,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryGold,
-                          foregroundColor: AppColors.backgroundDark,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                if (booking['status'] == 'ACTIVE') ...(() {
+                  final hasPendingExtension = (booking['extensionRequests'] as List?)?.any((r) => r['status'] == 'PENDING') ?? false;
+                  
+                  if (hasPendingExtension) {
+                    return [
+                      const SizedBox(height: 32),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.orange.withOpacity(0.5)),
                         ),
-                        onPressed: () => _handleExtend(context, ref, booking),
-                        child: const Text('Extend Booking', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.info_outline, color: Colors.orange),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'An extension request is currently pending supplier approval.',
+                                style: AppTextStyles.bodyMedium.copyWith(color: Colors.orange.shade800),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ];
+                  }
+
+                  return [
+                    const SizedBox(height: 32),
+                    Center(
+                      child: SizedBox(
+                        width: 320,
+                        height: 42,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryGold,
+                            foregroundColor: AppColors.backgroundDark,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed: () => _handleExtend(context, ref, booking),
+                          child: const Text('Extend Booking', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ];
+                })(),
 
                 const SizedBox(height: 40),
               ],
