@@ -101,7 +101,7 @@ class NotificationCard extends StatelessWidget {
                                     ? (Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight)
                                     : (Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                               ),
-                              maxLines: 2,
+                              maxLines: 3,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ],
@@ -119,6 +119,11 @@ class NotificationCard extends StatelessWidget {
   }
 
   IconData get _typeIcon {
+    final dataType = notification.data?['type'] as String?;
+    if (dataType == 'EXTENSION_APPROVED' || dataType == 'EXTENSION_REJECTED' ||
+        dataType == 'CAR_RENTAL' || dataType == 'BOOKING_CANCELLED') {
+      return Icons.directions_car_outlined;
+    }
     switch (notification.type) {
       case 'RIDE_UPDATE':
         return Icons.directions_car;
@@ -134,6 +139,11 @@ class NotificationCard extends StatelessWidget {
   }
 
   Color get _typeColor {
+    final dataType = notification.data?['type'] as String?;
+    if (dataType == 'EXTENSION_APPROVED') return const Color(0xFF22C55E); // green
+    if (dataType == 'EXTENSION_REJECTED') return const Color(0xFFEF4444);  // red
+    if (dataType == 'BOOKING_CANCELLED') return const Color(0xFFEF4444);   // red
+    if (dataType == 'CAR_RENTAL') return const Color(0xFF3B82F6);          // blue
     switch (notification.type) {
       case 'RIDE_UPDATE':
         return AppColors.info;
@@ -142,7 +152,7 @@ class NotificationCard extends StatelessWidget {
       case 'PAYMENT':
         return AppColors.success;
       case 'SYSTEM':
-        return AppColors.primaryGold; // use gold for system in both themes? or secondary?
+        return AppColors.primaryGold;
       default:
         return AppColors.textMuted;
     }

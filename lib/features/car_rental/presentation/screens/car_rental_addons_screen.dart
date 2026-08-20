@@ -66,11 +66,20 @@ class _CarRentalAddonsScreenState extends ConsumerState<CarRentalAddonsScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    // Calculate total price
-    double basePrice = (widget.car?.pricePerDay ?? 0.0) * 3; // Base price mock calculation
     final searchState = ref.watch(carRentalSearchProvider);
     final isFlexible = searchState.isFlexible;
-    final double flexiblePrice = isFlexible ? (15.0 * 3) : 0.0;
+    
+    int days = 1;
+    if (searchState.pickupDate != null && searchState.dropoffDate != null) {
+      final minutes = searchState.dropoffDate!.difference(searchState.pickupDate!).inMinutes;
+      if (minutes > 0) {
+        days = (minutes / 1440).ceil();
+      }
+    }
+
+    // Calculate total price
+    double basePrice = (widget.car?.pricePerDay ?? 0.0) * days; 
+    final double flexiblePrice = isFlexible ? (15.0 * days) : 0.0;
     
     double packagePrice = 0.0;
     String packageName = 'Protection Package';
@@ -78,7 +87,7 @@ class _CarRentalAddonsScreenState extends ConsumerState<CarRentalAddonsScreen> {
     if (widget.car?.selectedProtectionPackageId != null) {
       try {
         final pkg = widget.car!.protectionPackages.firstWhere((p) => p.valueIdentifier == widget.car!.selectedProtectionPackageId);
-        packagePrice = (pkg.pricePerDay * 3);
+        packagePrice = (pkg.pricePerDay * days);
         packageName = pkg.title;
       } catch (_) {}
     }
@@ -89,7 +98,7 @@ class _CarRentalAddonsScreenState extends ConsumerState<CarRentalAddonsScreen> {
       for (final addon in widget.car!.addons) {
         final qty = _addonQuantities[addon.id] ?? 0;
         if (qty > 0) {
-          addonsPrice += (addon.pricePerDay * 3 * qty); 
+          addonsPrice += (addon.pricePerDay * days * qty); 
         }
       }
     }
@@ -203,7 +212,7 @@ class _CarRentalAddonsScreenState extends ConsumerState<CarRentalAddonsScreen> {
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: () => _showPriceDetailsBottomSheet(context, basePrice, flexiblePrice, packagePrice, packageName, addonsPrice, totalPrice),
+                  onTap: () => _showPriceBreakdown(context, basePrice, flexiblePrice, packagePrice, packageName, days, addonsPrice, totalPrice),
                   child: Row(
                     children: [
                       Text('€${totalPrice.toStringAsFixed(2)}', style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold)),
@@ -296,7 +305,7 @@ class _CarRentalAddonsScreenState extends ConsumerState<CarRentalAddonsScreen> {
     );
   }
 
-  void _showPriceDetailsBottomSheet(BuildContext context, double basePrice, double flexiblePrice, double packagePrice, String packageName, double addonsPrice, double totalPrice) {
+  void _showPriceBreakdown(BuildContext context, double basePrice, double flexiblePrice, double packagePrice, String packageName, int days, double addonsPrice, double totalPrice) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     // Calculate individual addons
@@ -305,7 +314,7 @@ class _CarRentalAddonsScreenState extends ConsumerState<CarRentalAddonsScreen> {
       for (final addon in widget.car!.addons) {
         final qty = _addonQuantities[addon.id] ?? 0;
         if (qty > 0) {
-          selectedAddonPrices[addon.name] = addon.pricePerDay * 3 * qty;
+          selectedAddonPrices[addon.name] = addon.pricePerDay * days * qty;
         }
       }
     }
@@ -329,7 +338,7 @@ class _CarRentalAddonsScreenState extends ConsumerState<CarRentalAddonsScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Rental (3 Days)', style: AppTextStyles.bodyLarge),
+                  Text('Rental ($days ${days == 1 ? 'Day' : 'Days'})', style: AppTextStyles.bodyLarge),
                   Text('€${basePrice.toStringAsFixed(2)}', style: AppTextStyles.titleMedium),
                 ],
               ),
@@ -338,7 +347,7 @@ class _CarRentalAddonsScreenState extends ConsumerState<CarRentalAddonsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Stay Flexible (3 Days)', style: AppTextStyles.bodyLarge),
+                    Text('Stay Flexible ($days ${days == 1 ? 'Day' : 'Days'})', style: AppTextStyles.bodyLarge),
                     Text('€${flexiblePrice.toStringAsFixed(2)}', style: AppTextStyles.titleMedium),
                   ],
                 ),

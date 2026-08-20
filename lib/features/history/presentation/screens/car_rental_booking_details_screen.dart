@@ -7,8 +7,11 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../car_rental/data/datasources/car_rental_remote_datasource.dart';
 import '../../../../core/providers/dio_provider.dart';
+import '../../../ride/data/datasources/payment_remote_datasource.dart';
+import '../../../ride/presentation/widgets/stripe_add_card_sheet.dart';
 import 'car_rentals_history_view.dart';
 import 'car_rental_cancellation_success_screen.dart';
+import 'rental_extension_success_screen.dart';
 
 final carRentalBookingDetailsProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, bookingId) async {
   final dio = ref.read(dioProvider);
@@ -148,6 +151,7 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                 
                 const SizedBox(height: 24),
                 
+
                 // Vehicle Details
                 _buildSectionTitle(context, 'Vehicle Details'),
                 const SizedBox(height: 8),
@@ -178,41 +182,68 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                 _buildSectionTitle(context, 'Payment Details'),
                 const SizedBox(height: 8),
                 _buildInfoCard(context, [
-                  _buildInfoRow(context, 'Vehicle Rate', '€${double.parse(booking['vehicleTotal'].toString()).toStringAsFixed(2)}'),
-                  
-                  if (booking['isFlexible'] == true)
-                    _buildInfoRow(context, 'Stay Flexible', '€${double.parse(booking['flexibleTotal'].toString()).toStringAsFixed(2)}'),
+                  ...(() {
+                    int totalExtensionDays = 0;
+                    double totalExtensionCost = 0.0;
+                    if (booking['extensionRequests'] != null) {
+                      for (var r in (booking['extensionRequests'] as List).where((r) => r['status'] == 'APPROVED')) {
+                        final origDate = DateTime.parse(r['originalEndDate']);
+                        final newDate = DateTime.parse(r['newEndDate']);
+                        totalExtensionDays += (newDate.difference(origDate).inMinutes.abs() / 1440).ceil();
+                        totalExtensionCost += double.tryParse(r['additionalCost'].toString()) ?? 0;
+                      }
+                    }
+
+                    final currentDays = (DateTime.parse(booking['endDate']).difference(DateTime.parse(booking['startDate'])).inMinutes.abs() / 1440).ceil();
+                    int originalDays = currentDays - totalExtensionDays;
+                    final d = originalDays < 1 ? 1 : originalDays;
                     
-                  if (booking['protectionPackageId'] != null)
-                    ...(() {
+                    final vehicleRate = (double.tryParse(vehicle['pricePerDay'].toString()) ?? 0) * d;
+                    
+                    final rows = <Widget>[
+                      _buildInfoRow(context, 'Vehicle Rate', '€${vehicleRate.toStringAsFixed(2)}'),
+                    ];
+
+                    if (booking['isFlexible'] == true) {
+                      rows.add(_buildInfoRow(context, 'Stay Flexible', '€${double.parse(booking['flexibleTotal'].toString()).toStringAsFixed(2)}'));
+                    }
+
+                    if (booking['protectionPackageId'] != null) {
                       final pkg = (vehicle['protectionPackages'] as List?)?.firstWhere(
                         (p) => p['id'] == booking['protectionPackageId'],
                         orElse: () => null,
                       );
                       if (pkg != null) {
-                        final days = DateTime.parse(booking['endDate']).difference(DateTime.parse(booking['startDate'])).inDays.abs();
-                        final cost = (double.tryParse(pkg['pricePerDay'].toString()) ?? 0) * (days < 1 ? 1 : days);
-                        return [_buildInfoRow(context, pkg['title'] ?? 'Protection Package', '€${cost.toStringAsFixed(2)}')];
+                        final cost = (double.tryParse(pkg['pricePerDay'].toString()) ?? 0) * d;
+                        rows.add(_buildInfoRow(context, pkg['title'] ?? 'Protection Package', '€${cost.toStringAsFixed(2)}'));
                       }
-                      return <Widget>[];
-                    })(),
-                    
-                  if (booking['addonIds'] != null && (booking['addonIds'] as List).isNotEmpty)
-                    ...(() {
+                    }
+
+                    if (booking['addonIds'] != null && (booking['addonIds'] as List).isNotEmpty) {
                       final addonIds = List<String>.from(booking['addonIds']);
                       final addonsList = (vehicle['addons'] as List?) ?? [];
-                      final days = DateTime.parse(booking['endDate']).difference(DateTime.parse(booking['startDate'])).inDays.abs();
-                      final d = days < 1 ? 1 : days;
-                      
-                      return addonIds.map((id) {
+                      for (final id in addonIds) {
                         final addon = addonsList.firstWhere((a) => a['id'] == id, orElse: () => null);
                         if (addon != null) {
                           final cost = (double.tryParse(addon['pricePerDay'].toString()) ?? 0) * d;
-                          return _buildInfoRow(context, addon['name'] ?? 'Add-on', '€${cost.toStringAsFixed(2)}');
+                          rows.add(_buildInfoRow(context, addon['name'] ?? 'Add-on', '€${cost.toStringAsFixed(2)}'));
                         }
-                        return const SizedBox.shrink();
-                      }).whereType<Widget>().toList();
-                    })(),
+                      }
+                    }
+                    
+                    final grandTotal = double.tryParse(booking['grandTotal'].toString()) ?? 0;
+                    final originalPaid = grandTotal - totalExtensionCost;
+                    
+                    rows.add(const Divider());
+                    rows.add(_buildInfoRow(context, 'Previous Paid Amount', '€${originalPaid.toStringAsFixed(2)}', isBold: true));
+                    
+                    if (totalExtensionCost > 0) {
+                      rows.add(const SizedBox(height: 8));
+                      rows.add(_buildInfoRow(context, 'Extended Amount ($totalExtensionDays days)', '€${totalExtensionCost.toStringAsFixed(2)}', isBold: true));
+                    }
+                    
+                    return rows;
+                  })(),
                   
                   const Divider(),
                   _buildInfoRow(context, 'Grand Total', '€${double.parse(booking['grandTotal'].toString()).toStringAsFixed(2)}', isBold: true),
@@ -262,8 +293,23 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                 ],
 
                 if (booking['status'] == 'ACTIVE') ...(() {
-                  final hasPendingExtension = (booking['extensionRequests'] as List?)?.any((r) => r['status'] == 'PENDING') ?? false;
-                  
+                  final extensionRequests = (booking['extensionRequests'] as List?) ?? [];
+
+                  // 1. Pending request → awaiting supplier
+                  final hasPendingExtension = extensionRequests.any((r) {
+                    if (r['status'] != 'PENDING') return false;
+                    final reqOrigDate = DateTime.parse(r['originalEndDate']);
+                    final bookingEndDate = DateTime.parse(booking['endDate']);
+                    return reqOrigDate.isAtSameMomentAs(bookingEndDate);
+                  });
+
+                  // 2. Already has an APPROVED extension
+                  final hasApprovedExtension = extensionRequests.any((r) => r['status'] == 'APPROVED');
+
+                  // 3. Most recent request was REJECTED
+                  final hasRejectedExtension = !hasApprovedExtension &&
+                      extensionRequests.any((r) => r['status'] == 'REJECTED');
+
                   if (hasPendingExtension) {
                     return [
                       const SizedBox(height: 32),
@@ -276,11 +322,11 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.info_outline, color: Colors.orange),
+                            const Icon(Icons.hourglass_top_rounded, color: Colors.orange),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                'An extension request is currently pending supplier approval.',
+                                'Your extension request is pending supplier approval. You\'ll be notified once reviewed.',
                                 style: AppTextStyles.bodyMedium.copyWith(color: Colors.orange.shade800),
                               ),
                             ),
@@ -290,6 +336,87 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                     ];
                   }
 
+                  if (hasRejectedExtension) {
+                    return [
+                      const SizedBox(height: 32),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.red.withOpacity(0.4)),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.cancel_outlined, color: Colors.redAccent),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Extension Request Rejected',
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      color: Colors.red.shade700,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'The supplier has rejected your extension request. Your original return date remains unchanged.',
+                                    style: AppTextStyles.bodySmall.copyWith(color: Colors.red.shade600),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ];
+                  }
+
+                  if (hasApprovedExtension) {
+                    return [
+                      const SizedBox(height: 32),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.green.withOpacity(0.4)),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.check_circle_outline, color: Colors.green),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Booking Already Extended',
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      color: Colors.green.shade700,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Your booking has already been extended. Further extensions are not permitted.',
+                                    style: AppTextStyles.bodySmall.copyWith(color: Colors.green.shade700),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ];
+                  }
+
+                  // Default: show Extend Booking button
                   return [
                     const SizedBox(height: 32),
                     Center(
@@ -699,18 +826,70 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                   onPressed: isSubmitting ? null : () async {
                     setState(() => isSubmitting = true);
                     try {
-                      await datasource.createExtensionRequest(bookingId, newEndDateStr);
-                      if (!context.mounted) return;
-                      Navigator.of(context).pop(); // dismiss modal
+                      final double additionalCost = double.parse(calcResult['additionalCost'].toString());
                       
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Extension request submitted to supplier for approval.', style: TextStyle(color: Colors.white)),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                      
-                      ref.invalidate(carRentalBookingDetailsProvider(bookingId));
+                      if (additionalCost > 0) {
+                        // First get the payment intent
+                        await datasource.createExtensionPaymentIntent(bookingId, newEndDateStr);
+                        
+                        if (!context.mounted) return;
+                        Navigator.of(context).pop(); // dismiss modal
+                        
+                        // Show Stripe Bottom Sheet
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) => StripeAddCardSheet(
+                            datasource: PaymentRemoteDatasource(ref.read(dioProvider)),
+                            amount: additionalCost,
+                            simulatePayment: true,
+                            onCardAdded: (paymentMethodId) async {
+                              // Card was charged/added, now we submit the actual extension request
+                              try {
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (ctx) => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
+                                );
+                                
+                                await datasource.createExtensionRequest(
+                                  bookingId, 
+                                  newEndDateStr, 
+                                  paymentIntentId: paymentMethodId
+                                );
+                                
+                                ref.invalidate(carRentalBookingDetailsProvider(bookingId));
+                                
+                                if (context.mounted) {
+                                  Navigator.of(context).pop(); // dismiss loading
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => const RentalExtensionSuccessScreen()),
+                                  );
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  Navigator.of(context).pop(); // dismiss loading
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.redAccent),
+                                  );
+                                }
+                              }
+                            },
+                          ),
+                        );
+                      } else {
+                        // If 0 cost, just submit
+                        await datasource.createExtensionRequest(bookingId, newEndDateStr);
+                        if (!context.mounted) return;
+                        Navigator.of(context).pop(); // dismiss modal
+                        
+                        ref.invalidate(carRentalBookingDetailsProvider(bookingId));
+                        
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const RentalExtensionSuccessScreen()),
+                        );
+                      }
                     } catch (e) {
                       setState(() => isSubmitting = false);
                       if (!context.mounted) return;
@@ -721,7 +900,7 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                   },
                   child: isSubmitting 
                       ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.backgroundDark))
-                      : const Text('Submit Request', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      : const Text('Pay & Submit', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
               ),
             ),
@@ -733,6 +912,8 @@ Time: ${DateFormat('h:mm a').format(startDate)}
           ],
         ),
       ),
+    );
+      },
     );
   }
 }

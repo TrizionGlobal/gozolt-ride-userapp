@@ -79,15 +79,30 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
   Future<void> load() async {
     state = state.copyWith(isLoading: true, error: null);
 
+    // Car Rentals is a local client-side filter on data.type;
+    // pass null to API (fetches all SYSTEM type) and filter locally
+    final apiFilter = _filter == 'CAR_RENTAL' ? null : _filter;
+
     try {
-      var items = await _ds.getNotifications(type: _filter, page: 1);
+      var items = await _ds.getNotifications(type: apiFilter, page: 1);
       // If API returned empty, show default notifications
       if (items.isEmpty) {
         items = _defaultNotifications();
-        if (_filter != null) {
-          items = items.where((n) => n.type == _filter).toList();
-        }
       }
+
+      // Apply client-side filter for CAR_RENTAL
+      if (_filter == 'CAR_RENTAL') {
+        items = items.where((n) {
+          final dataType = n.data?['type'] as String?;
+          return dataType == 'EXTENSION_APPROVED' ||
+              dataType == 'EXTENSION_REJECTED' ||
+              dataType == 'BOOKING_CANCELLED' ||
+              dataType == 'CAR_RENTAL';
+        }).toList();
+      } else if (_filter != null && apiFilter == null) {
+        items = items.where((n) => n.type == _filter).toList();
+      }
+
       state = NotificationsState(
         notifications: items,
         isLoading: false,
@@ -97,7 +112,15 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
     } catch (e) {
       // API failed — show default notifications instead of error
       var defaults = _defaultNotifications();
-      if (_filter != null) {
+      if (_filter == 'CAR_RENTAL') {
+        defaults = defaults.where((n) {
+          final dataType = n.data?['type'] as String?;
+          return dataType == 'EXTENSION_APPROVED' ||
+              dataType == 'EXTENSION_REJECTED' ||
+              dataType == 'BOOKING_CANCELLED' ||
+              dataType == 'CAR_RENTAL';
+        }).toList();
+      } else if (_filter != null) {
         defaults = defaults.where((n) => n.type == _filter).toList();
       }
       state = NotificationsState(

@@ -52,6 +52,7 @@ abstract final class ApiConstants {
   static String carRentalBookingDetails(String id) => '/car-rentals/my-bookings/$id';
   static String carRentalBookingCancel(String id) => '/car-rentals/my-bookings/$id/cancel';
   static String carRentalBookingExtendCalculate(String id) => '/car-rentals/bookings/$id/extend/calculate';
+  static String carRentalBookingExtendPaymentIntent(String id) => '/car-rentals/bookings/$id/extend/payment-intent';
   static String carRentalBookingExtend(String id) => '/car-rentals/bookings/$id/extend';
 
   // ride actions use: /rides/:id/cancel, /rides/:id/stops, etc.

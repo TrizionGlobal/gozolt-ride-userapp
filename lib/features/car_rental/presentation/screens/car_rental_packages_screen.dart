@@ -35,15 +35,26 @@ class _CarRentalPackagesScreenState extends ConsumerState<CarRentalPackagesScree
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
+    final searchState = ref.watch(carRentalSearchProvider);
+    final isFlexible = searchState.isFlexible;
+    
+    int days = 1;
+    if (searchState.pickupDate != null && searchState.dropoffDate != null) {
+      final minutes = searchState.dropoffDate!.difference(searchState.pickupDate!).inMinutes;
+      if (minutes > 0) {
+        days = (minutes / 1440).ceil();
+      }
+    }
+
     // Calculate total price based on selected package
-    double basePrice = (widget.car?.pricePerDay ?? 0.0) * 3;
+    double basePrice = (widget.car?.pricePerDay ?? 0.0) * days;
     double packagePrice = 0.0;
     String deductibleString = 'up to €1,200.00 financial responsibility';
 
     if (widget.car != null && widget.car!.protectionPackages.isNotEmpty) {
       try {
         final pkg = widget.car!.protectionPackages.firstWhere((p) => p.valueIdentifier == _selectedPackage);
-        packagePrice = pkg.pricePerDay * 3;
+        packagePrice = pkg.pricePerDay * days;
         
         if (pkg.deductibleText.toLowerCase().contains('no')) {
           deductibleString = 'with no financial responsibility';
@@ -53,9 +64,7 @@ class _CarRentalPackagesScreenState extends ConsumerState<CarRentalPackagesScree
       } catch (_) {}
     }
 
-    final searchState = ref.watch(carRentalSearchProvider);
-    final isFlexible = searchState.isFlexible;
-    final double flexiblePrice = isFlexible ? (15.0 * 3) : 0.0;
+    final double flexiblePrice = isFlexible ? (15.0 * days) : 0.0;
 
     double totalPrice = basePrice + flexiblePrice + packagePrice;
 
@@ -143,7 +152,7 @@ class _CarRentalPackagesScreenState extends ConsumerState<CarRentalPackagesScree
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: () => _showPriceDetailsBottomSheet(context, basePrice, flexiblePrice, packagePrice, totalPrice),
+                  onTap: () => _showPriceBreakdown(context, basePrice, flexiblePrice, packagePrice, _selectedPackage, days),
                   child: Row(
                     children: [
                       Text('€${totalPrice.toStringAsFixed(2)}', style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold)),
@@ -315,8 +324,9 @@ class _CarRentalPackagesScreenState extends ConsumerState<CarRentalPackagesScree
     );
   }
 
-  void _showPriceDetailsBottomSheet(BuildContext context, double basePrice, double flexiblePrice, double packagePrice, double totalPrice) {
+  void _showPriceBreakdown(BuildContext context, double basePrice, double flexiblePrice, double packagePrice, String packageIdentifier, int days) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    double totalPrice = basePrice + flexiblePrice + packagePrice;
     
     // Find selected package name
     String packageName = 'Protection Package';
@@ -345,7 +355,7 @@ class _CarRentalPackagesScreenState extends ConsumerState<CarRentalPackagesScree
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Rental (3 Days)', style: AppTextStyles.bodyLarge),
+                  Text('Rental ($days ${days == 1 ? 'Day' : 'Days'})', style: AppTextStyles.bodyLarge),
                   Text('€${basePrice.toStringAsFixed(2)}', style: AppTextStyles.titleMedium),
                 ],
               ),
@@ -354,7 +364,7 @@ class _CarRentalPackagesScreenState extends ConsumerState<CarRentalPackagesScree
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Stay Flexible (3 Days)', style: AppTextStyles.bodyLarge),
+                    Text('Stay Flexible ($days ${days == 1 ? 'Day' : 'Days'})', style: AppTextStyles.bodyLarge),
                     Text('€${flexiblePrice.toStringAsFixed(2)}', style: AppTextStyles.titleMedium),
                   ],
                 ),

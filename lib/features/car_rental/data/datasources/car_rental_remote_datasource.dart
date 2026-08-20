@@ -103,11 +103,30 @@ class CarRentalRemoteDatasource {
     }
   }
 
-  Future<Map<String, dynamic>> createExtensionRequest(String bookingId, String newEndDate) async {
+  Future<Map<String, dynamic>> createExtensionPaymentIntent(String bookingId, String newEndDate) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.carRentalBookingExtendPaymentIntent(bookingId),
+        data: {'newEndDate': newEndDate},
+      );
+      return response.data as Map<String, dynamic>;
+    } catch (e) {
+      if (e is DioException) {
+        final message = e.response?.data?['message'] ?? 'Failed to initialize payment';
+        throw Exception(message);
+      }
+      throw Exception('Failed to initialize payment: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> createExtensionRequest(String bookingId, String newEndDate, {String? paymentIntentId}) async {
     try {
       final response = await _dio.post(
         ApiConstants.carRentalBookingExtend(bookingId),
-        data: {'newEndDate': newEndDate},
+        data: {
+          'newEndDate': newEndDate,
+          if (paymentIntentId != null) 'paymentIntentId': paymentIntentId,
+        },
       );
       return response.data as Map<String, dynamic>;
     } catch (e) {
