@@ -234,12 +234,11 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                     final grandTotal = double.tryParse(booking['grandTotal'].toString()) ?? 0;
                     final originalPaid = grandTotal - totalExtensionCost;
                     
-                    rows.add(const Divider());
-                    rows.add(_buildInfoRow(context, 'Previous Paid Amount', '€${originalPaid.toStringAsFixed(2)}', isBold: true));
-                    
                     if (totalExtensionCost > 0) {
+                      rows.add(const Divider());
+                      rows.add(_buildInfoRow(context, 'Original Booking', '€${originalPaid.toStringAsFixed(2)}', isBold: true));
                       rows.add(const SizedBox(height: 8));
-                      rows.add(_buildInfoRow(context, 'Extended Amount ($totalExtensionDays days)', '€${totalExtensionCost.toStringAsFixed(2)}', isBold: true));
+                      rows.add(_buildInfoRow(context, 'Extension ($totalExtensionDays days)', '€${totalExtensionCost.toStringAsFixed(2)}', isBold: true));
                     }
                     
                     return rows;
@@ -288,6 +287,44 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                       ),
                       onPressed: () => _handleCancel(context, ref, booking),
                       child: const Text('Cancel Booking', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                    ),
+                  ),
+                ],
+
+                if (booking['status'] == 'CANCELLED') ...[
+                  const SizedBox(height: 32),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.red.withOpacity(0.4)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.cancel_outlined, color: Colors.redAccent),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Booking Cancelled',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: Colors.redAccent,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'This booking has been cancelled. Any applicable refunds have been initiated to your original payment method.',
+                                style: AppTextStyles.bodySmall.copyWith(color: Colors.redAccent.shade100),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -665,6 +702,13 @@ Time: ${DateFormat('h:mm a').format(startDate)}
           TextButton(
             onPressed: () async {
               Navigator.of(ctx).pop();
+              
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
+              );
+
               try {
                 final dio = ref.read(dioProvider);
                 final datasource = CarRentalRemoteDatasource(dio);
@@ -674,6 +718,7 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                 ref.invalidate(carRentalHistoryProvider);
                 
                 if (context.mounted) {
+                  Navigator.of(context).pop(); // dismiss loading
                   final finalRefund = double.tryParse(response['refundAmount'].toString()) ?? estimatedRefund;
                   Navigator.of(context).push(
                     MaterialPageRoute(
@@ -683,6 +728,7 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                 }
               } catch (e) {
                 if (context.mounted) {
+                  Navigator.of(context).pop(); // dismiss loading
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.redAccent),
                   );

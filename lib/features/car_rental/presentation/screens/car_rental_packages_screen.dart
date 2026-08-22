@@ -165,7 +165,8 @@ class _CarRentalPackagesScreenState extends ConsumerState<CarRentalPackagesScree
               ),
               GozoltButton(
                 label: 'Continue',
-                width: 140,
+                width: 160,
+                icon: Icons.arrow_forward,
                 onPressed: () {
                   final updatedCar = widget.car?.copyWith(
                     selectedProtectionPackageId: _selectedPackage,
@@ -339,16 +340,19 @@ class _CarRentalPackagesScreenState extends ConsumerState<CarRentalPackagesScree
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => Container(
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Price Breakdown', style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 24),
@@ -390,6 +394,7 @@ class _CarRentalPackagesScreenState extends ConsumerState<CarRentalPackagesScree
               ),
               const SizedBox(height: 16),
             ],
+          ),
           ),
         ),
       ),

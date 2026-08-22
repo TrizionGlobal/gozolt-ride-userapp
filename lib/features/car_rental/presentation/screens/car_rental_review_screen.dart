@@ -34,7 +34,45 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
   String? _nationalIdPath;
   String? _drivingLicencePath;
 
+  bool _isCheckingActiveBooking = true;
+  bool _hasActiveBooking = false;
+  Map<String, dynamic>? _activeBookingData;
+
   final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkActiveBooking();
+  }
+
+  Future<void> _checkActiveBooking() async {
+    try {
+      final dio = ref.read(dioProvider);
+      final datasource = CarRentalRemoteDatasource(dio);
+      final myBookings = await datasource.getMyBookings();
+      
+      final activeBooking = myBookings.cast<Map<String, dynamic>?>().firstWhere(
+        (b) => b != null && ['PENDING_PAYMENT', 'PENDING_APPROVAL', 'CONFIRMED', 'ACTIVE'].contains(b['status']),
+        orElse: () => null,
+      );
+
+      if (activeBooking != null && mounted) {
+        setState(() {
+          _hasActiveBooking = true;
+          _activeBookingData = activeBooking;
+        });
+      }
+    } catch (e) {
+      debugPrint('Failed active booking check: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCheckingActiveBooking = false;
+        });
+      }
+    }
+  }
 
   Future<void> _pickImage(bool isNationalId) async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
@@ -120,6 +158,14 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isCheckingActiveBooking) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primaryGold),
+        ),
+      );
+    }
+
     final car = widget.car;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
@@ -406,6 +452,11 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
             label: _isBooking ? 'BOOKING...' : 'BOOK NOW',
             width: double.infinity,
             onPressed: _isBooking ? null : () async {
+              if (_hasActiveBooking && _activeBookingData != null) {
+                _showActiveBookingModal(_activeBookingData!);
+                return;
+              }
+
               if (!isFormValid) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -415,32 +466,6 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
                 );
                 return;
               }
-
-              setState(() {
-                _isBooking = true;
-              });
-
-              try {
-                final datasource = CarRentalRemoteDatasource(ref.read(dioProvider));
-                final myBookings = await datasource.getMyBookings();
-                
-                final activeBooking = myBookings.cast<Map<String, dynamic>?>().firstWhere(
-                  (b) => b != null && ['PENDING_PAYMENT', 'PENDING_APPROVAL', 'CONFIRMED', 'ACTIVE'].contains(b['status']),
-                  orElse: () => null,
-                );
-
-                if (activeBooking != null) {
-                  setState(() { _isBooking = false; });
-                  _showActiveBookingModal(activeBooking);
-                  return;
-                }
-              } catch (e) {
-                debugPrint('Failed active booking check: $e');
-              }
-
-              setState(() {
-                _isBooking = false;
-              });
 
               String? successfulBookingId;
               
@@ -476,6 +501,9 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
                         pickupLocation: searchState.pickupLocation,
                         dropoffLocation: searchState.dropoffLocation,
                         isFlexible: searchState.isFlexible,
+                        nationalIdPath: _nationalIdPath!,
+                        drivingLicencePath: _drivingLicencePath!,
+                        paymentMethodId: paymentMethodId,
                       );
                       
                       successfulBookingId = bookingData['id'];
@@ -526,8 +554,12 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
+      builder: (ctx) => WillPopScope(
+        onWillPop: () async => false,
+        child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color ?? (isDark ? AppColors.cardDark : Colors.white),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -620,6 +652,7 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
                 },
               ),
             ],
+          ),
           ),
         ),
       ),

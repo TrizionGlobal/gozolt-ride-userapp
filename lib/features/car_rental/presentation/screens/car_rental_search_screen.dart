@@ -193,53 +193,57 @@ class _CarRentalSearchScreenState extends ConsumerState<CarRentalSearchScreen> {
           children: [
             const CarRentalHeader(title: 'Car Rental'),
             // ── Location Input Box ──────────────────────────────
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardTheme.color,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.primaryGold, width: 1.2),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CarRentalLocationField(
-                    controller: _pickupController,
-                    hint: 'Current Location / Search Location',
-                    dotColor: AppColors.success,
-                    labelOverride: 'PICKUP',
-                    onTap: () => _selectLocation('pickup'),
-                  ),
-                  
-                  if (!_returnToSameLocation) ...[
-                    // Connecting line between locations
-                    Padding(
-                      padding: const EdgeInsets.only(left: 5, top: 4, bottom: 4),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Container(
-                          width: 2,
-                          height: 16,
-                          decoration: BoxDecoration(
-                            color: AppColors.textMuted.withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(1),
+            if (_deliveryType != 'SELF_PICKUP' || !_returnToSameLocation)
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardTheme.color,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.primaryGold, width: 1.2),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_deliveryType != 'SELF_PICKUP')
+                      CarRentalLocationField(
+                        controller: _pickupController,
+                        hint: 'Current Location / Search Location',
+                        dotColor: AppColors.success,
+                        labelOverride: 'PICKUP',
+                        onTap: () => _selectLocation('pickup'),
+                      ),
+                    
+                    if (_deliveryType != 'SELF_PICKUP' && !_returnToSameLocation)
+                      // Connecting line between locations
+                      Padding(
+                        padding: const EdgeInsets.only(left: 5, top: 4, bottom: 4),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            width: 2,
+                            height: 16,
+                            decoration: BoxDecoration(
+                              color: AppColors.textMuted.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(1),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    
-                    CarRentalLocationField(
-                      controller: _dropoffController,
-                      hint: 'Where are you going?',
-                      dotColor: AppColors.error,
-                      labelOverride: 'DROP-OFF',
-                      onTap: () => _selectLocation('dropoff'),
-                    ),
+                      
+                    if (!_returnToSameLocation)
+                      CarRentalLocationField(
+                        controller: _dropoffController,
+                        hint: 'Where are you going?',
+                        dotColor: AppColors.error,
+                        labelOverride: 'DROP-OFF',
+                        onTap: () => _selectLocation('dropoff'),
+                      ),
                   ],
-                ],
-              ),
-            ),
+                ),
+              )
+            else
+              const SizedBox(height: 24),
             
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),

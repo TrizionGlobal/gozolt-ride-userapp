@@ -106,6 +106,9 @@ abstract final class ApiConstants {
   // ── Ride Change Destination ─────────────────────────────
   static String rideChangeDestination(String id) => '/rides/$id/change-destination';
 
+  // ── Documents ──────────────────────────────────────────────
+  static const String documentsUpload = '/documents/upload';
+
   // ── Helpers ───────────────────────────────────────────────
   static String fullUrl(String path) {
     if (path.startsWith('http')) return path;

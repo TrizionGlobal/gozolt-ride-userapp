@@ -112,7 +112,7 @@ class CarRentalCancellationSuccessScreen extends StatelessWidget {
               
               // Done Button
               SizedBox(
-                width: double.infinity,
+                width: 200,
                 height: 50,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(

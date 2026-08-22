@@ -118,7 +118,7 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // Title Block
-                Text(widget.car?.name.toUpperCase() ?? 'TOYOTA COROLLA', style: AppTextStyles.headlineLarge.copyWith(fontWeight: FontWeight.w900)),
+                Text(widget.car?.name.toUpperCase() ?? 'TOYOTA COROLLA', style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.w900)),
                 const SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -242,7 +242,8 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
               ),
               GozoltButton(
                 label: 'Continue',
-                width: 140,
+                width: 160,
+                icon: Icons.arrow_forward,
                 onPressed: () {
                   ref.read(carRentalSearchProvider.notifier).updateSearch(
                     isFlexible: _paymentOption == 'stay_flexible',
@@ -414,16 +415,19 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => Container(
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.8),
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Price Breakdown', style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 24),
@@ -457,6 +461,7 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
               ),
               const SizedBox(height: 16),
             ],
+          ),
           ),
         ),
       ),

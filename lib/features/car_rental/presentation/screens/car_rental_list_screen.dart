@@ -25,6 +25,7 @@ class FilterState {
   Set<String> seats;
   Set<String> supplierOptions;
   Set<String> features;
+  Set<String> acOptions;
 
   FilterState({
     this.sortBy = 'Recommended',
@@ -36,12 +37,14 @@ class FilterState {
     Set<String>? seats,
     Set<String>? supplierOptions,
     Set<String>? features,
+    Set<String>? acOptions,
   })  : vehicleTypes = vehicleTypes ?? {},
         transmissions = transmissions ?? {},
         fuelTypes = fuelTypes ?? {},
         seats = seats ?? {},
         supplierOptions = supplierOptions ?? {},
-        features = features ?? {};
+        features = features ?? {},
+        acOptions = acOptions ?? {};
         
   FilterState clone() {
     return FilterState(
@@ -54,6 +57,7 @@ class FilterState {
       seats: Set.from(seats),
       supplierOptions: Set.from(supplierOptions),
       features: Set.from(features),
+      acOptions: Set.from(acOptions),
     );
   }
 }
@@ -136,6 +140,13 @@ class _CarRentalListScreenState extends ConsumerState<CarRentalListScreen> {
         if (!_filterState.features.every((f) => car.features.contains(f))) return false;
       }
       
+      if (_filterState.acOptions.isNotEmpty) {
+        bool hasAC = car.features.contains('A/C');
+        bool matchAC = _filterState.acOptions.contains('AC') && hasAC;
+        bool matchNonAC = _filterState.acOptions.contains('Non-AC') && !hasAC;
+        if (!matchAC && !matchNonAC) return false;
+      }
+
       return true;
     }).toList();
     
@@ -517,7 +528,7 @@ class _FilterModalContent extends StatefulWidget {
 
 class _FilterModalContentState extends State<_FilterModalContent> {
   late FilterState _state;
-  final List<String> _sortOptions = ['Recommended', 'Lowest Price', 'Highest Price', 'Highest Rated', 'Most Popular', 'Newest Vehicles'];
+  final List<String> _sortOptions = ['Recommended', 'Lowest Price', 'Highest Price', 'Highest Rated'];
 
   final _minPriceController = TextEditingController();
   final _maxPriceController = TextEditingController();
@@ -643,7 +654,7 @@ class _FilterModalContentState extends State<_FilterModalContent> {
                       child: AppFilledTextField(
                         controller: _minPriceController,
                         hint: 'Min €',
-                        icon: Icons.money_off,
+                        icon: Icons.euro,
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -651,7 +662,7 @@ class _FilterModalContentState extends State<_FilterModalContent> {
                       child: AppFilledTextField(
                         controller: _maxPriceController,
                         hint: 'Max €',
-                        icon: Icons.attach_money,
+                        icon: Icons.euro,
                       ),
                     ),
                   ],
@@ -663,6 +674,15 @@ class _FilterModalContentState extends State<_FilterModalContent> {
                     _buildCheckbox('Automatic', _state.transmissions),
                     const SizedBox(width: 24),
                     _buildCheckbox('Manual', _state.transmissions),
+                  ],
+                ),
+                
+                _buildFilterHeader('Air Conditioning'),
+                Row(
+                  children: [
+                    _buildCheckbox('AC', _state.acOptions),
+                    const SizedBox(width: 24),
+                    _buildCheckbox('Non-AC', _state.acOptions),
                   ],
                 ),
                 
@@ -689,45 +709,50 @@ class _FilterModalContentState extends State<_FilterModalContent> {
                   ],
                 ),
 
-                _buildFilterHeader('Supplier Option'),
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 12,
-                  children: [
-                    _buildCheckbox('Self Pickup', _state.supplierOptions),
-                    _buildCheckbox('Supplier Delivery', _state.supplierOptions),
-                    _buildCheckbox('Doorstep Delivery', _state.supplierOptions),
-                  ],
-                ),
-
-                _buildFilterHeader('Vehicle Features'),
-                Wrap(
-                  spacing: 16,
-                  runSpacing: 12,
-                  children: [
-                    _buildCheckbox('A/C', _state.features),
-                    _buildCheckbox('Unlimited Mileage', _state.features),
-                    _buildCheckbox('Free Cancellation', _state.features),
-                    _buildCheckbox('Instant Confirmation', _state.features),
-                  ],
-                ),
               ],
             ),
           ),
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: GozoltButton(
-                label: 'APPLY FILTERS',
-                width: double.infinity,
-                onPressed: () {
-                  _state.minPrice = double.tryParse(_minPriceController.text);
-                  _state.maxPrice = double.tryParse(_maxPriceController.text);
-                  Navigator.pop(context, _state);
-                },
+              padding: const EdgeInsets.only(bottom: 20, left: 16, right: 16),
+              child: SizedBox(
+                height: 44,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: isDark ? AppColors.borderDark : Colors.grey.shade300),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                        final clearedState = FilterState(sortBy: 'Recommended');
+                        Navigator.pop(context, clearedState);
+                      },
+                      child: Text(
+                        'Clear Filters',
+                        style: AppTextStyles.labelLarge.copyWith(
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: GozoltButton(
+                      label: 'Apply Filters',
+                      onPressed: () {
+                        _state.minPrice = double.tryParse(_minPriceController.text);
+                        _state.maxPrice = double.tryParse(_maxPriceController.text);
+                        Navigator.pop(context, _state);
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
+        ),
         ],
       ),
     );

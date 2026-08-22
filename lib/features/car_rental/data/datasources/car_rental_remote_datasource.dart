@@ -27,30 +27,40 @@ class CarRentalRemoteDatasource {
     String? deliveryAddress,
     String? pickupLocation,
     String? dropoffLocation,
-    bool isFlexible = false,
+    bool? isFlexible,
+    required String nationalIdPath,
+    required String drivingLicencePath,
+    String? paymentMethodId,
   }) async {
     try {
+      final formData = FormData.fromMap({
+        'vehicleId': vehicleId,
+        'startDate': startDate.toIso8601String(),
+        'endDate': endDate.toIso8601String(),
+        if (protectionPackageId != null) 'protectionPackageId': protectionPackageId,
+        if (addonIds != null && addonIds.isNotEmpty) 'addonIds': addonIds.join(','),
+        if (deliveryType != null) 'deliveryType': deliveryType,
+        if (deliveryAddress != null) 'deliveryAddress': deliveryAddress,
+        if (pickupLocation != null) 'pickupLocation': pickupLocation,
+        if (dropoffLocation != null) 'dropoffLocation': dropoffLocation,
+        if (isFlexible != null) 'isFlexible': isFlexible.toString(),
+        if (paymentMethodId != null) 'paymentMethodId': paymentMethodId,
+        'nationalId': await MultipartFile.fromFile(nationalIdPath, filename: 'national_id.jpg'),
+        'drivingLicence': await MultipartFile.fromFile(drivingLicencePath, filename: 'driving_licence.jpg'),
+      });
+
       final response = await _dio.post(
         ApiConstants.carRentalBook,
-        data: {
-          'vehicleId': vehicleId,
-          'startDate': startDate.toIso8601String(),
-          'endDate': endDate.toIso8601String(),
-          'protectionPackageId': protectionPackageId,
-          'addonIds': addonIds,
-          'deliveryType': deliveryType,
-          'deliveryAddress': deliveryAddress,
-          'pickupLocation': pickupLocation,
-          'dropoffLocation': dropoffLocation,
-          'isFlexible': isFlexible,
-        },
+        data: formData,
       );
+      
       return response.data as Map<String, dynamic>;
-    } on DioException catch (e) {
-      final message = e.response?.data?['message'] ?? 'Failed to create rental booking';
-      throw Exception(message);
     } catch (e) {
-      throw Exception('Failed to create rental booking: $e');
+      if (e is DioException) {
+        final message = e.response?.data?['message'] ?? 'Failed to create booking';
+        throw Exception(message);
+      }
+      throw Exception('Failed to create booking: $e');
     }
   }
 
