@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/constants/asset_paths.dart';
 import '../../../../core/widgets/gozolt_button.dart';
 import '../widgets/car_rental_header.dart';
 import '../../domain/models/car_model.dart';
@@ -16,6 +17,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/dio_provider.dart';
 import '../providers/car_rental_search_provider.dart';
 import 'package:intl/intl.dart';
+import '../../../history/presentation/screens/car_rentals_history_view.dart';
+import '../../../rewards/presentation/providers/rewards_providers.dart';
+import 'package:flutter/services.dart';
 
 class CarRentalReviewScreen extends ConsumerStatefulWidget {
   final CarModel? car;
@@ -29,6 +33,7 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
   bool _agreeRentalAgreement = false;
   bool _agreeTerms = false;
   bool _isBooking = false;
+  bool _useCoins = false;
 
   bool _documentsUploaded = false;
   String? _nationalIdPath;
@@ -156,6 +161,7 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
     );
   }
 
+
   @override
   Widget build(BuildContext context) {
     if (_isCheckingActiveBooking) {
@@ -211,7 +217,19 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
     }
     
     final double subtotal = basePrice + flexiblePrice + protectionPrice + addonsPrice;
-    final double totalPayable = subtotal;
+    
+    // GoCoins logic
+    final rewardSummary = ref.watch(rewardSummaryProvider).value;
+    final int balance = rewardSummary?.currentPoints.toInt() ?? 0;
+    final int conversionRate = (ref.watch(rewardRulesProvider).value?.redemption.pointsToEurRatio ?? 400.0).toInt();
+    
+    final double maxEurValue = balance / conversionRate;
+    final double appliedEurValue = maxEurValue > subtotal ? subtotal : maxEurValue;
+    final int coinsUsed = (appliedEurValue * conversionRate).round();
+
+    final double discount = _useCoins ? appliedEurValue : 0.0;
+    final double totalPayable = subtotal - discount;
+    final int earnedCoins = (subtotal * 10).floor();
 
     final isFormValid = _agreeRentalAgreement && _agreeTerms && _documentsUploaded;
 
@@ -379,17 +397,6 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
 
                   _buildSummarySection(
                     context,
-                    title: 'Delivery Details (Doorstep)',
-                    children: [
-                      _buildRow('Delivery Address', '123 Gozolt Ave, Valletta'),
-                      _buildRow('Phone Number', '+356 9912 3456'),
-                      _buildRow('Email', 'user@gozolt.com'),
-                      _buildRow('WhatsApp Number', '+356 9912 3456'),
-                    ],
-                  ),
-
-                  _buildSummarySection(
-                    context,
                     title: 'Protection & Add-ons',
                     children: [
                       _buildRow('Protection Package', selectedProtection != null ? '${selectedProtection.title} (${selectedProtection.pricePerDay == 0 ? 'Included' : '+€${selectedProtection.pricePerDay.toStringAsFixed(2)}'})' : 'Basic Price (Included)'),
@@ -400,7 +407,68 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
                         ...selectedAddons.map((addon) => _buildRow(addon.name, '€${addon.pricePerDay.toStringAsFixed(2)} / day')),
                     ],
                   ),
-                  
+
+                  // ── GoCoins Redeem Section ──
+                  Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardTheme.color,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: _useCoins ? AppColors.primaryGold : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark), width: _useCoins ? 1.5 : 0.5),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryGold.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Image.asset(AssetPaths.iconGoCoin, width: 32, height: 32),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Redeem GoCoins', style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Balance: $balance Coins',
+                                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                                ),
+                                if (appliedEurValue > 0)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Text(
+                                      'Save €${appliedEurValue.toStringAsFixed(2)} with $coinsUsed coins',
+                                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          Transform.scale(
+                            scale: 0.9,
+                            child: Switch.adaptive(
+                              value: _useCoins,
+                              activeColor: AppColors.backgroundDark,
+                              activeTrackColor: AppColors.primaryGold,
+                              inactiveTrackColor: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
+                              onChanged: (val) {
+                                setState(() {
+                                  _useCoins = val;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                  ),
+
                   _buildSummarySection(
                     context,
                     title: 'Payment Summary',
@@ -419,7 +487,21 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
                       }),
                       const Divider(height: 32),
                       
-                      _buildRow('TOTAL PAYABLE', '€${totalPayable.toStringAsFixed(2)}', isTotal: true),
+                      _buildRow('Subtotal', '€${subtotal.toStringAsFixed(2)}'),
+                      if (_useCoins)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('GoCoins Discount', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primaryGold)),
+                              Text('-€${discount.toStringAsFixed(2)}', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primaryGold)),
+                            ],
+                          ),
+                        ),
+                      Divider(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
+                      const SizedBox(height: 12),
+                      _buildRow('Total', '€${totalPayable.toStringAsFixed(2)}', isTotal: true),
                     ],
                   ),
 
@@ -448,9 +530,12 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
           ],
         ),
         child: SafeArea(
-          child: GozoltButton(
-            label: _isBooking ? 'BOOKING...' : 'BOOK NOW',
-            width: double.infinity,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GozoltButton(
+                label: _isBooking ? 'Booking...' : 'Book Now',
+                width: double.infinity,
             onPressed: _isBooking ? null : () async {
               if (_hasActiveBooking && _activeBookingData != null) {
                 _showActiveBookingModal(_activeBookingData!);
@@ -504,9 +589,10 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
                         nationalIdPath: _nationalIdPath!,
                         drivingLicencePath: _drivingLicencePath!,
                         paymentMethodId: paymentMethodId,
+                        walletAmountUsed: discount > 0 ? discount : null,
                       );
-                      
                       successfulBookingId = bookingData['id'];
+                      ref.invalidate(carRentalHistoryProvider);
                       
                     } catch (e) {
                       debugPrint('Error creating booking: $e');
@@ -520,9 +606,12 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
                 context.pushNamed(RouteNames.carRentalConfirmation, extra: {
                   'car': widget.car,
                   'bookingId': successfulBookingId,
+                  'earnedCoins': earnedCoins,
                 });
               }
             },
+          ),
+            ],
           ),
         ),
       ),

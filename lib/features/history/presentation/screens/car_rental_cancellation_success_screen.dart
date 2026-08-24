@@ -112,8 +112,8 @@ class CarRentalCancellationSuccessScreen extends StatelessWidget {
               
               // Done Button
               SizedBox(
-                width: 200,
-                height: 50,
+                width: double.infinity,
+                height: 44,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryGold,
@@ -127,7 +127,7 @@ class CarRentalCancellationSuccessScreen extends StatelessWidget {
                     Navigator.of(context).pop(); // pop the details screen
                   },
                   child: const Text(
-                    'DONE',
+                    'Done',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1.2,

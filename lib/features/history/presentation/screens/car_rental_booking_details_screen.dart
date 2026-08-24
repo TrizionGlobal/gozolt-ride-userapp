@@ -241,6 +241,11 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                       rows.add(_buildInfoRow(context, 'Extension ($totalExtensionDays days)', '€${totalExtensionCost.toStringAsFixed(2)}', isBold: true));
                     }
                     
+                    final walletAmountUsed = double.tryParse(booking['walletAmountUsed']?.toString() ?? '0') ?? 0;
+                    if (walletAmountUsed > 0) {
+                      rows.add(_buildInfoRow(context, 'GoCoins Discount', '-€${walletAmountUsed.toStringAsFixed(2)}', valueColor: AppColors.primaryGold));
+                    }
+                    
                     return rows;
                   })(),
                   
@@ -586,9 +591,9 @@ Time: ${DateFormat('h:mm a').format(startDate)}
     );
   }
 
-  Widget _buildInfoRow(BuildContext context, String label, String value, {bool isBold = false, bool isStatus = false}) {
+  Widget _buildInfoRow(BuildContext context, String label, String value, {bool isBold = false, bool isStatus = false, Color? valueColor}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    Color valueColor = isDark ? AppColors.textPrimary : AppColors.textPrimaryLight;
+    Color vColor = valueColor ?? (isDark ? AppColors.textPrimary : AppColors.textPrimaryLight);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -596,12 +601,12 @@ Time: ${DateFormat('h:mm a').format(startDate)}
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
-          Flexible(
+          Expanded(
             child: Text(
               value,
               textAlign: TextAlign.right,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: valueColor,
+                color: vColor,
                 fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
               ),
             ),

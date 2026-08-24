@@ -825,10 +825,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           final extra = state.extra as Map<String, dynamic>? ?? {};
           final car = extra['car'] as CarModel?;
           final bookingId = extra['bookingId'] as String?;
+          final earnedCoins = extra['earnedCoins'] as int?;
           
           return CustomTransitionPage(
             key: state.pageKey,
-            child: CarRentalConfirmationScreen(car: car, bookingId: bookingId),
+            child: CarRentalConfirmationScreen(car: car, bookingId: bookingId, earnedCoins: earnedCoins),
             transitionsBuilder: (context, animation, secondaryAnimation, child) =>
                 FadeTransition(opacity: animation, child: child),
           );

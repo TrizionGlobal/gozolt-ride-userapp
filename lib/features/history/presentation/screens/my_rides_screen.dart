@@ -110,7 +110,7 @@ class MyRidesScreen extends ConsumerWidget {
                           ),
                           child: Center(
                             child: Text(
-                              'Car Rentals',
+                              'My Car Rentals',
                               style: AppTextStyles.titleSmall.copyWith(
                                 color: selectedTab == 1 ? AppColors.backgroundDark : AppColors.textSecondary,
                               ),
