@@ -199,7 +199,7 @@ class _CarRentalsHistoryViewState extends ConsumerState<CarRentalsHistoryView> {
                     border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
+                        color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight.withValues(alpha: 0.04),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),

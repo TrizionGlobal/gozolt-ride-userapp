@@ -126,9 +126,9 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
                     Text('or similar | ${widget.car?.type.split(' - ').first ?? 'Saloon'}', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted)),
                     Row(
                       children: [
-                        const Icon(Icons.business, size: 14, color: Colors.grey),
+                        Icon(Icons.business, size: 14, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                         const SizedBox(width: 4),
-                        Text(widget.car?.supplier ?? 'Supplier', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey)),
+                        Text(widget.car?.supplier ?? 'Supplier', style: AppTextStyles.bodySmall.copyWith(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight)),
                       ],
                     ),
                   ],
@@ -217,7 +217,7 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4)),
+            BoxShadow(color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4)),
           ],
         ),
         child: SafeArea(
@@ -235,7 +235,7 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
                       Text('€${_totalPrice.toStringAsFixed(2)}', style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold)),
                       const SizedBox(width: 4),
                       Text('total', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted)),
-                      const Icon(Icons.keyboard_arrow_up, color: Colors.grey),
+                      Icon(Icons.keyboard_arrow_up, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                     ],
                   ),
                 ),
@@ -261,7 +261,7 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
   Widget _buildSpecItem(IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: Colors.grey.shade700),
+        Icon(icon, size: 20, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight.shade700),
         const SizedBox(width: 12),
         Expanded(child: Text(text, style: AppTextStyles.bodyMedium, maxLines: 1, overflow: TextOverflow.ellipsis)),
       ],
@@ -320,7 +320,7 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
                         ),
                       ],
                       const SizedBox(width: 8),
-                      const Icon(Icons.info_outline, size: 20, color: Colors.grey),
+                      Icon(Icons.info_outline, size: 20, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                     ],
                   ),
                   const SizedBox(height: 8),

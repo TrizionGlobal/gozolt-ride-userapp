@@ -144,7 +144,7 @@ class _CarRentalPackagesScreenState extends ConsumerState<CarRentalPackagesScree
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4)),
+            BoxShadow(color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4)),
           ],
         ),
         child: SafeArea(
@@ -158,7 +158,7 @@ class _CarRentalPackagesScreenState extends ConsumerState<CarRentalPackagesScree
                       Text('€${totalPrice.toStringAsFixed(2)}', style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold)),
                       const SizedBox(width: 4),
                       Text('total', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted)),
-                      const Icon(Icons.keyboard_arrow_up, color: Colors.grey),
+                      Icon(Icons.keyboard_arrow_up, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                     ],
                   ),
                 ),
@@ -233,7 +233,7 @@ class _CarRentalPackagesScreenState extends ConsumerState<CarRentalPackagesScree
                         )),
                       ),
                       const SizedBox(width: 8),
-                      Icon(isSelected ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 20, color: Colors.grey),
+                      Icon(isSelected ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 20, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -249,7 +249,7 @@ class _CarRentalPackagesScreenState extends ConsumerState<CarRentalPackagesScree
                         Text(
                           originalPriceText,
                           style: AppTextStyles.bodySmall.copyWith(
-                            color: Colors.grey,
+                            color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
                             decoration: TextDecoration.lineThrough,
                           ),
                         ),
@@ -315,11 +315,11 @@ class _CarRentalPackagesScreenState extends ConsumerState<CarRentalPackagesScree
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.check, size: 18, color: Colors.black54),
+          Icon(Icons.check, size: 18, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
           const SizedBox(width: 12),
           Expanded(child: Text(text, style: AppTextStyles.bodyMedium)),
           const SizedBox(width: 12),
-          const Icon(Icons.info_outline, size: 18, color: Colors.black54),
+          Icon(Icons.info_outline, size: 18, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
         ],
       ),
     );

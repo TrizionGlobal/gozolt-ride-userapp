@@ -370,7 +370,7 @@ class _CarRentalListScreenState extends ConsumerState<CarRentalListScreen> {
                     return Container(
                       color: isDark ? Colors.black12 : Colors.grey.shade100,
                       child: const Center(
-                        child: Icon(Icons.directions_car, size: 80, color: Colors.grey),
+                        child: Icon(Icons.directions_car, size: 80, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                       ),
                     );
                   },
@@ -407,9 +407,9 @@ class _CarRentalListScreenState extends ConsumerState<CarRentalListScreen> {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                const Icon(Icons.business, size: 14, color: Colors.grey),
+                                Icon(Icons.business, size: 14, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                                 const SizedBox(width: 4),
-                                Text(car.supplier, style: AppTextStyles.bodySmall.copyWith(color: Colors.grey)),
+                                Text(car.supplier, style: AppTextStyles.bodySmall.copyWith(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight)),
                                 const SizedBox(width: 8),
                                 const Icon(Icons.star, size: 14, color: Colors.orange),
                                 const SizedBox(width: 2),
@@ -454,7 +454,7 @@ class _CarRentalListScreenState extends ConsumerState<CarRentalListScreen> {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text('\$${car.pricePerDay.toInt()}', style: AppTextStyles.titleLarge.copyWith(color: AppColors.primaryGold)),
-                              Text(' / day', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey)),
+                              Text(' / day', style: AppTextStyles.bodySmall.copyWith(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight)),
                             ],
                           ),
                           Text('Total: \$${(car.pricePerDay * durationDays).toInt()} for $durationDays ${durationDays == 1 ? 'day' : 'days'}', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted, fontSize: 11)),
@@ -491,9 +491,9 @@ class _CarRentalListScreenState extends ConsumerState<CarRentalListScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: Colors.grey),
+        Icon(icon, size: 14, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
         const SizedBox(width: 4),
-        Text(label, style: AppTextStyles.labelSmall.copyWith(color: Colors.grey, fontSize: 11)),
+        Text(label, style: AppTextStyles.labelSmall.copyWith(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight, fontSize: 11)),
       ],
     );
   }

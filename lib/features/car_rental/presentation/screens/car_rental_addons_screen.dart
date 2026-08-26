@@ -204,7 +204,7 @@ class _CarRentalAddonsScreenState extends ConsumerState<CarRentalAddonsScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4)),
+            BoxShadow(color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4)),
           ],
         ),
         child: SafeArea(
@@ -218,7 +218,7 @@ class _CarRentalAddonsScreenState extends ConsumerState<CarRentalAddonsScreen> {
                       Text('€${totalPrice.toStringAsFixed(2)}', style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold)),
                       const SizedBox(width: 4),
                       Text('total', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted)),
-                      const Icon(Icons.keyboard_arrow_up, color: Colors.grey),
+                      Icon(Icons.keyboard_arrow_up, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                     ],
                   ),
                 ),

@@ -258,8 +258,8 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
                               child: car != null ? Image.network(
                                 car.imageUrl,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => const Icon(Icons.directions_car, color: Colors.grey, size: 65),
-                              ) : const Icon(Icons.directions_car, color: Colors.grey, size: 65),
+                                errorBuilder: (context, error, stackTrace) => Icon(Icons.directions_car, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight, size: 65),
+                              ) : Icon(Icons.directions_car, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight, size: 65),
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -329,7 +329,7 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
                                                 onTap: () => _pickImage(true),
                                                 child: Container(
                                                   padding: const EdgeInsets.all(4),
-                                                  decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                                                  decoration: const BoxDecoration(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight, shape: BoxShape.circle),
                                                   child: const Icon(Icons.edit, size: 16, color: Colors.white),
                                                 ),
                                               ),
@@ -379,7 +379,7 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
                                                 onTap: () => _pickImage(false),
                                                 child: Container(
                                                   padding: const EdgeInsets.all(4),
-                                                  decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                                                  decoration: const BoxDecoration(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight, shape: BoxShape.circle),
                                                   child: const Icon(Icons.edit, size: 16, color: Colors.white),
                                                 ),
                                               ),
@@ -526,7 +526,7 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4)),
+            BoxShadow(color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4)),
           ],
         ),
         child: SafeArea(
@@ -664,7 +664,7 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.3),
+                    color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),

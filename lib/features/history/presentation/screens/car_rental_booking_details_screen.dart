@@ -119,7 +119,7 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                     children: [
                       Text(
                         'Present this to supplier',
-                        style: AppTextStyles.titleMedium.copyWith(color: Colors.black87),
+                        style: AppTextStyles.titleMedium.copyWith(color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                       ),
                       const SizedBox(height: 16),
                       QrImageView(
@@ -131,7 +131,7 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                       const SizedBox(height: 16),
                       Text(
                         'Booking ID: $displayBookingId',
-                        style: AppTextStyles.labelLarge.copyWith(color: Colors.black54),
+                        style: AppTextStyles.labelLarge.copyWith(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                       ),
                     ],
                   ),
@@ -305,30 +305,28 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.red.withOpacity(0.4)),
                     ),
-                    child: Row(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.cancel_outlined, color: Colors.redAccent),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Booking Cancelled',
-                                style: AppTextStyles.bodyMedium.copyWith(
-                                  color: Colors.redAccent,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                        Row(
+                          children: [
+                            const Icon(Icons.cancel_outlined, color: Colors.redAccent),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Booking Cancelled',
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: Colors.redAccent,
+                                fontWeight: FontWeight.bold,
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'This booking has been cancelled. Any applicable refunds have been initiated to your original payment method.',
-                                style: AppTextStyles.bodySmall.copyWith(color: Colors.redAccent.shade100),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
+                        const SizedBox(height: 12),
+                        _buildInfoRow(context, 'Cancelled By', booking['cancelledBy'] == 'USER' ? 'You' : booking['cancelledBy'] == 'SUPPLIER' ? 'Supplier' : 'System', valueColor: Colors.redAccent),
+                        if (booking['cancellationReason'] != null)
+                          _buildInfoRow(context, 'Reason', booking['cancellationReason'], valueColor: Colors.redAccent),
+                        if (booking['return'] != null && booking['return']['refundAmount'] != null)
+                          _buildInfoRow(context, 'Refund Amount', '€${double.parse(booking['return']['refundAmount'].toString()).toStringAsFixed(2)}', valueColor: Colors.green),
                       ],
                     ),
                   ),
@@ -478,6 +476,24 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                     ),
                   ];
                 })(),
+
+                if (booking['extensionRequests'] != null && (booking['extensionRequests'] as List).isNotEmpty) ...[
+                  const SizedBox(height: 32),
+                  _buildSectionTitle(context, 'Extension History'),
+                  const SizedBox(height: 8),
+                  ...((booking['extensionRequests'] as List).map((ext) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: _buildInfoCard(context, [
+                        _buildStatusRow(context, ext['status']),
+                        _buildInfoRow(context, 'Requested End Date', DateFormat('MMM dd, yyyy h:mm a').format(DateTime.parse(ext['newEndDate']))),
+                        _buildInfoRow(context, 'Additional Cost', '€${double.parse(ext['additionalCost'].toString()).toStringAsFixed(2)}', isBold: true),
+                        if (ext['reason'] != null)
+                          _buildInfoRow(context, 'Reason', ext['reason']),
+                      ]),
+                    );
+                  }).toList()),
+                ],
 
                 const SizedBox(height: 40),
               ],
@@ -702,7 +718,7 @@ Time: ${DateFormat('h:mm a').format(startDate)}
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('NO', style: TextStyle(color: Colors.grey)),
+            child: Text('NO', style: TextStyle(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight)),
           ),
           TextButton(
             onPressed: () async {
@@ -842,7 +858,7 @@ Time: ${DateFormat('h:mm a').format(startDate)}
               crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Center(
-              child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2))),
+              child: Container(width: 40, height: 4, decoration: BoxDecoration(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight.withOpacity(0.3), borderRadius: BorderRadius.circular(2))),
             ),
             const SizedBox(height: 24),
             Text('Confirm Extension', style: AppTextStyles.headlineSmall, textAlign: TextAlign.center),
