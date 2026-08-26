@@ -22,6 +22,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   static const _filters = [
     _FilterTab(label: 'All', value: null),
     _FilterTab(label: 'Rides', value: 'RIDE_UPDATE'),
+    _FilterTab(label: 'Car Rentals', value: 'CAR_RENTAL'),
     _FilterTab(label: 'Promotions', value: 'PROMOTION'),
   ];
 
@@ -139,45 +140,49 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: Row(
-                  children: _filters.map((filter) {
-                    final isSelected = currentFilter == filter.value;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: GestureDetector(
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          ref
-                              .read(notificationFilterProvider.notifier)
-                              .state = filter.value;
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppColors.primaryGold
-                                : Theme.of(context).cardTheme.color,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: _filters.map((filter) {
+                      final isSelected = currentFilter == filter.value;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: GestureDetector(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            ref
+                                .read(notificationFilterProvider.notifier)
+                                .state = filter.value;
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 6),
+                            decoration: BoxDecoration(
                               color: isSelected
                                   ? AppColors.primaryGold
-                                  : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
+                                  : Theme.of(context).cardTheme.color,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppColors.primaryGold
+                                    : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            filter.label,
-                            style: AppTextStyles.labelLarge.copyWith(
-                              color: isSelected
-                                  ? Theme.of(context).scaffoldBackgroundColor
-                                  : (Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
-                              fontSize: 12,
+                            child: Text(
+                              filter.label,
+                              style: AppTextStyles.labelLarge.copyWith(
+                                color: isSelected
+                                    ? Theme.of(context).scaffoldBackgroundColor
+                                    : (Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
+                                fontSize: 12,
+                                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  }).toList(),
+                      );
+                    }).toList(),
+                  ),
                 ),
               ),
             ),

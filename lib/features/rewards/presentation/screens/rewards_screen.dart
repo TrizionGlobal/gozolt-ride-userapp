@@ -518,58 +518,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
   }
 
   Widget _buildRedeemCoinsButton(BuildContext context, RewardSummary summary) {
-    final canRedeem = summary.currentPoints >= 200;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ElevatedButton(
-            onPressed: canRedeem
-                ? () {
-                    HapticFeedback.mediumImpact();
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (_) => const RedeemBottomSheet(),
-                    );
-                  }
-                : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryGold,
-              foregroundColor: AppColors.backgroundDark,
-              disabledBackgroundColor: AppColors.primaryGold.withOpacity(0.15),
-              disabledForegroundColor: AppColors.textMuted,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: canRedeem ? 2 : 0,
-            ),
-            child: Text(
-              'Redeem Coins',
-              style: AppTextStyles.button.copyWith(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-          ),
-          if (!canRedeem) ...[
-            const SizedBox(height: 6),
-            Center(
-              child: Text(
-                'Need at least 200 coins to redeem.',
-                style: AppTextStyles.labelSmall.copyWith(
-                  color: AppColors.error.withOpacity(0.8),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
+    return const SizedBox.shrink();
   }
 
   Widget _buildEarnMoreCoinsInfoCard(BuildContext context) {

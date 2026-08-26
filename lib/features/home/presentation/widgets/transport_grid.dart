@@ -47,8 +47,10 @@ class TransportGrid extends StatelessWidget {
                 child: _TransportTile(
                   iconPath: AssetPaths.iconCarRental,
                   label: 'Car Rental',
-                  isActive: false,
-                  onTap: () => _showComingSoon(context),
+                  isActive: true,
+                  onTap: () {
+                    context.pushNamed(RouteNames.carRentalSearch);
+                  },
                 ),
               ),
             ],

@@ -939,6 +939,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
       return;
     }
     if (mounted) {
+      ref.invalidate(rideHistoryProvider);
       ref.read(activeRideProvider.notifier).initSearching(
         updatedBooking.createdRideId!,
         updatedBooking,

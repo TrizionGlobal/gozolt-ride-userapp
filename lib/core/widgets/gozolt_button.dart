@@ -7,6 +7,7 @@ class GozoltButton extends StatefulWidget {
   final bool isLoading;
   final bool isOutlined;
   final double? width;
+  final IconData? icon;
 
   const GozoltButton({
     super.key,
@@ -15,6 +16,7 @@ class GozoltButton extends StatefulWidget {
     this.isLoading = false,
     this.isOutlined = false,
     this.width,
+    this.icon,
   });
 
   @override
@@ -45,7 +47,17 @@ class _GozoltButtonState extends State<GozoltButton> {
                   AlwaysStoppedAnimation<Color>(Theme.of(context).scaffoldBackgroundColor),
             ),
           )
-        : Text(widget.label);
+        : widget.icon != null
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(widget.label),
+                  const SizedBox(width: 8),
+                  Icon(widget.icon, size: 18),
+                ],
+              )
+            : Text(widget.label);
 
     final effectiveOnPressed = widget.isLoading || _debouncing ? null : _handlePress;
 

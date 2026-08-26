@@ -1,14 +1,14 @@
 abstract final class ApiConstants {
   // ── Base URL ───────────────────────────────────────────
-  static const bool useLocal = false;
+  static const bool useLocal = true;
 
   static const String baseUrl = useLocal 
       ? 'http://127.0.0.1:4000/v1' 
-      : 'https://gozolt-new-ride-backend-production.up.railway.app/v1';
+      : 'https://gozolt-new-ride-backend-gozoltridedemo.up.railway.app/v1';
 
   static const String wsUrl = useLocal
       ? 'ws://127.0.0.1:4000'
-      : 'wss://gozolt-new-ride-backend-production.up.railway.app';
+      : 'wss://gozolt-new-ride-backend-gozoltridedemo.up.railway.app';
 
   // ── Config ──────────────────────────────────────────────
   static const String appVersion = '/config/app-version';
@@ -44,6 +44,16 @@ abstract final class ApiConstants {
   static const String activeRide = '/rides/active';
   static const String rideHistory = '/rides/history';
   static String paymentConfirmRide(String rideId) => '/rides/$rideId/confirm-payment';
+
+  // Car Rentals
+  static const String carRentalVehicles = '/car-rentals/vehicles';
+  static const String carRentalBook = '/car-rentals/book';
+  static const String carRentalMyBookings = '/car-rentals/my-bookings';
+  static String carRentalBookingDetails(String id) => '/car-rentals/my-bookings/$id';
+  static String carRentalBookingCancel(String id) => '/car-rentals/my-bookings/$id/cancel';
+  static String carRentalBookingExtendCalculate(String id) => '/car-rentals/bookings/$id/extend/calculate';
+  static String carRentalBookingExtendPaymentIntent(String id) => '/car-rentals/bookings/$id/extend/payment-intent';
+  static String carRentalBookingExtend(String id) => '/car-rentals/bookings/$id/extend';
 
   // ride actions use: /rides/:id/cancel, /rides/:id/stops, etc.
   static String rideById(String id) => '/rides/$id';
@@ -95,6 +105,9 @@ abstract final class ApiConstants {
 
   // ── Ride Change Destination ─────────────────────────────
   static String rideChangeDestination(String id) => '/rides/$id/change-destination';
+
+  // ── Documents ──────────────────────────────────────────────
+  static const String documentsUpload = '/documents/upload';
 
   // ── Helpers ───────────────────────────────────────────────
   static String fullUrl(String path) {

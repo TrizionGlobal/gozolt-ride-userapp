@@ -45,6 +45,7 @@ class TripSummaryScreen extends ConsumerWidget {
   }
 
   Widget _buildContent(BuildContext context, RideHistoryItem ride) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       children: [
         // ── Gold Header ──────────────────────────────
@@ -78,15 +79,15 @@ class TripSummaryScreen extends ConsumerWidget {
                               color: Theme.of(context).scaffoldBackgroundColor
                                   .withOpacity(0.15),
                             ),
-                            child: const Icon(Icons.arrow_back,
-                                color: Colors.black, size: 20),
+                            child: Icon(Icons.arrow_back,
+                                color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight, size: 20),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Text(
                           'Trip Summary',
                           style: AppTextStyles.headlineSmall.copyWith(
-                            color: Colors.black,
+                            color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
                           ),
                         ),
                       ],
@@ -98,11 +99,11 @@ class TripSummaryScreen extends ConsumerWidget {
                         children: [
                           Text(
                             '\u20AC${ride.displayFare.toStringAsFixed(2)}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontFamily: 'Roboto',
                               fontSize: 36,
                               fontWeight: FontWeight.w900,
-                              color: Colors.black,
+                              color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -117,7 +118,7 @@ class TripSummaryScreen extends ConsumerWidget {
                             child: Text(
                               ride.displayStatus,
                               style: AppTextStyles.labelSmall.copyWith(
-                                color: Colors.black,
+                                color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),

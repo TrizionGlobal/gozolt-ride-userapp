@@ -377,6 +377,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 30), // Padding to clear the bottom navigation bar
               ],
             ),
           ),

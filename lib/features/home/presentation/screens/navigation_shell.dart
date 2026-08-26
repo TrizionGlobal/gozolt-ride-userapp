@@ -26,7 +26,7 @@ class _NavigationShellState extends ConsumerState<NavigationShell> {
 
   static const _tabs = [
     _TabItem(icon: Icons.home_rounded, label: 'Home'),
-    _TabItem(icon: Icons.access_time_rounded, label: 'My Rides'),
+    _TabItem(icon: Icons.access_time_rounded, label: 'History'),
     _TabItem(icon: Icons.card_giftcard_rounded, label: 'Rewards'),
     _TabItem(icon: Icons.person_outline_rounded, label: 'Account'),
   ];
