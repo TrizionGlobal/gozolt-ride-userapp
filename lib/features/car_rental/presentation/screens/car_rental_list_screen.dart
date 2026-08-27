@@ -363,18 +363,25 @@ class _CarRentalListScreenState extends ConsumerState<CarRentalListScreen> {
               child: SizedBox(
                 height: 160,
                 width: double.infinity,
-                child: Image.network(
-                  car.imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
+                child: car.imageUrl.isNotEmpty
+                  ? Image.network(
+                      car.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: isDark ? Colors.black12 : Colors.grey.shade100,
+                          child: Center(
+                            child: Icon(Icons.directions_car, size: 80, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
+                          ),
+                        );
+                      },
+                    )
+                  : Container(
                       color: isDark ? Colors.black12 : Colors.grey.shade100,
-                      child: const Center(
+                      child: Center(
                         child: Icon(Icons.directions_car, size: 80, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                       ),
-                    );
-                  },
-                ),
+                    ),
               ),
             ),
             
@@ -428,11 +435,10 @@ class _CarRentalListScreenState extends ConsumerState<CarRentalListScreen> {
                     spacing: 16,
                     runSpacing: 12,
                     children: [
-                      if (car.transmission == 'Automatic') _buildSpec(Icons.settings, 'Automatic') else _buildSpec(Icons.settings, 'Manual'),
-                      if (car.fuelType == 'Petrol') _buildSpec(Icons.local_gas_station, 'Petrol') else if (car.fuelType == 'Electric') _buildSpec(Icons.electric_car, 'Electric') else _buildSpec(Icons.local_gas_station, car.fuelType),
-                      _buildSpec(Icons.airline_seat_recline_normal, '${car.seats} Seats'),
-                      if (car.features.contains('A/C')) _buildSpec(Icons.ac_unit, 'A/C'),
-                      if (car.features.contains('Unlimited Mileage')) _buildSpec(Icons.speed, 'Unlimited Mileage'),
+                      _buildSpec(isDark, Icons.settings, car.transmission),
+                      _buildSpec(isDark, Icons.local_gas_station, car.fuelType),
+                      _buildSpec(isDark, Icons.event_seat, '${car.seats} Seats'),
+                      _buildSpec(isDark, Icons.work, '${car.luggageCapacity} Bags'),
                     ],
                   ),
                   
@@ -448,16 +454,21 @@ class _CarRentalListScreenState extends ConsumerState<CarRentalListScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(car.supplierOption, style: AppTextStyles.labelSmall.copyWith(color: AppColors.success)),
+                          Text(
+                            car.deliveryCharge > 0 
+                                ? '${car.supplierOption} (+€${car.deliveryCharge.toStringAsFixed(1)}/km)' 
+                                : car.supplierOption, 
+                            style: AppTextStyles.labelSmall.copyWith(color: AppColors.success)
+                          ),
                           const SizedBox(height: 4),
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text('\$${car.pricePerDay.toInt()}', style: AppTextStyles.titleLarge.copyWith(color: AppColors.primaryGold)),
+                              Text('€${car.pricePerDay.toInt()}', style: AppTextStyles.titleLarge.copyWith(color: AppColors.primaryGold)),
                               Text(' / day', style: AppTextStyles.bodySmall.copyWith(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight)),
                             ],
                           ),
-                          Text('Total: \$${(car.pricePerDay * durationDays).toInt()} for $durationDays ${durationDays == 1 ? 'day' : 'days'}', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted, fontSize: 11)),
+                          Text('Total: €${(car.pricePerDay * durationDays).toInt()} for $durationDays ${durationDays == 1 ? 'day' : 'days'}', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted, fontSize: 11)),
                         ],
                       ),
                       OutlinedButton(
@@ -487,7 +498,7 @@ class _CarRentalListScreenState extends ConsumerState<CarRentalListScreen> {
     );
   }
 
-  Widget _buildSpec(IconData icon, String label) {
+  Widget _buildSpec(bool isDark, IconData icon, String label) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

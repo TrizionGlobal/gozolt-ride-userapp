@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class ProtectionPackageModel {
   final String id;
   final String title;
@@ -93,6 +95,8 @@ class CarModel {
   final String name;
   final String type;
   final String supplier;
+  final double? supplierLatitude;
+  final double? supplierLongitude;
   final double rating;
   final String transmission;
   final String fuelType;
@@ -104,6 +108,7 @@ class CarModel {
   final bool isSupplierDeliveryAllowed;
   final bool isDoorstepDeliveryAllowed;
   final double pricePerDay;
+  final double deliveryCharge;
   final String imageUrl;
   final List<ProtectionPackageModel> protectionPackages;
   final String? selectedProtectionPackageId;
@@ -117,6 +122,8 @@ class CarModel {
     required this.name,
     required this.type,
     required this.supplier,
+    this.supplierLatitude,
+    this.supplierLongitude,
     required this.rating,
     required this.transmission,
     required this.fuelType,
@@ -128,6 +135,7 @@ class CarModel {
     this.isSupplierDeliveryAllowed = false,
     this.isDoorstepDeliveryAllowed = false,
     required this.pricePerDay,
+    this.deliveryCharge = 0.0,
     required this.imageUrl,
     this.protectionPackages = const [],
     this.selectedProtectionPackageId,
@@ -142,6 +150,8 @@ class CarModel {
     String? name,
     String? type,
     String? supplier,
+    double? supplierLatitude,
+    double? supplierLongitude,
     double? rating,
     String? transmission,
     String? fuelType,
@@ -153,6 +163,7 @@ class CarModel {
     bool? isSupplierDeliveryAllowed,
     bool? isDoorstepDeliveryAllowed,
     double? pricePerDay,
+    double? deliveryCharge,
     String? imageUrl,
     List<ProtectionPackageModel>? protectionPackages,
     String? selectedProtectionPackageId,
@@ -166,6 +177,8 @@ class CarModel {
       name: name ?? this.name,
       type: type ?? this.type,
       supplier: supplier ?? this.supplier,
+      supplierLatitude: supplierLatitude ?? this.supplierLatitude,
+      supplierLongitude: supplierLongitude ?? this.supplierLongitude,
       rating: rating ?? this.rating,
       transmission: transmission ?? this.transmission,
       fuelType: fuelType ?? this.fuelType,
@@ -177,6 +190,7 @@ class CarModel {
       isSupplierDeliveryAllowed: isSupplierDeliveryAllowed ?? this.isSupplierDeliveryAllowed,
       isDoorstepDeliveryAllowed: isDoorstepDeliveryAllowed ?? this.isDoorstepDeliveryAllowed,
       pricePerDay: pricePerDay ?? this.pricePerDay,
+      deliveryCharge: deliveryCharge ?? this.deliveryCharge,
       imageUrl: imageUrl ?? this.imageUrl,
       protectionPackages: protectionPackages ?? this.protectionPackages,
       selectedProtectionPackageId: selectedProtectionPackageId ?? this.selectedProtectionPackageId,
@@ -193,7 +207,9 @@ class CarModel {
       name: json['name'] ?? '',
       type: json['type'] ?? '',
       supplier: json['supplier'] ?? '',
-      rating: (json['rating'] ?? 0.0).toDouble(),
+      supplierLatitude: json['supplierLatitude'] != null ? (json['supplierLatitude'] as num).toDouble() : null,
+      supplierLongitude: json['supplierLongitude'] != null ? (json['supplierLongitude'] as num).toDouble() : null,
+      rating: json['rating'] != null ? (json['rating'] as num).toDouble() : 4.8,
       transmission: json['transmission'] ?? '',
       fuelType: json['fuelType'] ?? '',
       seats: json['seats'] ?? 0,
@@ -203,7 +219,8 @@ class CarModel {
       isSelfPickupAllowed: json['isSelfPickupAllowed'] ?? true,
       isSupplierDeliveryAllowed: json['isSupplierDeliveryAllowed'] ?? false,
       isDoorstepDeliveryAllowed: json['isDoorstepDeliveryAllowed'] ?? false,
-      pricePerDay: (json['pricePerDay'] ?? 0.0).toDouble(),
+      pricePerDay: (json['pricePerDay'] ?? 0).toDouble(),
+      deliveryCharge: (json['deliveryCharge'] ?? 0).toDouble(),
       imageUrl: json['imageUrl'] ?? '',
       protectionPackages: (json['protectionPackages'] as List<dynamic>?)
               ?.map((e) => ProtectionPackageModel.fromJson(e as Map<String, dynamic>))

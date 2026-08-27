@@ -8,6 +8,10 @@ class CarRentalSearchState {
   final String? whatsapp;
   final String? pickupLocation;
   final String? dropoffLocation;
+  final double? pickupLat;
+  final double? pickupLng;
+  final double? dropoffLat;
+  final double? dropoffLng;
   final DateTime? pickupDate;
   final String? pickupTime;
   final DateTime? dropoffDate;
@@ -22,6 +26,10 @@ class CarRentalSearchState {
     this.whatsapp,
     this.pickupLocation,
     this.dropoffLocation,
+    this.pickupLat,
+    this.pickupLng,
+    this.dropoffLat,
+    this.dropoffLng,
     this.pickupDate,
     this.pickupTime,
     this.dropoffDate,
@@ -37,6 +45,10 @@ class CarRentalSearchState {
     String? whatsapp,
     String? pickupLocation,
     String? dropoffLocation,
+    double? pickupLat,
+    double? pickupLng,
+    double? dropoffLat,
+    double? dropoffLng,
     DateTime? pickupDate,
     String? pickupTime,
     DateTime? dropoffDate,
@@ -51,6 +63,10 @@ class CarRentalSearchState {
       whatsapp: whatsapp ?? this.whatsapp,
       pickupLocation: pickupLocation ?? this.pickupLocation,
       dropoffLocation: dropoffLocation ?? this.dropoffLocation,
+      pickupLat: pickupLat ?? this.pickupLat,
+      pickupLng: pickupLng ?? this.pickupLng,
+      dropoffLat: dropoffLat ?? this.dropoffLat,
+      dropoffLng: dropoffLng ?? this.dropoffLng,
       pickupDate: pickupDate ?? this.pickupDate,
       pickupTime: pickupTime ?? this.pickupTime,
       dropoffDate: dropoffDate ?? this.dropoffDate,
@@ -71,6 +87,10 @@ class CarRentalSearchNotifier extends StateNotifier<CarRentalSearchState> {
     String? whatsapp,
     String? pickupLocation,
     String? dropoffLocation,
+    double? pickupLat,
+    double? pickupLng,
+    double? dropoffLat,
+    double? dropoffLng,
     DateTime? pickupDate,
     String? pickupTime,
     DateTime? dropoffDate,
@@ -84,6 +104,10 @@ class CarRentalSearchNotifier extends StateNotifier<CarRentalSearchState> {
       whatsapp: whatsapp,
       pickupLocation: pickupLocation,
       dropoffLocation: dropoffLocation,
+      pickupLat: pickupLat,
+      pickupLng: pickupLng,
+      dropoffLat: dropoffLat,
+      dropoffLng: dropoffLng,
       pickupDate: pickupDate,
       pickupTime: pickupTime,
       dropoffDate: dropoffDate,

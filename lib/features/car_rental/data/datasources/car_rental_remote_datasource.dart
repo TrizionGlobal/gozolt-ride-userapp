@@ -32,6 +32,7 @@ class CarRentalRemoteDatasource {
     required String drivingLicencePath,
     String? paymentMethodId,
     double? walletAmountUsed,
+    double? deliveryFee,
   }) async {
     try {
       final formData = FormData.fromMap({
@@ -47,6 +48,7 @@ class CarRentalRemoteDatasource {
         if (isFlexible != null) 'isFlexible': isFlexible.toString(),
         if (paymentMethodId != null) 'paymentMethodId': paymentMethodId,
         if (walletAmountUsed != null) 'walletAmountUsed': walletAmountUsed.toString(),
+        if (deliveryFee != null) 'deliveryFee': deliveryFee.toString(),
         'nationalId': await MultipartFile.fromFile(nationalIdPath, filename: 'national_id.jpg'),
         'drivingLicence': await MultipartFile.fromFile(drivingLicencePath, filename: 'driving_licence.jpg'),
       });

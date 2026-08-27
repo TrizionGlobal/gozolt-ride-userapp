@@ -9,6 +9,7 @@ import '../../../../core/widgets/gozolt_button.dart';
 import '../widgets/car_rental_header.dart';
 import '../../domain/models/car_model.dart';
 import '../providers/car_rental_search_provider.dart';
+import '../../../../core/utils/geo_utils.dart';
 
 class CarRentalPackagesScreen extends ConsumerStatefulWidget {
   final CarModel? car;
@@ -65,8 +66,37 @@ class _CarRentalPackagesScreenState extends ConsumerState<CarRentalPackagesScree
     }
 
     final double flexiblePrice = isFlexible ? (15.0 * days) : 0.0;
-
-    double totalPrice = basePrice + flexiblePrice + packagePrice;
+    
+    double pickupFee = 0.0;
+    double dropoffFee = 0.0;
+    double pickupDistance = 0.0;
+    double dropoffDistance = 0.0;
+    final supLat = widget.car?.supplierLatitude;
+    final supLng = widget.car?.supplierLongitude;
+    
+    if (supLat != null && supLng != null) {
+      if (searchState.pickupLat != null && searchState.pickupLng != null) {
+        if (searchState.deliveryType == 'SELF_PICKUP') {
+          pickupDistance = 0.0;
+        } else {
+          pickupDistance = haversineDistanceKm(supLat, supLng, searchState.pickupLat!, searchState.pickupLng!);
+        }
+        pickupFee = pickupDistance * (widget.car?.deliveryCharge ?? 0.0);
+      }
+      if (searchState.dropoffLat != null && searchState.dropoffLng != null) {
+        if (searchState.deliveryType == 'SELF_PICKUP' && 
+            searchState.dropoffLat == searchState.pickupLat && 
+            searchState.dropoffLng == searchState.pickupLng) {
+          dropoffDistance = 0.0;
+        } else {
+          dropoffDistance = haversineDistanceKm(supLat, supLng, searchState.dropoffLat!, searchState.dropoffLng!);
+        }
+        dropoffFee = dropoffDistance * (widget.car?.deliveryCharge ?? 0.0);
+      }
+    }
+    
+    final double deliveryFee = pickupFee + dropoffFee;
+    double totalPrice = basePrice + flexiblePrice + packagePrice + deliveryFee;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -124,10 +154,10 @@ class _CarRentalPackagesScreenState extends ConsumerState<CarRentalPackagesScree
                       children: [
                         Text('Your booking overview', style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold)),
                         const SizedBox(height: 16),
-                        _buildOverviewItem('Third party insurance'),
-                        _buildOverviewItem('Loss Damage Waiver (including theft protection) $deductibleString'),
-                        _buildOverviewItem('Unlimited kilometers'),
-                        _buildOverviewItem('Booking option: Best price - Free cancellation and rebooking within 24h.'),
+                        _buildOverviewItem('Third party insurance', isDark),
+                        _buildOverviewItem('Loss Damage Waiver (including theft protection) $deductibleString', isDark),
+                        _buildOverviewItem('Unlimited kilometers', isDark),
+                        _buildOverviewItem('Booking option: Best price - Free cancellation and rebooking within 24h.', isDark),
                       ],
                     ),
                   ),
@@ -152,8 +182,9 @@ class _CarRentalPackagesScreenState extends ConsumerState<CarRentalPackagesScree
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: () => _showPriceBreakdown(context, basePrice, flexiblePrice, packagePrice, _selectedPackage, days),
-                  child: Row(
+                  onTap: () {
+                    _showPriceBreakdown(context, basePrice, flexiblePrice, packagePrice, pickupFee, pickupDistance, dropoffFee, dropoffDistance, _selectedPackage, days);
+                  },child: Row(
                     children: [
                       Text('€${totalPrice.toStringAsFixed(2)}', style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold)),
                       const SizedBox(width: 4),
@@ -309,7 +340,7 @@ class _CarRentalPackagesScreenState extends ConsumerState<CarRentalPackagesScree
 
 
 
-  Widget _buildOverviewItem(String text) {
+  Widget _buildOverviewItem(String text, bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -325,9 +356,9 @@ class _CarRentalPackagesScreenState extends ConsumerState<CarRentalPackagesScree
     );
   }
 
-  void _showPriceBreakdown(BuildContext context, double basePrice, double flexiblePrice, double packagePrice, String packageIdentifier, int days) {
+  void _showPriceBreakdown(BuildContext context, double basePrice, double flexiblePrice, double packagePrice, double pickupFee, double pickupDistance, double dropoffFee, double dropoffDistance, String packageIdentifier, int days) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    double totalPrice = basePrice + flexiblePrice + packagePrice;
+    double totalPrice = basePrice + flexiblePrice + packagePrice + pickupFee + dropoffFee;
     
     // Find selected package name
     String packageName = 'Protection Package';
@@ -370,6 +401,26 @@ class _CarRentalPackagesScreenState extends ConsumerState<CarRentalPackagesScree
                   children: [
                     Text('Stay Flexible ($days ${days == 1 ? 'Day' : 'Days'})', style: AppTextStyles.bodyLarge),
                     Text('€${flexiblePrice.toStringAsFixed(2)}', style: AppTextStyles.titleMedium),
+                  ],
+                ),
+              ],
+              if (pickupFee > 0) ...[
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Pickup Fee (${pickupDistance.toStringAsFixed(1)} km)', style: AppTextStyles.bodyLarge),
+                    Text('€${pickupFee.toStringAsFixed(2)}', style: AppTextStyles.titleMedium),
+                  ],
+                ),
+              ],
+              if (dropoffFee > 0) ...[
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Dropoff Fee (${dropoffDistance.toStringAsFixed(1)} km)', style: AppTextStyles.bodyLarge),
+                    Text('€${dropoffFee.toStringAsFixed(2)}', style: AppTextStyles.titleMedium),
                   ],
                 ),
               ],

@@ -17,6 +17,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/dio_provider.dart';
 import '../providers/car_rental_search_provider.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/utils/geo_utils.dart';
 import '../../../history/presentation/screens/car_rentals_history_view.dart';
 import '../../../rewards/presentation/providers/rewards_providers.dart';
 import 'package:flutter/services.dart';
@@ -216,7 +217,34 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
       addonsPrice += addon.pricePerDay * durationDays;
     }
     
-    final double subtotal = basePrice + flexiblePrice + protectionPrice + addonsPrice;
+    double pickupFee = 0.0;
+    double dropoffFee = 0.0;
+    double pickupDistance = 0.0;
+    double dropoffDistance = 0.0;
+    final supLat = widget.car?.supplierLatitude;
+    final supLng = widget.car?.supplierLongitude;
+    
+    if (supLat != null && supLng != null) {
+        final charge = (widget.car?.deliveryCharge != null && widget.car!.deliveryCharge > 0) ? widget.car!.deliveryCharge : 1.5;
+
+      if (searchState.deliveryType != 'SELF_PICKUP' && searchState.pickupLat != null && searchState.pickupLng != null && supLat != null && supLng != null) {
+        pickupDistance = haversineDistanceKm(supLat, supLng, searchState.pickupLat!, searchState.pickupLng!);
+        pickupFee = pickupDistance * charge;
+      }
+      
+      if (searchState.dropoffLat != null && searchState.dropoffLng != null && supLat != null && supLng != null) {
+        if (searchState.deliveryType == 'SELF_PICKUP' && searchState.dropoffLat == searchState.pickupLat && searchState.dropoffLng == searchState.pickupLng) {
+          dropoffDistance = 0;
+          dropoffFee = 0;
+        } else {
+          dropoffDistance = haversineDistanceKm(supLat, supLng, searchState.dropoffLat!, searchState.dropoffLng!);
+          dropoffFee = dropoffDistance * charge;
+        }
+      }
+    }
+    
+    final double deliveryFee = pickupFee + dropoffFee;    
+    final double subtotal = basePrice + flexiblePrice + protectionPrice + addonsPrice + deliveryFee;
     
     // GoCoins logic
     final rewardSummary = ref.watch(rewardSummaryProvider).value;
@@ -255,7 +283,7 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
                             child: SizedBox(
                               width: 100,
                               height: 65,
-                              child: car != null ? Image.network(
+                              child: car != null && car.imageUrl.isNotEmpty ? Image.network(
                                 car.imageUrl,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) => Icon(Icons.directions_car, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight, size: 65),
@@ -329,7 +357,7 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
                                                 onTap: () => _pickImage(true),
                                                 child: Container(
                                                   padding: const EdgeInsets.all(4),
-                                                  decoration: const BoxDecoration(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight, shape: BoxShape.circle),
+                                                  decoration: BoxDecoration(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight, shape: BoxShape.circle),
                                                   child: const Icon(Icons.edit, size: 16, color: Colors.white),
                                                 ),
                                               ),
@@ -379,7 +407,7 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
                                                 onTap: () => _pickImage(false),
                                                 child: Container(
                                                   padding: const EdgeInsets.all(4),
-                                                  decoration: const BoxDecoration(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight, shape: BoxShape.circle),
+                                                  decoration: BoxDecoration(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight, shape: BoxShape.circle),
                                                   child: const Icon(Icons.edit, size: 16, color: Colors.white),
                                                 ),
                                               ),
@@ -485,6 +513,10 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
                         final addonTotal = addon.pricePerDay * durationDays;
                         return _buildRow('${addon.name} ($durationDays days)', '€${addonTotal.toStringAsFixed(2)}');
                       }),
+                      if (pickupFee > 0)
+                        _buildRow('Pickup Fee (${pickupDistance.toStringAsFixed(1)} km)', '€${pickupFee.toStringAsFixed(2)}'),
+                      if (dropoffFee > 0)
+                        _buildRow('Dropoff Fee (${dropoffDistance.toStringAsFixed(1)} km)', '€${dropoffFee.toStringAsFixed(2)}'),
                       const Divider(height: 32),
                       
                       _buildRow('Subtotal', '€${subtotal.toStringAsFixed(2)}'),
@@ -590,6 +622,7 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
                         drivingLicencePath: _drivingLicencePath!,
                         paymentMethodId: paymentMethodId,
                         walletAmountUsed: discount > 0 ? discount : null,
+                        deliveryFee: deliveryFee,
                       );
                       successfulBookingId = bookingData['id'];
                       ref.invalidate(carRentalHistoryProvider);
@@ -607,6 +640,7 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
                   'car': widget.car,
                   'bookingId': successfulBookingId,
                   'earnedCoins': earnedCoins,
+                  'totalAmount': totalPayable,
                 });
               }
             },

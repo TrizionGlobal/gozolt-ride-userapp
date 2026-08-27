@@ -14,6 +14,7 @@ import '../widgets/car_rental_header.dart';
 import '../../domain/models/car_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/car_rental_search_provider.dart';
+import '../../../../core/utils/geo_utils.dart';
 
 class CarRentalAddonsScreen extends ConsumerStatefulWidget {
   final CarModel? car;
@@ -102,7 +103,37 @@ class _CarRentalAddonsScreenState extends ConsumerState<CarRentalAddonsScreen> {
         }
       }
     }
-    double totalPrice = basePrice + flexiblePrice + packagePrice + addonsPrice;
+    
+    double pickupFee = 0.0;
+    double dropoffFee = 0.0;
+    double pickupDistance = 0.0;
+    double dropoffDistance = 0.0;
+    final supLat = widget.car?.supplierLatitude;
+    final supLng = widget.car?.supplierLongitude;
+    
+    if (supLat != null && supLng != null) {
+      if (searchState.pickupLat != null && searchState.pickupLng != null) {
+        if (searchState.deliveryType == 'SELF_PICKUP') {
+          pickupDistance = 0.0;
+        } else {
+          pickupDistance = haversineDistanceKm(supLat, supLng, searchState.pickupLat!, searchState.pickupLng!);
+        }
+        pickupFee = pickupDistance * (widget.car?.deliveryCharge ?? 0.0);
+      }
+      if (searchState.dropoffLat != null && searchState.dropoffLng != null) {
+        if (searchState.deliveryType == 'SELF_PICKUP' && 
+            searchState.dropoffLat == searchState.pickupLat && 
+            searchState.dropoffLng == searchState.pickupLng) {
+          dropoffDistance = 0.0;
+        } else {
+          dropoffDistance = haversineDistanceKm(supLat, supLng, searchState.dropoffLat!, searchState.dropoffLng!);
+        }
+        dropoffFee = dropoffDistance * (widget.car?.deliveryCharge ?? 0.0);
+      }
+    }
+    
+    final double deliveryFee = pickupFee + dropoffFee;
+    double totalPrice = basePrice + flexiblePrice + packagePrice + addonsPrice + deliveryFee;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -212,7 +243,9 @@ class _CarRentalAddonsScreenState extends ConsumerState<CarRentalAddonsScreen> {
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: () => _showPriceBreakdown(context, basePrice, flexiblePrice, packagePrice, packageName, days, addonsPrice, totalPrice),
+                  onTap: () {
+                    _showPriceBreakdown(context, basePrice, flexiblePrice, packagePrice, packageName, days, addonsPrice, pickupFee, pickupDistance, dropoffFee, dropoffDistance, totalPrice);
+                  },
                   child: Row(
                     children: [
                       Text('€${totalPrice.toStringAsFixed(2)}', style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold)),
@@ -306,7 +339,7 @@ class _CarRentalAddonsScreenState extends ConsumerState<CarRentalAddonsScreen> {
     );
   }
 
-  void _showPriceBreakdown(BuildContext context, double basePrice, double flexiblePrice, double packagePrice, String packageName, int days, double addonsPrice, double totalPrice) {
+  void _showPriceBreakdown(BuildContext context, double basePrice, double flexiblePrice, double packagePrice, String packageName, int days, double addonsPrice, double pickupFee, double pickupDistance, double dropoffFee, double dropoffDistance, double totalPrice) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     // Calculate individual addons
@@ -351,7 +384,7 @@ class _CarRentalAddonsScreenState extends ConsumerState<CarRentalAddonsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Stay Flexible ($days ${days == 1 ? 'Day' : 'Days'})', style: AppTextStyles.bodyLarge),
+                    Text("Stay Flexible ($days ${days == 1 ? 'Day' : 'Days'})", style: AppTextStyles.bodyLarge),
                     Text('€${flexiblePrice.toStringAsFixed(2)}', style: AppTextStyles.titleMedium),
                   ],
                 ),
@@ -363,6 +396,36 @@ class _CarRentalAddonsScreenState extends ConsumerState<CarRentalAddonsScreen> {
                   children: [
                     Text(packageName, style: AppTextStyles.bodyLarge),
                     Text('€${packagePrice.toStringAsFixed(2)}', style: AppTextStyles.titleMedium),
+                  ],
+                ),
+              ],
+              if (addonsPrice > 0) ...[
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Selected Add-ons ($days ${days == 1 ? 'Day' : 'Days'})', style: AppTextStyles.bodyLarge),
+                    Text('€${addonsPrice.toStringAsFixed(2)}', style: AppTextStyles.titleMedium),
+                  ],
+                ),
+              ],
+              if (pickupFee > 0) ...[
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Pickup Fee (${pickupDistance.toStringAsFixed(1)} km)', style: AppTextStyles.bodyLarge),
+                    Text('€${pickupFee.toStringAsFixed(2)}', style: AppTextStyles.titleMedium),
+                  ],
+                ),
+              ],
+              if (dropoffFee > 0) ...[
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Dropoff Fee (${dropoffDistance.toStringAsFixed(1)} km)', style: AppTextStyles.bodyLarge),
+                    Text('€${dropoffFee.toStringAsFixed(2)}', style: AppTextStyles.titleMedium),
                   ],
                 ),
               ],

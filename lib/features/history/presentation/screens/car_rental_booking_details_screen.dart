@@ -26,6 +26,7 @@ class CarRentalBookingDetailsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final asyncDetails = ref.watch(carRentalBookingDetailsProvider(bookingId));
 
     return Scaffold(
@@ -146,7 +147,17 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                   _buildStatusRow(context, status),
                   _buildInfoRow(context, 'Pickup', DateFormat('MMM d, yyyy - h:mm a').format(startDate)),
                   _buildInfoRow(context, 'Return', DateFormat('MMM d, yyyy - h:mm a').format(endDate)),
-                  _buildInfoRow(context, 'Location', booking['pickupLocation'] ?? 'Self Pickup'),
+                  ...(() {
+                    final pickup = booking['pickupLocation'] ?? 'Self Pickup';
+                    final dropoff = booking['dropoffLocation'] ?? pickup;
+                    if (pickup == dropoff) {
+                      return [_buildInfoRow(context, 'Location', pickup)];
+                    }
+                    return [
+                      _buildInfoRow(context, 'Pickup Location', pickup),
+                      _buildInfoRow(context, 'Dropoff Location', dropoff),
+                    ];
+                  })(),
                 ]),
                 
                 const SizedBox(height: 24),
@@ -206,6 +217,26 @@ Time: ${DateFormat('h:mm a').format(startDate)}
 
                     if (booking['isFlexible'] == true) {
                       rows.add(_buildInfoRow(context, 'Stay Flexible', '€${double.parse(booking['flexibleTotal'].toString()).toStringAsFixed(2)}'));
+                    }
+
+                    if (booking['deliveryFee'] != null && double.tryParse(booking['deliveryFee'].toString()) != null && double.parse(booking['deliveryFee'].toString()) > 0) {
+                      final fee = double.parse(booking['deliveryFee'].toString());
+                      final pickup = booking['pickupLocation'] ?? 'Self Pickup';
+                      final dropoff = booking['dropoffLocation'] ?? pickup;
+                      
+                      final hasCustomPickup = pickup != 'Self Pickup' && pickup != vehicle['supplier']['address'];
+                      final hasCustomDropoff = dropoff != 'Self Pickup' && dropoff != pickup && dropoff != vehicle['supplier']['address'];
+                      
+                      if (hasCustomPickup && hasCustomDropoff) {
+                        rows.add(_buildInfoRow(context, 'Pickup Fee (Distance)', '€${(fee * 0.89).toStringAsFixed(2)}'));
+                        rows.add(_buildInfoRow(context, 'Dropoff Fee (Distance)', '€${(fee * 0.11).toStringAsFixed(2)}'));
+                      } else if (hasCustomPickup) {
+                        rows.add(_buildInfoRow(context, 'Pickup Fee (Distance)', '€${fee.toStringAsFixed(2)}'));
+                      } else if (hasCustomDropoff) {
+                        rows.add(_buildInfoRow(context, 'Dropoff Fee (Distance)', '€${fee.toStringAsFixed(2)}'));
+                      } else {
+                        rows.add(_buildInfoRow(context, 'Delivery Fee (Distance)', '€${fee.toStringAsFixed(2)}'));
+                      }
                     }
 
                     if (booking['protectionPackageId'] != null) {
@@ -648,7 +679,13 @@ Time: ${DateFormat('h:mm a').format(startDate)}
     return status.replaceAll('_', ' ');
   }
 
+  void _showContactSupportOptions(BuildContext context, Map<String, dynamic> booking) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(context: context, builder: (context) => Container());
+  }
+
   void _handleCancel(BuildContext context, WidgetRef ref, Map<String, dynamic> booking) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     bool isFlexible = booking['isFlexible'] == true;
     DateTime pickupDate = DateTime.parse(booking['startDate']);
     DateTime endDate = DateTime.parse(booking['endDate']);
@@ -823,7 +860,7 @@ Time: ${DateFormat('h:mm a').format(startDate)}
         isScrollControlled: true,
         isDismissible: false,
         enableDrag: false,
-        builder: (ctx) => _buildExtendConfirmationModal(ctx, calcResult, datasource, booking['id'], newEndDateStr, ref),
+        builder: (ctx) => _buildExtendConfirmationModal(ctx, calcResult, datasource, newEndDateStr, ref),
       );
     } catch (e) {
       if (!context.mounted) return;
@@ -838,10 +875,10 @@ Time: ${DateFormat('h:mm a').format(startDate)}
     BuildContext context, 
     Map<String, dynamic> calcResult,
     CarRentalRemoteDatasource datasource,
-    String bookingId,
     String newEndDateStr,
     WidgetRef ref,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     bool isSubmitting = false;
 
     return StatefulBuilder(

@@ -12,12 +12,14 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/asset_paths.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../history/presentation/providers/history_providers.dart';
+import '../../../home/presentation/providers/home_providers.dart';
 
 class CarRentalConfirmationScreen extends ConsumerStatefulWidget {
   final CarModel? car;
   final String? bookingId;
   final int? earnedCoins;
-  const CarRentalConfirmationScreen({super.key, this.car, this.bookingId, this.earnedCoins});
+  final double? totalAmount;
+  const CarRentalConfirmationScreen({super.key, this.car, this.bookingId, this.earnedCoins, this.totalAmount});
 
   @override
   ConsumerState<CarRentalConfirmationScreen> createState() => _CarRentalConfirmationScreenState();
@@ -119,6 +121,15 @@ Time: ${DateFormat('h:mm a').format(pickupDate)}
                             Text('Booking ID', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted)),
                             const SizedBox(height: 4),
                             Text(displayBookingId, style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.w900, letterSpacing: 2)),
+                            if (widget.totalAmount != null) ...[
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 12),
+                                child: Divider(),
+                              ),
+                              Text('Amount Paid', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted)),
+                              const SizedBox(height: 4),
+                              Text('€${widget.totalAmount!.toStringAsFixed(2)}', style: AppTextStyles.headlineSmall.copyWith(fontWeight: FontWeight.bold, color: AppColors.success)),
+                            ],
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                               child: QrImageView(
@@ -145,8 +156,11 @@ Time: ${DateFormat('h:mm a').format(pickupDate)}
                         label: 'View My Bookings',
                         width: double.infinity,
                         onPressed: () {
+                          // Select the Car Rentals tab in History
                           ref.read(historyTabSelectionProvider.notifier).state = 1;
-                          context.go('/my-rides');
+                          // Select the History tab in the bottom nav
+                          ref.read(homeTabIndexProvider.notifier).state = 1;
+                          context.go('/home');
                         },
                       ),
                       const SizedBox(height: 8),

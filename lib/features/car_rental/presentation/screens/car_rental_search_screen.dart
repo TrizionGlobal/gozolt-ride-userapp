@@ -11,6 +11,7 @@ import '../../../../core/widgets/gozolt_button.dart';
 import '../../../ride/data/models/location_data.dart';
 import '../widgets/car_rental_location_search.dart';
 import '../providers/car_rental_search_provider.dart';
+import '../../../../core/utils/geo_utils.dart';
 
 import '../widgets/car_rental_header.dart';
 
@@ -44,17 +45,8 @@ class _CarRentalSearchScreenState extends ConsumerState<CarRentalSearchScreen> {
   @override
   void initState() {
     super.initState();
-    _pickupLocation = const LocationData(
-      address: 'Malta International Airport',
-      latitude: 35.8575,
-      longitude: 14.4775,
-      subtitle: 'Luqa, LQA 4000',
-    );
-    _pickupController.text = _pickupLocation!.address;
-    if (_returnToSameLocation) {
-      _dropoffLocation = _pickupLocation;
-      _dropoffController.text = _pickupLocation!.address;
-    }
+    _pickupLocation = null;
+    _pickupController.text = '';
   }
 
   @override
@@ -385,7 +377,7 @@ class _CarRentalSearchScreenState extends ConsumerState<CarRentalSearchScreen> {
                     label: 'Search Available Vehicles',
                     width: double.infinity,
                     onPressed: () {
-                      if (_pickupLocation == null) {
+                      if (_deliveryType != 'SELF_PICKUP' && _pickupLocation == null) {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a pickup location'), backgroundColor: Colors.red));
                         return;
                       }
@@ -413,8 +405,18 @@ class _CarRentalSearchScreenState extends ConsumerState<CarRentalSearchScreen> {
                         phone: _deliveryPhoneController.text.trim(),
                         email: _deliveryEmailController.text.trim(),
                         whatsapp: _deliveryWhatsappController.text.trim(),
-                        pickupLocation: _pickupLocation?.address ?? '',
-                        dropoffLocation: _returnToSameLocation ? (_pickupLocation?.address ?? '') : (_dropoffLocation?.address ?? ''),
+                        pickupLocation: _deliveryType == 'SELF_PICKUP' ? '' : (_pickupLocation?.address ?? ''),
+                        dropoffLocation: _returnToSameLocation 
+                            ? (_deliveryType == 'SELF_PICKUP' ? '' : (_pickupLocation?.address ?? '')) 
+                            : (_dropoffLocation?.address ?? ''),
+                        pickupLat: _deliveryType == 'SELF_PICKUP' ? null : _pickupLocation?.latitude,
+                        pickupLng: _deliveryType == 'SELF_PICKUP' ? null : _pickupLocation?.longitude,
+                        dropoffLat: _returnToSameLocation 
+                            ? (_deliveryType == 'SELF_PICKUP' ? null : _pickupLocation?.latitude) 
+                            : _dropoffLocation?.latitude,
+                        dropoffLng: _returnToSameLocation 
+                            ? (_deliveryType == 'SELF_PICKUP' ? null : _pickupLocation?.longitude) 
+                            : _dropoffLocation?.longitude,
                         pickupDate: _pickupDate,
                         pickupTime: _pickupTime?.format(context),
                         dropoffDate: _dropoffDate,

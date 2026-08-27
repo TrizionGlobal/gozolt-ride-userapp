@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/car_rental_search_provider.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
-import '../../../../core/router/route_names.dart';
 import '../../../../core/widgets/gozolt_button.dart';
+import '../../../../core/utils/geo_utils.dart';
 import '../../domain/models/car_model.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CarRentalDetailsScreen extends ConsumerStatefulWidget {
   final CarModel? car;
@@ -34,7 +37,33 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
   }
   
   double get _days => _daysInt.toDouble();
-  
+
+  double get _pickupDistance {
+    final searchState = ref.read(carRentalSearchProvider);
+    final supLat = widget.car?.supplierLatitude;
+    final supLng = widget.car?.supplierLongitude;
+    if (supLat != null && supLng != null && searchState.pickupLat != null && searchState.pickupLng != null) {
+      if (searchState.deliveryType == 'SELF_PICKUP') return 0.0;
+      return haversineDistanceKm(supLat, supLng, searchState.pickupLat!, searchState.pickupLng!);
+    }
+    return 0.0;
+  }
+
+  double get _dropoffDistance {
+    final searchState = ref.read(carRentalSearchProvider);
+    final supLat = widget.car?.supplierLatitude;
+    final supLng = widget.car?.supplierLongitude;
+    if (supLat != null && supLng != null && searchState.dropoffLat != null && searchState.dropoffLng != null) {
+      if (searchState.deliveryType == 'SELF_PICKUP' && 
+          searchState.dropoffLat == searchState.pickupLat && 
+          searchState.dropoffLng == searchState.pickupLng) {
+        return 0.0;
+      }
+      return haversineDistanceKm(supLat, supLng, searchState.dropoffLat!, searchState.dropoffLng!);
+    }
+    return 0.0;
+  }
+
   double get _totalPrice {
     double total = _basePrice * _days;
     if (_paymentOption == 'stay_flexible') {
@@ -43,7 +72,148 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
     if (_selectedMileagePackage == 'premium') {
       total += (10.0 * _days); // Premium mileage cost
     }
+    
+    // Fallback to 1.5 per km if the backend still sends 0 (e.g. backend not restarted or DB value is 0)
+    final charge = (widget.car?.deliveryCharge != null && widget.car!.deliveryCharge > 0) 
+        ? widget.car!.deliveryCharge 
+        : 1.5;
+        
+    final pickupFee = _pickupDistance * charge;
+    final dropoffFee = _dropoffDistance * charge;
+    
+    total += pickupFee;
+    total += dropoffFee;
+
     return total;
+  }
+
+  void _showSupplierInfoModal(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    final lat = widget.car?.supplierLatitude;
+    final lng = widget.car?.supplierLongitude;
+    final supplierName = widget.car?.supplier ?? 'Supplier';
+    
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 24),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white24 : Colors.black12,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGold.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Icon(Icons.business, size: 36, color: AppColors.primaryGold),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('SUPPLIER',
+                              style: AppTextStyles.titleSmall.copyWith(
+                                color: isDark ? Colors.white54 : Colors.black54,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(supplierName,
+                              style: AppTextStyles.headlineSmall.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white : Colors.black,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                const Icon(Icons.star, color: AppColors.primaryGold, size: 20),
+                                const SizedBox(width: 4),
+                                Text(
+                                  widget.car?.rating.toStringAsFixed(1) ?? '4.8',
+                                  style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(width: 8),
+                                Text('•', style: TextStyle(color: isDark ? Colors.white54 : Colors.black54)),
+                                const SizedBox(width: 8),
+                                Icon(Icons.verified, color: AppColors.primaryGold, size: 16),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Trusted Partner',
+                                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.w500),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                  if (lat != null && lng != null)
+                    GozoltButton(
+                      label: 'View on Google Maps',
+                      icon: Icons.map,
+                      width: double.infinity,
+                      onPressed: () async {
+                        final url = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lng');
+                        final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+                        if (!launched) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Could not open maps. Please ensure a map app is installed.')),
+                            );
+                          }
+                        }
+                      },
+                    )
+                  else
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Location details are not available.',
+                        style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -78,7 +248,7 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
                 children: [
                   // Actual car image
                   Positioned.fill(
-                    child: widget.car != null ? Image.network(
+                    child: widget.car != null && widget.car!.imageUrl.isNotEmpty ? Image.network(
                       widget.car!.imageUrl,
                       fit: BoxFit.cover,
                     ) : Image.network(
@@ -124,12 +294,15 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('or similar | ${widget.car?.type.split(' - ').first ?? 'Saloon'}', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted)),
-                    Row(
-                      children: [
-                        Icon(Icons.business, size: 14, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
-                        const SizedBox(width: 4),
-                        Text(widget.car?.supplier ?? 'Supplier', style: AppTextStyles.bodySmall.copyWith(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight)),
-                      ],
+                    GestureDetector(
+                      onTap: () => _showSupplierInfoModal(context),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.business, size: 16, color: AppColors.primaryGold),
+                          const SizedBox(width: 4),
+                          Text('Supplier Info', style: AppTextStyles.labelLarge.copyWith(color: AppColors.primaryGold, decoration: TextDecoration.underline, decorationColor: AppColors.primaryGold)),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -140,17 +313,17 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
                   children: [
                     Row(
                       children: [
-                        Expanded(child: _buildSpecItem(Icons.person, '${widget.car?.seats ?? 5} people')),
+                        Expanded(child: _buildSpecItem(Icons.person, '${widget.car?.seats ?? 5} people', isDark)),
                         const SizedBox(width: 16),
-                        Expanded(child: _buildSpecItem(Icons.luggage, '${widget.car?.luggageCapacity ?? 2} bags')),
+                        Expanded(child: _buildSpecItem(Icons.luggage, '${widget.car?.luggageCapacity ?? 2} bags', isDark)),
                       ],
                     ),
                     const SizedBox(height: 16),
                     Row(
                       children: [
-                        Expanded(child: _buildSpecItem(Icons.settings, widget.car?.transmission ?? 'Automatic')),
+                        Expanded(child: _buildSpecItem(Icons.settings, widget.car?.transmission ?? 'Automatic', isDark)),
                         const SizedBox(width: 16),
-                        Expanded(child: _buildSpecItem(Icons.local_gas_station, widget.car?.fuelType ?? 'Petrol')),
+                        Expanded(child: _buildSpecItem(Icons.local_gas_station, widget.car?.fuelType ?? 'Petrol', isDark)),
                       ],
                     ),
                   ],
@@ -228,7 +401,21 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
                   onTap: () {
                     final basePrice = _basePrice * _days;
                     final flexiblePrice = _paymentOption == 'stay_flexible' ? 15.0 * _days : 0.0;
-                    _showPriceDetailsBottomSheet(context, basePrice, flexiblePrice, _totalPrice);
+                    final charge = (widget.car?.deliveryCharge != null && widget.car!.deliveryCharge > 0) 
+                        ? widget.car!.deliveryCharge 
+                        : 1.5;
+                    final pickupFee = _pickupDistance * charge;
+                    final dropoffFee = _dropoffDistance * charge;
+                    _showPriceDetailsBottomSheet(
+                      context, 
+                      basePrice, 
+                      flexiblePrice, 
+                      pickupFee, 
+                      _pickupDistance, 
+                      dropoffFee, 
+                      _dropoffDistance, 
+                      _totalPrice
+                    );
                   },
                   child: Row(
                     children: [
@@ -258,10 +445,10 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
     );
   }
 
-  Widget _buildSpecItem(IconData icon, String text) {
+  Widget _buildSpecItem(IconData icon, String text, bool isDark) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight.shade700),
+        Icon(icon, size: 20, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight.withOpacity(0.7)),
         const SizedBox(width: 12),
         Expanded(child: Text(text, style: AppTextStyles.bodyMedium, maxLines: 1, overflow: TextOverflow.ellipsis)),
       ],
@@ -409,7 +596,16 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
     );
   }
 
-  void _showPriceDetailsBottomSheet(BuildContext context, double basePrice, double flexiblePrice, double totalPrice) {
+  void _showPriceDetailsBottomSheet(
+    BuildContext context, 
+    double basePrice, 
+    double flexiblePrice, 
+    double pickupFee, 
+    double pickupDistance, 
+    double dropoffFee, 
+    double dropoffDistance, 
+    double totalPrice
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     showModalBottomSheet(
@@ -445,6 +641,26 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
                   children: [
                     Text('Stay Flexible ($_daysInt ${_daysInt == 1 ? 'Day' : 'Days'})', style: AppTextStyles.bodyLarge),
                     Text('€${flexiblePrice.toStringAsFixed(2)}', style: AppTextStyles.titleMedium),
+                  ],
+                ),
+              ],
+              if (pickupFee > 0) ...[
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Pickup Fee (${pickupDistance.toStringAsFixed(1)} km)', style: AppTextStyles.bodyLarge),
+                    Text('€${pickupFee.toStringAsFixed(2)}', style: AppTextStyles.titleMedium),
+                  ],
+                ),
+              ],
+              if (dropoffFee > 0) ...[
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Dropoff Fee (${dropoffDistance.toStringAsFixed(1)} km)', style: AppTextStyles.bodyLarge),
+                    Text('€${dropoffFee.toStringAsFixed(2)}', style: AppTextStyles.titleMedium),
                   ],
                 ),
               ],
