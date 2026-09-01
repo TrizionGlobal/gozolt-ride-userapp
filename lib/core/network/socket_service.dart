@@ -36,6 +36,15 @@ class UserSocketService {
       StreamController<Map<String, dynamic>>.broadcast();
   final _rideMatchingProgressController =
       StreamController<Map<String, dynamic>>.broadcast();
+  final _bikeRentalStatusController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  final _carRentalStatusController =
+      StreamController<Map<String, dynamic>>.broadcast();
+
+  Stream<Map<String, dynamic>> get onBikeRentalStatusChanged =>
+      _bikeRentalStatusController.stream;
+  Stream<Map<String, dynamic>> get onCarRentalStatusChanged =>
+      _carRentalStatusController.stream;
 
   Stream<Map<String, dynamic>> get onRideAccepted =>
       _rideAcceptedController.stream;
@@ -146,6 +155,22 @@ class UserSocketService {
       final map = _toMap(data);
       if (map != null) {
         _rideAcceptedController.add(map);
+      }
+    });
+
+    _socket!.on('bike_rental:status:changed', (data) {
+      _log('[Socket] Bike rental status changed: $data');
+      final map = _toMap(data);
+      if (map != null) {
+        _bikeRentalStatusController.add(map);
+      }
+    });
+
+    _socket!.on('car_rental:status:changed', (data) {
+      _log('[Socket] Car rental status changed: $data');
+      final map = _toMap(data);
+      if (map != null) {
+        _carRentalStatusController.add(map);
       }
     });
 

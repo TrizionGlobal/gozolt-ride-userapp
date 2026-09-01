@@ -62,4 +62,13 @@ abstract final class RouteNames {
   static const String carRentalAddons = 'car-rental-addons';
   static const String carRentalReview = 'car-rental-review';
   static const String carRentalConfirmation = 'car-rental-confirmation';
+
+  // Bike Rental
+  static const String bikeRentalSearch = 'bike-rental-search';
+  static const String bikeRentalList = 'bike-rental-list';
+  static const String bikeRentalDetails = 'bike-rental-details';
+  static const String bikeRentalPackages = 'bike-rental-packages';
+  static const String bikeRentalAddons = 'bike-rental-addons';
+  static const String bikeRentalReview = 'bike-rental-review';
+  static const String bikeRentalConfirmation = 'bike-rental-confirmation';
 }

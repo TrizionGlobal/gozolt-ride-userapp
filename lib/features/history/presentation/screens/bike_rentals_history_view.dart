@@ -6,17 +6,17 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
-import '../../../car_rental/data/datasources/car_rental_remote_datasource.dart';
+import '../../../bike_rental/data/datasources/bike_rental_remote_datasource.dart';
 import '../../../../core/providers/dio_provider.dart';
 import '../../../../core/network/socket_service.dart';
-import 'car_rental_booking_details_screen.dart';
+import 'bike_rental_booking_details_screen.dart';
 
-final carRentalHistoryProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+final bikeRentalHistoryProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final dio = ref.read(dioProvider);
-  final datasource = CarRentalRemoteDatasource(dio);
+  final datasource = BikeRentalRemoteDatasource(dio);
 
   final socketService = ref.read(socketServiceProvider);
-  final sub = socketService.onCarRentalStatusChanged.listen((_) {
+  final sub = socketService.onBikeRentalStatusChanged.listen((_) {
     ref.invalidateSelf();
   });
   
@@ -27,21 +27,21 @@ final carRentalHistoryProvider = FutureProvider<List<Map<String, dynamic>>>((ref
   return datasource.getMyBookings();
 });
 
-class CarRentalsHistoryView extends ConsumerStatefulWidget {
-  const CarRentalsHistoryView({super.key});
+class BikeRentalsHistoryView extends ConsumerStatefulWidget {
+  const BikeRentalsHistoryView({super.key});
 
   @override
-  ConsumerState<CarRentalsHistoryView> createState() => _CarRentalsHistoryViewState();
+  ConsumerState<BikeRentalsHistoryView> createState() => _BikeRentalsHistoryViewState();
 }
 
-class _CarRentalsHistoryViewState extends ConsumerState<CarRentalsHistoryView> {
+class _BikeRentalsHistoryViewState extends ConsumerState<BikeRentalsHistoryView> {
   String _selectedFilter = 'All';
 
   final List<String> _filters = ['All', 'Pending', 'Confirmed', 'Active', 'Completed', 'Cancelled'];
 
   @override
   Widget build(BuildContext context) {
-    final historyAsync = ref.watch(carRentalHistoryProvider);
+    final historyAsync = ref.watch(bikeRentalHistoryProvider);
 
     return historyAsync.when(
       data: (bookings) {
@@ -50,10 +50,10 @@ class _CarRentalsHistoryViewState extends ConsumerState<CarRentalsHistoryView> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.car_rental, color: AppColors.textMuted, size: 56),
+                const Icon(Icons.pedal_bike, color: AppColors.textMuted, size: 56),
                 const SizedBox(height: 16),
                 Text(
-                  'No car rentals yet',
+                  'No bike rentals yet',
                   style: AppTextStyles.titleMedium.copyWith(color: AppColors.textSecondary),
                 ),
                 const SizedBox(height: 6),
@@ -80,7 +80,7 @@ class _CarRentalsHistoryViewState extends ConsumerState<CarRentalsHistoryView> {
 
         return RefreshIndicator(
           color: AppColors.primaryGold,
-          onRefresh: () => ref.refresh(carRentalHistoryProvider.future),
+          onRefresh: () => ref.refresh(bikeRentalHistoryProvider.future),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -134,7 +134,7 @@ class _CarRentalsHistoryViewState extends ConsumerState<CarRentalsHistoryView> {
                 child: filteredBookings.isEmpty
                     ? Center(
                         child: Text(
-                          'No $_selectedFilter car rentals found',
+                          'No $_selectedFilter bike rentals found',
                           style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
                         ),
                       )
@@ -152,7 +152,7 @@ class _CarRentalsHistoryViewState extends ConsumerState<CarRentalsHistoryView> {
               final grandTotal = booking['grandTotal'];
               final pickupLocation = booking['pickupLocation'] ?? '';
               
-              final vehicleName = vehicle['name'] ?? 'Rental Car';
+              final vehicleName = vehicle['name'] ?? 'Rental Bike';
               final rawCategory = vehicle['category'] as String?;
               final formattedCategory = rawCategory != null 
                   ? rawCategory.split('_').map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}' : '').join(' ')
@@ -199,7 +199,7 @@ class _CarRentalsHistoryViewState extends ConsumerState<CarRentalsHistoryView> {
                   HapticFeedback.lightImpact();
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => CarRentalBookingDetailsScreen(bookingId: booking['id']),
+                      builder: (_) => BikeRentalBookingDetailsScreen(bookingId: booking['id']),
                     )
                   );
                 },
@@ -240,7 +240,7 @@ class _CarRentalsHistoryViewState extends ConsumerState<CarRentalsHistoryView> {
                                     : null,
                               ),
                               child: imageUrl == null
-                                  ? const Icon(Icons.directions_car_filled, color: AppColors.primaryGold, size: 32)
+                                  ? const Icon(Icons.motorcycle, color: AppColors.primaryGold, size: 32)
                                   : null,
                             ),
                             const SizedBox(width: 16),
@@ -358,7 +358,7 @@ class _CarRentalsHistoryViewState extends ConsumerState<CarRentalsHistoryView> {
             Text('Failed to load rentals', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
             const SizedBox(height: 8),
             TextButton(
-              onPressed: () => ref.refresh(carRentalHistoryProvider),
+              onPressed: () => ref.refresh(bikeRentalHistoryProvider),
               child: const Text('Retry', style: TextStyle(color: AppColors.primaryGold)),
             ),
           ],

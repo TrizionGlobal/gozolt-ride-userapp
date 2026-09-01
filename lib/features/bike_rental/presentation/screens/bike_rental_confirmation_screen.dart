@@ -6,7 +6,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/gozolt_button.dart';
-import '../../domain/models/car_model.dart';
+import '../../domain/models/bike_model.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../core/constants/asset_paths.dart';
@@ -14,18 +14,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../history/presentation/providers/history_providers.dart';
 import '../../../home/presentation/providers/home_providers.dart';
 
-class CarRentalConfirmationScreen extends ConsumerStatefulWidget {
-  final CarModel? car;
+class BikeRentalConfirmationScreen extends ConsumerStatefulWidget {
+  final BikeModel? bike;
   final String? bookingId;
   final int? earnedCoins;
   final double? totalAmount;
-  const CarRentalConfirmationScreen({super.key, this.car, this.bookingId, this.earnedCoins, this.totalAmount});
+  const BikeRentalConfirmationScreen({super.key, this.bike, this.bookingId, this.earnedCoins, this.totalAmount});
 
   @override
-  ConsumerState<CarRentalConfirmationScreen> createState() => _CarRentalConfirmationScreenState();
+  ConsumerState<BikeRentalConfirmationScreen> createState() => _BikeRentalConfirmationScreenState();
 }
 
-class _CarRentalConfirmationScreenState extends ConsumerState<CarRentalConfirmationScreen> {
+class _BikeRentalConfirmationScreenState extends ConsumerState<BikeRentalConfirmationScreen> {
   late String displayBookingId;
   late String fullBookingId;
   late String qrDataJson;
@@ -46,9 +46,19 @@ class _CarRentalConfirmationScreenState extends ConsumerState<CarRentalConfirmat
     final pickupDate = DateTime.now().add(const Duration(days: 1));
     qrDataJson = '''
 Booking Reference: $displayBookingId
-Vehicle: ${widget.car?.name ?? "Premium Vehicle"}
-Date: ${DateFormat('MMM dd, yyyy').format(pickupDate)}
-Time: ${DateFormat('h:mm a').format(pickupDate)}
+Brand: ${widget.bike?.brand ?? "-"}
+Model: ${widget.bike?.model ?? "-"}
+Year: ${widget.bike?.manufacturingYear ?? "-"}
+Category: ${widget.bike?.type ?? "-"}
+Registration: ${widget.bike?.registrationNumber ?? "-"}
+Engine (CC): ${widget.bike?.engineCapacityCc ?? "-"}cc
+Fuel Type: ${widget.bike?.fuelType ?? "-"}
+Transmission: ${widget.bike?.transmission ?? "-"}
+Mileage: ${widget.bike?.mileage ?? "-"} km/l
+Seats: ${widget.bike?.seats ?? "-"}
+Color: ${widget.bike?.color ?? "-"}
+Pickup Date: ${DateFormat('MMM dd, yyyy').format(pickupDate)}
+Pickup Time: ${DateFormat('h:mm a').format(pickupDate)}
 
 (ID: $fullBookingId)
 '''.trim();
@@ -104,7 +114,7 @@ Time: ${DateFormat('h:mm a').format(pickupDate)}
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Your vehicle is successfully reserved! The supplier has been notified.',
+                        'Your bike is successfully reserved! The supplier has been notified.',
                         style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted),
                         textAlign: TextAlign.center,
                       ),
@@ -156,8 +166,8 @@ Time: ${DateFormat('h:mm a').format(pickupDate)}
                         label: 'View My Bookings',
                         width: double.infinity,
                         onPressed: () {
-                          // Select the Car Rentals tab in History
-                          ref.read(historyTabSelectionProvider.notifier).state = 1;
+                          // Select the Bike Rentals tab in History
+                          ref.read(historyTabSelectionProvider.notifier).state = 2;
                           // Select the History tab in the bottom nav
                           ref.read(homeTabIndexProvider.notifier).state = 1;
                           context.go('/home');

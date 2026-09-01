@@ -64,8 +64,10 @@ class TransportGrid extends StatelessWidget {
                       ? AssetPaths.iconBikeRentalDarkTheme 
                       : AssetPaths.iconBikeRental,
                   label: 'Bike Rental',
-                  isActive: false,
-                  onTap: () => _showComingSoon(context),
+                  isActive: true,
+                  onTap: () {
+                    context.pushNamed(RouteNames.bikeRentalSearch);
+                  },
                 ),
               ),
               const SizedBox(width: 14),

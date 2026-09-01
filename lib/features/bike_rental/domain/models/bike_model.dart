@@ -90,10 +90,22 @@ class MileagePackageModel {
   }
 }
 
-class CarModel {
+class BikeModel {
   final String? id;
   final String name;
-  final String type;
+  final String brand;
+  final String model;
+  final int manufacturingYear;
+  final String type; // category
+  final String registrationNumber;
+  final int? engineCapacityCc;
+  final double? mileage;
+  final String color;
+  final String? batteryCapacity;
+  final String? estimatedRange;
+  final String? chargingType;
+  final String? chargingTime;
+  
   final String supplier;
   final double? supplierLatitude;
   final double? supplierLongitude;
@@ -101,7 +113,6 @@ class CarModel {
   final String transmission;
   final String fuelType;
   final int seats;
-  final int luggageCapacity;
   final List<String> features;
   final String supplierOption;
   final bool isSelfPickupAllowed;
@@ -109,19 +120,31 @@ class CarModel {
   final bool isDoorstepDeliveryAllowed;
   final double pricePerDay;
   final double deliveryCharge;
-  final String imageUrl;
+  
   final List<String> images;
+  String get imageUrl => images.isNotEmpty ? images.first : '';
+
   final List<ProtectionPackageModel> protectionPackages;
   final String? selectedProtectionPackageId;
   final List<MileagePackageModel> mileagePackages;
   final String? selectedMileagePackageId;
-  final List<AddonModel> addons;
   final List<String>? selectedAddonIds;
 
-  CarModel({
+  BikeModel({
     this.id,
     required this.name,
+    required this.brand,
+    required this.model,
+    required this.manufacturingYear,
     required this.type,
+    required this.registrationNumber,
+    this.engineCapacityCc,
+    this.mileage,
+    required this.color,
+    this.batteryCapacity,
+    this.estimatedRange,
+    this.chargingType,
+    this.chargingTime,
     required this.supplier,
     this.supplierLatitude,
     this.supplierLongitude,
@@ -129,7 +152,6 @@ class CarModel {
     required this.transmission,
     required this.fuelType,
     required this.seats,
-    required this.luggageCapacity,
     required this.features,
     required this.supplierOption,
     this.isSelfPickupAllowed = true,
@@ -137,20 +159,29 @@ class CarModel {
     this.isDoorstepDeliveryAllowed = false,
     required this.pricePerDay,
     this.deliveryCharge = 0.0,
-    required this.imageUrl,
     this.images = const [],
     this.protectionPackages = const [],
     this.selectedProtectionPackageId,
     this.mileagePackages = const [],
     this.selectedMileagePackageId,
-    this.addons = const [],
     this.selectedAddonIds,
   });
 
-  CarModel copyWith({
+  BikeModel copyWith({
     String? id,
     String? name,
+    String? brand,
+    String? model,
+    int? manufacturingYear,
     String? type,
+    String? registrationNumber,
+    int? engineCapacityCc,
+    double? mileage,
+    String? color,
+    String? batteryCapacity,
+    String? estimatedRange,
+    String? chargingType,
+    String? chargingTime,
     String? supplier,
     double? supplierLatitude,
     double? supplierLongitude,
@@ -158,7 +189,6 @@ class CarModel {
     String? transmission,
     String? fuelType,
     int? seats,
-    int? luggageCapacity,
     List<String>? features,
     String? supplierOption,
     bool? isSelfPickupAllowed,
@@ -166,19 +196,28 @@ class CarModel {
     bool? isDoorstepDeliveryAllowed,
     double? pricePerDay,
     double? deliveryCharge,
-    String? imageUrl,
     List<String>? images,
     List<ProtectionPackageModel>? protectionPackages,
     String? selectedProtectionPackageId,
     List<MileagePackageModel>? mileagePackages,
     String? selectedMileagePackageId,
-    List<AddonModel>? addons,
     List<String>? selectedAddonIds,
   }) {
-    return CarModel(
+    return BikeModel(
       id: id ?? this.id,
       name: name ?? this.name,
+      brand: brand ?? this.brand,
+      model: model ?? this.model,
+      manufacturingYear: manufacturingYear ?? this.manufacturingYear,
       type: type ?? this.type,
+      registrationNumber: registrationNumber ?? this.registrationNumber,
+      engineCapacityCc: engineCapacityCc ?? this.engineCapacityCc,
+      mileage: mileage ?? this.mileage,
+      color: color ?? this.color,
+      batteryCapacity: batteryCapacity ?? this.batteryCapacity,
+      estimatedRange: estimatedRange ?? this.estimatedRange,
+      chargingType: chargingType ?? this.chargingType,
+      chargingTime: chargingTime ?? this.chargingTime,
       supplier: supplier ?? this.supplier,
       supplierLatitude: supplierLatitude ?? this.supplierLatitude,
       supplierLongitude: supplierLongitude ?? this.supplierLongitude,
@@ -186,7 +225,6 @@ class CarModel {
       transmission: transmission ?? this.transmission,
       fuelType: fuelType ?? this.fuelType,
       seats: seats ?? this.seats,
-      luggageCapacity: luggageCapacity ?? this.luggageCapacity,
       features: features ?? this.features,
       supplierOption: supplierOption ?? this.supplierOption,
       isSelfPickupAllowed: isSelfPickupAllowed ?? this.isSelfPickupAllowed,
@@ -194,22 +232,31 @@ class CarModel {
       isDoorstepDeliveryAllowed: isDoorstepDeliveryAllowed ?? this.isDoorstepDeliveryAllowed,
       pricePerDay: pricePerDay ?? this.pricePerDay,
       deliveryCharge: deliveryCharge ?? this.deliveryCharge,
-      imageUrl: imageUrl ?? this.imageUrl,
       images: images ?? this.images,
       protectionPackages: protectionPackages ?? this.protectionPackages,
       selectedProtectionPackageId: selectedProtectionPackageId ?? this.selectedProtectionPackageId,
       mileagePackages: mileagePackages ?? this.mileagePackages,
       selectedMileagePackageId: selectedMileagePackageId ?? this.selectedMileagePackageId,
-      addons: addons ?? this.addons,
       selectedAddonIds: selectedAddonIds ?? this.selectedAddonIds,
     );
   }
 
-  factory CarModel.fromJson(Map<String, dynamic> json) {
-    return CarModel(
+  factory BikeModel.fromJson(Map<String, dynamic> json) {
+    return BikeModel(
       id: json['id'],
       name: json['name'] ?? '',
+      brand: json['brand'] ?? '',
+      model: json['model'] ?? '',
+      manufacturingYear: json['manufacturingYear'] ?? 2023,
       type: json['type'] ?? '',
+      registrationNumber: json['registrationNumber'] ?? '',
+      engineCapacityCc: json['engineCapacityCc'],
+      mileage: json['mileage'] != null ? (json['mileage'] as num).toDouble() : null,
+      color: json['color'] ?? 'Black',
+      batteryCapacity: json['batteryCapacity'],
+      estimatedRange: json['estimatedRange'],
+      chargingType: json['chargingType'],
+      chargingTime: json['chargingTime'],
       supplier: json['supplier'] ?? '',
       supplierLatitude: json['supplierLatitude'] != null ? (json['supplierLatitude'] as num).toDouble() : null,
       supplierLongitude: json['supplierLongitude'] != null ? (json['supplierLongitude'] as num).toDouble() : null,
@@ -217,7 +264,6 @@ class CarModel {
       transmission: json['transmission'] ?? '',
       fuelType: json['fuelType'] ?? '',
       seats: json['seats'] ?? 0,
-      luggageCapacity: json['luggageCapacity'] ?? 0,
       features: List<String>.from(json['features'] ?? []),
       supplierOption: json['supplierOption'] ?? '',
       isSelfPickupAllowed: json['isSelfPickupAllowed'] ?? true,
@@ -225,20 +271,13 @@ class CarModel {
       isDoorstepDeliveryAllowed: json['isDoorstepDeliveryAllowed'] ?? false,
       pricePerDay: (json['pricePerDay'] ?? 0).toDouble(),
       deliveryCharge: (json['deliveryCharge'] ?? 0).toDouble(),
-      imageUrl: json['imageUrl'] ?? '',
-      images: json['images'] != null ? List<String>.from(json['images']) : [],
+      images: json['images'] != null ? List<String>.from(json['images']) : (json['imageUrl'] != null ? [json['imageUrl']] : []),
       protectionPackages: (json['protectionPackages'] as List<dynamic>?)
               ?.map((e) => ProtectionPackageModel.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
+              .toList() ?? [],
       mileagePackages: (json['mileagePackages'] as List<dynamic>?)
               ?.map((e) => MileagePackageModel.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
-      addons: (json['addons'] as List<dynamic>?)
-              ?.map((e) => AddonModel.fromJson(e as Map<String, dynamic>))
-              .toList() ??
-          [],
+              .toList() ?? [],
     );
   }
 }

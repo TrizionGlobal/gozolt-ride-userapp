@@ -6,18 +6,18 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/widgets/gozolt_button.dart';
 import '../../../../core/widgets/app_filled_text_field.dart';
 
-import '../widgets/car_rental_header.dart';
-import '../../domain/models/car_model.dart';
-import '../../data/datasources/car_rental_remote_datasource.dart';
+import '../widgets/bike_rental_header.dart';
+import '../../domain/models/bike_model.dart';
+import '../../data/datasources/bike_rental_remote_datasource.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../../core/providers/dio_provider.dart';
-import '../providers/car_rental_search_provider.dart';
+import '../providers/bike_rental_search_provider.dart';
 
 class FilterState {
   String sortBy;
-  Set<String> vehicleTypes;
+  Set<String> bikeTypes;
   double? minPrice;
   double? maxPrice;
   Set<String> transmissions;
@@ -25,11 +25,10 @@ class FilterState {
   Set<String> seats;
   Set<String> supplierOptions;
   Set<String> features;
-  Set<String> acOptions;
 
   FilterState({
     this.sortBy = 'Recommended',
-    Set<String>? vehicleTypes,
+    Set<String>? bikeTypes,
     this.minPrice,
     this.maxPrice,
     Set<String>? transmissions,
@@ -37,19 +36,17 @@ class FilterState {
     Set<String>? seats,
     Set<String>? supplierOptions,
     Set<String>? features,
-    Set<String>? acOptions,
-  })  : vehicleTypes = vehicleTypes ?? {},
+  })  : bikeTypes = bikeTypes ?? {},
         transmissions = transmissions ?? {},
         fuelTypes = fuelTypes ?? {},
         seats = seats ?? {},
         supplierOptions = supplierOptions ?? {},
-        features = features ?? {},
-        acOptions = acOptions ?? {};
+        features = features ?? {};
         
   FilterState clone() {
     return FilterState(
       sortBy: sortBy,
-      vehicleTypes: Set.from(vehicleTypes),
+      bikeTypes: Set.from(bikeTypes),
       minPrice: minPrice,
       maxPrice: maxPrice,
       transmissions: Set.from(transmissions),
@@ -57,112 +54,103 @@ class FilterState {
       seats: Set.from(seats),
       supplierOptions: Set.from(supplierOptions),
       features: Set.from(features),
-      acOptions: Set.from(acOptions),
     );
   }
 }
 
-class CarRentalListScreen extends ConsumerStatefulWidget {
-  const CarRentalListScreen({super.key});
+class BikeRentalListScreen extends ConsumerStatefulWidget {
+  const BikeRentalListScreen({super.key});
 
   @override
-  ConsumerState<CarRentalListScreen> createState() => _CarRentalListScreenState();
+  ConsumerState<BikeRentalListScreen> createState() => _BikeRentalListScreenState();
 }
 
-class _CarRentalListScreenState extends ConsumerState<CarRentalListScreen> {
+class _BikeRentalListScreenState extends ConsumerState<BikeRentalListScreen> {
   int _selectedCategoryIndex = 0;
-  int? _selectedVehicleIndex;
+  int? _selectedBikeIndex;
   FilterState _filterState = FilterState();
   
-  final List<String> _categories = ['All', 'Go - 5P', 'Premium - 5P', 'SUV - 7P', 'Van - 8P & Above', 'Electric - 5P'];
+  final List<String> _categories = ['All', 'Commuter Bike', 'Sports Bike', 'Cruiser Bike', 'Adventure Bike', 'Premium Bike', 'Electric Bike', 'Standard Scooter', 'Electric Scooter', 'Premium Scooter'];
   
-  List<CarModel> _allCars = [];
+  List<BikeModel> _allBikes = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchCars();
+    _fetchBikes();
   }
 
-  Future<void> _fetchCars() async {
+  Future<void> _fetchBikes() async {
     try {
       final dio = ref.read(dioProvider);
-      final datasource = CarRentalRemoteDatasource(dio);
-      final cars = await datasource.getAvailableVehicles();
+      final datasource = BikeRentalRemoteDatasource(dio);
+      final bikes = await datasource.getAvailableBikes();
       if (mounted) {
         setState(() {
-          _allCars = cars;
+          _allBikes = bikes;
           _isLoading = false;
         });
       }
     } catch (e) {
-      debugPrint('Error fetching cars: $e');
+      debugPrint('Error fetching bikes: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _allCars = [];
+          _allBikes = [];
         });
       }
     }
   }
   
-  List<CarModel> get _filteredCars {
-    var cars = _allCars.where((car) {
+  List<BikeModel> get _filteredBikes {
+    var bikes = _allBikes.where((bike) {
       // Apply category tab filter
       final selectedCategory = _categories[_selectedCategoryIndex];
-      if (selectedCategory != 'All' && car.type != selectedCategory) return false;
+      if (selectedCategory != 'All' && bike.type != selectedCategory) return false;
 
       // Apply delivery type filter
-      final searchState = ref.watch(carRentalSearchProvider);
-      if (searchState.deliveryType == 'SELF_PICKUP' && !car.isSelfPickupAllowed) return false;
-      if (searchState.deliveryType == 'SUPPLIER_DELIVERY' && !car.isSupplierDeliveryAllowed) return false;
-      if (searchState.deliveryType == 'DOORSTEP_DELIVERY' && !car.isDoorstepDeliveryAllowed) return false;
+      final searchState = ref.watch(bikeRentalSearchProvider);
+      if (searchState.deliveryType == 'SELF_PICKUP' && !bike.isSelfPickupAllowed) return false;
+      if (searchState.deliveryType == 'SUPPLIER_DELIVERY' && !bike.isSupplierDeliveryAllowed) return false;
+      if (searchState.deliveryType == 'DOORSTEP_DELIVERY' && !bike.isDoorstepDeliveryAllowed) return false;
 
       // Apply modal filters
-      if (_filterState.vehicleTypes.isNotEmpty && !_filterState.vehicleTypes.contains(car.type)) return false;
-      if (_filterState.minPrice != null && car.pricePerDay < _filterState.minPrice!) return false;
-      if (_filterState.maxPrice != null && car.pricePerDay > _filterState.maxPrice!) return false;
-      if (_filterState.transmissions.isNotEmpty && !_filterState.transmissions.contains(car.transmission)) return false;
-      if (_filterState.fuelTypes.isNotEmpty && !_filterState.fuelTypes.contains(car.fuelType)) return false;
+      if (_filterState.bikeTypes.isNotEmpty && !_filterState.bikeTypes.contains(bike.type)) return false;
+      if (_filterState.minPrice != null && bike.pricePerDay < _filterState.minPrice!) return false;
+      if (_filterState.maxPrice != null && bike.pricePerDay > _filterState.maxPrice!) return false;
+      if (_filterState.transmissions.isNotEmpty && !_filterState.transmissions.contains(bike.transmission)) return false;
+      if (_filterState.fuelTypes.isNotEmpty && !_filterState.fuelTypes.contains(bike.fuelType)) return false;
       
       if (_filterState.seats.isNotEmpty) {
         bool match = false;
-        if (_filterState.seats.contains('5 Seats') && car.seats == 5) match = true;
-        if (_filterState.seats.contains('7 Seats') && car.seats == 7) match = true;
-        if (_filterState.seats.contains('8+ Seats') && car.seats >= 8) match = true;
+        if (_filterState.seats.contains('1 Seat') && bike.seats == 1) match = true;
+        if (_filterState.seats.contains('2 Seats') && bike.seats == 2) match = true;
         if (!match) return false;
       }
       
-      if (_filterState.supplierOptions.isNotEmpty && !_filterState.supplierOptions.contains(car.supplierOption)) return false;
+      if (_filterState.supplierOptions.isNotEmpty && !_filterState.supplierOptions.contains(bike.supplierOption)) return false;
       
       if (_filterState.features.isNotEmpty) {
-        if (!_filterState.features.every((f) => car.features.contains(f))) return false;
-      }
-      
-      if (_filterState.acOptions.isNotEmpty) {
-        bool hasAC = car.features.contains('A/C');
-        bool matchAC = _filterState.acOptions.contains('AC') && hasAC;
-        bool matchNonAC = _filterState.acOptions.contains('Non-AC') && !hasAC;
-        if (!matchAC && !matchNonAC) return false;
+        if (!_filterState.features.every((f) => bike.features.contains(f))) return false;
       }
 
       return true;
     }).toList();
     
     if (_filterState.sortBy == 'Lowest Price') {
-      cars.sort((a, b) => a.pricePerDay.compareTo(b.pricePerDay));
+      bikes.sort((a, b) => a.pricePerDay.compareTo(b.pricePerDay));
     } else if (_filterState.sortBy == 'Highest Price') {
-      cars.sort((a, b) => b.pricePerDay.compareTo(a.pricePerDay));
+      bikes.sort((a, b) => b.pricePerDay.compareTo(a.pricePerDay));
     } else if (_filterState.sortBy == 'Highest Rated') {
-      cars.sort((a, b) => b.rating.compareTo(a.rating));
+      bikes.sort((a, b) => b.rating.compareTo(a.rating));
     }
     
-    return cars;
+    return bikes;
   }
 
   int _calculateDays() {
-    final searchState = ref.read(carRentalSearchProvider);
+    final searchState = ref.read(bikeRentalSearchProvider);
     if (searchState.pickupDate != null && searchState.dropoffDate != null) {
       final hours = searchState.dropoffDate!.difference(searchState.pickupDate!).inHours;
       if (hours <= 0) return 1;
@@ -181,8 +169,8 @@ class _CarRentalListScreenState extends ConsumerState<CarRentalListScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          CarRentalHeader(
-            title: 'Available Vehicles',
+          BikeRentalHeader(
+            title: 'Available Bikes',
             trailing: IconButton(
               icon: const Icon(Icons.filter_list, color: AppColors.backgroundDark),
               onPressed: _showFilterModal,
@@ -192,13 +180,13 @@ class _CarRentalListScreenState extends ConsumerState<CarRentalListScreen> {
           Expanded(
             child: _isLoading
                 ? _buildSkeletonList(isDark)
-                : _filteredCars.isEmpty 
-                  ? Center(child: Text("No vehicles match your filters.", style: AppTextStyles.titleMedium))
+                : _filteredBikes.isEmpty 
+                  ? Center(child: Text("No bikes match your filters.", style: AppTextStyles.titleMedium))
                   : ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      itemCount: _filteredCars.length,
+                      itemCount: _filteredBikes.length,
                       itemBuilder: (context, index) {
-                        return _buildVehicleCard(isDark, index, _filteredCars[index], durationDays);
+                        return _buildBikeCard(isDark, index, _filteredBikes[index], durationDays);
                       },
                     ),
           ),
@@ -329,12 +317,12 @@ class _CarRentalListScreenState extends ConsumerState<CarRentalListScreen> {
     );
   }
 
-  Widget _buildVehicleCard(bool isDark, int index, CarModel car, int durationDays) {
-    final isSelected = _selectedVehicleIndex == index;
+  Widget _buildBikeCard(bool isDark, int index, BikeModel bike, int durationDays) {
+    final isSelected = _selectedBikeIndex == index;
     
     return GestureDetector(
       onTap: () {
-        context.pushNamed(RouteNames.carRentalDetails, extra: car);
+        context.pushNamed(RouteNames.bikeRentalDetails, extra: bike);
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
@@ -363,15 +351,15 @@ class _CarRentalListScreenState extends ConsumerState<CarRentalListScreen> {
               child: SizedBox(
                 height: 160,
                 width: double.infinity,
-                child: car.imageUrl.isNotEmpty
+                child: bike.imageUrl.isNotEmpty
                   ? Image.network(
-                      car.imageUrl,
+                      bike.imageUrl,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
                           color: isDark ? Colors.black12 : Colors.grey.shade100,
                           child: Center(
-                            child: Icon(Icons.directions_car, size: 80, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
+                            child: Icon(Icons.motorcycle, size: 80, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                           ),
                         );
                       },
@@ -379,7 +367,7 @@ class _CarRentalListScreenState extends ConsumerState<CarRentalListScreen> {
                   : Container(
                       color: isDark ? Colors.black12 : Colors.grey.shade100,
                       child: Center(
-                        child: Icon(Icons.directions_car, size: 80, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
+                        child: Icon(Icons.motorcycle, size: 80, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                       ),
                     ),
               ),
@@ -399,7 +387,7 @@ class _CarRentalListScreenState extends ConsumerState<CarRentalListScreen> {
                           children: [
                             Row(
                               children: [
-                                Text(car.name, style: AppTextStyles.titleMedium),
+                                Text(bike.name, style: AppTextStyles.titleMedium),
                                 const SizedBox(width: 8),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -416,11 +404,11 @@ class _CarRentalListScreenState extends ConsumerState<CarRentalListScreen> {
                               children: [
                                 Icon(Icons.business, size: 14, color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                                 const SizedBox(width: 4),
-                                Text(car.supplier, style: AppTextStyles.bodySmall.copyWith(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight)),
+                                Text(bike.supplier, style: AppTextStyles.bodySmall.copyWith(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight)),
                                 const SizedBox(width: 8),
                                 const Icon(Icons.star, size: 14, color: Colors.orange),
                                 const SizedBox(width: 2),
-                                Text('${car.rating}', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold)),
+                                Text('${bike.rating}', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold)),
                               ],
                             ),
                           ],
@@ -435,10 +423,9 @@ class _CarRentalListScreenState extends ConsumerState<CarRentalListScreen> {
                     spacing: 16,
                     runSpacing: 12,
                     children: [
-                      _buildSpec(isDark, Icons.settings, car.transmission),
-                      _buildSpec(isDark, Icons.local_gas_station, car.fuelType),
-                      _buildSpec(isDark, Icons.event_seat, '${car.seats} Seats'),
-                      _buildSpec(isDark, Icons.work, '${car.luggageCapacity} Bags'),
+                      _buildSpec(isDark, Icons.settings, bike.transmission),
+                      _buildSpec(isDark, Icons.local_gas_station, bike.fuelType),
+                      _buildSpec(isDark, Icons.event_seat, '${bike.seats} Seats'),
                     ],
                   ),
                   
@@ -455,25 +442,25 @@ class _CarRentalListScreenState extends ConsumerState<CarRentalListScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            car.deliveryCharge > 0 
-                                ? '${car.supplierOption} (+€${car.deliveryCharge.toStringAsFixed(1)}/km)' 
-                                : car.supplierOption, 
+                            bike.deliveryCharge > 0 
+                                ? '${bike.supplierOption} (+€${bike.deliveryCharge.toStringAsFixed(1)}/km)' 
+                                : bike.supplierOption, 
                             style: AppTextStyles.labelSmall.copyWith(color: AppColors.success)
                           ),
                           const SizedBox(height: 4),
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text('€${car.pricePerDay.toInt()}', style: AppTextStyles.titleLarge.copyWith(color: AppColors.primaryGold)),
+                              Text('€${bike.pricePerDay.toInt()}', style: AppTextStyles.titleLarge.copyWith(color: AppColors.primaryGold)),
                               Text(' / day', style: AppTextStyles.bodySmall.copyWith(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight)),
                             ],
                           ),
-                          Text('Total: €${(car.pricePerDay * durationDays).toInt()} for $durationDays ${durationDays == 1 ? 'day' : 'days'}', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted, fontSize: 11)),
+                          Text('Total: €${(bike.pricePerDay * durationDays).toInt()} for $durationDays ${durationDays == 1 ? 'day' : 'days'}', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted, fontSize: 11)),
                         ],
                       ),
                       OutlinedButton(
                         onPressed: () {
-                          context.pushNamed(RouteNames.carRentalDetails, extra: car);
+                          context.pushNamed(RouteNames.bikeRentalDetails, extra: bike);
                         },
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: AppColors.primaryGold),
@@ -645,16 +632,20 @@ class _FilterModalContentState extends State<_FilterModalContent> {
                   ),
                 ),
 
-                _buildFilterHeader('Vehicle Type'),
+                _buildFilterHeader('Bike Type'),
                 Wrap(
                   spacing: 16,
                   runSpacing: 12,
                   children: [
-                    _buildCheckbox('Go - 5P', _state.vehicleTypes),
-                    _buildCheckbox('Premium - 5P', _state.vehicleTypes),
-                    _buildCheckbox('SUV - 7P', _state.vehicleTypes),
-                    _buildCheckbox('Van - 8P & Above', _state.vehicleTypes),
-                          _buildCheckbox('Electric - 5P', _state.vehicleTypes),
+                    _buildCheckbox('Commuter Bike', _state.bikeTypes),
+                    _buildCheckbox('Sports Bike', _state.bikeTypes),
+                    _buildCheckbox('Cruiser Bike', _state.bikeTypes),
+                    _buildCheckbox('Adventure Bike', _state.bikeTypes),
+                    _buildCheckbox('Premium Bike', _state.bikeTypes),
+                    _buildCheckbox('Electric Bike', _state.bikeTypes),
+                    _buildCheckbox('Standard Scooter', _state.bikeTypes),
+                    _buildCheckbox('Electric Scooter', _state.bikeTypes),
+                    _buildCheckbox('Premium Scooter', _state.bikeTypes),
                   ],
                 ),
                 
@@ -688,23 +679,12 @@ class _FilterModalContentState extends State<_FilterModalContent> {
                   ],
                 ),
                 
-                _buildFilterHeader('Air Conditioning'),
-                Row(
-                  children: [
-                    _buildCheckbox('AC', _state.acOptions),
-                    const SizedBox(width: 24),
-                    _buildCheckbox('Non-AC', _state.acOptions),
-                  ],
-                ),
-                
                 _buildFilterHeader('Fuel Type'),
                 Wrap(
                   spacing: 16,
                   runSpacing: 12,
                   children: [
                     _buildCheckbox('Petrol', _state.fuelTypes),
-                    _buildCheckbox('Diesel', _state.fuelTypes),
-                    _buildCheckbox('Hybrid', _state.fuelTypes),
                     _buildCheckbox('Electric', _state.fuelTypes),
                   ],
                 ),
@@ -714,9 +694,8 @@ class _FilterModalContentState extends State<_FilterModalContent> {
                   spacing: 16,
                   runSpacing: 12,
                   children: [
-                    _buildCheckbox('5 Seats', _state.seats),
-                    _buildCheckbox('7 Seats', _state.seats),
-                    _buildCheckbox('8+ Seats', _state.seats),
+                    _buildCheckbox('1 Seat', _state.seats),
+                    _buildCheckbox('2 Seats', _state.seats),
                   ],
                 ),
 

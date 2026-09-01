@@ -11,6 +11,7 @@ import '../providers/history_providers.dart';
 import '../widgets/reschedule_bottom_sheet.dart';
 import '../widgets/ride_history_card.dart';
 import 'car_rentals_history_view.dart';
+import 'bike_rentals_history_view.dart';
 
 class MyRidesScreen extends ConsumerWidget {
   const MyRidesScreen({super.key});
@@ -90,6 +91,7 @@ class MyRidesScreen extends ConsumerWidget {
                               'My Rides',
                               style: AppTextStyles.titleSmall.copyWith(
                                 color: selectedTab == 0 ? AppColors.backgroundDark : AppColors.textSecondary,
+                                fontSize: 13,
                               ),
                             ),
                           ),
@@ -110,9 +112,34 @@ class MyRidesScreen extends ConsumerWidget {
                           ),
                           child: Center(
                             child: Text(
-                              'My Car Rentals',
+                              'Car Rentals',
                               style: AppTextStyles.titleSmall.copyWith(
                                 color: selectedTab == 1 ? AppColors.backgroundDark : AppColors.textSecondary,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          ref.read(historyTabSelectionProvider.notifier).state = 2;
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: BoxDecoration(
+                            color: selectedTab == 2 ? AppColors.primaryGold : Colors.transparent,
+                            borderRadius: BorderRadius.circular(11),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'Bike Rentals',
+                              style: AppTextStyles.titleSmall.copyWith(
+                                color: selectedTab == 2 ? AppColors.backgroundDark : AppColors.textSecondary,
+                                fontSize: 13,
                               ),
                             ),
                           ),
@@ -330,7 +357,7 @@ class MyRidesScreen extends ConsumerWidget {
     ), // closes Expanded
   ], // closes Column children
 ) // closes Column
-: const CarRentalsHistoryView(),
+: selectedTab == 1 ? const CarRentalsHistoryView() : const BikeRentalsHistoryView(),
             ), // closes Expanded
           ], // closes Column children
         ), // closes Column

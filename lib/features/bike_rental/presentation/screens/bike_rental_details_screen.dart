@@ -1,33 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../providers/car_rental_search_provider.dart';
+import '../providers/bike_rental_search_provider.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/gozolt_button.dart';
 import '../../../../core/utils/geo_utils.dart';
-import '../../domain/models/car_model.dart';
+import '../../domain/models/bike_model.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class CarRentalDetailsScreen extends ConsumerStatefulWidget {
-  final CarModel? car;
-  const CarRentalDetailsScreen({super.key, this.car});
+class BikeRentalDetailsScreen extends ConsumerStatefulWidget {
+  final BikeModel? bike;
+  const BikeRentalDetailsScreen({super.key, this.bike});
 
   @override
-  ConsumerState<CarRentalDetailsScreen> createState() => _CarRentalDetailsScreenState();
+  ConsumerState<BikeRentalDetailsScreen> createState() => _BikeRentalDetailsScreenState();
 }
 
-class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen> {
+class _BikeRentalDetailsScreenState extends ConsumerState<BikeRentalDetailsScreen> {
   String? _paymentOption = 'best_price';
   String? _selectedMileagePackage = 'unlimited';
-  int _currentImageIndex = 0;
   
-  double get _basePrice => widget.car?.pricePerDay ?? 45.0;
+  final PageController _pageController = PageController();
+  int _currentImageIndex = 0;
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  
+  double get _basePrice => widget.bike?.pricePerDay ?? 45.0;
   
   int get _daysInt {
-    final searchState = ref.read(carRentalSearchProvider);
+    final searchState = ref.read(bikeRentalSearchProvider);
     if (searchState.pickupDate != null && searchState.dropoffDate != null) {
       final hours = searchState.dropoffDate!.difference(searchState.pickupDate!).inHours;
       if (hours <= 0) return 1;
@@ -40,9 +49,9 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
   double get _days => _daysInt.toDouble();
 
   double get _pickupDistance {
-    final searchState = ref.read(carRentalSearchProvider);
-    final supLat = widget.car?.supplierLatitude;
-    final supLng = widget.car?.supplierLongitude;
+    final searchState = ref.read(bikeRentalSearchProvider);
+    final supLat = widget.bike?.supplierLatitude;
+    final supLng = widget.bike?.supplierLongitude;
     if (supLat != null && supLng != null && searchState.pickupLat != null && searchState.pickupLng != null) {
       if (searchState.deliveryType == 'SELF_PICKUP') return 0.0;
       return haversineDistanceKm(supLat, supLng, searchState.pickupLat!, searchState.pickupLng!);
@@ -51,9 +60,9 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
   }
 
   double get _dropoffDistance {
-    final searchState = ref.read(carRentalSearchProvider);
-    final supLat = widget.car?.supplierLatitude;
-    final supLng = widget.car?.supplierLongitude;
+    final searchState = ref.read(bikeRentalSearchProvider);
+    final supLat = widget.bike?.supplierLatitude;
+    final supLng = widget.bike?.supplierLongitude;
     if (supLat != null && supLng != null && searchState.dropoffLat != null && searchState.dropoffLng != null) {
       if (searchState.deliveryType == 'SELF_PICKUP' && 
           searchState.dropoffLat == searchState.pickupLat && 
@@ -75,8 +84,8 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
     }
     
     // Fallback to 1.5 per km if the backend still sends 0 (e.g. backend not restarted or DB value is 0)
-    final charge = (widget.car?.deliveryCharge != null && widget.car!.deliveryCharge > 0) 
-        ? widget.car!.deliveryCharge 
+    final charge = (widget.bike?.deliveryCharge != null && widget.bike!.deliveryCharge > 0) 
+        ? widget.bike!.deliveryCharge 
         : 1.5;
         
     final pickupFee = _pickupDistance * charge;
@@ -91,9 +100,9 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
   void _showSupplierInfoModal(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    final lat = widget.car?.supplierLatitude;
-    final lng = widget.car?.supplierLongitude;
-    final supplierName = widget.car?.supplier ?? 'Supplier';
+    final lat = widget.bike?.supplierLatitude;
+    final lng = widget.bike?.supplierLongitude;
+    final supplierName = widget.bike?.supplier ?? 'Supplier';
     
     showModalBottomSheet(
       context: context,
@@ -156,7 +165,7 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
                                 const Icon(Icons.star, color: AppColors.primaryGold, size: 20),
                                 const SizedBox(width: 4),
                                 Text(
-                                  widget.car?.rating.toStringAsFixed(1) ?? '4.8',
+                                  widget.bike?.rating.toStringAsFixed(1) ?? '4.8',
                                   style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.w600),
                                 ),
                                 const SizedBox(width: 8),
@@ -247,32 +256,30 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
               ),
               child: Stack(
                 children: [
-                  // Actual car image
                   Positioned.fill(
-                    child: (widget.car != null && widget.car!.images.isNotEmpty) ? PageView.builder(
-                      itemCount: widget.car!.images.length,
-                      onPageChanged: (index) {
-                        setState(() {
-                          _currentImageIndex = index;
-                        });
-                      },
-                      itemBuilder: (context, index) {
-                        return Image.network(
-                          widget.car!.images[index],
+                    child: widget.bike != null && widget.bike!.images.isNotEmpty
+                      ? PageView.builder(
+                          controller: _pageController,
+                          onPageChanged: (index) {
+                            setState(() {
+                              _currentImageIndex = index;
+                            });
+                          },
+                          itemCount: widget.bike!.images.length,
+                          itemBuilder: (context, index) {
+                            return Image.network(
+                              widget.bike!.images[index],
+                              fit: BoxFit.cover,
+                            );
+                          },
+                        )
+                      : Image.network(
+                          'https://images.unsplash.com/photo-1590362891991-f776e747a588?auto=format&fit=crop&q=80&w=800',
                           fit: BoxFit.cover,
-                        );
-                      },
-                    ) : (widget.car != null && widget.car!.imageUrl.isNotEmpty) ? Image.network(
-                      widget.car!.imageUrl,
-                      fit: BoxFit.cover,
-                    ) : Image.network(
-                      'https://images.unsplash.com/photo-1590362891991-f776e747a588?auto=format&fit=crop&q=80&w=800',
-                      fit: BoxFit.cover,
-                    ),
+                        ),
                   ),
                   Positioned.fill(
                     child: IgnorePointer(
-                      ignoring: true,
                       child: Container(
                         decoration: const BoxDecoration(
                           gradient: LinearGradient(
@@ -284,6 +291,27 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
                       ),
                     ),
                   ),
+                  if (widget.bike != null && widget.bike!.images.length > 1)
+                    Positioned(
+                      bottom: 40,
+                      left: 0,
+                      right: 0,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(
+                          widget.bike!.images.length,
+                          (index) => Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            width: _currentImageIndex == index ? 12 : 8,
+                            height: _currentImageIndex == index ? 12 : 8,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _currentImageIndex == index ? AppColors.primaryGold : Colors.white54,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   Positioned(
                     bottom: 20,
                     left: 20,
@@ -295,26 +323,6 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
                       ],
                     ),
                   ),
-                  if (widget.car != null && widget.car!.images.length > 1)
-                    Positioned(
-                      bottom: 20,
-                      right: 20,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: List.generate(
-                          widget.car!.images.length,
-                          (index) => Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: _currentImageIndex == index ? 10 : 8,
-                            height: _currentImageIndex == index ? 10 : 8,
-                            decoration: BoxDecoration(
-                              color: _currentImageIndex == index ? AppColors.primaryGold : Colors.white54,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
                 ],
               ),
             ),
@@ -325,12 +333,12 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 // Title Block
-                Text(widget.car?.name.toUpperCase() ?? 'TOYOTA COROLLA', style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.w900)),
+                Text(widget.bike?.name.toUpperCase() ?? 'ROYAL ENFIELD CLASSIC 350', style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.w900)),
                 const SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('or similar | ${widget.car?.type.split(' - ').first ?? 'Saloon'}', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted)),
+                    Text('or similar | ${widget.bike?.type.split(' - ').first ?? 'Cruiser'}', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted)),
                     GestureDetector(
                       onTap: () => _showSupplierInfoModal(context),
                       child: Row(
@@ -346,25 +354,7 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
                 const SizedBox(height: 24),
                 
                 // Specs Grid (2 columns)
-                Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(child: _buildSpecItem(Icons.person, '${widget.car?.seats ?? 5} people', isDark)),
-                        const SizedBox(width: 16),
-                        Expanded(child: _buildSpecItem(Icons.luggage, '${widget.car?.luggageCapacity ?? 2} bags', isDark)),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(child: _buildSpecItem(Icons.settings, widget.car?.transmission ?? 'Automatic', isDark)),
-                        const SizedBox(width: 16),
-                        Expanded(child: _buildSpecItem(Icons.local_gas_station, widget.car?.fuelType ?? 'Petrol', isDark)),
-                      ],
-                    ),
-                  ],
-                ),
+                _buildDetailedSpecs(isDark),
                 
                 const SizedBox(height: 32),
                 
@@ -438,8 +428,8 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
                   onTap: () {
                     final basePrice = _basePrice * _days;
                     final flexiblePrice = _paymentOption == 'stay_flexible' ? 15.0 * _days : 0.0;
-                    final charge = (widget.car?.deliveryCharge != null && widget.car!.deliveryCharge > 0) 
-                        ? widget.car!.deliveryCharge 
+                    final charge = (widget.bike?.deliveryCharge != null && widget.bike!.deliveryCharge > 0) 
+                        ? widget.bike!.deliveryCharge 
                         : 1.5;
                     final pickupFee = _pickupDistance * charge;
                     final dropoffFee = _dropoffDistance * charge;
@@ -469,10 +459,10 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
                 width: 160,
                 icon: Icons.arrow_forward,
                 onPressed: () {
-                  ref.read(carRentalSearchProvider.notifier).updateSearch(
+                  ref.read(bikeRentalSearchProvider.notifier).updateSearch(
                     isFlexible: _paymentOption == 'stay_flexible',
                   );
-                  context.pushNamed(RouteNames.carRentalPackages, extra: widget.car);
+                  context.pushNamed(RouteNames.bikeRentalPackages, extra: widget.bike);
                 },
               ),
             ],
@@ -717,6 +707,78 @@ class _CarRentalDetailsScreenState extends ConsumerState<CarRentalDetailsScreen>
           ),
           ),
         ),
+      ),
+    );
+  }
+
+
+  Widget _buildDetailedSpecs(bool isDark) {
+    final b = widget.bike;
+    if (b == null) return const SizedBox();
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Basic Information', style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: isDark ? AppColors.borderDark : Colors.grey.shade200),
+          ),
+          child: Column(
+            children: [
+              _buildSpecRow('Brand', b.brand, isDark),
+              _buildSpecRow('Model', b.model, isDark),
+              _buildSpecRow('Year', b.manufacturingYear.toString(), isDark),
+              _buildSpecRow('Category', b.type, isDark),
+              _buildSpecRow('Registration', b.registrationNumber, isDark),
+              if (b.engineCapacityCc != null) _buildSpecRow('Engine (CC)', '${b.engineCapacityCc}cc', isDark),
+              _buildSpecRow('Fuel Type', b.fuelType, isDark),
+              _buildSpecRow('Transmission', b.transmission, isDark),
+              if (b.mileage != null) _buildSpecRow('Mileage', '${b.mileage} km/l', isDark),
+              _buildSpecRow('Seats', b.seats.toString(), isDark),
+              _buildSpecRow('Color', b.color, isDark, isLast: true),
+            ],
+          ),
+        ),
+        
+        if (b.fuelType.toLowerCase() == 'electric') ...[
+          const SizedBox(height: 32),
+          Text('Electric Specifications', style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.primaryGold.withOpacity(0.5)),
+            ),
+            child: Column(
+              children: [
+                _buildSpecRow('Battery Capacity', b.batteryCapacity ?? 'N/A', isDark),
+                _buildSpecRow('Estimated Range', b.estimatedRange ?? 'N/A', isDark),
+                _buildSpecRow('Charging Type', b.chargingType ?? 'N/A', isDark),
+                _buildSpecRow('Charging Time', b.chargingTime ?? 'N/A', isDark, isLast: true),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSpecRow(String label, String value, bool isDark, {bool isLast = false}) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted)),
+          Text(value, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
+        ],
       ),
     );
   }

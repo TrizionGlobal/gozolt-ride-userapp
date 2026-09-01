@@ -55,6 +55,16 @@ abstract final class ApiConstants {
   static String carRentalBookingExtendPaymentIntent(String id) => '/car-rentals/bookings/$id/extend/payment-intent';
   static String carRentalBookingExtend(String id) => '/car-rentals/bookings/$id/extend';
 
+  // Bike Rental
+  static const String bikeRentalBikes = '/bike-rentals/vehicles';
+  static const String bikeRentalBook = '/bike-rentals/book';
+  static const String bikeRentalMyBookings = '/bike-rentals/my-bookings';
+  static String bikeRentalBookingDetails(String id) => '/bike-rentals/my-bookings/$id';
+  static String bikeRentalBookingCancel(String id) => '/bike-rentals/my-bookings/$id/cancel';
+  static String bikeRentalBookingExtendCalculate(String id) => '/bike-rentals/bookings/$id/extend/calculate';
+  static String bikeRentalBookingExtendPaymentIntent(String id) => '/bike-rentals/bookings/$id/extend/payment-intent';
+  static String bikeRentalBookingExtend(String id) => '/bike-rentals/bookings/$id/extend';
+
   // ride actions use: /rides/:id/cancel, /rides/:id/stops, etc.
   static String rideById(String id) => '/rides/$id';
   static String rideCancel(String id) => '/rides/$id/cancel';

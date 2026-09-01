@@ -41,6 +41,13 @@ import '../../features/car_rental/presentation/screens/car_rental_addons_screen.
 import '../../features/car_rental/presentation/screens/car_rental_review_screen.dart';
 import '../../features/car_rental/presentation/screens/car_rental_confirmation_screen.dart';
 import '../../features/car_rental/domain/models/car_model.dart';
+import '../../features/bike_rental/presentation/screens/bike_rental_search_screen.dart';
+import '../../features/bike_rental/presentation/screens/bike_rental_list_screen.dart';
+import '../../features/bike_rental/presentation/screens/bike_rental_details_screen.dart';
+import '../../features/bike_rental/presentation/screens/bike_rental_packages_screen.dart';
+import '../../features/bike_rental/presentation/screens/bike_rental_review_screen.dart';
+import '../../features/bike_rental/presentation/screens/bike_rental_confirmation_screen.dart';
+import '../../features/bike_rental/domain/models/bike_model.dart';
 import '../providers/auth_redirect_provider.dart';
 import '../providers/storage_provider.dart';
 import '../providers/theme_provider.dart';
@@ -831,6 +838,111 @@ final routerProvider = Provider<GoRouter>((ref) {
           return CustomTransitionPage(
             key: state.pageKey,
             child: CarRentalConfirmationScreen(car: car, bookingId: bookingId, earnedCoins: earnedCoins, totalAmount: totalAmount),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+                FadeTransition(opacity: animation, child: child),
+          );
+        },
+      ),
+      // ── Bike Rental ─────────────────────────────────────
+      GoRoute(
+        path: '/bike-rental-search',
+        name: RouteNames.bikeRentalSearch,
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const BikeRentalSearchScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+              SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1, 0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeInOutCubic,
+            )),
+            child: child,
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/bike-rental-list',
+        name: RouteNames.bikeRentalList,
+        pageBuilder: (context, state) => CustomTransitionPage(
+          key: state.pageKey,
+          child: const BikeRentalListScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+              FadeTransition(opacity: animation, child: child),
+        ),
+      ),
+      GoRoute(
+        path: '/bike-rental-details',
+        name: RouteNames.bikeRentalDetails,
+        pageBuilder: (context, state) {
+          final bike = state.extra as BikeModel?;
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: BikeRentalDetailsScreen(bike: bike),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+                FadeTransition(opacity: animation, child: child),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/bike-rental-packages',
+        name: RouteNames.bikeRentalPackages,
+        pageBuilder: (context, state) {
+          final bike = state.extra as BikeModel?;
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: BikeRentalPackagesScreen(bike: bike),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+                SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeInOutCubic,
+              )),
+              child: child,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/bike-rental-review',
+        name: RouteNames.bikeRentalReview,
+        pageBuilder: (context, state) {
+          final bike = state.extra as BikeModel?;
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: BikeRentalReviewScreen(bike: bike),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+                SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeInOutCubic,
+              )),
+              child: child,
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/bike-rental-confirmation',
+        name: RouteNames.bikeRentalConfirmation,
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final bike = extra['bike'] as BikeModel?;
+          final bookingId = extra['bookingId'] as String?;
+          final earnedCoins = extra['earnedCoins'] as int?;
+          final totalAmount = extra['totalAmount'] as double?;
+          
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: BikeRentalConfirmationScreen(bike: bike, bookingId: bookingId, earnedCoins: earnedCoins, totalAmount: totalAmount),
             transitionsBuilder: (context, animation, secondaryAnimation, child) =>
                 FadeTransition(opacity: animation, child: child),
           );
