@@ -593,7 +593,7 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
                 builder: (_) => StripeAddCardSheet(
                   datasource: PaymentRemoteDatasource(ref.read(dioProvider)),
                   amount: totalPayable,
-                  simulatePayment: true,
+                  simulatePayment: false,
                   onCardAdded: (paymentMethodId) async {
                     try {
                       final dio = ref.read(dioProvider);

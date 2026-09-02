@@ -969,7 +969,7 @@ Pickup Time: ${DateFormat('h:mm a').format(startDate)}
                           builder: (_) => StripeAddCardSheet(
                             datasource: PaymentRemoteDatasource(ref.read(dioProvider)),
                             amount: additionalCost,
-                            simulatePayment: true,
+                            simulatePayment: false,
                             onCardAdded: (paymentMethodId) async {
                               // Card was charged/added, now we submit the actual extension request
                               try {

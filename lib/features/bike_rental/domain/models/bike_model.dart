@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../../../../core/constants/api_constants.dart';
+
 class ProtectionPackageModel {
   final String id;
   final String title;
@@ -271,7 +273,9 @@ class BikeModel {
       isDoorstepDeliveryAllowed: json['isDoorstepDeliveryAllowed'] ?? false,
       pricePerDay: (json['pricePerDay'] ?? 0).toDouble(),
       deliveryCharge: (json['deliveryCharge'] ?? 0).toDouble(),
-      images: json['images'] != null ? List<String>.from(json['images']) : (json['imageUrl'] != null ? [json['imageUrl']] : []),
+      images: json['images'] != null 
+          ? List<String>.from(json['images']).map<String>((url) => ApiConstants.fullUrl(url)).toList() 
+          : (json['imageUrl'] != null ? [ApiConstants.fullUrl(json['imageUrl'])] : []),
       protectionPackages: (json['protectionPackages'] as List<dynamic>?)
               ?.map((e) => ProtectionPackageModel.fromJson(e as Map<String, dynamic>))
               .toList() ?? [],
