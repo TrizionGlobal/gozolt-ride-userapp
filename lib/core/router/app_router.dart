@@ -48,12 +48,113 @@ import '../../features/bike_rental/presentation/screens/bike_rental_packages_scr
 import '../../features/bike_rental/presentation/screens/bike_rental_review_screen.dart';
 import '../../features/bike_rental/presentation/screens/bike_rental_confirmation_screen.dart';
 import '../../features/bike_rental/domain/models/bike_model.dart';
+
+// Quick Services
+import '../../features/quick_services/presentation/screens/service_location_screen.dart';
+import '../../features/quick_services/presentation/screens/quick_services_list_screen.dart';
+import '../../features/quick_services/presentation/screens/home_cleaning_details_screen.dart';
+import '../../features/quick_services/presentation/screens/home_cleaning_review_screen.dart';
+import '../../features/quick_services/presentation/screens/home_cleaning_confirmation_screen.dart';
+
+import '../../features/quick_services/presentation/screens/plumbing_details_screen.dart';
+import '../../features/quick_services/presentation/screens/plumbing_review_screen.dart';
+import '../../features/quick_services/presentation/screens/plumbing_confirmation_screen.dart';
+
+import '../../features/quick_services/presentation/screens/carpenter_details_screen.dart';
+import '../../features/quick_services/presentation/screens/carpenter_review_screen.dart';
+import '../../features/quick_services/presentation/screens/carpenter_confirmation_screen.dart';
+
+import '../../features/quick_services/presentation/screens/appliance_repair_details_screen.dart';
+import '../../features/quick_services/presentation/screens/appliance_repair_review_screen.dart';
+import '../../features/quick_services/presentation/screens/appliance_repair_confirmation_screen.dart';
+
+import '../../features/quick_services/presentation/screens/bike_mechanic_details_screen.dart';
+import '../../features/quick_services/presentation/screens/bike_mechanic_review_screen.dart';
+import '../../features/quick_services/presentation/screens/bike_mechanic_confirmation_screen.dart';
+
+import '../../features/quick_services/presentation/screens/car_mechanic_details_screen.dart';
+import '../../features/quick_services/presentation/screens/car_mechanic_review_screen.dart';
+import '../../features/quick_services/presentation/screens/truck_mechanic_details_screen.dart';
+import '../../features/quick_services/presentation/screens/truck_mechanic_review_screen.dart';
+
+import '../../features/quick_services/presentation/screens/lift_elevator_mechanic_details_screen.dart';
+import '../../features/quick_services/presentation/screens/lift_elevator_mechanic_review_screen.dart';
+import '../../features/quick_services/presentation/screens/lift_elevator_mechanic_confirmation_screen.dart';
+
+import '../../features/quick_services/presentation/screens/home_electric_details_screen.dart';
+import '../../features/quick_services/presentation/screens/home_electric_review_screen.dart';
+import '../../features/quick_services/presentation/screens/home_electric_confirmation_screen.dart';
+
+import '../../features/quick_services/presentation/screens/handyman_details_screen.dart';
+import '../../features/quick_services/presentation/screens/handyman_review_screen.dart';
+import '../../features/quick_services/presentation/screens/handyman_confirmation_screen.dart';
+
+import '../../features/quick_services/presentation/screens/hire_person_details_screen.dart';
+import '../../features/quick_services/presentation/screens/hire_person_review_screen.dart';
+import '../../features/quick_services/presentation/screens/hire_person_confirmation_screen.dart';
+
+import '../../features/quick_services/presentation/screens/security_personnel_details_screen.dart';
+import '../../features/quick_services/presentation/screens/security_personnel_review_screen.dart';
+import '../../features/quick_services/presentation/screens/security_personnel_confirmation_screen.dart';
+
+import '../../features/quick_services/presentation/screens/mobile_repair_details_screen.dart';
+import '../../features/quick_services/presentation/screens/mobile_repair_review_screen.dart';
+import '../../features/quick_services/presentation/screens/mobile_repair_confirmation_screen.dart';
+
+import '../../features/quick_services/presentation/screens/computer_repair_details_screen.dart';
+import '../../features/quick_services/presentation/screens/computer_repair_review_screen.dart';
+import '../../features/quick_services/presentation/screens/computer_repair_confirmation_screen.dart';
+
+import '../../features/quick_services/presentation/screens/car_wash_details_screen.dart';
+import '../../features/quick_services/presentation/screens/car_wash_review_screen.dart';
+import '../../features/quick_services/presentation/screens/car_wash_confirmation_screen.dart';
+import '../../features/quick_services/presentation/screens/truck_wash_details_screen.dart';
+import '../../features/quick_services/presentation/screens/truck_wash_review_screen.dart';
+
+import '../../features/quick_services/presentation/screens/laundry_details_screen.dart';
+import '../../features/quick_services/presentation/screens/laundry_review_screen.dart';
+import '../../features/quick_services/presentation/screens/laundry_confirmation_screen.dart';
+
+import '../../features/quick_services/presentation/screens/painter_details_screen.dart';
+import '../../features/quick_services/presentation/screens/event_organisers_details_screen.dart';
+import '../../features/quick_services/presentation/screens/suppliers_details_screen.dart';
+import '../../features/quick_services/presentation/screens/other_services_review_screen.dart';
+import '../../features/quick_services/presentation/screens/other_services_confirmation_screen.dart';
+
+import '../../features/quick_services/presentation/screens/beauty_wellness_details_screen.dart';
+import '../../features/quick_services/presentation/screens/beauty_wellness_review_screen.dart';
+import '../../features/quick_services/presentation/screens/beauty_wellness_confirmation_screen.dart';
+
+import '../../features/quick_services/presentation/screens/gardening_details_screen.dart';
+import '../../features/quick_services/presentation/screens/gardening_review_screen.dart';
+import '../../features/quick_services/presentation/screens/gardening_confirmation_screen.dart';
+import '../../features/quick_services/presentation/screens/pest_control_details_screen.dart';
+import '../../features/quick_services/presentation/screens/pest_control_review_screen.dart';
+import '../../features/quick_services/presentation/screens/pest_control_confirmation_screen.dart';
+import '../../features/quick_services/presentation/screens/printer_scanner_details_screen.dart';
+import '../../features/quick_services/presentation/screens/printer_scanner_review_screen.dart';
+import '../../features/quick_services/presentation/screens/printer_scanner_confirmation_screen.dart';
+
+import '../../features/quick_services/data/models/quick_service_booking_data.dart';
+import '../../features/ride/data/models/location_data.dart';
 import '../providers/auth_redirect_provider.dart';
 import '../providers/storage_provider.dart';
 import '../providers/theme_provider.dart';
 import '../router/startup_provider.dart';
 import 'route_names.dart';
 
+final _dummyBookingData = QuickServiceBookingData(
+  scheduleDate: DateTime.now(),
+  scheduleTime: const TimeOfDay(hour: 10, minute: 0),
+  location: const LocationData(
+    latitude: 35.8989,
+    longitude: 14.5146,
+    address: '22 Triq il-Kbira, Sliema, Malta',
+  ),
+  userName: 'Test User',
+  userPhone: '+356 7712 3456',
+  userEmail: 'test@example.com',
+);
 
 final routerProvider = Provider<GoRouter>((ref) {
   final redirectNotifier = ref.read(authRedirectProvider);
@@ -947,6 +1048,548 @@ final routerProvider = Provider<GoRouter>((ref) {
                 FadeTransition(opacity: animation, child: child),
           );
         },
+      ),
+
+      // ── Quick Services ──────────────────────────────────────
+      GoRoute(
+        path: '/quick-services-location',
+        name: RouteNames.quickServicesLocation,
+        builder: (context, state) => const ServiceLocationScreen(),
+      ),
+      GoRoute(
+        path: '/quick-services-list',
+        name: RouteNames.quickServicesList,
+        builder: (context, state) => QuickServicesListScreen(
+          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+        ),
+      ),
+      GoRoute(
+        path: '/quick-services-home-cleaning',
+        name: RouteNames.quickServicesHomeCleaning,
+        builder: (context, state) => HomeCleaningDetailsScreen(
+          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+        ),
+      ),
+      GoRoute(
+        path: '/quick-services-home-cleaning-review',
+        name: RouteNames.quickServicesHomeCleaningReview,
+        builder: (context, state) => HomeCleaningReviewScreen(
+          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+        ),
+      ),
+      GoRoute(
+        path: '/quick-services-home-cleaning-confirmation',
+        name: RouteNames.quickServicesHomeCleaningConfirmation,
+        builder: (context, state) => HomeCleaningConfirmationScreen(
+          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+        ),
+      ),
+
+      GoRoute(
+        path: '/quick-services-plumbing',
+        name: RouteNames.quickServicesPlumbing,
+        builder: (context, state) => PlumbingDetailsScreen(
+          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+        ),
+      ),
+      GoRoute(
+        path: '/quick-services-plumbing-review',
+        name: RouteNames.quickServicesPlumbingReview,
+        builder: (context, state) => PlumbingReviewScreen(
+          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+        ),
+      ),
+      GoRoute(
+        path: '/quick-services-plumbing-confirmation',
+        name: RouteNames.quickServicesPlumbingConfirmation,
+        builder: (context, state) => PlumbingConfirmationScreen(
+          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+        ),
+      ),
+
+      GoRoute(
+        path: '/quick-services-carpenter',
+        name: RouteNames.quickServicesCarpenter,
+        builder: (context, state) => CarpenterDetailsScreen(
+          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+        ),
+      ),
+      GoRoute(
+        path: '/quick-services-carpenter-review',
+        name: RouteNames.quickServicesCarpenterReview,
+        builder: (context, state) => CarpenterReviewScreen(
+          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+        ),
+      ),
+      GoRoute(
+        path: '/quick-services-carpenter-confirmation',
+        name: RouteNames.quickServicesCarpenterConfirmation,
+        builder: (context, state) => CarpenterConfirmationScreen(
+          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+        ),
+      ),
+
+      GoRoute(
+        path: '/quick-services-appliance-repair',
+        name: RouteNames.quickServicesApplianceRepair,
+        builder: (context, state) => ApplianceRepairDetailsScreen(
+          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+        ),
+      ),
+      GoRoute(
+        path: '/quick-services-appliance-repair-review',
+        name: RouteNames.quickServicesApplianceRepairReview,
+        builder: (context, state) => ApplianceRepairReviewScreen(
+          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+        ),
+      ),
+      GoRoute(
+        path: '/quick-services-appliance-repair-confirmation',
+        name: RouteNames.quickServicesApplianceRepairConfirmation,
+        builder: (context, state) => ApplianceRepairConfirmationScreen(
+          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+        ),
+      ),
+      GoRoute(
+        path: '/quick-services-car-mechanic',
+        name: RouteNames.quickServicesCarMechanic,
+        builder: (context, state) => CarMechanicDetailsScreen(
+          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+        ),
+      ),
+      GoRoute(
+        path: '/quick-services-car-mechanic-review',
+        name: RouteNames.quickServicesCarMechanicReview,
+        builder: (context, state) => CarMechanicReviewScreen(
+          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+        ),
+      ),
+      GoRoute(
+        path: '/quick-services-car-mechanic-confirmation',
+        name: RouteNames.quickServicesCarMechanicConfirmation,
+        builder: (context, state) => BikeMechanicConfirmationScreen( // Using generic confirmation
+          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+        ),
+      ),
+
+      GoRoute(
+        path: '/quick-services-bike-mechanic',
+        name: RouteNames.quickServicesBikeMechanic,
+        builder: (context, state) => BikeMechanicDetailsScreen(
+          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+        ),
+      ),
+      GoRoute(
+        path: '/quick-services-bike-mechanic-review',
+        name: RouteNames.quickServicesBikeMechanicReview,
+        builder: (context, state) => BikeMechanicReviewScreen(
+          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+        ),
+      ),
+
+      GoRoute(
+        path: '/quick-services-truck-mechanic',
+        name: RouteNames.quickServicesTruckMechanic,
+        builder: (context, state) => TruckMechanicDetailsScreen(
+          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+        ),
+      ),
+      GoRoute(
+        path: '/quick-services-truck-mechanic-review',
+        name: RouteNames.quickServicesTruckMechanicReview,
+        builder: (context, state) => TruckMechanicReviewScreen(
+          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+        ),
+      ),
+      GoRoute(
+        path: '/quick-services-truck-mechanic-confirmation',
+        name: RouteNames.quickServicesTruckMechanicConfirmation,
+        builder: (context, state) => BikeMechanicConfirmationScreen(
+          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+        ),
+      ),
+      GoRoute(
+        path: '/lift-elevator',
+        name: RouteNames.quickServicesLiftElevator,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return LiftElevatorMechanicDetailsScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/lift-elevator-review',
+        name: RouteNames.quickServicesLiftElevatorReview,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return LiftElevatorMechanicReviewScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/lift-elevator-confirmation',
+        name: RouteNames.quickServicesLiftElevatorConfirmation,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return LiftElevatorMechanicConfirmationScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/electrical',
+        name: RouteNames.quickServicesElectrical,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return HomeElectricDetailsScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/electrical-review',
+        name: RouteNames.quickServicesElectricalReview,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return HomeElectricReviewScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/electrical-confirmation',
+        name: RouteNames.quickServicesElectricalConfirmation,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return HomeElectricConfirmationScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/handyman',
+        name: RouteNames.quickServicesHandyman,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return HandymanDetailsScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/handyman-review',
+        name: RouteNames.quickServicesHandymanReview,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return HandymanReviewScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/handyman-confirmation',
+        name: RouteNames.quickServicesHandymanConfirmation,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return HandymanConfirmationScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/hire-person',
+        name: RouteNames.quickServicesHirePerson,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return HirePersonDetailsScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/hire-person-review',
+        name: RouteNames.quickServicesHirePersonReview,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return HirePersonReviewScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/hire-person-confirmation',
+        name: RouteNames.quickServicesHirePersonConfirmation,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return HirePersonConfirmationScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/security-personnel',
+        name: RouteNames.quickServicesSecurityPersonnel,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return SecurityPersonnelDetailsScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/security-personnel-review',
+        name: RouteNames.quickServicesSecurityPersonnelReview,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return SecurityPersonnelReviewScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/security-personnel-confirmation',
+        name: RouteNames.quickServicesSecurityPersonnelConfirmation,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return SecurityPersonnelConfirmationScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/mobile-repair',
+        name: RouteNames.quickServicesMobileRepair,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return MobileRepairDetailsScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/mobile-repair-review',
+        name: RouteNames.quickServicesMobileRepairReview,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return MobileRepairReviewScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/mobile-repair-confirmation',
+        name: RouteNames.quickServicesMobileRepairConfirmation,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return MobileRepairConfirmationScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/computer-repair',
+        name: RouteNames.quickServicesComputerRepair,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return ComputerRepairDetailsScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/computer-repair-review',
+        name: RouteNames.quickServicesComputerRepairReview,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return ComputerRepairReviewScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/computer-repair-confirmation',
+        name: RouteNames.quickServicesComputerRepairConfirmation,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return ComputerRepairConfirmationScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/car-wash',
+        name: RouteNames.quickServicesCarWash,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return CarWashDetailsScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/car-wash-review',
+        name: RouteNames.quickServicesCarWashReview,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return CarWashReviewScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/car-wash-confirmation',
+        name: RouteNames.quickServicesCarWashConfirmation,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return CarWashConfirmationScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/truck-wash',
+        name: RouteNames.quickServicesTruckWash,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return TruckWashDetailsScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/truck-wash-review',
+        name: RouteNames.quickServicesTruckWashReview,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return TruckWashReviewScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/truck-wash-confirmation',
+        name: RouteNames.quickServicesTruckWashConfirmation,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return CarWashConfirmationScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/laundry-details',
+        name: RouteNames.quickServicesLaundry,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return LaundryDetailsScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/laundry-review',
+        name: RouteNames.quickServicesLaundryReview,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return LaundryReviewScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/laundry-confirmation',
+        name: RouteNames.quickServicesLaundryConfirmation,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return LaundryConfirmationScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/painter',
+        name: RouteNames.quickServicesPainter,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return PainterDetailsScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/event-organisers',
+        name: RouteNames.quickServicesEventOrganisers,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return EventOrganisersDetailsScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/suppliers',
+        name: RouteNames.quickServicesSuppliers,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return SuppliersDetailsScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/other-services-review',
+        name: RouteNames.quickServicesOtherServicesReview,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return OtherServicesReviewScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/other-services-confirmation',
+        name: RouteNames.quickServicesOtherServicesConfirmation,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return OtherServicesConfirmationScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/beauty-wellness-details',
+        name: RouteNames.quickServicesBeautyWellness,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return BeautyWellnessDetailsScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/beauty-wellness-review',
+        name: RouteNames.quickServicesBeautyWellnessReview,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return BeautyWellnessReviewScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/beauty-wellness-confirmation',
+        name: RouteNames.quickServicesBeautyWellnessConfirmation,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return BeautyWellnessConfirmationScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/gardening-details',
+        name: RouteNames.quickServicesGardening,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return GardeningDetailsScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/gardening-review',
+        name: RouteNames.quickServicesGardeningReview,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return GardeningReviewScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/gardening-confirmation',
+        name: RouteNames.quickServicesGardeningConfirmation,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return GardeningConfirmationScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/pest-control-details',
+        name: RouteNames.quickServicesPestControl,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return PestControlDetailsScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/pest-control-review',
+        name: RouteNames.quickServicesPestControlReview,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return PestControlReviewScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/pest-control-confirmation',
+        name: RouteNames.quickServicesPestControlConfirmation,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return PestControlConfirmationScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/printer-scanner-details',
+        name: RouteNames.quickServicesPrinterScanner,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return PrinterScannerDetailsScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/printer-scanner-review',
+        name: RouteNames.quickServicesPrinterScannerReview,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return PrinterScannerReviewScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/printer-scanner-confirmation',
+        name: RouteNames.quickServicesPrinterScannerConfirmation,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return PrinterScannerConfirmationScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/quick-services-bike-mechanic-confirmation',
+        name: RouteNames.quickServicesBikeMechanicConfirmation,
+        builder: (context, state) => BikeMechanicConfirmationScreen(
+          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+        ),
       ),
     ],
   );

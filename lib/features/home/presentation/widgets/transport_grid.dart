@@ -24,7 +24,7 @@ class TransportGrid extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            'Transport',
+            'Features',
             style: AppTextStyles.titleLarge.copyWith(
               fontWeight: FontWeight.w700,
             ),
@@ -79,6 +79,22 @@ class TransportGrid extends StatelessWidget {
                   onTap: () => _showComingSoon(context),
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _TransportTile(
+                  iconData: Icons.cleaning_services_rounded,
+                  label: 'Quick Services',
+                  isActive: true,
+                  onTap: () {
+                    context.pushNamed('quick-services-location');
+                  },
+                ),
+              ),
+              const Spacer(),
             ],
           ),
         ],
@@ -141,13 +157,15 @@ class TransportGrid extends StatelessWidget {
 }
 
 class _TransportTile extends StatelessWidget {
-  final String iconPath;
+  final String? iconPath;
+  final IconData? iconData;
   final String label;
   final bool isActive;
   final VoidCallback onTap;
 
   const _TransportTile({
-    required this.iconPath,
+    this.iconPath,
+    this.iconData,
     required this.label,
     required this.isActive,
     required this.onTap,
@@ -179,12 +197,25 @@ class _TransportTile extends StatelessWidget {
           ),
           child: Column(
             children: [
-              Image.asset(
-                iconPath,
-                width: 96,
-                height: 68,
-                fit: BoxFit.contain,
-              ),
+              if (iconPath != null)
+                Image.asset(
+                  iconPath!,
+                  width: 96,
+                  height: 68,
+                  fit: BoxFit.contain,
+                )
+              else if (iconData != null)
+                SizedBox(
+                  width: 96,
+                  height: 68,
+                  child: Center(
+                    child: Icon(
+                      iconData,
+                      size: 48,
+                      color: AppColors.primaryGold,
+                    ),
+                  ),
+                ),
               const SizedBox(height: 2),
               Text(
                 label,

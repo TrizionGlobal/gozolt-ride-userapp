@@ -1,0 +1,371 @@
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/router/route_names.dart';
+import '../../data/models/quick_service_booking_data.dart';
+import '../widgets/quick_services_header.dart';
+import '../widgets/quick_services_additional_details.dart';
+
+class HomeCleaningDetailsScreen extends StatefulWidget {
+  final QuickServiceBookingData bookingData;
+
+  const HomeCleaningDetailsScreen({super.key, required this.bookingData});
+
+  @override
+  State<HomeCleaningDetailsScreen> createState() => _HomeCleaningDetailsScreenState();
+}
+
+class _HomeCleaningDetailsScreenState extends State<HomeCleaningDetailsScreen> {
+  final Map<String, int> _counts = {
+    'Bathrooms': 0,
+    'Bedrooms': 0,
+    'Kitchen Cleaning': 0,
+    'Hall': 0,
+    'Fans': 0,
+    'Cupboards': 0,
+    'Chimney': 0,
+    'Corridor / Terrace': 0,
+  };
+
+  final Map<String, double> _prices = {
+    'Bathrooms': 20.00,
+    'Bedrooms': 20.00,
+    'Kitchen Cleaning': 15.00,
+    'Hall': 10.00,
+    'Fans': 3.00,
+    'Cupboards': 5.00,
+    'Chimney': 4.00,
+    'Corridor / Terrace': 4.00,
+  };
+
+  final Map<String, IconData> _icons = {
+    'Bathrooms': Icons.bathtub_outlined,
+    'Bedrooms': Icons.bed_outlined,
+    'Kitchen Cleaning': Icons.countertops_outlined,
+    'Hall': Icons.weekend_outlined,
+    'Fans': Icons.mode_fan_off_outlined,
+    'Cupboards': Icons.kitchen_outlined,
+    'Chimney': Icons.fireplace_outlined,
+    'Corridor / Terrace': Icons.balcony_outlined,
+  };
+
+  String _materialPreference = 'Bring materials';
+
+  final TextEditingController _whatYouNeedController = TextEditingController();
+  final TextEditingController _describeIssueController = TextEditingController();
+
+  final ImagePicker _picker = ImagePicker();
+  final List<XFile> _selectedImages = [];
+
+  Future<void> _pickImages() async {
+    try {
+      final List<XFile> pickedFiles = await _picker.pickMultiImage();
+      if (pickedFiles.isNotEmpty) {
+        setState(() {
+          _selectedImages.addAll(pickedFiles);
+        });
+      }
+    } catch (e) {
+      debugPrint("Error picking images: $e");
+    }
+  }
+
+  @override
+  void dispose() {
+    _whatYouNeedController.dispose();
+    _describeIssueController.dispose();
+    super.dispose();
+  }
+
+  void _increment(String key) {
+    setState(() {
+      _counts[key] = (_counts[key] ?? 0) + 1;
+    });
+  }
+
+  void _decrement(String key) {
+    setState(() {
+      if ((_counts[key] ?? 0) > 0) {
+        _counts[key] = (_counts[key] ?? 0) - 1;
+      }
+    });
+  }
+
+  double get _subtotal {
+    double total = 0;
+    _counts.forEach((key, count) {
+      total += count * (_prices[key] ?? 0.0);
+    });
+    return total;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: Column(
+        children: [
+          const QuickServicesHeader(
+            title: 'Service Requirements',
+          ),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Select the areas you want cleaned',
+                    style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                    ),
+                    child: Column(
+                      children: _counts.keys.map((key) {
+                        final isLast = key == _counts.keys.last;
+                        return Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              child: Row(
+                                children: [
+                                  Icon(_icons[key], size: 24, color: Colors.grey.shade600),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Text(
+                                      key,
+                                      style: AppTextStyles.titleMedium,
+                                    ),
+                                  ),
+                                  Row(
+                                    children: [
+                                      GestureDetector(
+                                        onTap: () => _decrement(key),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: const Icon(Icons.remove, size: 16),
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        width: 32,
+                                        child: Text(
+                                          '${_counts[key]}',
+                                          textAlign: TextAlign.center,
+                                          style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                      GestureDetector(
+                                        onTap: () => _increment(key),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: const Icon(Icons.add, size: 16),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (!isLast)
+                              Divider(
+                                height: 1,
+                                thickness: 1,
+                                color: Colors.grey.withOpacity(0.2),
+                                indent: 16,
+                                endIndent: 16,
+                              ),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Cleaning materials',
+                    style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _MaterialOptionCard(
+                          title: 'Bring materials',
+                          subtitle: '(+€5.00)',
+                          assetPath: 'assets/images/bring_materials_icon.png',
+                          isSelected: _materialPreference == 'Bring materials',
+                          onTap: () => setState(() => _materialPreference = 'Bring materials'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _MaterialOptionCard(
+                          title: 'Use my materials',
+                          subtitle: '(No extra charge)',
+                          assetPath: 'assets/images/use_my_materials_icon.png',
+                          isSelected: _materialPreference == 'Use my materials',
+                          onTap: () => setState(() => _materialPreference = 'Use my materials'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Additional Details',
+                    style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  QuickServicesAdditionalDetails(
+                    whatYouNeedController: _whatYouNeedController,
+                    describeIssueController: _describeIssueController,
+                    images: _selectedImages,
+                    onAddImages: _pickImages,
+                    onRemoveImage: (image) {
+                      setState(() {
+                        _selectedImages.remove(image);
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_subtotal == 0) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Please select at least one area to clean.')),
+                        );
+                        return;
+                      }
+
+                      List<ServiceAddon> selectedAddons = [];
+                      _counts.forEach((key, count) {
+                        if (count > 0) {
+                          selectedAddons.add(ServiceAddon(
+                            name: key,
+                            count: count,
+                            pricePerUnit: _prices[key]!,
+                          ));
+                        }
+                      });
+
+                      final updatedData = widget.bookingData.copyWith(
+                        selectedAddons: selectedAddons,
+                        materialPreference: _materialPreference,
+                        subtotal: _subtotal,
+                        whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty ? _whatYouNeedController.text.trim() : null,
+                        describeIssue: _describeIssueController.text.trim().isNotEmpty ? _describeIssueController.text.trim() : null,
+                        uploadedImages: _selectedImages.map((e) => e.path).toList(),
+                      );
+
+                      context.pushNamed(
+                        RouteNames.quickServicesHomeCleaningReview,
+                        extra: updatedData,
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGold,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    child: const Text('CONTINUE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MaterialOptionCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final String assetPath;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _MaterialOptionCard({
+    required this.title,
+    required this.subtitle,
+    required this.assetPath,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardTheme.color,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Stack(
+          children: [
+            Align(
+              alignment: Alignment.topLeft,
+              child: Icon(
+                isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                color: isSelected ? AppColors.backgroundDark : Colors.grey,
+                size: 20,
+              ),
+            ),
+            SizedBox(
+              width: double.infinity,
+              child: Column(
+                children: [
+                  Image.asset(
+                    assetPath,
+                    width: 68,
+                    height: 68,
+                    color: AppColors.backgroundDark,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.titleSmall.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.backgroundDark,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodySmall.copyWith(color: Colors.grey, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

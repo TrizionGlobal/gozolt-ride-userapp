@@ -119,4 +119,5 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/images/beauty/
     - assets/
