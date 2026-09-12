@@ -140,6 +140,9 @@ abstract final class RouteNames {
   static const String quickServicesCarWashConfirmation = 'quick-services-car-wash-confirmation';
 
   static const String quickServicesLaundry = 'quick-services-laundry';
+  static const String quickServicesHospitalLaundry = 'quick-services-hospital-laundry';
+  static const String quickServicesHotelLaundry = 'quick-services-hotel-laundry';
+  static const String quickServicesCommercialLaundry = 'quick-services-commercial-laundry';
   static const String quickServicesLaundryReview = 'quick-services-laundry-review';
   static const String quickServicesLaundryConfirmation = 'quick-services-laundry-confirmation';
 

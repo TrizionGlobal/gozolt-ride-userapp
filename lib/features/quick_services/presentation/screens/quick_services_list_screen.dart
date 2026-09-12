@@ -74,9 +74,9 @@ const List<_ServiceCategory> _categories = [
 
   _ServiceCategory('Laundry Worker', Icons.local_laundry_service, [
     _SubService('Home', Icons.home),
-    _SubService('Hotel', Icons.hotel),
     _SubService('Hospital', Icons.local_hospital),
-    _SubService('Others', Icons.miscellaneous_services),
+    _SubService('Hotel', Icons.hotel),
+    _SubService('Commercials', Icons.business),
   ]),
   _ServiceCategory('Vehicle Wash', Icons.local_car_wash, [
     _SubService('Car', Icons.directions_car),
@@ -176,7 +176,29 @@ class _QuickServicesListScreenState extends State<QuickServicesListScreen> {
                           } else if (category.title == 'Vehicle Wash' || subService.title == 'Car Wash' || subService.title == 'Car') {
                             context.pushNamed(RouteNames.quickServicesCarWash, extra: updatedData);
                           } else if (category.title == 'Laundry Worker' || subService.title == 'Laundry & Ironing' || subService.title == 'Laundry') {
-                            context.pushNamed(RouteNames.quickServicesLaundry, extra: updatedData);
+                            if (subService.title == 'Home' || subService.title == 'Laundry & Ironing' || subService.title == 'Laundry') {
+                              context.pushNamed(RouteNames.quickServicesLaundry, extra: updatedData);
+                            } else if (subService.title == 'Hospital') {
+                              context.pushNamed(RouteNames.quickServicesHospitalLaundry, extra: updatedData);
+                            } else if (subService.title == 'Hotel') {
+                              context.pushNamed(RouteNames.quickServicesHotelLaundry, extra: updatedData);
+                            } else if (subService.title == 'Commercials') {
+                              context.pushNamed(RouteNames.quickServicesCommercialLaundry, extra: updatedData);
+                            } else {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Coming Soon!'),
+                                  content: Text('${subService.title} laundry services are coming soon.'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('OK'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
                           } else if (category.title == 'Beautician / Wellness' || category.title == 'Beauty & Wellness') {
                             context.pushNamed(RouteNames.quickServicesBeautyWellness, extra: updatedData);
                           } else if (subService.title == 'Gardening' || category.title == 'Gardening') {
@@ -313,11 +335,6 @@ class _QuickServicesListScreenState extends State<QuickServicesListScreen> {
                                 context.pushNamed(
                                   RouteNames.quickServicesBeautyWellness,
                                   extra: widget.bookingData.copyWith(selectedServiceTitle: 'Beauty & Wellness'),
-                                );
-                              } else if (category.title == 'Laundry Worker' || category.title == 'Laundry') {
-                                context.pushNamed(
-                                  RouteNames.quickServicesLaundry,
-                                  extra: widget.bookingData.copyWith(selectedServiceTitle: 'Laundry & Ironing'),
                                 );
                               } else {
                                 _showSubServicesModal(context, category);

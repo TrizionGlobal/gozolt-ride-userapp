@@ -113,7 +113,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   const RewardsHomeBanner(),
                   const SizedBox(height: 24),
                   const GoPlacesSection(),
-                  const SizedBox(height: 100),
+                  const SizedBox(height: 140),
                 ],
               ),
             ),

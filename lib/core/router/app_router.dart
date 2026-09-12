@@ -52,88 +52,73 @@ import '../../features/bike_rental/domain/models/bike_model.dart';
 // Quick Services
 import '../../features/quick_services/presentation/screens/service_location_screen.dart';
 import '../../features/quick_services/presentation/screens/quick_services_list_screen.dart';
-import '../../features/quick_services/presentation/screens/home_cleaning_details_screen.dart';
-import '../../features/quick_services/presentation/screens/home_cleaning_review_screen.dart';
-import '../../features/quick_services/presentation/screens/home_cleaning_confirmation_screen.dart';
+import '../../features/quick_services/presentation/screens/shared_quick_service_confirmation_screen.dart';
+import '../../features/quick_services/presentation/screens/home_services/home_cleaning_details_screen.dart';
+import '../../features/quick_services/presentation/screens/home_services/home_cleaning_review_screen.dart';
 
-import '../../features/quick_services/presentation/screens/plumbing_details_screen.dart';
-import '../../features/quick_services/presentation/screens/plumbing_review_screen.dart';
-import '../../features/quick_services/presentation/screens/plumbing_confirmation_screen.dart';
+import '../../features/quick_services/presentation/screens/home_services/plumbing_details_screen.dart';
+import '../../features/quick_services/presentation/screens/home_services/plumbing_review_screen.dart';
 
-import '../../features/quick_services/presentation/screens/carpenter_details_screen.dart';
-import '../../features/quick_services/presentation/screens/carpenter_review_screen.dart';
-import '../../features/quick_services/presentation/screens/carpenter_confirmation_screen.dart';
+import '../../features/quick_services/presentation/screens/home_services/carpenter_details_screen.dart';
+import '../../features/quick_services/presentation/screens/home_services/carpenter_review_screen.dart';
 
-import '../../features/quick_services/presentation/screens/appliance_repair_details_screen.dart';
-import '../../features/quick_services/presentation/screens/appliance_repair_review_screen.dart';
-import '../../features/quick_services/presentation/screens/appliance_repair_confirmation_screen.dart';
+import '../../features/quick_services/presentation/screens/appliance_repair/appliance_repair_details_screen.dart';
+import '../../features/quick_services/presentation/screens/appliance_repair/appliance_repair_review_screen.dart';
 
-import '../../features/quick_services/presentation/screens/bike_mechanic_details_screen.dart';
-import '../../features/quick_services/presentation/screens/bike_mechanic_review_screen.dart';
-import '../../features/quick_services/presentation/screens/bike_mechanic_confirmation_screen.dart';
+import '../../features/quick_services/presentation/screens/vehicle_mechanic/bike_mechanic_details_screen.dart';
+import '../../features/quick_services/presentation/screens/vehicle_mechanic/bike_mechanic_review_screen.dart';
 
-import '../../features/quick_services/presentation/screens/car_mechanic_details_screen.dart';
-import '../../features/quick_services/presentation/screens/car_mechanic_review_screen.dart';
-import '../../features/quick_services/presentation/screens/truck_mechanic_details_screen.dart';
-import '../../features/quick_services/presentation/screens/truck_mechanic_review_screen.dart';
+import '../../features/quick_services/presentation/screens/vehicle_mechanic/car_mechanic_details_screen.dart';
+import '../../features/quick_services/presentation/screens/vehicle_mechanic/car_mechanic_review_screen.dart';
+import '../../features/quick_services/presentation/screens/vehicle_mechanic/truck_mechanic_details_screen.dart';
+import '../../features/quick_services/presentation/screens/vehicle_mechanic/truck_mechanic_review_screen.dart';
 
-import '../../features/quick_services/presentation/screens/lift_elevator_mechanic_details_screen.dart';
-import '../../features/quick_services/presentation/screens/lift_elevator_mechanic_review_screen.dart';
-import '../../features/quick_services/presentation/screens/lift_elevator_mechanic_confirmation_screen.dart';
+import '../../features/quick_services/presentation/screens/electrical_mechanic/lift_elevator_mechanic_details_screen.dart';
+import '../../features/quick_services/presentation/screens/electrical_mechanic/lift_elevator_mechanic_review_screen.dart';
 
-import '../../features/quick_services/presentation/screens/home_electric_details_screen.dart';
-import '../../features/quick_services/presentation/screens/home_electric_review_screen.dart';
-import '../../features/quick_services/presentation/screens/home_electric_confirmation_screen.dart';
+import '../../features/quick_services/presentation/screens/electrical_mechanic/home_electric_details_screen.dart';
+import '../../features/quick_services/presentation/screens/electrical_mechanic/home_electric_review_screen.dart';
 
-import '../../features/quick_services/presentation/screens/handyman_details_screen.dart';
-import '../../features/quick_services/presentation/screens/handyman_review_screen.dart';
-import '../../features/quick_services/presentation/screens/handyman_confirmation_screen.dart';
+import '../../features/quick_services/presentation/screens/home_services/handyman_details_screen.dart';
+import '../../features/quick_services/presentation/screens/home_services/handyman_review_screen.dart';
 
-import '../../features/quick_services/presentation/screens/hire_person_details_screen.dart';
-import '../../features/quick_services/presentation/screens/hire_person_review_screen.dart';
-import '../../features/quick_services/presentation/screens/hire_person_confirmation_screen.dart';
+import '../../features/quick_services/presentation/screens/hire_person/hire_person_details_screen.dart';
+import '../../features/quick_services/presentation/screens/hire_person/hire_person_review_screen.dart';
 
-import '../../features/quick_services/presentation/screens/security_personnel_details_screen.dart';
-import '../../features/quick_services/presentation/screens/security_personnel_review_screen.dart';
-import '../../features/quick_services/presentation/screens/security_personnel_confirmation_screen.dart';
+import '../../features/quick_services/presentation/screens/security_personnel/security_personnel_details_screen.dart';
+import '../../features/quick_services/presentation/screens/security_personnel/security_personnel_review_screen.dart';
 
-import '../../features/quick_services/presentation/screens/mobile_repair_details_screen.dart';
-import '../../features/quick_services/presentation/screens/mobile_repair_review_screen.dart';
-import '../../features/quick_services/presentation/screens/mobile_repair_confirmation_screen.dart';
+import '../../features/quick_services/presentation/screens/pc_mobile/mobile_repair_details_screen.dart';
+import '../../features/quick_services/presentation/screens/pc_mobile/mobile_repair_review_screen.dart';
 
-import '../../features/quick_services/presentation/screens/computer_repair_details_screen.dart';
-import '../../features/quick_services/presentation/screens/computer_repair_review_screen.dart';
-import '../../features/quick_services/presentation/screens/computer_repair_confirmation_screen.dart';
+import '../../features/quick_services/presentation/screens/pc_mobile/computer_repair_details_screen.dart';
+import '../../features/quick_services/presentation/screens/pc_mobile/computer_repair_review_screen.dart';
 
-import '../../features/quick_services/presentation/screens/car_wash_details_screen.dart';
-import '../../features/quick_services/presentation/screens/car_wash_review_screen.dart';
-import '../../features/quick_services/presentation/screens/car_wash_confirmation_screen.dart';
-import '../../features/quick_services/presentation/screens/truck_wash_details_screen.dart';
-import '../../features/quick_services/presentation/screens/truck_wash_review_screen.dart';
+import '../../features/quick_services/presentation/screens/vehicle_wash/car_wash_details_screen.dart';
+import '../../features/quick_services/presentation/screens/vehicle_wash/car_wash_review_screen.dart';
+import '../../features/quick_services/presentation/screens/vehicle_wash/truck_wash_details_screen.dart';
+import '../../features/quick_services/presentation/screens/vehicle_wash/truck_wash_review_screen.dart';
 
-import '../../features/quick_services/presentation/screens/laundry_details_screen.dart';
-import '../../features/quick_services/presentation/screens/laundry_review_screen.dart';
-import '../../features/quick_services/presentation/screens/laundry_confirmation_screen.dart';
+import '../../features/quick_services/presentation/screens/laundry_worker/laundry_details_screen.dart';
+import '../../features/quick_services/presentation/screens/laundry_worker/hospital_laundry_details_screen.dart';
+import '../../features/quick_services/presentation/screens/laundry_worker/hotel_laundry_details_screen.dart';
+import '../../features/quick_services/presentation/screens/laundry_worker/commercial_laundry_details_screen.dart';
+import '../../features/quick_services/presentation/screens/laundry_worker/laundry_review_screen.dart';
 
-import '../../features/quick_services/presentation/screens/painter_details_screen.dart';
-import '../../features/quick_services/presentation/screens/event_organisers_details_screen.dart';
-import '../../features/quick_services/presentation/screens/suppliers_details_screen.dart';
-import '../../features/quick_services/presentation/screens/other_services_review_screen.dart';
-import '../../features/quick_services/presentation/screens/other_services_confirmation_screen.dart';
+import '../../features/quick_services/presentation/screens/other_services/painter_details_screen.dart';
+import '../../features/quick_services/presentation/screens/other_services/event_organisers_details_screen.dart';
+import '../../features/quick_services/presentation/screens/other_services/suppliers_details_screen.dart';
+import '../../features/quick_services/presentation/screens/other_services/other_services_review_screen.dart';
 
-import '../../features/quick_services/presentation/screens/beauty_wellness_details_screen.dart';
-import '../../features/quick_services/presentation/screens/beauty_wellness_review_screen.dart';
-import '../../features/quick_services/presentation/screens/beauty_wellness_confirmation_screen.dart';
+import '../../features/quick_services/presentation/screens/beauty_wellness/beauty_wellness_details_screen.dart';
+import '../../features/quick_services/presentation/screens/beauty_wellness/beauty_wellness_review_screen.dart';
 
-import '../../features/quick_services/presentation/screens/gardening_details_screen.dart';
-import '../../features/quick_services/presentation/screens/gardening_review_screen.dart';
-import '../../features/quick_services/presentation/screens/gardening_confirmation_screen.dart';
-import '../../features/quick_services/presentation/screens/pest_control_details_screen.dart';
-import '../../features/quick_services/presentation/screens/pest_control_review_screen.dart';
-import '../../features/quick_services/presentation/screens/pest_control_confirmation_screen.dart';
-import '../../features/quick_services/presentation/screens/printer_scanner_details_screen.dart';
-import '../../features/quick_services/presentation/screens/printer_scanner_review_screen.dart';
-import '../../features/quick_services/presentation/screens/printer_scanner_confirmation_screen.dart';
+import '../../features/quick_services/presentation/screens/home_services/gardening_details_screen.dart';
+import '../../features/quick_services/presentation/screens/home_services/gardening_review_screen.dart';
+import '../../features/quick_services/presentation/screens/home_services/pest_control_details_screen.dart';
+import '../../features/quick_services/presentation/screens/home_services/pest_control_review_screen.dart';
+import '../../features/quick_services/presentation/screens/pc_mobile/printer_scanner_details_screen.dart';
+import '../../features/quick_services/presentation/screens/pc_mobile/printer_scanner_review_screen.dart';
 
 import '../../features/quick_services/data/models/quick_service_booking_data.dart';
 import '../../features/ride/data/models/location_data.dart';
@@ -1080,9 +1065,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/quick-services-home-cleaning-confirmation',
         name: RouteNames.quickServicesHomeCleaningConfirmation,
-        builder: (context, state) => HomeCleaningConfirmationScreen(
-          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
-        ),
+        builder: (context, state) => SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.cleaning_services, defaultTitle: 'Home Cleaning'),
       ),
 
       GoRoute(
@@ -1102,9 +1085,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/quick-services-plumbing-confirmation',
         name: RouteNames.quickServicesPlumbingConfirmation,
-        builder: (context, state) => PlumbingConfirmationScreen(
-          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
-        ),
+        builder: (context, state) => SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.plumbing, defaultTitle: 'Plumbing'),
       ),
 
       GoRoute(
@@ -1124,9 +1105,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/quick-services-carpenter-confirmation',
         name: RouteNames.quickServicesCarpenterConfirmation,
-        builder: (context, state) => CarpenterConfirmationScreen(
-          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
-        ),
+        builder: (context, state) => SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.carpenter, defaultTitle: 'Carpenter'),
       ),
 
       GoRoute(
@@ -1146,9 +1125,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/quick-services-appliance-repair-confirmation',
         name: RouteNames.quickServicesApplianceRepairConfirmation,
-        builder: (context, state) => ApplianceRepairConfirmationScreen(
-          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
-        ),
+        builder: (context, state) => SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.ac_unit, defaultTitle: 'AC & Appliance Repair'),
       ),
       GoRoute(
         path: '/quick-services-car-mechanic',
@@ -1167,9 +1144,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/quick-services-car-mechanic-confirmation',
         name: RouteNames.quickServicesCarMechanicConfirmation,
-        builder: (context, state) => BikeMechanicConfirmationScreen( // Using generic confirmation
-          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
-        ),
+        builder: (context, state) => SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.build, defaultTitle: 'Mechanic'),
       ),
 
       GoRoute(
@@ -1204,9 +1179,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/quick-services-truck-mechanic-confirmation',
         name: RouteNames.quickServicesTruckMechanicConfirmation,
-        builder: (context, state) => BikeMechanicConfirmationScreen(
-          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
-        ),
+        builder: (context, state) => SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.build, defaultTitle: 'Mechanic'),
       ),
       GoRoute(
         path: '/lift-elevator',
@@ -1229,7 +1202,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesLiftElevatorConfirmation,
         builder: (context, state) {
           final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return LiftElevatorMechanicConfirmationScreen(bookingData: bookingData);
+          return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.elevator, defaultTitle: 'Lift / Elevator');
         },
       ),
       GoRoute(
@@ -1253,7 +1226,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesElectricalConfirmation,
         builder: (context, state) {
           final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return HomeElectricConfirmationScreen(bookingData: bookingData);
+          return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.electrical_services, defaultTitle: 'Electrical');
         },
       ),
       GoRoute(
@@ -1277,7 +1250,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesHandymanConfirmation,
         builder: (context, state) {
           final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return HandymanConfirmationScreen(bookingData: bookingData);
+          return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.handyman, defaultTitle: 'Handyman');
         },
       ),
       GoRoute(
@@ -1301,7 +1274,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesHirePersonConfirmation,
         builder: (context, state) {
           final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return HirePersonConfirmationScreen(bookingData: bookingData);
+          return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.person_outline, defaultTitle: 'Hire a Person');
         },
       ),
       GoRoute(
@@ -1325,7 +1298,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesSecurityPersonnelConfirmation,
         builder: (context, state) {
           final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return SecurityPersonnelConfirmationScreen(bookingData: bookingData);
+          return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.security, defaultTitle: 'Security Personnel');
         },
       ),
       GoRoute(
@@ -1349,7 +1322,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesMobileRepairConfirmation,
         builder: (context, state) {
           final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return MobileRepairConfirmationScreen(bookingData: bookingData);
+          return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.smartphone, defaultTitle: 'Mobile Repair');
         },
       ),
       GoRoute(
@@ -1373,7 +1346,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesComputerRepairConfirmation,
         builder: (context, state) {
           final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return ComputerRepairConfirmationScreen(bookingData: bookingData);
+          return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.laptop, defaultTitle: 'Computer Repair');
         },
       ),
       GoRoute(
@@ -1397,7 +1370,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesCarWashConfirmation,
         builder: (context, state) {
           final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return CarWashConfirmationScreen(bookingData: bookingData);
+          return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.local_car_wash, defaultTitle: 'Vehicle Wash');
         },
       ),
       GoRoute(
@@ -1421,7 +1394,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesTruckWashConfirmation,
         builder: (context, state) {
           final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return CarWashConfirmationScreen(bookingData: bookingData);
+          return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.local_car_wash, defaultTitle: 'Vehicle Wash');
         },
       ),
       GoRoute(
@@ -1430,6 +1403,30 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
           return LaundryDetailsScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/hospital-laundry-details',
+        name: RouteNames.quickServicesHospitalLaundry,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return HospitalLaundryDetailsScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/hotel-laundry-details',
+        name: RouteNames.quickServicesHotelLaundry,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return HotelLaundryDetailsScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/commercial-laundry-details',
+        name: RouteNames.quickServicesCommercialLaundry,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return CommercialLaundryDetailsScreen(bookingData: bookingData);
         },
       ),
       GoRoute(
@@ -1445,7 +1442,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesLaundryConfirmation,
         builder: (context, state) {
           final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return LaundryConfirmationScreen(bookingData: bookingData);
+          return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.local_laundry_service, defaultTitle: 'Laundry');
         },
       ),
       GoRoute(
@@ -1485,7 +1482,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesOtherServicesConfirmation,
         builder: (context, state) {
           final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return OtherServicesConfirmationScreen(bookingData: bookingData);
+          return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.miscellaneous_services, defaultTitle: 'Other Services');
         },
       ),
       GoRoute(
@@ -1509,7 +1506,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesBeautyWellnessConfirmation,
         builder: (context, state) {
           final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return BeautyWellnessConfirmationScreen(bookingData: bookingData);
+          return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.spa, defaultTitle: 'Beauty & Wellness');
         },
       ),
       GoRoute(
@@ -1533,7 +1530,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesGardeningConfirmation,
         builder: (context, state) {
           final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return GardeningConfirmationScreen(bookingData: bookingData);
+          return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.yard, defaultTitle: 'Gardening');
         },
       ),
       GoRoute(
@@ -1557,7 +1554,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesPestControlConfirmation,
         builder: (context, state) {
           final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return PestControlConfirmationScreen(bookingData: bookingData);
+          return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.pest_control, defaultTitle: 'Pest Control');
         },
       ),
       GoRoute(
@@ -1581,15 +1578,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesPrinterScannerConfirmation,
         builder: (context, state) {
           final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return PrinterScannerConfirmationScreen(bookingData: bookingData);
+          return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.print, defaultTitle: 'Printer / Scanner');
         },
       ),
       GoRoute(
         path: '/quick-services-bike-mechanic-confirmation',
         name: RouteNames.quickServicesBikeMechanicConfirmation,
-        builder: (context, state) => BikeMechanicConfirmationScreen(
-          bookingData: state.extra as QuickServiceBookingData? ?? _dummyBookingData,
-        ),
+        builder: (context, state) => SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.build, defaultTitle: 'Mechanic'),
       ),
     ],
   );

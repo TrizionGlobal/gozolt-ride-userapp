@@ -34,56 +34,13 @@ class TransportGrid extends StatelessWidget {
             children: [
               Expanded(
                 child: _TransportTile(
-                  iconPath: AssetPaths.iconRide,
-                  label: 'Ride',
+                  iconData: Icons.emoji_transportation_rounded,
+                  label: 'Transport',
                   isActive: true,
-                  onTap: () {
-                    context.pushNamed(RouteNames.searchDestination);
-                  },
+                  onTap: () => _showTransportModal(context),
                 ),
               ),
               const SizedBox(width: 14),
-              Expanded(
-                child: _TransportTile(
-                  iconPath: AssetPaths.iconCarRental,
-                  label: 'Car Rental',
-                  isActive: true,
-                  onTap: () {
-                    context.pushNamed(RouteNames.carRentalSearch);
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: _TransportTile(
-                  iconPath: Theme.of(context).brightness == Brightness.dark 
-                      ? AssetPaths.iconBikeRentalDarkTheme 
-                      : AssetPaths.iconBikeRental,
-                  label: 'Bike Rental',
-                  isActive: true,
-                  onTap: () {
-                    context.pushNamed(RouteNames.bikeRentalSearch);
-                  },
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: _TransportTile(
-                  iconPath: AssetPaths.iconAirportTransfer,
-                  label: 'Airport Transfer',
-                  isActive: false,
-                  onTap: () => _showComingSoon(context),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
               Expanded(
                 child: _TransportTile(
                   iconData: Icons.cleaning_services_rounded,
@@ -94,11 +51,109 @@ class TransportGrid extends StatelessWidget {
                   },
                 ),
               ),
-              const Spacer(),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _TransportTile(
+                  iconData: Icons.local_grocery_store_rounded,
+                  label: 'Groceries',
+                  isActive: true,
+                  onTap: () => _showComingSoon(context),
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(child: SizedBox()),
             ],
           ),
         ],
       ),
+    );
+  }
+
+  void _showTransportModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Transport Services',
+                style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: _TransportTile(
+                      iconPath: AssetPaths.iconRide,
+                      label: 'Ride',
+                      isActive: true,
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        context.pushNamed(RouteNames.searchDestination);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: _TransportTile(
+                      iconPath: AssetPaths.iconCarRental,
+                      label: 'Car Rental',
+                      isActive: true,
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        context.pushNamed(RouteNames.carRentalSearch);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: _TransportTile(
+                      iconPath: Theme.of(context).brightness == Brightness.dark 
+                          ? AssetPaths.iconBikeRentalDarkTheme 
+                          : AssetPaths.iconBikeRental,
+                      label: 'Bike Rental',
+                      isActive: true,
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        context.pushNamed(RouteNames.bikeRentalSearch);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: _TransportTile(
+                      iconPath: AssetPaths.iconAirportTransfer,
+                      label: 'Airport Transfer',
+                      isActive: false,
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _showComingSoon(context);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        );
+      },
     );
   }
 
