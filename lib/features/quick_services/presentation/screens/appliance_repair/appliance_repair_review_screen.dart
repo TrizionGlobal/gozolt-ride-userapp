@@ -146,41 +146,9 @@ class _ApplianceRepairReviewScreenState extends ConsumerState<ApplianceRepairRev
               const SizedBox(height: 20),
                             QuickServicesPriceSummary(bookingData: _bookingData, useGoCoins: _useGoCoins, onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),),
               const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryGold.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text('Available: 250 GO Coins', style: TextStyle(fontSize: 12)),
-                        Text('Use 200 coins', style: TextStyle(fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                    Switch(
-                      value: useCoins,
-                      activeColor: AppColors.primaryGold,
-                      onChanged: (v) => setState(() => useCoins = v),
-                    ),
-                  ],
-                ),
-              ),
-              if (useCoins) _buildPriceRow('Discount', '-€2.00', isDiscount: true),
-              const Divider(),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Total', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                  Text('€${_calculateTotal().toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                ],
-              ),
+              
+                            
               const SizedBox(height: 8),
-              const Text('ℹ️ Pay after service', style: TextStyle(fontSize: 12, color: Colors.grey)),
               ],
             ),
           )),

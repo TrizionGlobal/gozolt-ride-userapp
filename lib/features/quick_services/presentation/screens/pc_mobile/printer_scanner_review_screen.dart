@@ -274,59 +274,6 @@ class _PrinterScannerReviewScreenState extends ConsumerState<PrinterScannerRevie
 
                   const SizedBox(height: 16),
 
-                  // GO Coins Card
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardTheme.color,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                    ),
-                    child: Row(
-                      children: [
-                        Image.asset(
-                          'assets/images/go_coin.png',
-                          width: 24,
-                          height: 24,
-                          errorBuilder: (_, __, ___) => const Icon(
-                            Icons.monetization_on,
-                            color: AppColors.primaryGold,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'GO Coins',
-                                style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              Text(
-                                'Use 200 GO Coins',
-                                style: AppTextStyles.bodySmall.copyWith(color: Colors.grey),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Checkbox(
-                          value: _useGoCoins,
-                          activeColor: AppColors.primaryGold,
-                          onChanged: (val) => setState(() => _useGoCoins = val ?? false),
-                        ),
-                        if (_useGoCoins)
-                          Text(
-                            '- €${_coinDiscount.toStringAsFixed(2)}',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: Colors.green,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-
                   const SizedBox(height: 24),
 
                   // Confirm Booking Button

@@ -180,57 +180,17 @@ class _BikeMechanicReviewScreenState extends ConsumerState<BikeMechanicReviewScr
                   const Text('Final quote after inspection', style: TextStyle(fontSize: 12, color: Colors.grey)),
                   
                   const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGold.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text('Available: 250 GO Coins', style: TextStyle(fontSize: 12)),
-                            Text('Use 200 coins', style: TextStyle(fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                        Switch(
-                          value: useCoins,
-                          activeColor: AppColors.primaryGold,
-                          onChanged: (v) => setState(() => useCoins = v),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (useCoins) _buildPriceRow('Discount', '-€2.00', isDiscount: true),
                   
+                                    
                   const SizedBox(height: 16),
                   Row(
                     children: [
                       const Icon(Icons.info_outline, size: 16, color: AppColors.primaryGold),
                       const SizedBox(width: 8),
-                      const Text('Pay after service', style: TextStyle(fontSize: 12, color: Colors.grey)),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Checkbox(
-                        value: true, // Mock checked state
-                        onChanged: (v) {},
-                        activeColor: AppColors.primaryGold,
-                        checkColor: Colors.black,
-                      ),
-                      const Expanded(
-                        child: Text(
-                          'I accept the Service Terms and Cancellation Policy.',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                      ),
-                    ],
-                  ),
+                  
                 ],
               ),
             ),

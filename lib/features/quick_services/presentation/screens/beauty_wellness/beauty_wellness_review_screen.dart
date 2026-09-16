@@ -317,26 +317,6 @@ class _BeautyWellnessReviewScreenState extends ConsumerState<BeautyWellnessRevie
                           ],
                         ),
                         const SizedBox(height: 14),
-
-                        // PAY AFTER SERVICE Badge
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.blue.shade200),
-                          ),
-                          child: Text(
-                            'PAY AFTER SERVICE',
-                            textAlign: TextAlign.center,
-                            style: AppTextStyles.bodySmall.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue.shade800,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),

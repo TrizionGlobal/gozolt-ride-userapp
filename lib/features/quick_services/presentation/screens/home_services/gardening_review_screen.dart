@@ -273,55 +273,7 @@ class _GardeningReviewScreenState extends ConsumerState<GardeningReviewScreen> {
                   QuickServicesPriceSummary(bookingData: _bookingData, useGoCoins: _useGoCoins, onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),),
                   const SizedBox(height: 16),
 
-                  // GO Coins Banner
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.grey[850] : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: const BoxDecoration(
-                            color: AppColors.primaryGold,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.monetization_on, size: 18, color: Colors.black),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'GO Coins',
-                                style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              Text(
-                                'Use 200 GO Coins',
-                                style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600]),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          '250 available',
-                          style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600]),
-                        ),
-                        const SizedBox(width: 8),
-                        Switch(
-                          value: _useGoCoins,
-                          onChanged: (val) => setState(() => _useGoCoins = val),
-                          activeThumbColor: AppColors.primaryGold,
-                        ),
-                      ],
-                    ),
-                  ),
+                  
                   const SizedBox(height: 16),
 
                   // CONFIRM BOOKING Button
