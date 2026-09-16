@@ -2,14 +2,21 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/quick_service_booking_data.dart';
 
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/asset_paths.dart';
+
 class QuickServicesPriceSummary extends StatelessWidget {
   final QuickServiceBookingData bookingData;
   final String? note;
+  final bool useGoCoins;
+  final ValueChanged<bool>? onGoCoinsChanged;
 
   const QuickServicesPriceSummary({
     super.key,
     required this.bookingData,
     this.note,
+    this.useGoCoins = false,
+    this.onGoCoinsChanged,
   });
 
   @override
@@ -158,6 +165,82 @@ class QuickServicesPriceSummary extends StatelessWidget {
           if (bookingData.fixedAddonCosts > 0 || bookingData.materialCost > 0 || bookingData.subtotal > 0)
             const Divider(height: 24),
 
+
+          // ── GoCoins Redeem Section ──
+          if (onGoCoinsChanged != null) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.only(top: 16, bottom: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: useGoCoins ? AppColors.primaryGold : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
+                  width: useGoCoins ? 1.5 : 0.5,
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGold.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Image.asset(AssetPaths.iconGoCoin, width: 24, height: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Redeem GoCoins', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Balance: 250 Coins',
+                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                        ),
+                        if (useGoCoins)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Text(
+                              'Save €2.00 with 200 coins',
+                              style: AppTextStyles.bodySmall.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  Transform.scale(
+                    scale: 0.8,
+                    child: Switch.adaptive(
+                      value: useGoCoins,
+                      activeColor: AppColors.backgroundDark,
+                      activeTrackColor: AppColors.primaryGold,
+                      inactiveTrackColor: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
+                      onChanged: onGoCoinsChanged,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          
+          if (useGoCoins) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(child: Text('GoCoins Discount', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primaryGold))),
+                Text(
+                  '-€2.00',
+                  style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: AppColors.primaryGold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -167,8 +250,8 @@ class QuickServicesPriceSummary extends StatelessWidget {
               ),
               Text(
                 bookingData.hasRateRange
-                    ? '€${bookingData.estimatedTotalMin.toStringAsFixed(2)} - €${bookingData.estimatedTotalMax.toStringAsFixed(2)}'
-                    : '€${bookingData.estimatedTotalMin.toStringAsFixed(2)}',
+                    ? '€${(bookingData.estimatedTotalMin - (useGoCoins ? 2.0 : 0.0)).toStringAsFixed(2)} - €${(bookingData.estimatedTotalMax - (useGoCoins ? 2.0 : 0.0)).toStringAsFixed(2)}'
+                    : '€${(bookingData.estimatedTotalMin - (useGoCoins ? 2.0 : 0.0)).toStringAsFixed(2)}',
                 style: AppTextStyles.titleMedium.copyWith(
                   fontWeight: FontWeight.bold,
                   color: Theme.of(context).primaryColor,

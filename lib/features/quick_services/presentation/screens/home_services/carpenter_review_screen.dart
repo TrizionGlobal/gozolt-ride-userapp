@@ -1,3 +1,4 @@
+import '../../../../../core/widgets/booking_payment_sheet.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,6 +23,7 @@ class CarpenterReviewScreen extends ConsumerStatefulWidget {
 }
 
 class _CarpenterReviewScreenState extends ConsumerState<CarpenterReviewScreen> {
+  bool _useGoCoins = false;
   late QuickServiceBookingData _bookingData;
   bool _useCoins = false;
 
@@ -142,7 +144,7 @@ class _CarpenterReviewScreenState extends ConsumerState<CarpenterReviewScreen> {
                 ),
               ],
               const SizedBox(height: 20),
-                            QuickServicesPriceSummary(bookingData: _bookingData),
+                            QuickServicesPriceSummary(bookingData: _bookingData, useGoCoins: _useGoCoins, onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),),
               const SizedBox(height: 20),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -182,69 +184,9 @@ class _CarpenterReviewScreenState extends ConsumerState<CarpenterReviewScreen> {
               ],
             ),
           )),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: QuickServicesPaymentSelector(
-              bookingData: _bookingData,
-              onChanged: (newData) {
-                setState(() {
-                  _bookingData = newData;
-                });
-              },
-            ),
-          ),
+          
           const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Consumer(
-              builder: (context, ref, child) {
-                final rewardSummary = ref.watch(rewardSummaryProvider).value;
-                final int balance = rewardSummary?.currentPoints.toInt() ?? 0;
-                final int conversionRate = (ref.watch(rewardRulesProvider).value?.redemption.pointsToEurRatio ?? 400.0).toInt();
-                
-                final double maxEurValue = balance / conversionRate;
-                final double appliedEurValue = maxEurValue > _bookingData.estimatedTotalMax ? _bookingData.estimatedTotalMax : maxEurValue;
-                final int coinsUsed = (appliedEurValue * conversionRate).round();
-
-                return GestureDetector(
-                  onTap: () => setState(() => _useCoins = !_useCoins),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: _useCoins ? AppColors.primaryGold.withValues(alpha: 0.1) : Theme.of(context).cardTheme.color,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: _useCoins ? AppColors.primaryGold : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark), width: _useCoins ? 1.5 : 0.5),
-                    ),
-                    child: Row(
-                      children: [
-                        Image.asset(AssetPaths.iconGoCoin, width: 24, height: 24),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('GO Coins: $balance available', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold)),
-                              Text('Use $coinsUsed GO Coins', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700])),
-                            ],
-                          ),
-                        ),
-                        const Spacer(),
-                        if (appliedEurValue > 0)
-                          Text('-€${appliedEurValue.toStringAsFixed(2)}', style: AppTextStyles.bodySmall.copyWith(color: Colors.green, fontWeight: FontWeight.bold)),
-                        const SizedBox(width: 8),
-                        Checkbox(
-                          value: _useCoins,
-                          onChanged: (val) => setState(() => _useCoins = val ?? false),
-                          activeColor: AppColors.primaryGold,
-                          checkColor: Colors.black,
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
+          
           const SizedBox(height: 16),
 
           SafeArea(
@@ -253,9 +195,30 @@ class _CarpenterReviewScreenState extends ConsumerState<CarpenterReviewScreen> {
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: ElevatedButton(
                 onPressed: () {
-                  context.pushNamed(
-                    RouteNames.quickServicesCarpenterConfirmation,
-                    extra: _bookingData,
+                  final finalTotal = _bookingData.hasRateRange
+                      ? _bookingData.estimatedTotalMax - (_useGoCoins ? 2.0 : 0.0)
+                      : _bookingData.estimatedTotalMin - (_useGoCoins ? 2.0 : 0.0);
+                      
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (ctx) => BookingPaymentSheet(
+                      currentType: _bookingData.paymentMethodType,
+                      currentCardId: _bookingData.paymentMethodId,
+                      isQuickService: true,
+                      amount: finalTotal,
+                      onConfirm: (type, {cardId}) {
+                        final updatedData = _bookingData.copyWith(
+                          paymentMethodType: type,
+                          paymentMethodId: cardId,
+                        );
+                        context.pushNamed(
+                          RouteNames.quickServicesCarpenterConfirmation,
+                          extra: updatedData,
+                        );
+                      },
+                    ),
                   );
                 },
                 style: ElevatedButton.styleFrom(

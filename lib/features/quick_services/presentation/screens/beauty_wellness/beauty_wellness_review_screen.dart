@@ -1,3 +1,4 @@
+import '../../../../../core/widgets/booking_payment_sheet.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -174,7 +175,7 @@ class _BeautyWellnessReviewScreenState extends ConsumerState<BeautyWellnessRevie
                               scrollDirection: Axis.horizontal,
                               itemCount: data.uploadedImages!.length,
                               itemBuilder: (context, index) {
-                                return QuickServicesPriceSummary(bookingData: _bookingData);
+                                return QuickServicesPriceSummary(bookingData: _bookingData, useGoCoins: _useGoCoins, onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),);
                               },
                             ),
                           ),
@@ -229,37 +230,80 @@ class _BeautyWellnessReviewScreenState extends ConsumerState<BeautyWellnessRevie
                         const SizedBox(height: 12),
 
                         // GO Coins Discount Box
-                        GestureDetector(
-                          onTap: () => setState(() => _useGoCoins = !_useGoCoins),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: isDark ? Colors.grey[850] : const Color(0xFFFFF8E1),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: _useGoCoins ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Checkbox(
-                                  value: _useGoCoins,
-                                  activeColor: AppColors.primaryGold,
-                                  onChanged: (val) => setState(() => _useGoCoins = val ?? false),
-                                ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('GO Coins: 250 available', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold)),
-                                    Text('Use 200 GO Coins', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700])),
-                                  ],
-                                ),
-                                const Spacer(),
-                                Text('-€2.00', style: AppTextStyles.bodySmall.copyWith(color: Colors.green, fontWeight: FontWeight.bold)),
-                              ],
+                        
+                        // ── GoCoins Redeem Section ──
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          margin: const EdgeInsets.only(top: 16, bottom: 8),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardTheme.color,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: _useGoCoins ? AppColors.primaryGold : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
+                              width: _useGoCoins ? 1.5 : 0.5,
                             ),
                           ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryGold.withOpacity(0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Image.asset(AssetPaths.iconGoCoin, width: 24, height: 24),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Redeem GoCoins', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Balance: 250 Coins',
+                                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                                    ),
+                                    if (_useGoCoins)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 2),
+                                        child: Text(
+                                          'Save €2.00 with 200 coins',
+                                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              Transform.scale(
+                                scale: 0.8,
+                                child: Switch.adaptive(
+                                  value: _useGoCoins,
+                                  activeColor: AppColors.backgroundDark,
+                                  activeTrackColor: AppColors.primaryGold,
+                                  inactiveTrackColor: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
+                                  onChanged: (val) => setState(() => _useGoCoins = val),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
+                        if (_useGoCoins) ...[
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(child: Text('GoCoins Discount', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primaryGold))),
+                              Text(
+                                '-€2.00',
+                                style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: AppColors.primaryGold),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+
 
                         const Divider(height: 20),
                         Row(
@@ -302,14 +346,32 @@ class _BeautyWellnessReviewScreenState extends ConsumerState<BeautyWellnessRevie
                   // Confirm Booking Button
                   ElevatedButton(
                     onPressed: () {
-                      final finalData = data.copyWith(
-                        subtotal: estimatedTotal,
-                      );
-                      context.pushNamed(
-                        RouteNames.quickServicesBeautyWellnessConfirmation,
-                        extra: finalData,
-                      );
-                    },
+                  final finalTotal = _bookingData.hasRateRange
+                      ? _bookingData.estimatedTotalMax - (_useGoCoins ? 2.0 : 0.0)
+                      : _bookingData.estimatedTotalMin - (_useGoCoins ? 2.0 : 0.0);
+                      
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (ctx) => BookingPaymentSheet(
+                      currentType: _bookingData.paymentMethodType,
+                      currentCardId: _bookingData.paymentMethodId,
+                      isQuickService: true,
+                      amount: finalTotal,
+                      onConfirm: (type, {cardId}) {
+                        final updatedData = _bookingData.copyWith(
+                          paymentMethodType: type,
+                          paymentMethodId: cardId,
+                        );
+                        context.pushNamed(
+                          RouteNames.quickServicesBeautyWellnessConfirmation,
+                          extra: updatedData,
+                        );
+                      },
+                    ),
+                  );
+                },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,
                       foregroundColor: Colors.black,

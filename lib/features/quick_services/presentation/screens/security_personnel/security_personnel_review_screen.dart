@@ -1,3 +1,4 @@
+import '../../../../../core/widgets/booking_payment_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../widgets/quick_services_payment_selector.dart';
@@ -281,7 +282,7 @@ class _SecurityPersonnelReviewScreenState extends ConsumerState<SecurityPersonne
                   const SizedBox(height: 16),
 
                   // Price Summary Card
-                  QuickServicesPriceSummary(bookingData: _bookingData),
+                  QuickServicesPriceSummary(bookingData: _bookingData, useGoCoins: _useGoCoins, onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),),
 
                   const SizedBox(height: 16),
 
@@ -370,11 +371,32 @@ class _SecurityPersonnelReviewScreenState extends ConsumerState<SecurityPersonne
                   // Confirm Booking Button
                   ElevatedButton(
                     onPressed: () {
-                      context.pushNamed(
-                        RouteNames.quickServicesSecurityPersonnelConfirmation,
-                        extra: _bookingData,
-                      );
-                    },
+                  final finalTotal = _bookingData.hasRateRange
+                      ? _bookingData.estimatedTotalMax - (_useGoCoins ? 2.0 : 0.0)
+                      : _bookingData.estimatedTotalMin - (_useGoCoins ? 2.0 : 0.0);
+                      
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (ctx) => BookingPaymentSheet(
+                      currentType: _bookingData.paymentMethodType,
+                      currentCardId: _bookingData.paymentMethodId,
+                      isQuickService: true,
+                      amount: finalTotal,
+                      onConfirm: (type, {cardId}) {
+                        final updatedData = _bookingData.copyWith(
+                          paymentMethodType: type,
+                          paymentMethodId: cardId,
+                        );
+                        context.pushNamed(
+                          RouteNames.quickServicesSecurityPersonnelConfirmation,
+                          extra: updatedData,
+                        );
+                      },
+                    ),
+                  );
+                },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,
                       foregroundColor: Colors.black,

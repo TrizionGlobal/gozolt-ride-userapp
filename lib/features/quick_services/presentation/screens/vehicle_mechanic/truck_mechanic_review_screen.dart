@@ -1,3 +1,4 @@
+import '../../../../../core/widgets/booking_payment_sheet.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -22,6 +23,7 @@ class TruckMechanicReviewScreen extends ConsumerStatefulWidget {
 }
 
 class _TruckMechanicReviewScreenState extends ConsumerState<TruckMechanicReviewScreen> {
+  bool _useGoCoins = false;
   late QuickServiceBookingData _bookingData;
   bool _useCoins = false;
 
@@ -245,11 +247,32 @@ class _TruckMechanicReviewScreenState extends ConsumerState<TruckMechanicReviewS
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
           child: ElevatedButton(
             onPressed: () {
-              context.pushNamed(
-                RouteNames.quickServicesTruckMechanicConfirmation, // generic confirmation screen
-                extra: _bookingData,
-              );
-            },
+                  final finalTotal = _bookingData.hasRateRange
+                      ? _bookingData.estimatedTotalMax - (_useGoCoins ? 2.0 : 0.0)
+                      : _bookingData.estimatedTotalMin - (_useGoCoins ? 2.0 : 0.0);
+                      
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (ctx) => BookingPaymentSheet(
+                      currentType: _bookingData.paymentMethodType,
+                      currentCardId: _bookingData.paymentMethodId,
+                      isQuickService: true,
+                      amount: finalTotal,
+                      onConfirm: (type, {cardId}) {
+                        final updatedData = _bookingData.copyWith(
+                          paymentMethodType: type,
+                          paymentMethodId: cardId,
+                        );
+                        context.pushNamed(
+                          RouteNames.quickServicesTruckMechanicConfirmation,
+                          extra: updatedData,
+                        );
+                      },
+                    ),
+                  );
+                },
             style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,
                       foregroundColor: Colors.black,
