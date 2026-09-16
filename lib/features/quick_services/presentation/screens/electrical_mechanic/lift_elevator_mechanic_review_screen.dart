@@ -1,5 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../widgets/quick_services_payment_selector.dart';
+import '../../../../rewards/presentation/providers/rewards_providers.dart';
+import '../../../../../core/constants/asset_paths.dart';
+
 import 'package:go_router/go_router.dart';
 
 import '../../../../../core/constants/app_colors.dart';
@@ -9,22 +14,96 @@ import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_price_summary.dart';
 import '../../widgets/quick_services_header.dart';
 
-class LiftElevatorMechanicReviewScreen extends StatefulWidget {
+class LiftElevatorMechanicReviewScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
   const LiftElevatorMechanicReviewScreen({super.key, required this.bookingData});
 
   @override
-  State<LiftElevatorMechanicReviewScreen> createState() => _LiftElevatorMechanicReviewScreenState();
+  ConsumerState<LiftElevatorMechanicReviewScreen> createState() => _LiftElevatorMechanicReviewScreenState();
 }
 
-class _LiftElevatorMechanicReviewScreenState extends State<LiftElevatorMechanicReviewScreen> {
+class _LiftElevatorMechanicReviewScreenState extends ConsumerState<LiftElevatorMechanicReviewScreen> {
+  late QuickServiceBookingData _bookingData;
+  bool _useCoins = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _bookingData = widget.bookingData;
+  }
+
   bool useCoins = true;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      bottomNavigationBar: SafeArea(
+      bottomNavigationBar: Column(mainAxisSize: MainAxisSize.min, children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: QuickServicesPaymentSelector(
+              bookingData: _bookingData,
+              onChanged: (newData) {
+                setState(() {
+                  _bookingData = newData;
+                });
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Consumer(
+              builder: (context, ref, child) {
+                final rewardSummary = ref.watch(rewardSummaryProvider).value;
+                final int balance = rewardSummary?.currentPoints.toInt() ?? 0;
+                final int conversionRate = (ref.watch(rewardRulesProvider).value?.redemption.pointsToEurRatio ?? 400.0).toInt();
+                
+                final double maxEurValue = balance / conversionRate;
+                final double appliedEurValue = maxEurValue > _bookingData.estimatedTotalMax ? _bookingData.estimatedTotalMax : maxEurValue;
+                final int coinsUsed = (appliedEurValue * conversionRate).round();
+
+                return GestureDetector(
+                  onTap: () => setState(() => _useCoins = !_useCoins),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: _useCoins ? AppColors.primaryGold.withValues(alpha: 0.1) : Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: _useCoins ? AppColors.primaryGold : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark), width: _useCoins ? 1.5 : 0.5),
+                    ),
+                    child: Row(
+                      children: [
+                        Image.asset(AssetPaths.iconGoCoin, width: 24, height: 24),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('GO Coins: $balance available', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold)),
+                              Text('Use $coinsUsed GO Coins', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700])),
+                            ],
+                          ),
+                        ),
+                        const Spacer(),
+                        if (appliedEurValue > 0)
+                          Text('-€${appliedEurValue.toStringAsFixed(2)}', style: AppTextStyles.bodySmall.copyWith(color: Colors.green, fontWeight: FontWeight.bold)),
+                        const SizedBox(width: 8),
+                        Checkbox(
+                          value: _useCoins,
+                          onChanged: (val) => setState(() => _useCoins = val ?? false),
+                          activeColor: AppColors.primaryGold,
+                          checkColor: Colors.black,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+ SafeArea(
         top: false,
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -32,7 +111,7 @@ class _LiftElevatorMechanicReviewScreenState extends State<LiftElevatorMechanicR
             onPressed: () {
               context.pushNamed(
                 RouteNames.quickServicesLiftElevatorConfirmation,
-                extra: widget.bookingData,
+                extra: _bookingData,
               );
             },
             style: ElevatedButton.styleFrom(
@@ -46,6 +125,7 @@ class _LiftElevatorMechanicReviewScreenState extends State<LiftElevatorMechanicR
           ),
         ),
       ),
+      ],),
       body: Column(
         children: [
           const QuickServicesHeader(
@@ -94,12 +174,12 @@ class _LiftElevatorMechanicReviewScreenState extends State<LiftElevatorMechanicR
                     ),
                     child: Column(
                       children: [
-                        _buildSummaryRow('Service', widget.bookingData.selectedServiceTitle ?? 'N/A'),
-                        _buildSummaryRow('Property Type', widget.bookingData.propertyType ?? 'N/A'),
-                        _buildSummaryRow('Lift Type', widget.bookingData.liftType ?? 'N/A'),
-                        _buildSummaryRow('Manufacturer / Model', '${widget.bookingData.vehicleMake ?? 'Unknown'} ${widget.bookingData.vehicleModel ?? ''}'.trim()),
-                        _buildSummaryRow('Floors Served', widget.bookingData.floorsServed ?? 'Not specified'),
-                        _buildSummaryRow('Issue', widget.bookingData.vehicleIssue ?? 'N/A'),
+                        _buildSummaryRow('Service', _bookingData.selectedServiceTitle ?? 'N/A'),
+                        _buildSummaryRow('Property Type', _bookingData.propertyType ?? 'N/A'),
+                        _buildSummaryRow('Lift Type', _bookingData.liftType ?? 'N/A'),
+                        _buildSummaryRow('Manufacturer / Model', '${_bookingData.vehicleMake ?? 'Unknown'} ${_bookingData.vehicleModel ?? ''}'.trim()),
+                        _buildSummaryRow('Floors Served', _bookingData.floorsServed ?? 'Not specified'),
+                        _buildSummaryRow('Issue', _bookingData.vehicleIssue ?? 'N/A'),
                       ],
                     ),
                   ),
@@ -110,7 +190,7 @@ class _LiftElevatorMechanicReviewScreenState extends State<LiftElevatorMechanicR
                   Padding(
                     padding: const EdgeInsets.only(left: 28.0),
                     child: Text(
-                      _formatDate(widget.bookingData.scheduleDate, widget.bookingData.scheduleTime),
+                      _formatDate(_bookingData.scheduleDate, _bookingData.scheduleTime),
                       style: AppTextStyles.bodyMedium,
                     ),
                   ),
@@ -120,7 +200,7 @@ class _LiftElevatorMechanicReviewScreenState extends State<LiftElevatorMechanicR
                   Padding(
                     padding: const EdgeInsets.only(left: 28.0),
                     child: Text(
-                      widget.bookingData.location.address,
+                      _bookingData.location.address,
                       style: AppTextStyles.bodyMedium,
                     ),
                   ),
@@ -133,43 +213,43 @@ class _LiftElevatorMechanicReviewScreenState extends State<LiftElevatorMechanicR
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.bookingData.userName,
+                          _bookingData.userName,
                           style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '${widget.bookingData.userPhone} • ${widget.bookingData.userEmail}',
+                          '${_bookingData.userPhone} • ${_bookingData.userEmail}',
                           style: AppTextStyles.bodySmall.copyWith(color: Colors.grey.shade600),
                         ),
                       ],
                     ),
                   ),
                   
-                  if (widget.bookingData.whatYouNeed != null) ...[
+                  if (_bookingData.whatYouNeed != null) ...[
                     const SizedBox(height: 16),
                     _buildSectionHeader(Icons.info_outline, 'What You Need'),
                     Padding(
                       padding: const EdgeInsets.only(left: 28.0),
                       child: Text(
-                        widget.bookingData.whatYouNeed!,
+                        _bookingData.whatYouNeed!,
                         style: AppTextStyles.bodyMedium,
                       ),
                     ),
                   ],
 
-                  if (widget.bookingData.describeIssue != null) ...[
+                  if (_bookingData.describeIssue != null) ...[
                     const SizedBox(height: 16),
                     _buildSectionHeader(Icons.description, 'Issue Description'),
                     Padding(
                       padding: const EdgeInsets.only(left: 28.0),
                       child: Text(
-                        widget.bookingData.describeIssue!,
+                        _bookingData.describeIssue!,
                         style: AppTextStyles.bodyMedium,
                       ),
                     ),
                   ],
 
-                  if (widget.bookingData.uploadedImages != null && widget.bookingData.uploadedImages!.isNotEmpty) ...[
+                  if (_bookingData.uploadedImages != null && _bookingData.uploadedImages!.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     _buildSectionHeader(Icons.photo_library, 'Uploaded Photos'),
                     Padding(
@@ -178,7 +258,7 @@ class _LiftElevatorMechanicReviewScreenState extends State<LiftElevatorMechanicR
                         height: 60,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
-                          itemCount: widget.bookingData.uploadedImages!.length,
+                          itemCount: _bookingData.uploadedImages!.length,
                           itemBuilder: (context, index) {
                             return Container(
                               width: 60,
@@ -186,7 +266,7 @@ class _LiftElevatorMechanicReviewScreenState extends State<LiftElevatorMechanicR
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(8),
                                 image: DecorationImage(
-                                  image: FileImage(File(widget.bookingData.uploadedImages![index])),
+                                  image: FileImage(File(_bookingData.uploadedImages![index])),
                                   fit: BoxFit.cover,
                                 ),
                               ),
@@ -199,7 +279,7 @@ class _LiftElevatorMechanicReviewScreenState extends State<LiftElevatorMechanicR
 
                   const SizedBox(height: 32),
                   
-                  QuickServicesPriceSummary(bookingData: widget.bookingData),
+                  QuickServicesPriceSummary(bookingData: _bookingData),
                   const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.all(16),

@@ -1,5 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../widgets/quick_services_payment_selector.dart';
+import '../../../../rewards/presentation/providers/rewards_providers.dart';
+import '../../../../../core/constants/asset_paths.dart';
+
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../../core/constants/app_colors.dart';
@@ -9,15 +14,24 @@ import '../../widgets/quick_services_header.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_price_summary.dart';
 
-class BeautyWellnessReviewScreen extends StatefulWidget {
+class BeautyWellnessReviewScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
   const BeautyWellnessReviewScreen({super.key, required this.bookingData});
 
   @override
-  State<BeautyWellnessReviewScreen> createState() => _BeautyWellnessReviewScreenState();
+  ConsumerState<BeautyWellnessReviewScreen> createState() => _BeautyWellnessReviewScreenState();
 }
 
-class _BeautyWellnessReviewScreenState extends State<BeautyWellnessReviewScreen> {
+class _BeautyWellnessReviewScreenState extends ConsumerState<BeautyWellnessReviewScreen> {
+  late QuickServiceBookingData _bookingData;
+  bool _useCoins = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _bookingData = widget.bookingData;
+  }
+
   bool _useGoCoins = false;
 
   final Map<String, double> _treatmentPrices = {
@@ -36,7 +50,7 @@ class _BeautyWellnessReviewScreenState extends State<BeautyWellnessReviewScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final data = widget.bookingData;
+    final data = _bookingData;
 
     final String formattedDate = DateFormat('dd MMM yyyy').format(data.scheduleDate);
     final String formattedTime = data.scheduleTime.format(context);
@@ -160,7 +174,7 @@ class _BeautyWellnessReviewScreenState extends State<BeautyWellnessReviewScreen>
                               scrollDirection: Axis.horizontal,
                               itemCount: data.uploadedImages!.length,
                               itemBuilder: (context, index) {
-                                return QuickServicesPriceSummary(bookingData: widget.bookingData);
+                                return QuickServicesPriceSummary(bookingData: _bookingData);
                               },
                             ),
                           ),

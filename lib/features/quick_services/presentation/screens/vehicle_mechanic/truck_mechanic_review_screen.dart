@@ -1,5 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../widgets/quick_services_payment_selector.dart';
+import '../../../../rewards/presentation/providers/rewards_providers.dart';
+import '../../../../../core/constants/asset_paths.dart';
+
 import 'package:go_router/go_router.dart';
 import '../../../../../core/router/route_names.dart';
 import '../../../../../core/constants/app_colors.dart';
@@ -8,15 +13,24 @@ import '../../widgets/quick_services_header.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_price_summary.dart';
 
-class TruckMechanicReviewScreen extends StatefulWidget {
+class TruckMechanicReviewScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
   const TruckMechanicReviewScreen({super.key, required this.bookingData});
 
   @override
-  State<TruckMechanicReviewScreen> createState() => _TruckMechanicReviewScreenState();
+  ConsumerState<TruckMechanicReviewScreen> createState() => _TruckMechanicReviewScreenState();
 }
 
-class _TruckMechanicReviewScreenState extends State<TruckMechanicReviewScreen> {
+class _TruckMechanicReviewScreenState extends ConsumerState<TruckMechanicReviewScreen> {
+  late QuickServiceBookingData _bookingData;
+  bool _useCoins = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _bookingData = widget.bookingData;
+  }
+
   bool useCoins = false;
 
   @override
@@ -47,23 +61,23 @@ class _TruckMechanicReviewScreenState extends State<TruckMechanicReviewScreen> {
                           ],
                         ),
                         const Divider(height: 24),
-                        _buildDetailRow('Vehicle Type', widget.bookingData.truckType ?? '-'),
+                        _buildDetailRow('Vehicle Type', _bookingData.truckType ?? '-'),
                         const SizedBox(height: 8),
-                        _buildDetailRow('Make & Model', '${widget.bookingData.vehicleMake ?? ''} ${widget.bookingData.vehicleModel ?? ''}'.trim()),
-                        if (widget.bookingData.vehicleYear != null) ...[
+                        _buildDetailRow('Make & Model', '${_bookingData.vehicleMake ?? ''} ${_bookingData.vehicleModel ?? ''}'.trim()),
+                        if (_bookingData.vehicleYear != null) ...[
                           const SizedBox(height: 8),
-                          _buildDetailRow('Year', widget.bookingData.vehicleYear!),
+                          _buildDetailRow('Year', _bookingData.vehicleYear!),
                         ],
-                        if (widget.bookingData.vehicleRegistration != null) ...[
+                        if (_bookingData.vehicleRegistration != null) ...[
                           const SizedBox(height: 8),
-                          _buildDetailRow('Registration Number', widget.bookingData.vehicleRegistration!),
+                          _buildDetailRow('Registration Number', _bookingData.vehicleRegistration!),
                         ],
-                        if (widget.bookingData.mileage != null) ...[
+                        if (_bookingData.mileage != null) ...[
                           const SizedBox(height: 8),
-                          _buildDetailRow('Mileage', widget.bookingData.mileage!),
+                          _buildDetailRow('Mileage', _bookingData.mileage!),
                         ],
                         const SizedBox(height: 8),
-                        _buildDetailRow('Issue', widget.bookingData.vehicleIssue ?? '-'),
+                        _buildDetailRow('Issue', _bookingData.vehicleIssue ?? '-'),
                         const Divider(height: 24),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -72,7 +86,7 @@ class _TruckMechanicReviewScreenState extends State<TruckMechanicReviewScreen> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Schedule\n${_formatDate(widget.bookingData.scheduleDate)} • ${widget.bookingData.scheduleTime.format(context)}',
+                                'Schedule\n${_formatDate(_bookingData.scheduleDate)} • ${_bookingData.scheduleTime.format(context)}',
                                 style: const TextStyle(fontSize: 12),
                               ),
                             ),
@@ -86,7 +100,7 @@ class _TruckMechanicReviewScreenState extends State<TruckMechanicReviewScreen> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Service Address\n${widget.bookingData.location.address}',
+                                'Service Address\n${_bookingData.location.address}',
                                 style: const TextStyle(fontSize: 12),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
@@ -102,7 +116,7 @@ class _TruckMechanicReviewScreenState extends State<TruckMechanicReviewScreen> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Customer\n${widget.bookingData.userName}\n${widget.bookingData.userPhone} • ${widget.bookingData.userEmail}',
+                                'Customer\n${_bookingData.userName}\n${_bookingData.userPhone} • ${_bookingData.userEmail}',
                                 style: const TextStyle(fontSize: 12),
                               ),
                             ),
@@ -112,7 +126,7 @@ class _TruckMechanicReviewScreenState extends State<TruckMechanicReviewScreen> {
                     ),
                   ),
 
-                  if (widget.bookingData.whatYouNeed != null || widget.bookingData.describeIssue != null || (widget.bookingData.uploadedImages?.isNotEmpty ?? false)) ...[
+                  if (_bookingData.whatYouNeed != null || _bookingData.describeIssue != null || (_bookingData.uploadedImages?.isNotEmpty ?? false)) ...[
                     const SizedBox(height: 20),
                     Text('Issue Description', style: AppTextStyles.titleSmall),
                     const SizedBox(height: 10),
@@ -122,25 +136,25 @@ class _TruckMechanicReviewScreenState extends State<TruckMechanicReviewScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (widget.bookingData.whatYouNeed != null) ...[
+                          if (_bookingData.whatYouNeed != null) ...[
                             const Text('What You Need:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF324461))),
                             const SizedBox(height: 4),
-                            Text(widget.bookingData.whatYouNeed!, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                            if (widget.bookingData.describeIssue != null || (widget.bookingData.uploadedImages?.isNotEmpty ?? false)) const SizedBox(height: 12),
+                            Text(_bookingData.whatYouNeed!, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                            if (_bookingData.describeIssue != null || (_bookingData.uploadedImages?.isNotEmpty ?? false)) const SizedBox(height: 12),
                           ],
-                          if (widget.bookingData.describeIssue != null) ...[
+                          if (_bookingData.describeIssue != null) ...[
                             const Text('Issue Description:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF324461))),
                             const SizedBox(height: 4),
-                            Text(widget.bookingData.describeIssue!, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                            if (widget.bookingData.uploadedImages?.isNotEmpty ?? false) const SizedBox(height: 12),
+                            Text(_bookingData.describeIssue!, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                            if (_bookingData.uploadedImages?.isNotEmpty ?? false) const SizedBox(height: 12),
                           ],
-                          if (widget.bookingData.uploadedImages?.isNotEmpty ?? false) ...[
+                          if (_bookingData.uploadedImages?.isNotEmpty ?? false) ...[
                             const Text('Uploaded Photos:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF324461))),
                             const SizedBox(height: 8),
                             Wrap(
                               spacing: 8,
                               runSpacing: 8,
-                              children: widget.bookingData.uploadedImages!.map((path) {
+                              children: _bookingData.uploadedImages!.map((path) {
                                 return ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
                                   child: Image.file(
@@ -159,10 +173,10 @@ class _TruckMechanicReviewScreenState extends State<TruckMechanicReviewScreen> {
                   ],
                   const SizedBox(height: 20),
                   
-                  ...widget.bookingData.selectedAddons.map((addon) {
+                  ..._bookingData.selectedAddons.map((addon) {
                     return _buildPriceRow(addon.name, '€${addon.totalPrice.toStringAsFixed(2)}');
                   }).toList(),
-                  _buildPriceRow('Visit / Inspection Fee', '€${widget.bookingData.subtotal.toStringAsFixed(2)}'),
+                  _buildPriceRow('Visit / Inspection Fee', '€${_bookingData.subtotal.toStringAsFixed(2)}'),
                   _buildPriceRow('Estimated Labour', '€40 - €120', valueStyle: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGold)),
                   _buildPriceRow('Replacement Parts', 'Not Included'),
                   const Divider(),
@@ -233,7 +247,7 @@ class _TruckMechanicReviewScreenState extends State<TruckMechanicReviewScreen> {
             onPressed: () {
               context.pushNamed(
                 RouteNames.quickServicesTruckMechanicConfirmation, // generic confirmation screen
-                extra: widget.bookingData,
+                extra: _bookingData,
               );
             },
             style: ElevatedButton.styleFrom(

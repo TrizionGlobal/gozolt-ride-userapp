@@ -1,6 +1,7 @@
 import '../../../../core/config/quick_services_pricing_config.dart';
 import 'package:flutter/material.dart';
 import '../../../ride/data/models/location_data.dart';
+import '../../../ride/data/models/saved_payment_method.dart';
 
 class ServiceAddon {
   final String name;
@@ -98,6 +99,9 @@ class QuickServiceBookingData {
   final int? personnelCount;
   final String? expectedAttendance;
   final String? serviceArea;
+
+  final PaymentMethodType paymentMethodType;
+  final String? paymentMethodId;
   final String? dressPreference;
   final String? alcoholServed;
 
@@ -211,17 +215,20 @@ class QuickServiceBookingData {
     }
     return total;
   }
+      
+  bool get hasRateRange => maxHourlyRate != null && maxHourlyRate! > minHourlyRate;
 
   double get estimatedTotalMin => (totalEstimatedHours * minHourlyRate) + fixedAddonCosts + materialCost + subtotal;
   
   double get estimatedTotalMax => (maxHourlyRate != null) 
       ? ((totalEstimatedHours * maxHourlyRate!) + fixedAddonCosts + materialCost + subtotal)
       : estimatedTotalMin;
-      
-  bool get hasRateRange => maxHourlyRate != null && maxHourlyRate! > minHourlyRate;
 
   const QuickServiceBookingData({
     this.category = '',
+
+    this.paymentMethodType = PaymentMethodType.cash,
+    this.paymentMethodId,
     this.selectedService = '',
     required this.scheduleDate,
     required this.scheduleTime,
@@ -269,6 +276,7 @@ class QuickServiceBookingData {
     this.personnelCount,
     this.expectedAttendance,
     this.serviceArea,
+
     this.dressPreference,
     this.alcoholServed,
     this.deviceType,
@@ -391,6 +399,8 @@ class QuickServiceBookingData {
     int? personnelCount,
     String? expectedAttendance,
     String? serviceArea,
+    PaymentMethodType? paymentMethodType,
+    String? paymentMethodId,
     String? dressPreference,
     String? alcoholServed,
     String? deviceType,
@@ -512,6 +522,9 @@ class QuickServiceBookingData {
       personnelCount: personnelCount ?? this.personnelCount,
       expectedAttendance: expectedAttendance ?? this.expectedAttendance,
       serviceArea: serviceArea ?? this.serviceArea,
+      paymentMethodType: paymentMethodType ?? this.paymentMethodType,
+      paymentMethodId: paymentMethodId ?? this.paymentMethodId,
+
       dressPreference: dressPreference ?? this.dressPreference,
       alcoholServed: alcoholServed ?? this.alcoholServed,
       deviceType: deviceType ?? this.deviceType,

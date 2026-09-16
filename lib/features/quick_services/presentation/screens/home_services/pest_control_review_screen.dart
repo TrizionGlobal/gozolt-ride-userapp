@@ -1,5 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../widgets/quick_services_payment_selector.dart';
+import '../../../../rewards/presentation/providers/rewards_providers.dart';
+import '../../../../../core/constants/asset_paths.dart';
+
 import 'package:go_router/go_router.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/constants/app_text_styles.dart';
@@ -8,22 +13,31 @@ import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_price_summary.dart';
 import '../../widgets/quick_services_header.dart';
 
-class PestControlReviewScreen extends StatefulWidget {
+class PestControlReviewScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
 
   const PestControlReviewScreen({super.key, required this.bookingData});
 
   @override
-  State<PestControlReviewScreen> createState() => _PestControlReviewScreenState();
+  ConsumerState<PestControlReviewScreen> createState() => _PestControlReviewScreenState();
 }
 
-class _PestControlReviewScreenState extends State<PestControlReviewScreen> {
+class _PestControlReviewScreenState extends ConsumerState<PestControlReviewScreen> {
+  late QuickServiceBookingData _bookingData;
+  bool _useCoins = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _bookingData = widget.bookingData;
+  }
+
   bool _useGoCoins = true;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final booking = widget.bookingData;
+    final booking = _bookingData;
 
     final pestType = booking.pestType ?? 'Not selected';
     final propertyType = booking.propertyType ?? 'Not selected';
@@ -241,7 +255,72 @@ class _PestControlReviewScreenState extends State<PestControlReviewScreen> {
                 ),
               ],
             ),
-            child: SafeArea(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: QuickServicesPaymentSelector(
+              bookingData: _bookingData,
+              onChanged: (newData) {
+                setState(() {
+                  _bookingData = newData;
+                });
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Consumer(
+              builder: (context, ref, child) {
+                final rewardSummary = ref.watch(rewardSummaryProvider).value;
+                final int balance = rewardSummary?.currentPoints.toInt() ?? 0;
+                final int conversionRate = (ref.watch(rewardRulesProvider).value?.redemption.pointsToEurRatio ?? 400.0).toInt();
+                
+                final double maxEurValue = balance / conversionRate;
+                final double appliedEurValue = maxEurValue > _bookingData.estimatedTotalMax ? _bookingData.estimatedTotalMax : maxEurValue;
+                final int coinsUsed = (appliedEurValue * conversionRate).round();
+
+                return GestureDetector(
+                  onTap: () => setState(() => _useCoins = !_useCoins),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: _useCoins ? AppColors.primaryGold.withValues(alpha: 0.1) : Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: _useCoins ? AppColors.primaryGold : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark), width: _useCoins ? 1.5 : 0.5),
+                    ),
+                    child: Row(
+                      children: [
+                        Image.asset(AssetPaths.iconGoCoin, width: 24, height: 24),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('GO Coins: $balance available', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold)),
+                              Text('Use $coinsUsed GO Coins', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700])),
+                            ],
+                          ),
+                        ),
+                        const Spacer(),
+                        if (appliedEurValue > 0)
+                          Text('-€${appliedEurValue.toStringAsFixed(2)}', style: AppTextStyles.bodySmall.copyWith(color: Colors.green, fontWeight: FontWeight.bold)),
+                        const SizedBox(width: 8),
+                        Checkbox(
+                          value: _useCoins,
+                          onChanged: (val) => setState(() => _useCoins = val ?? false),
+                          activeColor: AppColors.primaryGold,
+                          checkColor: Colors.black,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+ SafeArea(
               top: false,
               child: ElevatedButton(
                 onPressed: () {
@@ -257,6 +336,8 @@ class _PestControlReviewScreenState extends State<PestControlReviewScreen> {
                     child: Text('Confirm Booking', style: AppTextStyles.button.copyWith(color: Colors.black)),
               ),
             ),
+          ],
+          ),
           ),
         ],
       ),

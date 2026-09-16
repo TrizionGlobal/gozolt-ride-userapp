@@ -1,5 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../widgets/quick_services_payment_selector.dart';
+import '../../../../rewards/presentation/providers/rewards_providers.dart';
+import '../../../../../core/constants/asset_paths.dart';
+
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../../core/constants/app_colors.dart';
@@ -9,16 +14,25 @@ import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_price_summary.dart';
 import '../../widgets/quick_services_header.dart';
 
-class MobileRepairReviewScreen extends StatefulWidget {
+class MobileRepairReviewScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
 
   const MobileRepairReviewScreen({super.key, required this.bookingData});
 
   @override
-  State<MobileRepairReviewScreen> createState() => _MobileRepairReviewScreenState();
+  ConsumerState<MobileRepairReviewScreen> createState() => _MobileRepairReviewScreenState();
 }
 
-class _MobileRepairReviewScreenState extends State<MobileRepairReviewScreen> {
+class _MobileRepairReviewScreenState extends ConsumerState<MobileRepairReviewScreen> {
+  late QuickServiceBookingData _bookingData;
+  bool _useCoins = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _bookingData = widget.bookingData;
+  }
+
   bool _useGoCoins = false;
 
   double get _coinDiscount => _useGoCoins ? 2.00 : 0.00;
@@ -58,21 +72,21 @@ class _MobileRepairReviewScreenState extends State<MobileRepairReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dateStr = DateFormat('dd MMM yyyy').format(widget.bookingData.scheduleDate);
-    final timeStr = widget.bookingData.scheduleTime.format(context);
-    final addressStr = widget.bookingData.location.address;
+    final dateStr = DateFormat('dd MMM yyyy').format(_bookingData.scheduleDate);
+    final timeStr = _bookingData.scheduleTime.format(context);
+    final addressStr = _bookingData.location.address;
 
-    final deviceBrand = widget.bookingData.deviceBrand ?? 'Smartphone';
-    final deviceModel = widget.bookingData.deviceModel ?? '';
+    final deviceBrand = _bookingData.deviceBrand ?? 'Smartphone';
+    final deviceModel = _bookingData.deviceModel ?? '';
     final fullDeviceName = deviceModel.isNotEmpty ? '$deviceBrand $deviceModel' : deviceBrand;
-    final deviceType = widget.bookingData.deviceType ?? 'Smartphone';
-    final operatingSystem = widget.bookingData.operatingSystem ?? 'Android';
-    final issue = widget.bookingData.mobileIssue ?? 'General Issue';
-    final deviceCount = widget.bookingData.deviceCount ?? 1;
+    final deviceType = _bookingData.deviceType ?? 'Smartphone';
+    final operatingSystem = _bookingData.operatingSystem ?? 'Android';
+    final issue = _bookingData.mobileIssue ?? 'General Issue';
+    final deviceCount = _bookingData.deviceCount ?? 1;
 
-    final whatYouNeed = widget.bookingData.whatYouNeed;
-    final describeIssue = widget.bookingData.describeIssue;
-    final uploadedImages = widget.bookingData.uploadedImages;
+    final whatYouNeed = _bookingData.whatYouNeed;
+    final describeIssue = _bookingData.describeIssue;
+    final uploadedImages = _bookingData.uploadedImages;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -116,7 +130,7 @@ class _MobileRepairReviewScreenState extends State<MobileRepairReviewScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                widget.bookingData.selectedServiceTitle ?? 'Mobile Repair at Home',
+                                _bookingData.selectedServiceTitle ?? 'Mobile Repair at Home',
                                 style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -194,7 +208,7 @@ class _MobileRepairReviewScreenState extends State<MobileRepairReviewScreen> {
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'Customer: ${widget.bookingData.userName}',
+                                'Customer: ${_bookingData.userName}',
                                 style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -286,7 +300,7 @@ class _MobileRepairReviewScreenState extends State<MobileRepairReviewScreen> {
                   const SizedBox(height: 16),
 
                   // Price Summary Card
-                  QuickServicesPriceSummary(bookingData: widget.bookingData),
+                  QuickServicesPriceSummary(bookingData: _bookingData),
 
                   const SizedBox(height: 16),
 
@@ -377,7 +391,7 @@ class _MobileRepairReviewScreenState extends State<MobileRepairReviewScreen> {
                     onPressed: () {
                       context.pushNamed(
                         RouteNames.quickServicesMobileRepairConfirmation,
-                        extra: widget.bookingData,
+                        extra: _bookingData,
                       );
                     },
                     style: ElevatedButton.styleFrom(

@@ -1,5 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../widgets/quick_services_payment_selector.dart';
+import '../../../../rewards/presentation/providers/rewards_providers.dart';
+import '../../../../../core/constants/asset_paths.dart';
+
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../../core/constants/app_colors.dart';
@@ -9,21 +14,30 @@ import '../../widgets/quick_services_header.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_price_summary.dart';
 
-class LaundryReviewScreen extends StatefulWidget {
+class LaundryReviewScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
   const LaundryReviewScreen({super.key, required this.bookingData});
 
   @override
-  State<LaundryReviewScreen> createState() => _LaundryReviewScreenState();
+  ConsumerState<LaundryReviewScreen> createState() => _LaundryReviewScreenState();
 }
 
-class _LaundryReviewScreenState extends State<LaundryReviewScreen> {
+class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
+  late QuickServiceBookingData _bookingData;
+  bool _useCoins = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _bookingData = widget.bookingData;
+  }
+
   bool _useGoCoins = false;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final data = widget.bookingData;
+    final data = _bookingData;
 
     final double rawSubtotal = data.subtotal;
     final double goCoinsDiscount = _useGoCoins ? 2.0 : 0.0;
@@ -399,7 +413,7 @@ class _LaundryReviewScreenState extends State<LaundryReviewScreen> {
                   // Confirm Booking Button
                   ElevatedButton(
                     onPressed: () {
-                      final updatedData = widget.bookingData.copyWith(
+                      final updatedData = _bookingData.copyWith(
                         subtotal: estimatedTotal,
                       );
 

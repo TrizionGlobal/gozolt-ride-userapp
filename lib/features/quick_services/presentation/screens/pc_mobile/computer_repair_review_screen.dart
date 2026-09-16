@@ -1,5 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../widgets/quick_services_payment_selector.dart';
+import '../../../../rewards/presentation/providers/rewards_providers.dart';
+import '../../../../../core/constants/asset_paths.dart';
+
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../../core/constants/app_colors.dart';
@@ -9,16 +14,25 @@ import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_price_summary.dart';
 import '../../widgets/quick_services_header.dart';
 
-class ComputerRepairReviewScreen extends StatefulWidget {
+class ComputerRepairReviewScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
 
   const ComputerRepairReviewScreen({super.key, required this.bookingData});
 
   @override
-  State<ComputerRepairReviewScreen> createState() => _ComputerRepairReviewScreenState();
+  ConsumerState<ComputerRepairReviewScreen> createState() => _ComputerRepairReviewScreenState();
 }
 
-class _ComputerRepairReviewScreenState extends State<ComputerRepairReviewScreen> {
+class _ComputerRepairReviewScreenState extends ConsumerState<ComputerRepairReviewScreen> {
+  late QuickServiceBookingData _bookingData;
+  bool _useCoins = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _bookingData = widget.bookingData;
+  }
+
   bool _useGoCoins = false;
 
   double get _coinDiscount => _useGoCoins ? 2.00 : 0.00;
@@ -58,21 +72,21 @@ class _ComputerRepairReviewScreenState extends State<ComputerRepairReviewScreen>
 
   @override
   Widget build(BuildContext context) {
-    final dateStr = DateFormat('dd MMM yyyy').format(widget.bookingData.scheduleDate);
-    final timeStr = widget.bookingData.scheduleTime.format(context);
-    final addressStr = widget.bookingData.location.address;
+    final dateStr = DateFormat('dd MMM yyyy').format(_bookingData.scheduleDate);
+    final timeStr = _bookingData.scheduleTime.format(context);
+    final addressStr = _bookingData.location.address;
 
-    final deviceType = widget.bookingData.computerDeviceType ?? 'Laptop';
-    final deviceBrand = widget.bookingData.computerBrand ?? 'Dell';
-    final deviceModel = widget.bookingData.computerModel ?? 'Inspiron 15';
-    final os = widget.bookingData.computerOS ?? 'Windows';
-    final issue = widget.bookingData.computerIssue ?? 'Battery / Charging';
+    final deviceType = _bookingData.computerDeviceType ?? 'Laptop';
+    final deviceBrand = _bookingData.computerBrand ?? 'Dell';
+    final deviceModel = _bookingData.computerModel ?? 'Inspiron 15';
+    final os = _bookingData.computerOS ?? 'Windows';
+    final issue = _bookingData.computerIssue ?? 'Battery / Charging';
 
     final fullDeviceSpec = '$deviceType - $deviceBrand $deviceModel - $os';
 
-    final whatYouNeed = widget.bookingData.whatYouNeed;
-    final describeIssue = widget.bookingData.describeIssue;
-    final uploadedImages = widget.bookingData.uploadedImages;
+    final whatYouNeed = _bookingData.whatYouNeed;
+    final describeIssue = _bookingData.describeIssue;
+    final uploadedImages = _bookingData.uploadedImages;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -136,7 +150,7 @@ class _ComputerRepairReviewScreenState extends State<ComputerRepairReviewScreen>
                         _buildDetailRow('Issue:', issue),
                         _buildDetailRow('Date & Time:', '$dateStr • $timeStr'),
                         _buildDetailRow('Location:', addressStr),
-                        _buildDetailRow('Customer:', widget.bookingData.userName),
+                        _buildDetailRow('Customer:', _bookingData.userName),
                       ],
                     ),
                   ),
@@ -244,7 +258,7 @@ class _ComputerRepairReviewScreenState extends State<ComputerRepairReviewScreen>
                     const SizedBox(height: 16),
 
                   // Price Summary Card
-                  QuickServicesPriceSummary(bookingData: widget.bookingData, note: 'Final quote provided after inspection'),
+                  QuickServicesPriceSummary(bookingData: _bookingData, note: 'Final quote provided after inspection'),
 
                   const SizedBox(height: 16),
 
@@ -335,7 +349,7 @@ class _ComputerRepairReviewScreenState extends State<ComputerRepairReviewScreen>
                     onPressed: () {
                       context.pushNamed(
                         RouteNames.quickServicesComputerRepairConfirmation,
-                        extra: widget.bookingData,
+                        extra: _bookingData,
                       );
                     },
                     style: ElevatedButton.styleFrom(

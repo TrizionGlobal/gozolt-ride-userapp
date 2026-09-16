@@ -1,5 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../widgets/quick_services_payment_selector.dart';
+import '../../../../rewards/presentation/providers/rewards_providers.dart';
+import '../../../../../core/constants/asset_paths.dart';
+
 import 'package:go_router/go_router.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/constants/app_text_styles.dart';
@@ -8,22 +13,31 @@ import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_price_summary.dart';
 import '../../widgets/quick_services_header.dart';
 
-class GardeningReviewScreen extends StatefulWidget {
+class GardeningReviewScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
 
   const GardeningReviewScreen({super.key, required this.bookingData});
 
   @override
-  State<GardeningReviewScreen> createState() => _GardeningReviewScreenState();
+  ConsumerState<GardeningReviewScreen> createState() => _GardeningReviewScreenState();
 }
 
-class _GardeningReviewScreenState extends State<GardeningReviewScreen> {
+class _GardeningReviewScreenState extends ConsumerState<GardeningReviewScreen> {
+  late QuickServiceBookingData _bookingData;
+  bool _useCoins = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _bookingData = widget.bookingData;
+  }
+
   bool _useGoCoins = true;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final booking = widget.bookingData;
+    final booking = _bookingData;
 
     final serviceArea = booking.gardeningServiceArea ?? 'Not selected';
     final approxArea = booking.gardeningApproximateArea ?? 'Not selected';
@@ -255,7 +269,7 @@ class _GardeningReviewScreenState extends State<GardeningReviewScreen> {
                   const SizedBox(height: 20),
 
                   // Price Summary Card
-                  QuickServicesPriceSummary(bookingData: widget.bookingData),
+                  QuickServicesPriceSummary(bookingData: _bookingData),
                   const SizedBox(height: 16),
 
                   // GO Coins Banner
@@ -314,7 +328,7 @@ class _GardeningReviewScreenState extends State<GardeningReviewScreen> {
                     onPressed: () {
                       context.pushNamed(
                         RouteNames.quickServicesGardeningConfirmation,
-                        extra: widget.bookingData,
+                        extra: _bookingData,
                       );
                     },
                     style: ElevatedButton.styleFrom(

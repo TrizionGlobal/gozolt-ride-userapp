@@ -1,5 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../widgets/quick_services_payment_selector.dart';
+import '../../../../rewards/presentation/providers/rewards_providers.dart';
+import '../../../../../core/constants/asset_paths.dart';
+
 import 'package:go_router/go_router.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/constants/app_text_styles.dart';
@@ -8,16 +13,25 @@ import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_price_summary.dart';
 import '../../widgets/quick_services_header.dart';
 
-class OtherServicesReviewScreen extends StatefulWidget {
+class OtherServicesReviewScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
 
   const OtherServicesReviewScreen({super.key, required this.bookingData});
 
   @override
-  State<OtherServicesReviewScreen> createState() => _OtherServicesReviewScreenState();
+  ConsumerState<OtherServicesReviewScreen> createState() => _OtherServicesReviewScreenState();
 }
 
-class _OtherServicesReviewScreenState extends State<OtherServicesReviewScreen> {
+class _OtherServicesReviewScreenState extends ConsumerState<OtherServicesReviewScreen> {
+  late QuickServiceBookingData _bookingData;
+  bool _useCoins = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _bookingData = widget.bookingData;
+  }
+
   bool useCoins = false;
 
   String _formatDate(DateTime date) {
@@ -27,7 +41,7 @@ class _OtherServicesReviewScreenState extends State<OtherServicesReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bookingData = widget.bookingData;
+    final bookingData = _bookingData;
     
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -262,13 +276,78 @@ class _OtherServicesReviewScreenState extends State<OtherServicesReviewScreen> {
                   ],
 
                   // Pricing Details Card
-                  QuickServicesPriceSummary(bookingData: widget.bookingData),
+                  QuickServicesPriceSummary(bookingData: _bookingData),
                 ],
               ),
             ),
           ),
           
           // Bottom Bar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: QuickServicesPaymentSelector(
+              bookingData: _bookingData,
+              onChanged: (newData) {
+                setState(() {
+                  _bookingData = newData;
+                });
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Consumer(
+              builder: (context, ref, child) {
+                final rewardSummary = ref.watch(rewardSummaryProvider).value;
+                final int balance = rewardSummary?.currentPoints.toInt() ?? 0;
+                final int conversionRate = (ref.watch(rewardRulesProvider).value?.redemption.pointsToEurRatio ?? 400.0).toInt();
+                
+                final double maxEurValue = balance / conversionRate;
+                final double appliedEurValue = maxEurValue > _bookingData.estimatedTotalMax ? _bookingData.estimatedTotalMax : maxEurValue;
+                final int coinsUsed = (appliedEurValue * conversionRate).round();
+
+                return GestureDetector(
+                  onTap: () => setState(() => _useCoins = !_useCoins),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: _useCoins ? AppColors.primaryGold.withValues(alpha: 0.1) : Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: _useCoins ? AppColors.primaryGold : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark), width: _useCoins ? 1.5 : 0.5),
+                    ),
+                    child: Row(
+                      children: [
+                        Image.asset(AssetPaths.iconGoCoin, width: 24, height: 24),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('GO Coins: $balance available', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold)),
+                              Text('Use $coinsUsed GO Coins', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700])),
+                            ],
+                          ),
+                        ),
+                        const Spacer(),
+                        if (appliedEurValue > 0)
+                          Text('-€${appliedEurValue.toStringAsFixed(2)}', style: AppTextStyles.bodySmall.copyWith(color: Colors.green, fontWeight: FontWeight.bold)),
+                        const SizedBox(width: 8),
+                        Checkbox(
+                          value: _useCoins,
+                          onChanged: (val) => setState(() => _useCoins = val ?? false),
+                          activeColor: AppColors.primaryGold,
+                          checkColor: Colors.black,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+
           SafeArea(
             top: false,
             child: Padding(

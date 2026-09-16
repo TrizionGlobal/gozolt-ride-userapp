@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../widgets/quick_services_payment_selector.dart';
+import '../../../../rewards/presentation/providers/rewards_providers.dart';
+import '../../../../../core/constants/asset_paths.dart';
+
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../../core/constants/app_colors.dart';
@@ -8,16 +13,25 @@ import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_price_summary.dart';
 import '../../widgets/quick_services_header.dart';
 
-class SecurityPersonnelReviewScreen extends StatefulWidget {
+class SecurityPersonnelReviewScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
 
   const SecurityPersonnelReviewScreen({super.key, required this.bookingData});
 
   @override
-  State<SecurityPersonnelReviewScreen> createState() => _SecurityPersonnelReviewScreenState();
+  ConsumerState<SecurityPersonnelReviewScreen> createState() => _SecurityPersonnelReviewScreenState();
 }
 
-class _SecurityPersonnelReviewScreenState extends State<SecurityPersonnelReviewScreen> {
+class _SecurityPersonnelReviewScreenState extends ConsumerState<SecurityPersonnelReviewScreen> {
+  late QuickServiceBookingData _bookingData;
+  bool _useCoins = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _bookingData = widget.bookingData;
+  }
+
   bool _useGoCoins = false;
 
   double get _coinDiscount => _useGoCoins ? 2.00 : 0.00;
@@ -57,19 +71,19 @@ class _SecurityPersonnelReviewScreenState extends State<SecurityPersonnelReviewS
 
   @override
   Widget build(BuildContext context) {
-    final dateStr = DateFormat('dd MMM yyyy').format(widget.bookingData.scheduleDate);
-    final timeStr = widget.bookingData.scheduleTime.format(context);
-    final addressStr = widget.bookingData.location.address;
+    final dateStr = DateFormat('dd MMM yyyy').format(_bookingData.scheduleDate);
+    final timeStr = _bookingData.scheduleTime.format(context);
+    final addressStr = _bookingData.location.address;
 
-    final serviceName = widget.bookingData.securityService ?? 'Event Security';
-    final venueName = widget.bookingData.venueType ?? 'Corporate Event';
-    final personnelCount = widget.bookingData.personnelCount ?? 2;
-    final startTime = widget.bookingData.dutyStartTime ?? '18:00';
-    final endTime = widget.bookingData.dutyEndTime ?? '23:00';
-    final area = widget.bookingData.serviceArea ?? 'Indoor';
-    final dress = widget.bookingData.dressPreference ?? 'Security Uniform';
-    final alcohol = widget.bookingData.alcoholServed ?? 'Yes';
-    final dutyInstructions = widget.bookingData.describeIssue ?? '';
+    final serviceName = _bookingData.securityService ?? 'Event Security';
+    final venueName = _bookingData.venueType ?? 'Corporate Event';
+    final personnelCount = _bookingData.personnelCount ?? 2;
+    final startTime = _bookingData.dutyStartTime ?? '18:00';
+    final endTime = _bookingData.dutyEndTime ?? '23:00';
+    final area = _bookingData.serviceArea ?? 'Indoor';
+    final dress = _bookingData.dressPreference ?? 'Security Uniform';
+    final alcohol = _bookingData.alcoholServed ?? 'Yes';
+    final dutyInstructions = _bookingData.describeIssue ?? '';
 
     final durationHours = _calculateHours(startTime, endTime);
     final (minRate, maxRate) = _getHourlyRateRange(serviceName);
@@ -196,7 +210,7 @@ class _SecurityPersonnelReviewScreenState extends State<SecurityPersonnelReviewS
                             const Icon(Icons.person_outline, size: 20, color: Colors.grey),
                             const SizedBox(width: 10),
                             Text(
-                              'Customer: ${widget.bookingData.userName}',
+                              'Customer: ${_bookingData.userName}',
                               style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -223,23 +237,23 @@ class _SecurityPersonnelReviewScreenState extends State<SecurityPersonnelReviewS
                         ],
                         const Divider(height: 24),
                           
-                          if (widget.bookingData.whatYouNeed != null && widget.bookingData.whatYouNeed!.isNotEmpty) ...[
+                          if (_bookingData.whatYouNeed != null && _bookingData.whatYouNeed!.isNotEmpty) ...[
                             Text('Tell us what you need', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: Colors.grey)),
                             const SizedBox(height: 4),
-                            Text(widget.bookingData.whatYouNeed!, style: AppTextStyles.bodyMedium),
+                            Text(_bookingData.whatYouNeed!, style: AppTextStyles.bodyMedium),
                             const SizedBox(height: 16),
                           ],
 
-                          if (widget.bookingData.uploadedImages != null &&
-                            widget.bookingData.uploadedImages!.isNotEmpty) ...[
+                          if (_bookingData.uploadedImages != null &&
+                            _bookingData.uploadedImages!.isNotEmpty) ...[
                           const SizedBox(height: 12),
                           SizedBox(
                             height: 60,
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
-                              itemCount: widget.bookingData.uploadedImages!.length,
+                              itemCount: _bookingData.uploadedImages!.length,
                               itemBuilder: (context, index) {
-                                final imgPath = widget.bookingData.uploadedImages![index];
+                                final imgPath = _bookingData.uploadedImages![index];
                                 return Container(
                                   margin: const EdgeInsets.only(right: 8),
                                   width: 60,
@@ -267,7 +281,7 @@ class _SecurityPersonnelReviewScreenState extends State<SecurityPersonnelReviewS
                   const SizedBox(height: 16),
 
                   // Price Summary Card
-                  QuickServicesPriceSummary(bookingData: widget.bookingData),
+                  QuickServicesPriceSummary(bookingData: _bookingData),
 
                   const SizedBox(height: 16),
 
@@ -358,7 +372,7 @@ class _SecurityPersonnelReviewScreenState extends State<SecurityPersonnelReviewS
                     onPressed: () {
                       context.pushNamed(
                         RouteNames.quickServicesSecurityPersonnelConfirmation,
-                        extra: widget.bookingData,
+                        extra: _bookingData,
                       );
                     },
                     style: ElevatedButton.styleFrom(

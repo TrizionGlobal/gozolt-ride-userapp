@@ -1,5 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../widgets/quick_services_payment_selector.dart';
+import '../../../../rewards/presentation/providers/rewards_providers.dart';
+import '../../../../../core/constants/asset_paths.dart';
+
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../../../core/constants/app_colors.dart';
@@ -9,16 +14,25 @@ import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_price_summary.dart';
 import '../../widgets/quick_services_header.dart';
 
-class PrinterScannerReviewScreen extends StatefulWidget {
+class PrinterScannerReviewScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
 
   const PrinterScannerReviewScreen({super.key, required this.bookingData});
 
   @override
-  State<PrinterScannerReviewScreen> createState() => _PrinterScannerReviewScreenState();
+  ConsumerState<PrinterScannerReviewScreen> createState() => _PrinterScannerReviewScreenState();
 }
 
-class _PrinterScannerReviewScreenState extends State<PrinterScannerReviewScreen> {
+class _PrinterScannerReviewScreenState extends ConsumerState<PrinterScannerReviewScreen> {
+  late QuickServiceBookingData _bookingData;
+  bool _useCoins = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _bookingData = widget.bookingData;
+  }
+
   bool _useGoCoins = false;
 
   double get _coinDiscount => _useGoCoins ? 2.00 : 0.00;
@@ -58,15 +72,15 @@ class _PrinterScannerReviewScreenState extends State<PrinterScannerReviewScreen>
 
   @override
   Widget build(BuildContext context) {
-    final dateStr = DateFormat('dd MMM yyyy').format(widget.bookingData.scheduleDate);
-    final timeStr = widget.bookingData.scheduleTime.format(context);
-    final addressStr = widget.bookingData.location.address;
+    final dateStr = DateFormat('dd MMM yyyy').format(_bookingData.scheduleDate);
+    final timeStr = _bookingData.scheduleTime.format(context);
+    final addressStr = _bookingData.location.address;
 
-    final deviceType = widget.bookingData.printerDeviceType ?? 'Printer';
-    final deviceBrand = widget.bookingData.printerBrand ?? '';
-    final deviceModel = widget.bookingData.printerModel ?? '';
-    final connMethod = widget.bookingData.printerConnectionMethod ?? '';
-    final issues = widget.bookingData.printerIssues?.join(', ') ?? '';
+    final deviceType = _bookingData.printerDeviceType ?? 'Printer';
+    final deviceBrand = _bookingData.printerBrand ?? '';
+    final deviceModel = _bookingData.printerModel ?? '';
+    final connMethod = _bookingData.printerConnectionMethod ?? '';
+    final issues = _bookingData.printerIssues?.join(', ') ?? '';
 
     String fullDeviceSpec = deviceType;
     if (deviceBrand.isNotEmpty || deviceModel.isNotEmpty) {
@@ -76,9 +90,9 @@ class _PrinterScannerReviewScreenState extends State<PrinterScannerReviewScreen>
       fullDeviceSpec += ' ($connMethod)';
     }
 
-    final whatYouNeed = widget.bookingData.whatYouNeed;
-    final describeIssue = widget.bookingData.describeIssue;
-    final uploadedImages = widget.bookingData.uploadedImages;
+    final whatYouNeed = _bookingData.whatYouNeed;
+    final describeIssue = _bookingData.describeIssue;
+    final uploadedImages = _bookingData.uploadedImages;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -125,7 +139,7 @@ class _PrinterScannerReviewScreenState extends State<PrinterScannerReviewScreen>
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    widget.bookingData.selectedServiceTitle ?? 'Printer & Scanner Service',
+                                    _bookingData.selectedServiceTitle ?? 'Printer & Scanner Service',
                                     style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
                                   ),
                                   Text(
@@ -140,14 +154,14 @@ class _PrinterScannerReviewScreenState extends State<PrinterScannerReviewScreen>
                         const Divider(height: 24),
 
                         if (issues.isNotEmpty) _buildDetailRow('Issue:', issues),
-                        if (widget.bookingData.printerDeviceCount != null && widget.bookingData.printerDeviceCount! > 1)
-                          _buildDetailRow('Devices:', '${widget.bookingData.printerDeviceCount}'),
-                        if (widget.bookingData.printerErrorCode != null && widget.bookingData.printerErrorCode!.isNotEmpty)
-                          _buildDetailRow('Error Code:', widget.bookingData.printerErrorCode!),
+                        if (_bookingData.printerDeviceCount != null && _bookingData.printerDeviceCount! > 1)
+                          _buildDetailRow('Devices:', '${_bookingData.printerDeviceCount}'),
+                        if (_bookingData.printerErrorCode != null && _bookingData.printerErrorCode!.isNotEmpty)
+                          _buildDetailRow('Error Code:', _bookingData.printerErrorCode!),
                         
                         _buildDetailRow('Date & Time:', '$dateStr • $timeStr'),
                         _buildDetailRow('Location:', addressStr),
-                        _buildDetailRow('Customer:', widget.bookingData.userName),
+                        _buildDetailRow('Customer:', _bookingData.userName),
                       ],
                     ),
                   ),
@@ -255,7 +269,7 @@ class _PrinterScannerReviewScreenState extends State<PrinterScannerReviewScreen>
                     const SizedBox(height: 16),
 
                   // Price Summary Card
-                  QuickServicesPriceSummary(bookingData: widget.bookingData, note: 'Final quote provided after inspection'),
+                  QuickServicesPriceSummary(bookingData: _bookingData, note: 'Final quote provided after inspection'),
 
                   const SizedBox(height: 16),
 
@@ -319,7 +333,7 @@ class _PrinterScannerReviewScreenState extends State<PrinterScannerReviewScreen>
                     onPressed: () {
                       context.pushNamed(
                         RouteNames.quickServicesPrinterScannerConfirmation,
-                        extra: widget.bookingData,
+                        extra: _bookingData,
                       );
                     },
                     style: ElevatedButton.styleFrom(
