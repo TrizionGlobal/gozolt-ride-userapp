@@ -204,7 +204,7 @@ class _TruckMechanicReviewScreenState extends ConsumerState<TruckMechanicReviewS
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
           child: ElevatedButton(
             onPressed: () {
                   final finalTotal = _bookingData.hasRateRange

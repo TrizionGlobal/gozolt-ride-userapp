@@ -269,7 +269,7 @@ class _HomeElectricReviewScreenState extends ConsumerState<HomeElectricReviewScr
             SafeArea(
               top: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(

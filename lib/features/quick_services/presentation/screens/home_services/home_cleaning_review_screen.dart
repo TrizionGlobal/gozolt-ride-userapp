@@ -160,7 +160,7 @@ class _HomeCleaningReviewScreenState extends ConsumerState<HomeCleaningReviewScr
           SafeArea(
             top: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
               child: ElevatedButton(
                 onPressed: () {
                   final finalTotal = _bookingData.hasRateRange

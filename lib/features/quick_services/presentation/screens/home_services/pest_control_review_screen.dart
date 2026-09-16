@@ -245,17 +245,7 @@ class _PestControlReviewScreenState extends ConsumerState<PestControlReviewScree
           
           // Bottom Bar
           Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.grey[900] : Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -4),
-                ),
-              ],
-            ),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
             child: Column(mainAxisSize: MainAxisSize.min, children: [
           
           const SizedBox(height: 16),
