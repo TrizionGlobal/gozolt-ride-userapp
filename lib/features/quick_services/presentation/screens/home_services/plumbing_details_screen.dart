@@ -96,6 +96,7 @@ class _PlumbingDetailsScreenState extends State<PlumbingDetailsScreen> {
         children: [
           const QuickServicesHeader(
             title: 'Service Requirements',
+            subtitle: 'Plumbing Repair',
           ),
           Expanded(
             child: SingleChildScrollView(

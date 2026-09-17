@@ -129,7 +129,8 @@ class _CommercialLaundryDetailsScreenState extends State<CommercialLaundryDetail
       body: Column(
         children: [
           const QuickServicesHeader(
-            title: 'Commercial Laundry\nService Requirements',
+            title: 'Service Requirements',
+            subtitle: 'Commercial Laundry',
           ),
           Expanded(
             child: SingleChildScrollView(

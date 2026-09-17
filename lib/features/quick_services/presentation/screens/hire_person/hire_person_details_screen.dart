@@ -113,6 +113,7 @@ class _HirePersonDetailsScreenState extends State<HirePersonDetailsScreen> {
         children: [
           const QuickServicesHeader(
             title: 'Service Requirements',
+            subtitle: 'Hire Person',
           ),
           Expanded(
             child: SingleChildScrollView(

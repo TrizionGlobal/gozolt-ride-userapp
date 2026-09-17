@@ -73,6 +73,7 @@ class _TruckMechanicDetailsScreenState extends State<TruckMechanicDetailsScreen>
         children: [
           const QuickServicesHeader(
             title: 'Service Requirements',
+            subtitle: 'Truck Mechanic',
           ),
           Expanded(
             child: SingleChildScrollView(

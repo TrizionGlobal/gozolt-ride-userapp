@@ -219,6 +219,7 @@ class _LiftElevatorMechanicDetailsScreenState extends State<LiftElevatorMechanic
         children: [
           const QuickServicesHeader(
             title: 'Service Requirements',
+            subtitle: 'Lift/Elevator Mechanic',
           ),
           Expanded(
             child: SingleChildScrollView(

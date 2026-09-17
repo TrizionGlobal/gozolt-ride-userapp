@@ -109,6 +109,7 @@ class _ApplianceRepairDetailsScreenState extends State<ApplianceRepairDetailsScr
         children: [
           const QuickServicesHeader(
             title: 'Service Requirements',
+            subtitle: 'Appliance Repair',
           ),
           Expanded(
             child: SingleChildScrollView(

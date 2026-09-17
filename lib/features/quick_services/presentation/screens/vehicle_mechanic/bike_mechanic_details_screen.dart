@@ -70,6 +70,7 @@ class _BikeMechanicDetailsScreenState extends State<BikeMechanicDetailsScreen> {
         children: [
           const QuickServicesHeader(
             title: 'Service Requirements',
+            subtitle: 'Bike Mechanic',
           ),
           Expanded(
             child: SingleChildScrollView(

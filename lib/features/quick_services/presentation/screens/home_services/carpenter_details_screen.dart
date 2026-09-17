@@ -99,6 +99,7 @@ class _CarpenterDetailsScreenState extends State<CarpenterDetailsScreen> {
         children: [
           const QuickServicesHeader(
             title: 'Service Requirements',
+            subtitle: 'Carpenter',
           ),
           Expanded(
             child: SingleChildScrollView(

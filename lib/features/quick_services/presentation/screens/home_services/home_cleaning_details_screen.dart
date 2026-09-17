@@ -110,6 +110,7 @@ class _HomeCleaningDetailsScreenState extends State<HomeCleaningDetailsScreen> {
         children: [
           const QuickServicesHeader(
             title: 'Service Requirements',
+            subtitle: 'Home Cleaning',
           ),
           Expanded(
             child: SingleChildScrollView(

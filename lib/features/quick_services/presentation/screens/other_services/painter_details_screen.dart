@@ -110,6 +110,7 @@ class _PainterDetailsScreenState extends State<PainterDetailsScreen> {
         children: [
           const QuickServicesHeader(
             title: 'Service Requirements',
+            subtitle: 'Painter',
           ),
           Expanded(
             child: SingleChildScrollView(

@@ -143,20 +143,9 @@ class _CarWashDetailsScreenState extends State<CarWashDetailsScreen> {
         children: [
           const QuickServicesHeader(
             title: 'Vehicle & Wash Details',
+            subtitle: 'Car Wash',
           ),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            color: isDark ? Colors.grey[900] : const Color(0xFFFFF8E1),
-            child: Text(
-              'Car Wash',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodyMedium.copyWith(
-                fontWeight: FontWeight.bold,
-                color: isDark ? AppColors.primaryGold : const Color(0xFFF57F17),
-              ),
-            ),
-          ),
+            
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),

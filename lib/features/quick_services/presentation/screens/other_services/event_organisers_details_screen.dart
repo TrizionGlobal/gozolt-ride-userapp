@@ -80,6 +80,7 @@ class _EventOrganisersDetailsScreenState extends State<EventOrganisersDetailsScr
         children: [
           const QuickServicesHeader(
               title: 'Service Requirements',
+            subtitle: 'Event Organisers',
             ),
             Expanded(
               child: SingleChildScrollView(

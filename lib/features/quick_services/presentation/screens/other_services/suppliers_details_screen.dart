@@ -87,6 +87,7 @@ class _SuppliersDetailsScreenState extends State<SuppliersDetailsScreen> {
         children: [
           const QuickServicesHeader(
             title: 'Service Requirements',
+            subtitle: 'Suppliers',
           ),
           Expanded(
             child: SingleChildScrollView(

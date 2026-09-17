@@ -183,20 +183,9 @@ class _ComputerRepairDetailsScreenState extends State<ComputerRepairDetailsScree
         children: [
           const QuickServicesHeader(
             title: 'Service Requirements',
+            subtitle: 'Computer & Laptop Repair',
           ),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            color: isDark ? Colors.grey[900] : const Color(0xFFFFF8E1),
-            child: Text(
-              'Computer & Laptop Repair',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodyMedium.copyWith(
-                fontWeight: FontWeight.bold,
-                color: isDark ? AppColors.primaryGold : const Color(0xFFF57F17),
-              ),
-            ),
-          ),
+            
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),

@@ -33,7 +33,7 @@ class _GardeningReviewScreenState extends ConsumerState<GardeningReviewScreen> {
     _bookingData = widget.bookingData;
   }
 
-  bool _useGoCoins = true;
+  bool _useGoCoins = false;
 
   @override
   Widget build(BuildContext context) {

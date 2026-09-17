@@ -33,7 +33,7 @@ class _PestControlReviewScreenState extends ConsumerState<PestControlReviewScree
     _bookingData = widget.bookingData;
   }
 
-  bool _useGoCoins = true;
+  bool _useGoCoins = false;
 
   @override
   Widget build(BuildContext context) {

@@ -146,6 +146,7 @@ class _HandymanDetailsScreenState extends State<HandymanDetailsScreen> {
         children: [
           const QuickServicesHeader(
             title: 'Service Requirements',
+            subtitle: 'Handyman',
           ),
           Expanded(
             child: SingleChildScrollView(

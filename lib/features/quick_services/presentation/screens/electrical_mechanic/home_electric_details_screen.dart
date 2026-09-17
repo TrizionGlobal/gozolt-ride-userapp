@@ -140,6 +140,7 @@ class _HomeElectricDetailsScreenState extends State<HomeElectricDetailsScreen> {
         children: [
           const QuickServicesHeader(
             title: 'Service Requirements',
+            subtitle: 'Home Electric',
           ),
           Expanded(
             child: SingleChildScrollView(
