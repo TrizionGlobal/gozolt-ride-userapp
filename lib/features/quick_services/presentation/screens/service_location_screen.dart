@@ -11,7 +11,10 @@ import '../widgets/quick_services_header.dart';
 import '../../data/models/quick_service_booking_data.dart';
 
 class ServiceLocationScreen extends StatefulWidget {
-  const ServiceLocationScreen({super.key});
+  final QuickServiceBookingData? bookingData;
+  final String? nextRoute;
+
+  const ServiceLocationScreen({super.key, this.bookingData, this.nextRoute});
 
   @override
   State<ServiceLocationScreen> createState() => _ServiceLocationScreenState();
@@ -402,7 +405,16 @@ class _ServiceLocationScreenState extends State<ServiceLocationScreen> {
                           return;
                         }
                         if (_formKey.currentState!.validate()) {
-                          final bookingData = QuickServiceBookingData(
+                          final bookingData = (widget.bookingData ?? QuickServiceBookingData(
+                            category: '',
+                            selectedService: '',
+                            scheduleDate: _selectedDate!,
+                            scheduleTime: _selectedTime!,
+                            location: _selectedLocation!,
+                            userName: _nameController.text.trim(),
+                            userPhone: _phoneController.text.trim(),
+                            userEmail: _emailController.text.trim(),
+                          )).copyWith(
                             scheduleDate: _selectedDate!,
                             scheduleTime: _selectedTime!,
                             location: _selectedLocation!,
@@ -410,10 +422,19 @@ class _ServiceLocationScreenState extends State<ServiceLocationScreen> {
                             userPhone: _phoneController.text.trim(),
                             userEmail: _emailController.text.trim(),
                           );
-                          context.pushNamed(
-                            RouteNames.quickServicesList,
-                            extra: bookingData,
-                          );
+                          
+                          if (widget.nextRoute != null) {
+                            context.pushNamed(
+                              widget.nextRoute!,
+                              extra: bookingData,
+                            );
+                          } else {
+                            // Fallback if no nextRoute is provided
+                            context.pushNamed(
+                              RouteNames.quickServicesHomeCleaning,
+                              extra: bookingData,
+                            );
+                          }
                         }
                       },
                       style: ElevatedButton.styleFrom(

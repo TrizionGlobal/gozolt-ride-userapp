@@ -148,42 +148,42 @@ class _QuickServicesListScreenState extends State<QuickServicesListScreen> {
                           final updatedData = widget.bookingData.copyWith(selectedServiceTitle: subService.title);
                           
                           if (subService.title == 'Plumbing') {
-                            context.pushNamed(RouteNames.quickServicesPlumbing, extra: updatedData);
+                            context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesPlumbing});
                           } else if (subService.title == 'Carpenter') {
-                            context.pushNamed(RouteNames.quickServicesCarpenter, extra: updatedData);
+                            context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesCarpenter});
                           } else if (category.title == 'AC & Appliance Repair') {
-                            context.pushNamed(RouteNames.quickServicesApplianceRepair, extra: updatedData);
+                            context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesApplianceRepair});
                           } else if (category.title == 'Vehicle Mechanic' && subService.title == 'Bike') {
-                            context.pushNamed(RouteNames.quickServicesBikeMechanic, extra: updatedData);
+                            context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesBikeMechanic});
                           } else if (category.title == 'Vehicle Mechanic' && subService.title == 'Car') {
-                            context.pushNamed(RouteNames.quickServicesCarMechanic, extra: updatedData);
+                            context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesCarMechanic});
                           } else if (category.title == 'Vehicle Mechanic' && subService.title == 'Truck') {
-                            context.pushNamed(RouteNames.quickServicesTruckMechanic, extra: updatedData);
+                            context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesTruckMechanic});
                           } else if (category.title == 'Electrical Mechanic' && subService.title == 'Lift / Elevator') {
-                            context.pushNamed(RouteNames.quickServicesLiftElevator, extra: updatedData);
+                            context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesLiftElevator});
                           } else if (category.title == 'Electrical Mechanic' && subService.title == 'Home') {
-                            context.pushNamed(RouteNames.quickServicesElectrical, extra: updatedData);
+                            context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesElectrical});
                           } else if (subService.title == 'Handyman' || subService.title == 'Handyman Services') {
-                            context.pushNamed(RouteNames.quickServicesHandyman, extra: updatedData);
+                            context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesHandyman});
                           } else if (subService.title == 'Mobile' || subService.title == 'Mobile Repair at Home') {
-                            context.pushNamed(RouteNames.quickServicesMobileRepair, extra: updatedData);
+                            context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesMobileRepair});
                           } else if (subService.title == 'Computer' || subService.title == 'Laptop/Computer' || subService.title == 'Computer & Laptop Repair' || subService.title == 'Computer & Laptop') {
-                            context.pushNamed(RouteNames.quickServicesComputerRepair, extra: updatedData);
+                            context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesComputerRepair});
                           } else if (subService.title == 'Printer / Scanner') {
-                            context.pushNamed(RouteNames.quickServicesPrinterScanner, extra: updatedData);
+                            context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesPrinterScanner});
                           } else if (category.title == 'Vehicle Wash' && subService.title == 'Truck') {
-                            context.pushNamed(RouteNames.quickServicesTruckWash, extra: updatedData);
+                            context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesTruckWash});
                           } else if (category.title == 'Vehicle Wash' || subService.title == 'Car Wash' || subService.title == 'Car') {
-                            context.pushNamed(RouteNames.quickServicesCarWash, extra: updatedData);
+                            context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesCarWash});
                           } else if (category.title == 'Laundry Worker' || subService.title == 'Laundry & Ironing' || subService.title == 'Laundry') {
                             if (subService.title == 'Home' || subService.title == 'Laundry & Ironing' || subService.title == 'Laundry') {
-                              context.pushNamed(RouteNames.quickServicesLaundry, extra: updatedData);
+                              context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesLaundry});
                             } else if (subService.title == 'Hospital') {
-                              context.pushNamed(RouteNames.quickServicesHospitalLaundry, extra: updatedData);
+                              context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesHospitalLaundry});
                             } else if (subService.title == 'Hotel') {
-                              context.pushNamed(RouteNames.quickServicesHotelLaundry, extra: updatedData);
+                              context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesHotelLaundry});
                             } else if (subService.title == 'Commercials') {
-                              context.pushNamed(RouteNames.quickServicesCommercialLaundry, extra: updatedData);
+                              context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesCommercialLaundry});
                             } else {
                               showDialog(
                                 context: context,
@@ -200,29 +200,20 @@ class _QuickServicesListScreenState extends State<QuickServicesListScreen> {
                               );
                             }
                           } else if (category.title == 'Beautician / Wellness' || category.title == 'Beauty & Wellness') {
-                            context.pushNamed(RouteNames.quickServicesBeautyWellness, extra: updatedData);
+                            context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesBeautyWellness});
                           } else if (subService.title == 'Gardening' || category.title == 'Gardening') {
-                            context.pushNamed(RouteNames.quickServicesGardening, extra: updatedData);
+                            context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesGardening});
                           } else if (subService.title == 'Pest Control') {
-                            context.pushNamed(RouteNames.quickServicesPestControl, extra: updatedData);
+                            context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesPestControl});
                           } else if (category.title == 'Other Services' && subService.title == 'Painter') {
-                            context.pushNamed(
-                              RouteNames.quickServicesPainter, 
-                              extra: updatedData.copyWith(selectedServiceTitle: subService.title)
-                            );
+                            context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData.copyWith(selectedServiceTitle: subService.title), 'nextRoute': RouteNames.quickServicesPainter});
                           } else if (category.title == 'Other Services' && subService.title == 'Event Organisers') {
-                            context.pushNamed(
-                              RouteNames.quickServicesEventOrganisers, 
-                              extra: updatedData.copyWith(selectedServiceTitle: subService.title)
-                            );
+                            context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData.copyWith(selectedServiceTitle: subService.title), 'nextRoute': RouteNames.quickServicesEventOrganisers});
                           } else if (category.title == 'Other Services' && subService.title == 'Suppliers') {
-                            context.pushNamed(
-                              RouteNames.quickServicesSuppliers, 
-                              extra: updatedData.copyWith(selectedServiceTitle: subService.title)
-                            );
+                            context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData.copyWith(selectedServiceTitle: subService.title), 'nextRoute': RouteNames.quickServicesSuppliers});
                           } else {
                             // Default to Home Cleaning details template
-                            context.pushNamed(RouteNames.quickServicesHomeCleaning, extra: updatedData);
+                            context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesHomeCleaning});
                           }
                         },
                         child: Container(
@@ -307,35 +298,17 @@ class _QuickServicesListScreenState extends State<QuickServicesListScreen> {
                           return GestureDetector(
                             onTap: () {
                               if (category.title == 'AC & Appliance Repair') {
-                                context.pushNamed(
-                                  RouteNames.quickServicesApplianceRepair,
-                                  extra: widget.bookingData.copyWith(selectedServiceTitle: null),
-                                );
+                                context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': widget.bookingData.copyWith(selectedServiceTitle: null), 'nextRoute': RouteNames.quickServicesApplianceRepair});
                               } else if (category.title == 'Hire a Person') {
-                                context.pushNamed(
-                                  RouteNames.quickServicesHirePerson,
-                                  extra: widget.bookingData.copyWith(selectedServiceTitle: 'Hire a Person'),
-                                );
+                                context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': widget.bookingData.copyWith(selectedServiceTitle: 'Hire a Person'), 'nextRoute': RouteNames.quickServicesHirePerson});
                               } else if (category.title == 'Security Personnel' || category.title == 'Security / Bouncer') {
-                                context.pushNamed(
-                                  RouteNames.quickServicesSecurityPersonnel,
-                                  extra: widget.bookingData.copyWith(selectedServiceTitle: 'Security Personnel'),
-                                );
+                                context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': widget.bookingData.copyWith(selectedServiceTitle: 'Security Personnel'), 'nextRoute': RouteNames.quickServicesSecurityPersonnel});
                               } else if (category.title == 'Mobile Repair at Home') {
-                                context.pushNamed(
-                                  RouteNames.quickServicesMobileRepair,
-                                  extra: widget.bookingData.copyWith(selectedServiceTitle: 'Mobile Repair at Home'),
-                                );
+                                context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': widget.bookingData.copyWith(selectedServiceTitle: 'Mobile Repair at Home'), 'nextRoute': RouteNames.quickServicesMobileRepair});
                               } else if (category.title == 'Computer & Laptop Repair' || category.title == 'Computer & Laptop') {
-                                context.pushNamed(
-                                  RouteNames.quickServicesComputerRepair,
-                                  extra: widget.bookingData.copyWith(selectedServiceTitle: 'Computer & Laptop Repair'),
-                                );
+                                context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': widget.bookingData.copyWith(selectedServiceTitle: 'Computer & Laptop Repair'), 'nextRoute': RouteNames.quickServicesComputerRepair});
                               } else if (category.title == 'Beautician / Wellness' || category.title == 'Beauty & Wellness') {
-                                context.pushNamed(
-                                  RouteNames.quickServicesBeautyWellness,
-                                  extra: widget.bookingData.copyWith(selectedServiceTitle: 'Beauty & Wellness'),
-                                );
+                                context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': widget.bookingData.copyWith(selectedServiceTitle: 'Beauty & Wellness'), 'nextRoute': RouteNames.quickServicesBeautyWellness});
                               } else {
                                 _showSubServicesModal(context, category);
                               }

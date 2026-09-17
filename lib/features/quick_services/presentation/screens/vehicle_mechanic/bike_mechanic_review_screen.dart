@@ -196,9 +196,7 @@ class _BikeMechanicReviewScreenState extends ConsumerState<BikeMechanicReviewScr
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
           child: ElevatedButton(
             onPressed: () {
-                  final finalTotal = _bookingData.hasRateRange
-                      ? _bookingData.estimatedTotalMax - (_useGoCoins ? 2.0 : 0.0)
-                      : _bookingData.estimatedTotalMin - (_useGoCoins ? 2.0 : 0.0);
+                  final finalTotal = _bookingData.upfrontBookingFee - (_useGoCoins ? 2.0 : 0.0);
                       
                   showModalBottomSheet(
                     context: context,
@@ -213,6 +211,7 @@ class _BikeMechanicReviewScreenState extends ConsumerState<BikeMechanicReviewScr
                         final updatedData = _bookingData.copyWith(
                           paymentMethodType: type,
                           paymentMethodId: cardId,
+                          useGoCoins: _useGoCoins,
                         );
                         context.pushNamed(
                           RouteNames.quickServicesBikeMechanicConfirmation,

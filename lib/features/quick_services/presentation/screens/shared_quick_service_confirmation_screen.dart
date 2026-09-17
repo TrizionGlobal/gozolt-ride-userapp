@@ -5,6 +5,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
 import '../../data/models/quick_service_booking_data.dart';
+import '../../../ride/data/models/saved_payment_method.dart';
 
 class SharedQuickServiceConfirmationScreen extends StatelessWidget {
   final QuickServiceBookingData bookingData;
@@ -12,14 +13,27 @@ class SharedQuickServiceConfirmationScreen extends StatelessWidget {
   final String defaultTitle;
 
   const SharedQuickServiceConfirmationScreen({
-    super.key, 
+    super.key,
     required this.bookingData,
     required this.serviceIcon,
     required this.defaultTitle,
   });
 
   String _formatDate(DateTime date) {
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
@@ -36,7 +50,8 @@ class SharedQuickServiceConfirmationScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Icon(Icons.check_circle, color: Colors.green, size: 64),
+                    const Icon(Icons.check_circle,
+                        color: Colors.green, size: 64),
                     const SizedBox(height: 16),
                     Text(
                       'Your booking is confirmed!',
@@ -45,15 +60,17 @@ class SharedQuickServiceConfirmationScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Booking ID',
+                      'Service ID',
                       textAlign: TextAlign.center,
-                      style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey),
+                      style:
+                          AppTextStyles.bodyMedium.copyWith(color: Colors.grey),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       'GZT-QS-260905-1845', // Hardcoded dummy ID for now
                       textAlign: TextAlign.center,
-                      style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.w900, letterSpacing: 1.5),
+                      style: AppTextStyles.titleLarge.copyWith(
+                          fontWeight: FontWeight.w900, letterSpacing: 1.5),
                     ),
                     const SizedBox(height: 24),
                     Center(
@@ -62,8 +79,11 @@ class SharedQuickServiceConfirmationScreen extends StatelessWidget {
                         version: QrVersions.auto,
                         size: 160.0,
                         backgroundColor: Colors.white,
-                        eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: Colors.black),
-                        dataModuleStyle: const QrDataModuleStyle(dataModuleShape: QrDataModuleShape.square, color: Colors.black),
+                        eyeStyle: const QrEyeStyle(
+                            eyeShape: QrEyeShape.square, color: Colors.black),
+                        dataModuleStyle: const QrDataModuleStyle(
+                            dataModuleShape: QrDataModuleShape.square,
+                            color: Colors.black),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -73,7 +93,7 @@ class SharedQuickServiceConfirmationScreen extends StatelessWidget {
                       style: TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                     const SizedBox(height: 32),
-                    
+
                     // Booking Details Box
                     Container(
                       padding: const EdgeInsets.all(16),
@@ -87,22 +107,40 @@ class SharedQuickServiceConfirmationScreen extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              Icon(serviceIcon, color: const Color(0xFF324461), size: 24),
+                              Icon(serviceIcon,
+                                  color: const Color(0xFF324461), size: 24),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  bookingData.selectedServiceTitle ?? defaultTitle,
-                                  style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold, color: const Color(0xFF324461)),
+                                  bookingData.selectedServiceTitle ??
+                                      defaultTitle,
+                                  style: AppTextStyles.titleMedium.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFF324461)),
                                 ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 16),
-                          _buildDetailRow('Date', _formatDate(bookingData.scheduleDate)),
-                          _buildDetailRow('Time', bookingData.scheduleTime.format(context)),
-                          _buildDetailRow('Location', bookingData.location.address),
+                          _buildDetailRow(
+                              'Date', _formatDate(bookingData.scheduleDate)),
+                          _buildDetailRow(
+                              'Time', bookingData.scheduleTime.format(context)),
+                          _buildDetailRow(
+                              'Location', bookingData.location.address),
                           const Divider(height: 24),
-                          _buildDetailRow('Total Paid', '€${(bookingData.hasRateRange ? '${bookingData.estimatedTotalMin.toStringAsFixed(2)} - €${bookingData.estimatedTotalMax.toStringAsFixed(2)}' : bookingData.estimatedTotalMin.toStringAsFixed(2))}', isTotal: true),
+                          _buildDetailRow(
+                            'Amount Paid Now',
+                            '€${(bookingData.upfrontBookingFee - (bookingData.useGoCoins ? 2.0 : 0.0)).toStringAsFixed(2)}',
+                            isTotal: false,
+                          ),
+                          _buildDetailRow(
+                            'Remaining Amount (After Service)',
+                            bookingData.hasRateRange
+                                ? '€${bookingData.estimatedTotalMin.toStringAsFixed(2)} - €${bookingData.estimatedTotalMax.toStringAsFixed(2)}'
+                                : '€${bookingData.estimatedTotalMin.toStringAsFixed(2)}',
+                            isTotal: true,
+                          ),
                         ],
                       ),
                     ),
@@ -111,7 +149,6 @@ class SharedQuickServiceConfirmationScreen extends StatelessWidget {
                 ),
               ),
             ),
-            
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: ElevatedButton(
@@ -122,11 +159,14 @@ class SharedQuickServiceConfirmationScreen extends StatelessWidget {
                   backgroundColor: AppColors.primaryGold,
                   foregroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                   minimumSize: const Size.fromHeight(50),
                 ),
-                child: const Text('BACK TO HOME', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                child: const Text('BACK TO HOME',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               ),
             ),
           ],

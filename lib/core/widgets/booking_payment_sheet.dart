@@ -33,12 +33,21 @@ class _BookingPaymentSheetState extends ConsumerState<BookingPaymentSheet> {
   late PaymentMethodType _selectedType;
   String? _selectedCardId;
   bool _isLoading = false;
+  bool _payFullAmount = false;
 
   @override
   void initState() {
     super.initState();
     _selectedType = widget.currentType;
     _selectedCardId = widget.currentCardId;
+    if (widget.isQuickService) {
+      if (widget.currentType == PaymentMethodType.cash) {
+        _selectedCardId = null;
+      }
+      _selectedType = PaymentMethodType.card;
+      // If currentType is card, they paid full amount. If cash, they chose postpaid.
+      _payFullAmount = widget.currentType == PaymentMethodType.card;
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.invalidate(paymentMethodsProvider);
@@ -46,6 +55,16 @@ class _BookingPaymentSheetState extends ConsumerState<BookingPaymentSheet> {
   }
 
   Future<void> _confirm() async {
+    if (widget.isQuickService && _selectedCardId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a card to pay the upfront fee.'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -218,7 +237,7 @@ class _BookingPaymentSheetState extends ConsumerState<BookingPaymentSheet> {
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                onPressed: _isLoading ? null : _confirm,
+                onPressed: (_isLoading || paymentMethodsAsync.isLoading) ? null : _confirm,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGold,
                   foregroundColor: Colors.black,
@@ -262,7 +281,8 @@ class _BookingPaymentSheetState extends ConsumerState<BookingPaymentSheet> {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         children: [
-          // Cash option
+          if (!widget.isQuickService) ...[
+            // Cash option
           _buildOptionTile(
             icon: Icons.payments_outlined,
             title: cashTitle,
@@ -278,6 +298,9 @@ class _BookingPaymentSheetState extends ConsumerState<BookingPaymentSheet> {
             }),
           ),
           const SizedBox(height: 10),
+          ],
+          
+
 
           // Saved cards
           ...methods.map((pm) {
@@ -346,7 +369,7 @@ class _BookingPaymentSheetState extends ConsumerState<BookingPaymentSheet> {
           // Add New Card
           _buildOptionTile(
             icon: Icons.add_circle_outline,
-            title: widget.isQuickService ? 'Add New Card (Prepaid)' : 'Add New Card',
+            title: 'Add New Card',
             subtitle: 'Credit / Debit Card',
             isSelected: false,
             cardColor: cardColor,
@@ -356,6 +379,9 @@ class _BookingPaymentSheetState extends ConsumerState<BookingPaymentSheet> {
             onTap: _addCard,
           ),
           const SizedBox(height: 16),
+          if (widget.isQuickService) ...[
+
+          ],
         ],
       ),
     );

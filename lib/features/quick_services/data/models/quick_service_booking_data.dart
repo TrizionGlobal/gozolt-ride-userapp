@@ -57,7 +57,7 @@ class QuickServiceBookingData {
   final String? whatYouNeed;
   final String? describeIssue;
   final List<String>? uploadedImages;
-  
+
   // Vehicle Mechanic specific fields
   final String? bikeType;
   final String? carType;
@@ -77,7 +77,7 @@ class QuickServiceBookingData {
   final int? pestAffectedRooms;
   final String? pestObservedLevel;
   final String? childrenOrPets;
-  
+
   // Lift / Elevator Mechanic specific fields
   final String? propertyType;
   final String? liftType;
@@ -102,6 +102,7 @@ class QuickServiceBookingData {
 
   final PaymentMethodType paymentMethodType;
   final String? paymentMethodId;
+  final bool useGoCoins;
   final String? dressPreference;
   final String? alcoholServed;
 
@@ -196,8 +197,9 @@ class QuickServiceBookingData {
   final String? requestType;
   final String? requirementDescription;
 
-  double get materialCost => (materialPreference == 'Bring materials') ? 5.0 : 0.0;
-  
+  double get materialCost =>
+      (materialPreference == 'Bring materials') ? 5.0 : 0.0;
+
   double get totalEstimatedHours {
     double addonHours = 0.0;
     for (var addon in selectedAddons) {
@@ -215,22 +217,30 @@ class QuickServiceBookingData {
     }
     return total;
   }
-      
-  bool get hasRateRange => maxHourlyRate != null && maxHourlyRate! > minHourlyRate;
+
+  bool get hasRateRange =>
+      maxHourlyRate != null && maxHourlyRate! > minHourlyRate;
 
   double get upfrontBookingFee => 10.0;
 
-  double get estimatedTotalMin => (totalEstimatedHours * minHourlyRate) + fixedAddonCosts + materialCost + subtotal + upfrontBookingFee;
-  
-  double get estimatedTotalMax => (maxHourlyRate != null) 
-      ? ((totalEstimatedHours * maxHourlyRate!) + fixedAddonCosts + materialCost + subtotal + upfrontBookingFee)
+  double get estimatedTotalMin =>
+      (totalEstimatedHours * minHourlyRate) +
+      fixedAddonCosts +
+      materialCost +
+      subtotal;
+
+  double get estimatedTotalMax => (maxHourlyRate != null)
+      ? ((totalEstimatedHours * maxHourlyRate!) +
+          fixedAddonCosts +
+          materialCost +
+          subtotal)
       : estimatedTotalMin;
 
   const QuickServiceBookingData({
     this.category = '',
-
     this.paymentMethodType = PaymentMethodType.cash,
     this.paymentMethodId,
+    this.useGoCoins = false,
     this.selectedService = '',
     required this.scheduleDate,
     required this.scheduleTime,
@@ -278,7 +288,6 @@ class QuickServiceBookingData {
     this.personnelCount,
     this.expectedAttendance,
     this.serviceArea,
-
     this.dressPreference,
     this.alcoholServed,
     this.deviceType,
@@ -403,6 +412,7 @@ class QuickServiceBookingData {
     String? serviceArea,
     PaymentMethodType? paymentMethodType,
     String? paymentMethodId,
+    bool? useGoCoins,
     String? dressPreference,
     String? alcoholServed,
     String? deviceType,
@@ -489,8 +499,14 @@ class QuickServiceBookingData {
       materialPreference: materialPreference ?? this.materialPreference,
       subtotal: subtotal ?? this.subtotal,
       baseEstimatedHours: baseEstimatedHours ?? this.baseEstimatedHours,
-      minHourlyRate: minHourlyRate ?? (selectedService != null ? QuickServicesPricingConfig.getMinRate(selectedService) : this.minHourlyRate),
-      maxHourlyRate: maxHourlyRate ?? (selectedService != null ? QuickServicesPricingConfig.getMaxRate(selectedService) : this.maxHourlyRate),
+      minHourlyRate: minHourlyRate ??
+          (selectedService != null
+              ? QuickServicesPricingConfig.getMinRate(selectedService)
+              : this.minHourlyRate),
+      maxHourlyRate: maxHourlyRate ??
+          (selectedService != null
+              ? QuickServicesPricingConfig.getMaxRate(selectedService)
+              : this.maxHourlyRate),
       whatYouNeed: whatYouNeed ?? this.whatYouNeed,
       describeIssue: describeIssue ?? this.describeIssue,
       uploadedImages: uploadedImages ?? this.uploadedImages,
@@ -526,7 +542,7 @@ class QuickServiceBookingData {
       serviceArea: serviceArea ?? this.serviceArea,
       paymentMethodType: paymentMethodType ?? this.paymentMethodType,
       paymentMethodId: paymentMethodId ?? this.paymentMethodId,
-
+      useGoCoins: useGoCoins ?? this.useGoCoins,
       dressPreference: dressPreference ?? this.dressPreference,
       alcoholServed: alcoholServed ?? this.alcoholServed,
       deviceType: deviceType ?? this.deviceType,
@@ -544,7 +560,8 @@ class QuickServiceBookingData {
       printerBrand: printerBrand ?? this.printerBrand,
       printerModel: printerModel ?? this.printerModel,
       printerSerialNumber: printerSerialNumber ?? this.printerSerialNumber,
-      printerConnectionMethod: printerConnectionMethod ?? this.printerConnectionMethod,
+      printerConnectionMethod:
+          printerConnectionMethod ?? this.printerConnectionMethod,
       printerIssues: printerIssues ?? this.printerIssues,
       printerDeviceCount: printerDeviceCount ?? this.printerDeviceCount,
       printerErrorCode: printerErrorCode ?? this.printerErrorCode,
@@ -559,31 +576,43 @@ class QuickServiceBookingData {
       laundryServiceType: laundryServiceType ?? this.laundryServiceType,
       laundryPackagePrice: laundryPackagePrice ?? this.laundryPackagePrice,
       laundryQuantityKg: laundryQuantityKg ?? this.laundryQuantityKg,
-      specialCareShirtCount: specialCareShirtCount ?? this.specialCareShirtCount,
-      specialCareDressCount: specialCareDressCount ?? this.specialCareDressCount,
-      specialCareTrouserCount: specialCareTrouserCount ?? this.specialCareTrouserCount,
-      specialCareBeddingCount: specialCareBeddingCount ?? this.specialCareBeddingCount,
+      specialCareShirtCount:
+          specialCareShirtCount ?? this.specialCareShirtCount,
+      specialCareDressCount:
+          specialCareDressCount ?? this.specialCareDressCount,
+      specialCareTrouserCount:
+          specialCareTrouserCount ?? this.specialCareTrouserCount,
+      specialCareBeddingCount:
+          specialCareBeddingCount ?? this.specialCareBeddingCount,
       detergentArrangement: detergentArrangement ?? this.detergentArrangement,
       customLaundryService: customLaundryService ?? this.customLaundryService,
       facilityName: facilityName ?? this.facilityName,
       collectionPoint: collectionPoint ?? this.collectionPoint,
-      facilityContactPerson: facilityContactPerson ?? this.facilityContactPerson,
-      facilityContactNumber: facilityContactNumber ?? this.facilityContactNumber,
-      commercialLaundryTypes: commercialLaundryTypes ?? this.commercialLaundryTypes,
+      facilityContactPerson:
+          facilityContactPerson ?? this.facilityContactPerson,
+      facilityContactNumber:
+          facilityContactNumber ?? this.facilityContactNumber,
+      commercialLaundryTypes:
+          commercialLaundryTypes ?? this.commercialLaundryTypes,
       numberOfBags: numberOfBags ?? this.numberOfBags,
       linenHandlingType: linenHandlingType ?? this.linenHandlingType,
       serviceFrequency: serviceFrequency ?? this.serviceFrequency,
       businessType: businessType ?? this.businessType,
       requestedReturnDate: requestedReturnDate ?? this.requestedReturnDate,
       requestedReturnTime: requestedReturnTime ?? this.requestedReturnTime,
-      collectionInstructions: collectionInstructions ?? this.collectionInstructions,
-      beautySelectedTreatments: beautySelectedTreatments ?? this.beautySelectedTreatments,
-      beautyTreatmentsSubtotal: beautyTreatmentsSubtotal ?? this.beautyTreatmentsSubtotal,
+      collectionInstructions:
+          collectionInstructions ?? this.collectionInstructions,
+      beautySelectedTreatments:
+          beautySelectedTreatments ?? this.beautySelectedTreatments,
+      beautyTreatmentsSubtotal:
+          beautyTreatmentsSubtotal ?? this.beautyTreatmentsSubtotal,
       peopleCount: peopleCount ?? this.peopleCount,
-      professionalPreference: professionalPreference ?? this.professionalPreference,
+      professionalPreference:
+          professionalPreference ?? this.professionalPreference,
       customBeautyService: customBeautyService ?? this.customBeautyService,
       gardeningServiceArea: gardeningServiceArea ?? this.gardeningServiceArea,
-      gardeningApproximateArea: gardeningApproximateArea ?? this.gardeningApproximateArea,
+      gardeningApproximateArea:
+          gardeningApproximateArea ?? this.gardeningApproximateArea,
       greenWasteRemoval: greenWasteRemoval ?? this.greenWasteRemoval,
       paintingType: paintingType ?? this.paintingType,
       roomCount: roomCount ?? this.roomCount,
@@ -597,7 +626,8 @@ class QuickServiceBookingData {
       supplyQuantity: supplyQuantity ?? this.supplyQuantity,
       supplyUnit: supplyUnit ?? this.supplyUnit,
       requestType: requestType ?? this.requestType,
-      requirementDescription: requirementDescription ?? this.requirementDescription,
+      requirementDescription:
+          requirementDescription ?? this.requirementDescription,
     );
   }
 }

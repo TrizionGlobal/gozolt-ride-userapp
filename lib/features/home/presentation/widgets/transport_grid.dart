@@ -47,7 +47,7 @@ class TransportGrid extends StatelessWidget {
                   label: 'Quick Services',
                   isActive: true,
                   onTap: () {
-                    context.pushNamed('quick-services-location');
+                    context.pushNamed(RouteNames.quickServicesList);
                   },
                 ),
               ),

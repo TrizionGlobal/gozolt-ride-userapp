@@ -1063,7 +1063,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/quick-services-location',
         name: RouteNames.quickServicesLocation,
-        builder: (context, state) => const ServiceLocationScreen(),
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          return ServiceLocationScreen(
+            bookingData: extra['bookingData'] as QuickServiceBookingData?,
+            nextRoute: extra['nextRoute'] as String?,
+          );
+        },
       ),
       GoRoute(
         path: '/quick-services-list',
