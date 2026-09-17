@@ -18,6 +18,7 @@ class MobileRepairDetailsScreen extends StatefulWidget {
 }
 
 class _MobileRepairDetailsScreenState extends State<MobileRepairDetailsScreen> {
+  String _materialPreference = 'Bring materials';
   String? _selectedDeviceType;
   String? _selectedBrand;
   String? _selectedModel;
@@ -608,7 +609,8 @@ class _MobileRepairDetailsScreenState extends State<MobileRepairDetailsScreen> {
                             : null,
                         uploadedImages: _selectedImages.map((e) => e.path).toList(),
                         subtotal: 0.0,
-                        baseEstimatedHours: _deviceCount * 1.5,
+                        baseEstimatedHours: 0.0,
+                        materialPreference: _materialPreference,
                       );
 
                       context.pushNamed(

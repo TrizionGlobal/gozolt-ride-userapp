@@ -19,6 +19,7 @@ class GardeningDetailsScreen extends StatefulWidget {
 }
 
 class _GardeningDetailsScreenState extends State<GardeningDetailsScreen> {
+  String _materialPreference = 'Bring materials';
   final Set<String> _selectedServices = {};
 
   final Map<String, IconData> _icons = {
@@ -403,6 +404,7 @@ class _GardeningDetailsScreenState extends State<GardeningDetailsScreen> {
                         selectedAddons: selectedAddons,
                         subtotal: 0.0,
                         baseEstimatedHours: 0.0,
+                        materialPreference: _materialPreference,
                         gardeningServiceArea: _selectedServiceArea,
                         gardeningApproximateArea: _selectedApproxArea,
                         greenWasteRemoval: _greenWasteRemoval,

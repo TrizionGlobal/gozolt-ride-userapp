@@ -18,6 +18,7 @@ class CarWashDetailsScreen extends StatefulWidget {
 }
 
 class _CarWashDetailsScreenState extends State<CarWashDetailsScreen> {
+  String _materialPreference = 'Bring materials';
   String? _selectedVehicleType;
   String? _selectedVehicleMake;
   String? _selectedVehicleModel;
@@ -672,7 +673,8 @@ class _CarWashDetailsScreenState extends State<CarWashDetailsScreen> {
                         waterAccess: _waterAccess,
                         electricityAccess: _electricityAccess,
                         subtotal: 0.0,
-                        baseEstimatedHours: (_vehicleCount * 1.0) > 0 ? (_vehicleCount * 1.0) : 1.0,
+                        baseEstimatedHours: 0.0,
+                        materialPreference: _materialPreference,
                         describeIssue: _describeIssueController.text.trim().isNotEmpty
                             ? _describeIssueController.text.trim()
                             : null,

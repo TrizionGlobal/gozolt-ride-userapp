@@ -289,7 +289,7 @@ class _SecurityPersonnelDetailsScreenState extends State<SecurityPersonnelDetail
       whatYouNeed: _selectedSecurityService,
       uploadedImages: _selectedImages.map((img) => img.path).toList(),
       subtotal: 0.0,
-                        baseEstimatedHours: (durationHours * _personnelCount).toDouble(),
+                        baseEstimatedHours: 0.0,
     );
 
     context.pushNamed(RouteNames.quickServicesSecurityPersonnelReview, extra: updatedData);

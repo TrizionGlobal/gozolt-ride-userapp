@@ -21,6 +21,7 @@ class CommercialLaundryDetailsScreen extends StatefulWidget {
 }
 
 class _CommercialLaundryDetailsScreenState extends State<CommercialLaundryDetailsScreen> {
+  String _materialPreference = 'Bring materials';
   final TextEditingController _businessNameController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
   final TextEditingController _bagsController = TextEditingController();
@@ -374,7 +375,8 @@ class _CommercialLaundryDetailsScreenState extends State<CommercialLaundryDetail
                         whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty ? _whatYouNeedController.text.trim() : null,
                         describeIssue: _describeIssueController.text.trim().isNotEmpty ? _describeIssueController.text.trim() : null,
                         uploadedImages: _selectedFiles.map((e) => e.path).toList(),
-                        baseEstimatedHours: (weight != null && weight > 0) ? (weight * 0.5 > 1.0 ? weight * 0.5 : 1.0) : 2.0,
+                        baseEstimatedHours: 0.0,
+                        materialPreference: _materialPreference,
                       );
 
                       context.pushNamed(RouteNames.quickServicesLaundryReview, extra: updatedData);

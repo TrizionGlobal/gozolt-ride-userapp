@@ -392,7 +392,7 @@ class _BeautyWellnessDetailsScreenState extends State<BeautyWellnessDetailsScree
                         customBeautyService: _customServiceController.text.trim(),
                         uploadedImages: _selectedImages.map((e) => e.path).toList(),
                         subtotal: 0.0,
-                        baseEstimatedHours: (_selectedTreatments.length * _peopleCount * 0.5) > 0 ? (_selectedTreatments.length * _peopleCount * 0.5) : 1.0,
+                        baseEstimatedHours: 0.0,
                       );
 
                       context.pushNamed(

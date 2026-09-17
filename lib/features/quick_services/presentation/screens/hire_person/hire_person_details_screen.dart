@@ -99,7 +99,7 @@ class _HirePersonDetailsScreenState extends State<HirePersonDetailsScreen> {
       comments: commentsText,
       uploadedImages: _selectedImages.map((img) => img.path).toList(),
       subtotal: 0.0,
-                        baseEstimatedHours: (double.tryParse(_selectedDuration?.split(' ')[0] ?? '1') ?? 4.0) * _helperCount,
+                        baseEstimatedHours: 0.0,
     );
 
     context.pushNamed(RouteNames.quickServicesHirePersonReview, extra: updatedData);

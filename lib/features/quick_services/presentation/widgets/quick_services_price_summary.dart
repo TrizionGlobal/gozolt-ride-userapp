@@ -119,7 +119,21 @@ class QuickServicesPriceSummary extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Estimated Service Charge', style: AppTextStyles.bodyMedium),
+              Text(
+                bookingData.hasRateRange 
+                    ? '€${(bookingData.totalEstimatedHours * bookingData.minHourlyRate).toStringAsFixed(2)} - €${(bookingData.totalEstimatedHours * bookingData.maxHourlyRate!).toStringAsFixed(2)}'
+                    : '€${(bookingData.totalEstimatedHours * bookingData.minHourlyRate).toStringAsFixed(2)}',
+                style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
           const Divider(height: 24),
+
 
           if (bookingData.fixedAddonCosts > 0) ...[
             Row(
@@ -139,7 +153,7 @@ class QuickServicesPriceSummary extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(child: Text('Material Surcharge', style: AppTextStyles.bodyMedium)),
+                Expanded(child: Text('Materials Included Charge', style: AppTextStyles.bodyMedium)),
                 Text(
                   '€${bookingData.materialCost.toStringAsFixed(2)}',
                   style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
@@ -162,9 +176,19 @@ class QuickServicesPriceSummary extends StatelessWidget {
             const SizedBox(height: 8),
           ],
 
-          if (bookingData.fixedAddonCosts > 0 || bookingData.materialCost > 0 || bookingData.subtotal > 0)
-            const Divider(height: 24),
 
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(child: Text('Upfront Booking', style: AppTextStyles.bodyMedium)),
+              Text(
+                '€${bookingData.upfrontBookingFee.toStringAsFixed(2)}',
+                style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const Divider(height: 24),
 
           // ── GoCoins Redeem Section ──
           if (onGoCoinsChanged != null) ...[

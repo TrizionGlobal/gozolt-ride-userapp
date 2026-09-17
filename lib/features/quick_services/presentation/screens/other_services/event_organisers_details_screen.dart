@@ -18,6 +18,7 @@ class EventOrganisersDetailsScreen extends StatefulWidget {
 }
 
 class _EventOrganisersDetailsScreenState extends State<EventOrganisersDetailsScreen> {
+  String _materialPreference = 'Bring materials';
   final TextEditingController _whatYouNeedController = TextEditingController();
   final TextEditingController _describeIssueController = TextEditingController();
   final TextEditingController _guestCountController = TextEditingController();
@@ -74,6 +75,7 @@ class _EventOrganisersDetailsScreenState extends State<EventOrganisersDetailsScr
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
@@ -152,7 +154,8 @@ class _EventOrganisersDetailsScreenState extends State<EventOrganisersDetailsScr
                           describeIssue: _describeIssueController.text.trim().isNotEmpty ? _describeIssueController.text.trim() : null,
                           uploadedImages: _selectedImages.map((e) => e.path).toList(),
                           subtotal: 0.0,
-                        baseEstimatedHours: _eventDuration == 'Half Day' ? 4.0 : (_eventDuration == 'Full Day' ? 8.0 : 16.0),
+                        baseEstimatedHours: 0.0,
+                        materialPreference: _materialPreference,
                         );
 
                         context.pushNamed(

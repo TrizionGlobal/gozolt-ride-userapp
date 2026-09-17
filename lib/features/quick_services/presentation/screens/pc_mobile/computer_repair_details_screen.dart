@@ -18,6 +18,7 @@ class ComputerRepairDetailsScreen extends StatefulWidget {
 }
 
 class _ComputerRepairDetailsScreenState extends State<ComputerRepairDetailsScreen> {
+  String _materialPreference = 'Bring materials';
   String? _selectedDeviceType;
   String? _selectedBrand;
   String? _selectedModel;
@@ -546,7 +547,8 @@ class _ComputerRepairDetailsScreenState extends State<ComputerRepairDetailsScree
                             : null,
                         uploadedImages: _selectedImages.map((e) => e.path).toList(),
                         subtotal: 0.0,
-                        baseEstimatedHours: 1.5,
+                        baseEstimatedHours: 0.0,
+                        materialPreference: _materialPreference,
                       );
 
                       context.pushNamed(

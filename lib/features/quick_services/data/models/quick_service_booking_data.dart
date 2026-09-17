@@ -218,10 +218,12 @@ class QuickServiceBookingData {
       
   bool get hasRateRange => maxHourlyRate != null && maxHourlyRate! > minHourlyRate;
 
-  double get estimatedTotalMin => (totalEstimatedHours * minHourlyRate) + fixedAddonCosts + materialCost + subtotal;
+  double get upfrontBookingFee => 10.0;
+
+  double get estimatedTotalMin => (totalEstimatedHours * minHourlyRate) + fixedAddonCosts + materialCost + subtotal + upfrontBookingFee;
   
   double get estimatedTotalMax => (maxHourlyRate != null) 
-      ? ((totalEstimatedHours * maxHourlyRate!) + fixedAddonCosts + materialCost + subtotal)
+      ? ((totalEstimatedHours * maxHourlyRate!) + fixedAddonCosts + materialCost + subtotal + upfrontBookingFee)
       : estimatedTotalMin;
 
   const QuickServiceBookingData({

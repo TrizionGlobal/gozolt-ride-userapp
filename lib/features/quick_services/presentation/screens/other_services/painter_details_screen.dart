@@ -20,6 +20,7 @@ class PainterDetailsScreen extends StatefulWidget {
 }
 
 class _PainterDetailsScreenState extends State<PainterDetailsScreen> {
+  String _materialPreference = 'Bring materials';
   final TextEditingController _describeIssueController = TextEditingController();
   final TextEditingController _whatYouNeedController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
@@ -104,6 +105,7 @@ class _PainterDetailsScreenState extends State<PainterDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6F8), // Matches screenshot background
       body: Column(
@@ -301,7 +303,8 @@ class _PainterDetailsScreenState extends State<PainterDetailsScreen> {
                         describeIssue: _describeIssueController.text.trim().isNotEmpty ? _describeIssueController.text.trim() : null,
                         uploadedImages: _selectedImages.map((e) => e.path).toList(),
                         subtotal: 0.0,
-                        baseEstimatedHours: (_roomCount * 2.0),
+                        baseEstimatedHours: 0.0,
+                        materialPreference: _materialPreference,
                       );
 
                       context.pushNamed(

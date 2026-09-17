@@ -19,6 +19,7 @@ class PestControlDetailsScreen extends StatefulWidget {
 }
 
 class _PestControlDetailsScreenState extends State<PestControlDetailsScreen> {
+  String _materialPreference = 'Bring materials';
   String? _selectedPestType;
   String? _selectedPropertyType;
   final List<String> _selectedAffectedAreas = [];
@@ -114,7 +115,8 @@ class _PestControlDetailsScreenState extends State<PestControlDetailsScreen> {
       describeIssue: _problemDescriptionController.text.trim(),
       uploadedImages: _selectedImages.map((f) => f.path).toList(),
       subtotal: 0.0,
-                        baseEstimatedHours: 1.0 + (_affectedRoomsCount * 0.5),
+                        baseEstimatedHours: 0.0,
+                        materialPreference: _materialPreference,
     );
 
     context.pushNamed(RouteNames.quickServicesPestControlReview, extra: updatedData);

@@ -21,6 +21,7 @@ class HospitalLaundryDetailsScreen extends StatefulWidget {
 }
 
 class _HospitalLaundryDetailsScreenState extends State<HospitalLaundryDetailsScreen> {
+  String _materialPreference = 'Bring materials';
   final TextEditingController _facilityNameController = TextEditingController();
   final TextEditingController _collectionPointController = TextEditingController();
   final TextEditingController _contactPersonController = TextEditingController();
@@ -288,6 +289,7 @@ class _HospitalLaundryDetailsScreenState extends State<HospitalLaundryDetailsScr
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
@@ -602,7 +604,8 @@ class _HospitalLaundryDetailsScreenState extends State<HospitalLaundryDetailsScr
                               whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty ? _whatYouNeedController.text.trim() : null,
                               describeIssue: _describeIssueController.text.trim().isNotEmpty ? _describeIssueController.text.trim() : null,
                               uploadedImages: _selectedFiles.map((e) => e.path).toList(),
-                              baseEstimatedHours: (_estimatedWeightKg * 0.5) > 1.0 ? (_estimatedWeightKg * 0.5) : 1.0,
+                              baseEstimatedHours: 0.0,
+                        materialPreference: _materialPreference,
                             );
 
                             context.pushNamed(RouteNames.quickServicesLaundryReview, extra: updatedData);

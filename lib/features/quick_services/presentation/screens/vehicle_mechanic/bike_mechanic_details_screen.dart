@@ -18,6 +18,7 @@ class BikeMechanicDetailsScreen extends StatefulWidget {
 }
 
 class _BikeMechanicDetailsScreenState extends State<BikeMechanicDetailsScreen> {
+  String _materialPreference = 'Bring materials';
   String? _selectedBikeType;
   final List<String> _bikeTypes = ['Bicycle', 'E-Bike', 'Scooter', 'Motorcycle'];
 
@@ -64,6 +65,7 @@ class _BikeMechanicDetailsScreenState extends State<BikeMechanicDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
@@ -189,6 +191,70 @@ class _BikeMechanicDetailsScreenState extends State<BikeMechanicDetailsScreen> {
                   ),
                   const SizedBox(height: 24),
                   const SizedBox(height: 24),
+
+                  Text(
+                    'Materials / Parts',
+                    style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
+                        width: _materialPreference == 'Bring materials' ? 1.5 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGold.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.handyman, size: 24, color: AppColors.primaryGold),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Bring materials', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 2),
+                              Text(
+                                _materialPreference == 'Bring materials' ? '+€5.00 extra charge' : 'Use my materials (No extra charge)',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey[600],
+                                  fontWeight: _materialPreference == 'Bring materials' ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Transform.scale(
+                          scale: 0.8,
+                          child: Switch.adaptive(
+                            value: _materialPreference == 'Bring materials',
+                            activeColor: isDark ? AppColors.backgroundDark : Colors.white,
+                            activeTrackColor: AppColors.primaryGold,
+                            inactiveTrackColor: Colors.grey[300],
+                            onChanged: (val) {
+                              setState(() {
+                                _materialPreference = val ? 'Bring materials' : 'Use my materials';
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
                   
                   Text(
                     'Additional Details',
@@ -235,7 +301,8 @@ class _BikeMechanicDetailsScreenState extends State<BikeMechanicDetailsScreen> {
                   final updatedData = widget.bookingData.copyWith(
                     selectedServiceTitle: 'Bike Mechanic',
                     subtotal: 0.0,
-                        baseEstimatedHours: 2.0,
+                        baseEstimatedHours: 0.0,
+                        materialPreference: _materialPreference,
                     bikeType: _selectedBikeType,
                     vehicleMake: _makeController.text.trim(),
                     vehicleModel: _modelController.text.trim(),
