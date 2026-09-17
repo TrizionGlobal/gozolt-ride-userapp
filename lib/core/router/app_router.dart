@@ -21,6 +21,7 @@ import '../../features/ride/presentation/screens/ride_complete_screen.dart';
 import '../../features/ride/presentation/screens/chat_screen.dart';
 import '../../features/rewards/presentation/screens/rewards_info_screen.dart';
 import '../../features/history/presentation/screens/trip_summary_screen.dart';
+import '../../features/history/presentation/screens/quick_service_history_details_screen.dart';
 import '../../features/history/presentation/screens/receipt_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/notifications/presentation/screens/notification_preferences_screen.dart';
@@ -515,6 +516,29 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // ── Trip Summary ────────────────────────────────────
+
+      GoRoute(
+        path: '/quick-service-history-details',
+        name: RouteNames.quickServiceHistoryDetails,
+        pageBuilder: (context, state) {
+          final booking = state.extra as Map<String, dynamic>? ?? {};
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: QuickServiceHistoryDetailsScreen(booking: booking),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+                SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeInOut,
+              )),
+              child: child,
+            ),
+          );
+        },
+      ),
 
       GoRoute(
         path: '/trip-summary',

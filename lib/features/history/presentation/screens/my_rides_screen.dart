@@ -12,6 +12,7 @@ import '../widgets/reschedule_bottom_sheet.dart';
 import '../widgets/ride_history_card.dart';
 import 'car_rentals_history_view.dart';
 import 'bike_rentals_history_view.dart';
+import 'quick_services_history_view.dart';
 
 class MyRidesScreen extends ConsumerWidget {
   const MyRidesScreen({super.key});
@@ -51,99 +52,46 @@ class MyRidesScreen extends ConsumerWidget {
                   children: [
                     Padding(
                       padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                      child: Text(
-                        'History',
-                        style: AppTextStyles.headlineMedium.copyWith(
-                          color: AppColors.backgroundDark,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // ── Tab Toggle ────────────────────────────
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.backgroundLight,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.borderLight),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          ref.read(historyTabSelectionProvider.notifier).state = 0;
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          decoration: BoxDecoration(
-                            color: selectedTab == 0 ? AppColors.primaryGold : Colors.transparent,
-                            borderRadius: BorderRadius.circular(11),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'History',
+                            style: AppTextStyles.headlineMedium.copyWith(
+                              color: AppColors.backgroundDark,
+                            ),
                           ),
-                          child: Center(
-                            child: Text(
-                              'My Rides',
-                              style: AppTextStyles.titleSmall.copyWith(
-                                color: selectedTab == 0 ? AppColors.backgroundDark : AppColors.textSecondary,
-                                fontSize: 13,
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: AppColors.backgroundDark.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<int>(
+                                value: selectedTab,
+                                isDense: true,
+                                icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.backgroundDark),
+                                dropdownColor: const Color(0xFFF5C518),
+                                style: AppTextStyles.titleSmall.copyWith(color: AppColors.backgroundDark, fontSize: 13),
+                                elevation: 4,
+                                borderRadius: BorderRadius.circular(12),
+                                onChanged: (int? newValue) {
+                                  if (newValue != null) {
+                                    HapticFeedback.selectionClick();
+                                    ref.read(historyTabSelectionProvider.notifier).state = newValue;
+                                  }
+                                },
+                                items: const [
+                                  DropdownMenuItem(value: 0, child: Text('My Rides')),
+                                  DropdownMenuItem(value: 1, child: Text('Car Rentals')),
+                                  DropdownMenuItem(value: 2, child: Text('Bike Rentals')),
+                                  DropdownMenuItem(value: 3, child: Text('Quick Services')),
+                                ],
                               ),
                             ),
                           ),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          ref.read(historyTabSelectionProvider.notifier).state = 1;
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          decoration: BoxDecoration(
-                            color: selectedTab == 1 ? AppColors.primaryGold : Colors.transparent,
-                            borderRadius: BorderRadius.circular(11),
-                          ),
-                          child: Center(
-                            child: Text(
-                              'Car Rentals',
-                              style: AppTextStyles.titleSmall.copyWith(
-                                color: selectedTab == 1 ? AppColors.backgroundDark : AppColors.textSecondary,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          ref.read(historyTabSelectionProvider.notifier).state = 2;
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          decoration: BoxDecoration(
-                            color: selectedTab == 2 ? AppColors.primaryGold : Colors.transparent,
-                            borderRadius: BorderRadius.circular(11),
-                          ),
-                          child: Center(
-                            child: Text(
-                              'Bike Rentals',
-                              style: AppTextStyles.titleSmall.copyWith(
-                                color: selectedTab == 2 ? AppColors.backgroundDark : AppColors.textSecondary,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ),
+                        ],
                       ),
                     ),
                   ],
@@ -357,7 +305,7 @@ class MyRidesScreen extends ConsumerWidget {
     ), // closes Expanded
   ], // closes Column children
 ) // closes Column
-: selectedTab == 1 ? const CarRentalsHistoryView() : const BikeRentalsHistoryView(),
+: selectedTab == 1 ? const CarRentalsHistoryView() : selectedTab == 2 ? const BikeRentalsHistoryView() : const QuickServicesHistoryView(),
             ), // closes Expanded
           ], // closes Column children
         ), // closes Column

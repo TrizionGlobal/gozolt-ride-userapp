@@ -168,4 +168,5 @@ abstract final class RouteNames {
   static const String quickServicesPrinterScanner = 'quick-services-printer-scanner';
   static const String quickServicesPrinterScannerReview = 'quick-services-printer-scanner-review';
   static const String quickServicesPrinterScannerConfirmation = 'quick-services-printer-scanner-confirmation';
+  static const String quickServiceHistoryDetails = 'quick-service-history-details';
 }
