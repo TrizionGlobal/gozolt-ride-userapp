@@ -194,7 +194,7 @@ class _LiftElevatorMechanicDetailsScreenState extends State<LiftElevatorMechanic
               final updatedData = widget.bookingData.copyWith(
                 selectedServiceTitle: 'Lift / Elevator Mechanic',
                 subtotal: 0.0,
-                        baseEstimatedHours: 0.0,
+                        baseEstimatedHours: 1.0,
                 propertyType: _selectedPropertyType,
                 liftType: _selectedLiftType,
                 vehicleMake: _manufacturerController.text.trim().isNotEmpty ? _manufacturerController.text.trim() : null, // Reusing vehicleMake for Manufacturer

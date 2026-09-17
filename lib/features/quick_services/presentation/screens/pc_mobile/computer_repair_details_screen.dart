@@ -546,7 +546,7 @@ class _ComputerRepairDetailsScreenState extends State<ComputerRepairDetailsScree
                             : null,
                         uploadedImages: _selectedImages.map((e) => e.path).toList(),
                         subtotal: 0.0,
-                        baseEstimatedHours: 0.0,
+                        baseEstimatedHours: 1.5,
                       );
 
                       context.pushNamed(

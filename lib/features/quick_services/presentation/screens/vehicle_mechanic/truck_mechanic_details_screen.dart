@@ -332,7 +332,7 @@ class _TruckMechanicDetailsScreenState extends State<TruckMechanicDetailsScreen>
                     uploadedImages: _selectedImages.map((f) => f.path).toList(),
                     selectedServiceTitle: 'Truck Mechanic',
                     subtotal: 0.0,
-                        baseEstimatedHours: 0.0, // Inspection fee
+                        baseEstimatedHours: 2.0, // Inspection fee
                   );
                   context.pushNamed(
                     RouteNames.quickServicesTruckMechanicReview,

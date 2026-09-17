@@ -101,6 +101,7 @@ class _PrinterScannerReviewScreenState extends ConsumerState<PrinterScannerRevie
         children: [
           const QuickServicesHeader(
             title: 'Review & Book',
+            subtitle: 'Printer & Scanner Repair',
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -270,7 +271,11 @@ class _PrinterScannerReviewScreenState extends ConsumerState<PrinterScannerRevie
                     const SizedBox(height: 16),
 
                   // Price Summary Card
-                  QuickServicesPriceSummary(bookingData: _bookingData, note: 'Final quote provided after inspection'),
+                  QuickServicesPriceSummary(
+                    bookingData: _bookingData, 
+                    useGoCoins: _useGoCoins, 
+                    onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),
+                  ),
 
                   const SizedBox(height: 16),
 

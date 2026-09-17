@@ -74,6 +74,7 @@ class _BeautyWellnessReviewScreenState extends ConsumerState<BeautyWellnessRevie
         children: [
           const QuickServicesHeader(
             title: 'Review & Book',
+            subtitle: 'Beauty & Wellness',
           ),
           Expanded(
             child: SingleChildScrollView(

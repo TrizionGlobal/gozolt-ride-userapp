@@ -59,6 +59,7 @@ class _TruckWashReviewScreenState extends ConsumerState<TruckWashReviewScreen> {
         children: [
           const QuickServicesHeader(
             title: 'Review & Book',
+            subtitle: 'Truck Wash',
           ),
           Expanded(
             child: SingleChildScrollView(

@@ -329,7 +329,7 @@ class _CarMechanicDetailsScreenState extends State<CarMechanicDetailsScreen> {
                     uploadedImages: _selectedImages.map((f) => f.path).toList(),
                     selectedServiceTitle: 'Car Mechanic',
                     subtotal: 0.0,
-                        baseEstimatedHours: 0.0, // Inspection fee
+                        baseEstimatedHours: 2.0, // Inspection fee
                   );
                   context.pushNamed(
                     RouteNames.quickServicesCarMechanicReview,

@@ -41,7 +41,7 @@ class _CarpenterReviewScreenState extends ConsumerState<CarpenterReviewScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(title: 'Review & Book'),
+          const QuickServicesHeader(title: 'Review & Book', subtitle: 'Carpenter'),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),

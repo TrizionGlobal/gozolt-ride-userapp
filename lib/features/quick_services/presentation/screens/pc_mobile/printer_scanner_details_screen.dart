@@ -336,7 +336,7 @@ class _PrinterScannerDetailsScreenState extends State<PrinterScannerDetailsScree
                         describeIssue: _problemDescriptionController.text.trim().isNotEmpty ? _problemDescriptionController.text.trim() : null,
                         uploadedImages: _selectedImages.map((e) => e.path).toList(),
                         subtotal: 0.0,
-                        baseEstimatedHours: 0.0, // Inspection fee basis
+                        baseEstimatedHours: 1.5, // Inspection fee basis
                       );
 
                       context.pushNamed(

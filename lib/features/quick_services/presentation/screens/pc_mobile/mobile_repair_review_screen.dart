@@ -95,6 +95,7 @@ class _MobileRepairReviewScreenState extends ConsumerState<MobileRepairReviewScr
         children: [
           const QuickServicesHeader(
             title: 'Review & Book',
+            subtitle: 'Mobile Repair',
           ),
           Expanded(
             child: SingleChildScrollView(

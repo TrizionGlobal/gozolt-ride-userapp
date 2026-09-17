@@ -95,6 +95,7 @@ class _ComputerRepairReviewScreenState extends ConsumerState<ComputerRepairRevie
         children: [
           const QuickServicesHeader(
             title: 'Review & Book',
+            subtitle: 'Computer Repair',
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -259,7 +260,11 @@ class _ComputerRepairReviewScreenState extends ConsumerState<ComputerRepairRevie
                     const SizedBox(height: 16),
 
                   // Price Summary Card
-                  QuickServicesPriceSummary(bookingData: _bookingData, note: 'Final quote provided after inspection'),
+                  QuickServicesPriceSummary(
+                    bookingData: _bookingData, 
+                    useGoCoins: _useGoCoins, 
+                    onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),
+                  ),
 
                   const SizedBox(height: 16),
 

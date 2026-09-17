@@ -235,7 +235,11 @@ class _PestControlReviewScreenState extends ConsumerState<PestControlReviewScree
                   const SizedBox(height: 24),
 
                   // Payment Section
-                  QuickServicesPriceSummary(bookingData: booking),
+                  QuickServicesPriceSummary(
+  bookingData: booking,
+  useGoCoins: _useGoCoins,
+  onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),
+),
 
                   const SizedBox(height: 40),
                 ],

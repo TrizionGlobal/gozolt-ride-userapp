@@ -313,7 +313,7 @@ class _SuppliersDetailsScreenState extends State<SuppliersDetailsScreen> {
                         describeIssue: _describeIssueController.text.trim().isNotEmpty ? _describeIssueController.text.trim() : null,
                         uploadedImages: _selectedImages.map((e) => e.path).toList(),
                         subtotal: 0.0,
-                        baseEstimatedHours: 0.0,
+                        baseEstimatedHours: 1.0,
                       );
 
                       context.pushNamed(

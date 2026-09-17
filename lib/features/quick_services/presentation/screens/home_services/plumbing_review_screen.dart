@@ -41,7 +41,7 @@ class _PlumbingReviewScreenState extends ConsumerState<PlumbingReviewScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(title: 'Review & Book'),
+          const QuickServicesHeader(title: 'Review & Book', subtitle: 'Plumbing Repair'),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),

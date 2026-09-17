@@ -41,7 +41,7 @@ class _BikeMechanicReviewScreenState extends ConsumerState<BikeMechanicReviewScr
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(title: 'Review & Book'),
+          const QuickServicesHeader(title: 'Review & Book', subtitle: 'Bike Mechanic'),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),
@@ -171,17 +171,11 @@ class _BikeMechanicReviewScreenState extends ConsumerState<BikeMechanicReviewScr
                   ],
                   const SizedBox(height: 20),
                   
-                  ..._bookingData.selectedAddons.map((addon) {
-                    return _buildPriceRow(addon.name, '€${addon.totalPrice.toStringAsFixed(2)}');
-                  }).toList(),
-                  _buildPriceRow('Estimated Labour', '€25 - €80', valueStyle: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGold)),
-                  _buildPriceRow('Replacement Parts', 'Not Included'),
-                  const Divider(),
-                  const Text('Final quote after inspection', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                  
-                  const SizedBox(height: 20),
-                  
-                                    
+                                    QuickServicesPriceSummary(
+                    bookingData: _bookingData,
+                    useGoCoins: _useGoCoins,
+                    onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),
+                  ),
                   const SizedBox(height: 16),
                   Row(
                     children: [

@@ -45,6 +45,7 @@ class _HandymanReviewScreenState extends ConsumerState<HandymanReviewScreen> {
         children: [
           const QuickServicesHeader(
             title: 'Review & Book',
+            subtitle: 'Handyman',
           ),
           Expanded(
             child: SingleChildScrollView(

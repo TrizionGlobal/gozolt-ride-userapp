@@ -50,6 +50,7 @@ class _HirePersonReviewScreenState extends ConsumerState<HirePersonReviewScreen>
         children: [
           const QuickServicesHeader(
             title: 'Review & Book',
+            subtitle: 'Hire Person',
           ),
           Expanded(
             child: SingleChildScrollView(

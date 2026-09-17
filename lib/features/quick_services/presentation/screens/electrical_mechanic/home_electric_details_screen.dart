@@ -126,7 +126,7 @@ class _HomeElectricDetailsScreenState extends State<HomeElectricDetailsScreen> {
       describeIssue: _describeIssueController.text.trim(),
       uploadedImages: _selectedImages.map((img) => img.path).toList(),
       subtotal: 0.0,
-                        baseEstimatedHours: 0.0,
+                        baseEstimatedHours: 1.0,
     );
 
     context.pushNamed(RouteNames.quickServicesElectricalReview, extra: updatedData);

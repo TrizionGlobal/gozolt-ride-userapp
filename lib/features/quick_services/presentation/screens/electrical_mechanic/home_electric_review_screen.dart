@@ -45,6 +45,7 @@ class _HomeElectricReviewScreenState extends ConsumerState<HomeElectricReviewScr
         children: [
           const QuickServicesHeader(
             title: 'Review & Book',
+            subtitle: 'Home Electric',
           ),
             Expanded(
               child: SingleChildScrollView(

@@ -323,7 +323,7 @@ class _ApplianceRepairDetailsScreenState extends State<ApplianceRepairDetailsScr
                         describeIssue: _describeIssueController.text.trim().isNotEmpty ? _describeIssueController.text.trim() : null,
                         uploadedImages: _selectedImages.map((e) => e.path).toList(),
                         subtotal: 0.0,
-                        baseEstimatedHours: 0.0, // Fixed 20 euro visit fee as per mockup
+                        baseEstimatedHours: 1.0, // Fixed 20 euro visit fee as per mockup
                       );
 
                       context.pushNamed(

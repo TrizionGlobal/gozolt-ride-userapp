@@ -41,7 +41,7 @@ class _TruckMechanicReviewScreenState extends ConsumerState<TruckMechanicReviewS
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(title: 'Review & Book'),
+          const QuickServicesHeader(title: 'Review & Book', subtitle: 'Truck Mechanic'),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),
@@ -175,18 +175,11 @@ class _TruckMechanicReviewScreenState extends ConsumerState<TruckMechanicReviewS
                   ],
                   const SizedBox(height: 20),
                   
-                  ..._bookingData.selectedAddons.map((addon) {
-                    return _buildPriceRow(addon.name, '€${addon.totalPrice.toStringAsFixed(2)}');
-                  }).toList(),
-                  _buildPriceRow('Visit / Inspection Fee', '€${_bookingData.subtotal.toStringAsFixed(2)}'),
-                  _buildPriceRow('Estimated Labour', '€40 - €120', valueStyle: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGold)),
-                  _buildPriceRow('Replacement Parts', 'Not Included'),
-                  const Divider(),
-                  const Text('Final quote after inspection', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                  
-                  const SizedBox(height: 20),
-                  
-                                    
+                                    QuickServicesPriceSummary(
+                    bookingData: _bookingData,
+                    useGoCoins: _useGoCoins,
+                    onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),
+                  ),
                   const SizedBox(height: 16),
                   Row(
                     children: [

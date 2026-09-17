@@ -235,7 +235,7 @@ class _BikeMechanicDetailsScreenState extends State<BikeMechanicDetailsScreen> {
                   final updatedData = widget.bookingData.copyWith(
                     selectedServiceTitle: 'Bike Mechanic',
                     subtotal: 0.0,
-                        baseEstimatedHours: 0.0,
+                        baseEstimatedHours: 2.0,
                     bikeType: _selectedBikeType,
                     vehicleMake: _makeController.text.trim(),
                     vehicleModel: _modelController.text.trim(),

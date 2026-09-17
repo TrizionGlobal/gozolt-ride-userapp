@@ -93,6 +93,7 @@ class _LiftElevatorMechanicReviewScreenState extends ConsumerState<LiftElevatorM
         children: [
           const QuickServicesHeader(
             title: 'Review & Book',
+            subtitle: 'Lift/Elevator Mechanic',
           ),
           
           // Certified technician required banner

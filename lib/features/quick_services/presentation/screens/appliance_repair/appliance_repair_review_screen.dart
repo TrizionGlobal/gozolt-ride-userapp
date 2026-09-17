@@ -41,7 +41,7 @@ class _ApplianceRepairReviewScreenState extends ConsumerState<ApplianceRepairRev
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(title: 'Review & Book'),
+          const QuickServicesHeader(title: 'Review & Book', subtitle: 'Appliance Repair'),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),

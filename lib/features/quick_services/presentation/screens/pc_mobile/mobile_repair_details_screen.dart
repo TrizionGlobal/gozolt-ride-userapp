@@ -608,7 +608,7 @@ class _MobileRepairDetailsScreenState extends State<MobileRepairDetailsScreen> {
                             : null,
                         uploadedImages: _selectedImages.map((e) => e.path).toList(),
                         subtotal: 0.0,
-                        baseEstimatedHours: 0.0,
+                        baseEstimatedHours: _deviceCount * 1.5,
                       );
 
                       context.pushNamed(

@@ -68,6 +68,7 @@ class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
         children: [
           const QuickServicesHeader(
             title: 'Review & Book',
+            subtitle: 'Laundry Service',
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -297,8 +298,11 @@ class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
 
                   // Price Summary Card
                   if (data.selectedServiceTitle == 'Hospital Laundry' || data.selectedServiceTitle == 'Hotel Laundry' || data.selectedServiceTitle == 'Commercial Laundry') ...[
-                    const SizedBox(height: 16),
-                    QuickServicesPriceSummary(bookingData: data),
+                    QuickServicesPriceSummary(
+                      bookingData: data,
+                      useGoCoins: _useGoCoins,
+                      onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),
+                    ),
                   ] else ...[
                     Text(
                       'Price Summary',
