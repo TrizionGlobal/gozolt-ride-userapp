@@ -176,7 +176,7 @@ class _ServiceLocationScreenState extends State<ServiceLocationScreen> {
       body: Column(
         children: [
           // ── Header ───────────────────────────────────────
-          const QuickServicesHeader(
+          QuickServicesHeader(
             title: 'Location & Schedule',
           ),
           

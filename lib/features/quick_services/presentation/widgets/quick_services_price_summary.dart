@@ -114,35 +114,38 @@ class QuickServicesPriceSummary extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
               ],
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Hourly Rate', style: AppTextStyles.bodyMedium),
-                  Text(
-                    bookingData.hasRateRange
-                        ? '€${bookingData.minHourlyRate.toStringAsFixed(2)} - €${bookingData.maxHourlyRate!.toStringAsFixed(2)}/hr'
-                        : '€${bookingData.minHourlyRate.toStringAsFixed(2)}/hr',
-                    style: AppTextStyles.bodyMedium
-                        .copyWith(fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Estimated Service Charge',
-                      style: AppTextStyles.bodyMedium),
-                  Text(
-                    bookingData.hasRateRange
-                        ? '€${(bookingData.totalEstimatedHours * bookingData.minHourlyRate).toStringAsFixed(2)} - €${(bookingData.totalEstimatedHours * bookingData.maxHourlyRate!).toStringAsFixed(2)}'
-                        : '€${(bookingData.totalEstimatedHours * bookingData.minHourlyRate).toStringAsFixed(2)}',
-                    style: AppTextStyles.bodyMedium
-                        .copyWith(fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-              const Divider(height: 24),
+              if (bookingData.category != 'Vehicle Wash') ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Hourly Rate', style: AppTextStyles.bodyMedium),
+                    Text(
+                      bookingData.hasRateRange
+                          ? '€${bookingData.minHourlyRate.toStringAsFixed(2)} - €${bookingData.maxHourlyRate!.toStringAsFixed(2)}/hr'
+                          : '€${bookingData.minHourlyRate.toStringAsFixed(2)}/hr',
+                      style: AppTextStyles.bodyMedium
+                          .copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Estimated Service Charge',
+                        style: AppTextStyles.bodyMedium),
+                    Text(
+                      bookingData.hasRateRange
+                          ? '€${(bookingData.totalEstimatedHours * bookingData.minHourlyRate).toStringAsFixed(2)} - €${(bookingData.totalEstimatedHours * bookingData.maxHourlyRate!).toStringAsFixed(2)}'
+                          : '€${(bookingData.totalEstimatedHours * bookingData.minHourlyRate).toStringAsFixed(2)}',
+                      style: AppTextStyles.bodyMedium
+                          .copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ],
+              if (bookingData.category != 'Vehicle Wash')
+                const Divider(height: 24),
               if (bookingData.fixedAddonCosts > 0) ...[
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -152,6 +155,25 @@ class QuickServicesPriceSummary extends StatelessWidget {
                             style: AppTextStyles.bodyMedium)),
                     Text(
                       '€${bookingData.fixedAddonCosts.toStringAsFixed(2)}',
+                      style: AppTextStyles.bodyMedium
+                          .copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
+              if (bookingData.subtotal > 0) ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                        child: Text(
+                            bookingData.category == 'Vehicle Wash'
+                                ? 'Total Vehicles Charges'
+                                : 'Service Subtotal',
+                            style: AppTextStyles.bodyMedium)),
+                    Text(
+                      '€${bookingData.subtotal.toStringAsFixed(2)}',
                       style: AppTextStyles.bodyMedium
                           .copyWith(fontWeight: FontWeight.bold),
                     ),
@@ -175,15 +197,18 @@ class QuickServicesPriceSummary extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
               ],
-              if (bookingData.subtotal > 0) ...[
+              if (bookingData.pickupAndReturnFee != null && bookingData.pickupAndReturnFee! > 0) ...[
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                        child: Text('Other Subtotal',
+                        child: Text(
+                            (bookingData.category == 'Vehicle Wash' && bookingData.carWashVehicles != null && bookingData.carWashVehicles!.isNotEmpty)
+                                ? 'Pickup & Return Fee (x${bookingData.carWashVehicles!.length})'
+                                : 'Pickup & Return Fee',
                             style: AppTextStyles.bodyMedium)),
                     Text(
-                      '€${bookingData.subtotal.toStringAsFixed(2)}',
+                      '€${bookingData.pickupAndReturnFee!.toStringAsFixed(2)}',
                       style: AppTextStyles.bodyMedium
                           .copyWith(fontWeight: FontWeight.bold),
                     ),

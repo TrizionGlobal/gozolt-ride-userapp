@@ -1,6 +1,6 @@
 import '../../../../../core/widgets/booking_payment_sheet.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../widgets/quick_services_payment_selector.dart';
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -23,6 +23,7 @@ class TruckWashReviewScreen extends ConsumerStatefulWidget {
 
 class _TruckWashReviewScreenState extends ConsumerState<TruckWashReviewScreen> {
   late QuickServiceBookingData _bookingData;
+  bool _useGoCoins = false;
 
   @override
   void initState() {
@@ -30,36 +31,36 @@ class _TruckWashReviewScreenState extends ConsumerState<TruckWashReviewScreen> {
     _bookingData = widget.bookingData;
   }
 
-  bool _useGoCoins = false;
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    String getVehicleName() {
+      final title = _bookingData.selectedServiceTitle?.toLowerCase() ?? '';
+      if (title.contains('bike')) return 'Bike';
+      if (title.contains('truck')) return 'Truck';
+      if (title.contains('car')) return 'Car';
+      return 'Car';
+    }
+    final vName = getVehicleName();
     final dateStr = DateFormat('dd MMM yyyy').format(_bookingData.scheduleDate);
     final timeStr = _bookingData.scheduleTime.format(context);
 
-    final make = _bookingData.vehicleMake ?? 'Toyota';
-    final model = _bookingData.vehicleModel ?? 'Corolla';
-    final colour = _bookingData.vehicleColour ?? 'Black';
-    final regNo = _bookingData.vehicleRegistration ?? 'ABC 123';
-    final packageName = _bookingData.carWashPackage ?? 'Full Wash';
-    final packagePrice = _bookingData.carWashPackagePrice ?? 30.0;
-    final vehicleCount = _bookingData.vehicleCount ?? 1;
-    final condition = _bookingData.vehicleCondition ?? 'Normal';
+    final vehicles = _bookingData.carWashVehicles ?? [];
     final water = _bookingData.waterAccess ?? 'Available';
     final electricity = _bookingData.electricityAccess ?? 'Available';
 
-    final rawSubtotal = packagePrice * vehicleCount;
     final discount = _useGoCoins ? 2.0 : 0.0;
-    final estimatedTotal = (rawSubtotal - discount).clamp(0.0, 9999.0);
+    
+    // We already set subtotal properly in CarWashDetailsScreen, so we can use _bookingData.estimatedTotalMin
+    final estimatedTotal = (_bookingData.estimatedTotalMin - discount).clamp(0.0, 9999.0);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(
+          QuickServicesHeader(
             title: 'Review & Book',
-            subtitle: 'Truck Wash',
+            subtitle: _bookingData.selectedServiceTitle ?? 'Car Wash',
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -74,73 +75,33 @@ class _TruckWashReviewScreenState extends ConsumerState<TruckWashReviewScreen> {
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFFFF8E1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.local_car_wash,
-                            color: Color(0xFFF57F17),
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Truck Wash',
-                          style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Service Details Summary Card
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardTheme.color,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildDetailRow('Vehicle:', '$make $model • $colour'),
-                        const SizedBox(height: 8),
-                        _buildDetailRow('Registration:', regNo),
-                        const SizedBox(height: 8),
-                        _buildDetailRow('Package:', packageName),
-                        const SizedBox(height: 8),
-                        _buildDetailRow('Vehicles:', '$vehicleCount'),
-                        const SizedBox(height: 8),
-                        _buildDetailRow('Condition:', condition),
-                        const SizedBox(height: 8),
-                        _buildDetailRow('Water:', water),
-                        const SizedBox(height: 8),
-                        _buildDetailRow('Electricity:', electricity),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Location, Schedule & Customer Card
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardTheme.color,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                      border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGold.withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.local_car_wash,
+                                color: AppColors.primaryGold,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Booking details',
+                              style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
                         // Date & Time
                         Row(
                           children: [
@@ -177,87 +138,211 @@ class _TruckWashReviewScreenState extends ConsumerState<TruckWashReviewScreen> {
                             Text('Customer: ${_bookingData.userName}', style: AppTextStyles.bodyMedium),
                           ],
                         ),
+                        const SizedBox(height: 10),
 
-                        if (_bookingData.describeIssue != null && _bookingData.describeIssue!.isNotEmpty) ...[
-                          const SizedBox(height: 10),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.note_alt_outlined, size: 18, color: Colors.grey),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  'Parking instruction: ${_bookingData.describeIssue!}',
-                                  style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700]),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-
-                        // Photos Thumbnail
-                        if (_bookingData.uploadedImages != null && _bookingData.uploadedImages!.isNotEmpty) ...[
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              const Icon(Icons.image_outlined, size: 18, color: Colors.grey),
-                              const SizedBox(width: 10),
-                              Text('Attached Photo (${_bookingData.uploadedImages!.length})', style: AppTextStyles.bodySmall),
-                              const Spacer(),
-                              SizedBox(
-                                height: 40,
-                                child: ListView.builder(
-                                  scrollDirection: Axis.horizontal,
-                                  shrinkWrap: true,
-                                  itemCount: _bookingData.uploadedImages!.length,
-                                  itemBuilder: (context, index) {
-                                    final path = _bookingData.uploadedImages![index];
-                                    return QuickServicesPriceSummary(bookingData: _bookingData, useGoCoins: _useGoCoins, onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),);
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                        // Service Mode
+                        Row(
+                          children: [
+                            const Icon(Icons.local_shipping, size: 18, color: Colors.grey),
+                            const SizedBox(width: 10),
+                            Text('Service Mode: ${_bookingData.vehicleServiceMode ?? 'On-Site'}', style: AppTextStyles.bodyMedium),
+                          ],
+                        ),
                       ],
                     ),
                   ),
 
+                  const SizedBox(height: 16),
+
+                  // Vehicles Summary Card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${vName}s (${vehicles.length})',
+                          style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 12),
+                        ...vehicles.map((v) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.grey[850] : Colors.grey[50],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        '${v.make} ${v.model}',
+                                        style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    Text(
+                                      '€${v.washPackagePrice.toStringAsFixed(0)}',
+                                      style: AppTextStyles.bodyMedium.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: isDark ? AppColors.primaryGold : const Color(0xFFD97706),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                _buildDetailRow('Type:', v.type),
+                                _buildDetailRow('Package:', v.washPackage),
+                                _buildDetailRow('Condition:', v.condition),
+                              ],
+                            ),
+                          ),
+                        )),
+
+                      ],
+                    ),
+                  ),
+
+
+
+                  const SizedBox(height: 20),
+
+                  if ((_bookingData.comments != null && _bookingData.comments!.isNotEmpty) ||
+                      (_bookingData.describeIssue != null && _bookingData.describeIssue!.isNotEmpty) ||
+                      (_bookingData.uploadedImages != null && _bookingData.uploadedImages!.isNotEmpty))
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardTheme.color,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Additional Details',
+                            style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 12),
+                          if (_bookingData.comments != null && _bookingData.comments!.isNotEmpty) ...[
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(Icons.chat_bubble_outline, size: 18, color: Colors.grey),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Specific instruction: ${_bookingData.comments!}',
+                                    style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700]),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+                          if (_bookingData.describeIssue != null && _bookingData.describeIssue!.isNotEmpty) ...[
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(Icons.note_alt_outlined, size: 18, color: Colors.grey),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Issue description: ${_bookingData.describeIssue!}',
+                                    style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700]),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (_bookingData.uploadedImages != null && _bookingData.uploadedImages!.isNotEmpty)
+                              const SizedBox(height: 10),
+                          ],
+                          if (_bookingData.uploadedImages != null && _bookingData.uploadedImages!.isNotEmpty) ...[
+                            Row(
+                              children: [
+                                const Icon(Icons.image_outlined, size: 18, color: Colors.grey),
+                                const SizedBox(width: 10),
+                                Text('Attached Photo (${_bookingData.uploadedImages!.length})', style: AppTextStyles.bodySmall),
+                                const Spacer(),
+                                SizedBox(
+                                  height: 40,
+                                  child: ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    shrinkWrap: true,
+                                    itemCount: _bookingData.uploadedImages!.length,
+                                    itemBuilder: (context, index) {
+                                      final path = _bookingData.uploadedImages![index];
+                                      return Padding(
+                                        padding: const EdgeInsets.only(left: 4.0),
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(4),
+                                          child: Image.file(
+                                            File(path),
+                                            width: 40,
+                                            height: 40,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+
                   const SizedBox(height: 20),
 
                   // Payment Section
-                  
-                  QuickServicesPriceSummary(bookingData: _bookingData, useGoCoins: _useGoCoins, onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),),
+                  QuickServicesPriceSummary(
+                    bookingData: _bookingData,
+                    useGoCoins: _useGoCoins,
+                    onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),
+                  ),
                   const SizedBox(height: 40),
 
                   // Confirm Booking Button
                   ElevatedButton(
                     onPressed: () {
-                  final finalTotal = _bookingData.upfrontBookingFee - (_useGoCoins ? 2.0 : 0.0);
+                      final finalTotal = estimatedTotal;
                       
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (ctx) => BookingPaymentSheet(
-                      currentType: _bookingData.paymentMethodType,
-                      currentCardId: _bookingData.paymentMethodId,
-                      isQuickService: true,
-                      amount: finalTotal,
-                      onConfirm: (type, {cardId}) {
-                        final updatedData = _bookingData.copyWith(
-                          paymentMethodType: type,
-                          paymentMethodId: cardId,
-                          useGoCoins: _useGoCoins,
-                        );
-                        context.pushNamed(
-                          RouteNames.quickServicesTruckWashConfirmation,
-                          extra: updatedData,
-                        );
-                      },
-                    ),
-                  );
-                },
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (ctx) => BookingPaymentSheet(
+                          currentType: _bookingData.paymentMethodType,
+                          currentCardId: _bookingData.paymentMethodId,
+                          isQuickService: true,
+                          amount: finalTotal,
+                          onConfirm: (type, {cardId}) {
+                            final updatedData = _bookingData.copyWith(
+                              paymentMethodType: type,
+                              paymentMethodId: cardId,
+                              useGoCoins: _useGoCoins,
+                            );
+                            context.pushNamed(
+                              RouteNames.quickServicesTruckWashConfirmation,
+                              extra: updatedData,
+                            );
+                          },
+                        ),
+                      );
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,
                       foregroundColor: Colors.black,
@@ -279,12 +364,20 @@ class _TruckWashReviewScreenState extends ConsumerState<TruckWashReviewScreen> {
   }
 
   Widget _buildDetailRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700])),
-        Text(value, style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold)),
-      ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(label, style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600])),
+          ),
+          Expanded(
+            child: Text(value, style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w500)),
+          ),
+        ],
+      ),
     );
   }
 }

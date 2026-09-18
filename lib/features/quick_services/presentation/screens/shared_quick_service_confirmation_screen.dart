@@ -100,7 +100,7 @@ class SharedQuickServiceConfirmationScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Theme.of(context).cardTheme.color,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,7 +164,7 @@ class SharedQuickServiceConfirmationScreen extends StatelessWidget {
                   elevation: 0,
                   minimumSize: const Size.fromHeight(50),
                 ),
-                child: const Text('BACK TO HOME',
+                child: const Text('Back To Home',
                     style:
                         TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               ),

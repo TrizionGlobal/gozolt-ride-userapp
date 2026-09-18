@@ -47,18 +47,17 @@ class WelcomeScreen extends ConsumerWidget {
                         // ── New Tagline ────────────────────────────────────
                         Text(
                           'Your Complete Mobility Solution',
-                          style: AppTextStyles.titleMedium.copyWith(
-                            color: Theme.of(context).textTheme.bodyMedium?.color,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Cabs, Rentals, Bikes & Airport Transport.',
                           style: AppTextStyles.bodyMedium.copyWith(
                             color: AppColors.textMuted,
                           ),
                         ),
+                        // const SizedBox(height: 8),
+                        // Text(
+                        //   'Cabs, Rentals, Bikes & Airport Transport.',
+                        //   style: AppTextStyles.bodyMedium.copyWith(
+                        //     color: AppColors.textMuted,
+                        //   ),
+                        // ),
 
                         const Spacer(flex: 2),
 

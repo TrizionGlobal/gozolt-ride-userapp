@@ -38,6 +38,43 @@ class ServiceAddon {
   }
 }
 
+
+class CarWashVehicle {
+  final String type;
+  final String make;
+  final String model;
+  final String washPackage;
+  final double washPackagePrice;
+  final String condition;
+
+  const CarWashVehicle({
+    required this.type,
+    required this.make,
+    required this.model,
+    required this.washPackage,
+    required this.washPackagePrice,
+    required this.condition,
+  });
+
+  CarWashVehicle copyWith({
+    String? type,
+    String? make,
+    String? model,
+    String? washPackage,
+    double? washPackagePrice,
+    String? condition,
+  }) {
+    return CarWashVehicle(
+      type: type ?? this.type,
+      make: make ?? this.make,
+      model: model ?? this.model,
+      washPackage: washPackage ?? this.washPackage,
+      washPackagePrice: washPackagePrice ?? this.washPackagePrice,
+      condition: condition ?? this.condition,
+    );
+  }
+}
+
 class QuickServiceBookingData {
   final String category;
   final String selectedService;
@@ -139,6 +176,10 @@ class QuickServiceBookingData {
   final String? waterAccess;
   final String? electricityAccess;
   final int? vehicleCount;
+  final List<CarWashVehicle>? carWashVehicles;
+  final String? vehicleServiceMode;
+  final double? pickupAndReturnFee;
+
 
   // Laundry & Ironing specific fields
   final String? laundryServiceMethod;
@@ -227,12 +268,14 @@ class QuickServiceBookingData {
       (totalEstimatedHours * minHourlyRate) +
       fixedAddonCosts +
       materialCost +
+      (pickupAndReturnFee ?? 0.0) +
       subtotal;
 
   double get estimatedTotalMax => (maxHourlyRate != null)
       ? ((totalEstimatedHours * maxHourlyRate!) +
           fixedAddonCosts +
           materialCost +
+          (pickupAndReturnFee ?? 0.0) +
           subtotal)
       : estimatedTotalMin;
 
@@ -316,6 +359,9 @@ class QuickServiceBookingData {
     this.waterAccess,
     this.electricityAccess,
     this.vehicleCount,
+    this.carWashVehicles,
+    this.vehicleServiceMode = 'On-Site',
+    this.pickupAndReturnFee,
     this.laundryServiceMethod,
     this.laundryServiceType,
     this.laundryPackagePrice,
@@ -434,6 +480,8 @@ class QuickServiceBookingData {
     List<String>? printerIssues,
     int? printerDeviceCount,
     String? printerErrorCode,
+    String? vehicleServiceMode,
+    double? pickupAndReturnFee,
     String? carWashPackage,
     double? carWashPackagePrice,
     String? vehicleColour,
@@ -441,6 +489,7 @@ class QuickServiceBookingData {
     String? waterAccess,
     String? electricityAccess,
     int? vehicleCount,
+    List<CarWashVehicle>? carWashVehicles,
     String? laundryServiceMethod,
     String? laundryServiceType,
     double? laundryPackagePrice,
@@ -565,6 +614,8 @@ class QuickServiceBookingData {
       printerIssues: printerIssues ?? this.printerIssues,
       printerDeviceCount: printerDeviceCount ?? this.printerDeviceCount,
       printerErrorCode: printerErrorCode ?? this.printerErrorCode,
+      vehicleServiceMode: vehicleServiceMode ?? this.vehicleServiceMode,
+      pickupAndReturnFee: pickupAndReturnFee ?? this.pickupAndReturnFee,
       carWashPackage: carWashPackage ?? this.carWashPackage,
       carWashPackagePrice: carWashPackagePrice ?? this.carWashPackagePrice,
       vehicleColour: vehicleColour ?? this.vehicleColour,
@@ -572,6 +623,7 @@ class QuickServiceBookingData {
       waterAccess: waterAccess ?? this.waterAccess,
       electricityAccess: electricityAccess ?? this.electricityAccess,
       vehicleCount: vehicleCount ?? this.vehicleCount,
+      carWashVehicles: carWashVehicles ?? this.carWashVehicles,
       laundryServiceMethod: laundryServiceMethod ?? this.laundryServiceMethod,
       laundryServiceType: laundryServiceType ?? this.laundryServiceType,
       laundryPackagePrice: laundryPackagePrice ?? this.laundryPackagePrice,

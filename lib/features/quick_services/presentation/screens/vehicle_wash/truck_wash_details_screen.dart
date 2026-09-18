@@ -19,71 +19,28 @@ class TruckWashDetailsScreen extends StatefulWidget {
 
 class _TruckWashDetailsScreenState extends State<TruckWashDetailsScreen> {
   String _materialPreference = 'Bring materials';
-  String? _selectedVehicleType;
-  String? _selectedVehicleMake;
-  String? _selectedVehicleModel;
-  String? _selectedColour;
+  
+  // List to hold multiple vehicles
+  final List<CarWashVehicle> _savedVehicles = [];
+
+  // Controllers for the current vehicle form
+  final TextEditingController _vehicleTypeController = TextEditingController();
+  final TextEditingController _vehicleMakeController = TextEditingController();
+  final TextEditingController _vehicleModelController = TextEditingController();
+  
   String? _selectedWashPackage;
   double _selectedPackagePrice = 0.0;
-  int _vehicleCount = 1;
   String? _selectedCondition;
+
+  // Global properties (not per vehicle)
   String? _waterAccess;
   String? _electricityAccess;
+  String _serviceMode = 'On-Site';
 
-  final TextEditingController _registrationController = TextEditingController();
-  final TextEditingController _customVehicleTypeController = TextEditingController();
-  final TextEditingController _customMakeController = TextEditingController();
-  final TextEditingController _customModelController = TextEditingController();
-  final TextEditingController _customColourController = TextEditingController();
   final TextEditingController _whatYouNeedController = TextEditingController();
   final TextEditingController _describeIssueController = TextEditingController();
   final List<XFile> _selectedImages = [];
   final ImagePicker _picker = ImagePicker();
-
-  final List<String> _vehicleTypes = [
-    'Light Duty',
-    'Heavy Duty',
-    'Trailer',
-    'Box Truck',
-    'Other',
-  ];
-
-  final List<String> _vehicleMakes = [
-    'Volvo',
-    'Scania',
-    'MAN',
-    'Mercedes-Benz',
-    'DAF',
-    'Iveco',
-    'Renault',
-    'Ford',
-    'Other',
-  ];
-
-  static const Map<String, List<String>> _makeModelsMap = {
-    'Volvo': ['FH', 'FM', 'FMX', 'FE', 'FL', 'Other Model'],
-    'Scania': ['R-Series', 'S-Series', 'G-Series', 'P-Series', 'Other Model'],
-    'MAN': ['TGX', 'TGS', 'TGM', 'TGL', 'Other Model'],
-    'Mercedes-Benz': ['Actros', 'Arocs', 'Atego', 'Econic', 'Other Model'],
-    'DAF': ['XF', 'CF', 'LF', 'Other Model'],
-    'Iveco': ['Stralis', 'Eurocargo', 'Trakker', 'Daily', 'Other Model'],
-    'Renault': ['T-High', 'T', 'C', 'K', 'Other Model'],
-    'Ford': ['F-Max', 'Cargo', 'Transit', 'Other Model'],
-    'Other': ['Other Model'],
-  };
-
-  List<String> get _currentModels =>
-      _selectedVehicleMake != null ? (_makeModelsMap[_selectedVehicleMake] ?? const ['Other Model']) : const [];
-
-  final List<String> _colours = [
-    'Black',
-    'White',
-    'Silver',
-    'Grey',
-    'Blue',
-    'Red',
-    'Other',
-  ];
 
   final List<Map<String, dynamic>> _washPackages = [
     {'title': 'Exterior Wash', 'price': 15.0, 'displayPrice': '€15'},
@@ -108,11 +65,9 @@ class _TruckWashDetailsScreenState extends State<TruckWashDetailsScreen> {
 
   @override
   void dispose() {
-    _registrationController.dispose();
-    _customVehicleTypeController.dispose();
-    _customMakeController.dispose();
-    _customModelController.dispose();
-    _customColourController.dispose();
+    _vehicleTypeController.dispose();
+    _vehicleMakeController.dispose();
+    _vehicleModelController.dispose();
     _whatYouNeedController.dispose();
     _describeIssueController.dispose();
     super.dispose();
@@ -127,21 +82,86 @@ class _TruckWashDetailsScreenState extends State<TruckWashDetailsScreen> {
     }
   }
 
+  void _addVehicle(String vName) {
+    if (_vehicleTypeController.text.trim().isEmpty ||
+        _vehicleMakeController.text.trim().isEmpty ||
+        _vehicleModelController.text.trim().isEmpty ||
+        _selectedWashPackage == null ||
+        _selectedCondition == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please fill all $vName details, select a wash package and condition.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _savedVehicles.add(CarWashVehicle(
+        type: _vehicleTypeController.text.trim(),
+        make: _vehicleMakeController.text.trim(),
+        model: _vehicleModelController.text.trim(),
+        washPackage: _selectedWashPackage!,
+        washPackagePrice: _selectedPackagePrice,
+        condition: _selectedCondition!,
+      ));
+
+      // Reset form
+      _vehicleTypeController.clear();
+      _vehicleMakeController.clear();
+      _vehicleModelController.clear();
+      _selectedWashPackage = null;
+      _selectedPackagePrice = 0.0;
+      _selectedCondition = null;
+      
+      // Remove focus to dismiss keyboard and focus outlines
+      FocusScope.of(context).unfocus();
+    });
+  }
+
+  void _removeVehicle(int index) {
+    setState(() {
+      _savedVehicles.removeAt(index);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final currentModels = _currentModels;
-    if (_selectedVehicleMake != null && _selectedVehicleModel != null && !currentModels.contains(_selectedVehicleModel)) {
-      _selectedVehicleModel = currentModels.isNotEmpty ? currentModels.first : null;
+    String getVehicleName() {
+      final title = widget.bookingData.selectedServiceTitle?.toLowerCase() ?? '';
+      if (title.contains('bike')) return 'Bike';
+      if (title.contains('truck')) return 'Truck';
+      if (title.contains('car')) return 'Car';
+      return 'Car';
     }
+    final vName = getVehicleName();
+    final fullServiceName = '$vName Wash';
+    String getTypePlaceholder() {
+      if (vName == 'Bike') return 'e.g. Sports';
+      if (vName == 'Truck') return 'e.g. Box Truck';
+      return 'e.g. Sedan';
+    }
+    String getMakePlaceholder() {
+      if (vName == 'Bike') return 'e.g. Yamaha';
+      if (vName == 'Truck') return 'e.g. Volvo';
+      return 'e.g. Toyota';
+    }
+    String getModelPlaceholder() {
+      if (vName == 'Bike') return 'e.g. YZF-R1';
+      if (vName == 'Truck') return 'e.g. FH16';
+      return 'e.g. Corolla';
+    }
+
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(
-            title: 'Vehicle & Wash Details',
-            subtitle: 'Truck Wash',
+          QuickServicesHeader(
+            title: 'Service Requirements',
+            subtitle: fullServiceName,
           ),
             
           Expanded(
@@ -151,443 +171,437 @@ class _TruckWashDetailsScreenState extends State<TruckWashDetailsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Vehicle Type
+                  // --- SERVICE MODE ---
                   Text(
-                    'Vehicle Type',
-                    style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.grey[700]),
+                    'Service Mode',
+                    style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 6),
-                  DropdownButtonFormField<String>(
-                    value: _selectedVehicleType,
-                    hint: Text('Select Vehicle Type', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey)),
-                    decoration: _inputDecoration(),
-                    items: _vehicleTypes.map((type) => DropdownMenuItem(value: type, child: Text(type, style: AppTextStyles.bodyMedium))).toList(),
-                    onChanged: (val) => setState(() => _selectedVehicleType = val),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _serviceMode = 'On-Site';
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: _serviceMode == 'On-Site' ? AppColors.primaryGold.withValues(alpha: 0.1) : Theme.of(context).cardTheme.color,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: _serviceMode == 'On-Site' ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                'On-Site',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  fontWeight: _serviceMode == 'On-Site' ? FontWeight.bold : FontWeight.normal,
+                                  color: _serviceMode == 'On-Site' ? AppColors.primaryGold : null,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _serviceMode = 'Pickup & Return';
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: _serviceMode == 'Pickup & Return' ? AppColors.primaryGold.withValues(alpha: 0.1) : Theme.of(context).cardTheme.color,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: _serviceMode == 'Pickup & Return' ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                'Pickup & Return',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  fontWeight: _serviceMode == 'Pickup & Return' ? FontWeight.bold : FontWeight.normal,
+                                  color: _serviceMode == 'Pickup & Return' ? AppColors.primaryGold : null,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  if (_selectedVehicleType == 'Other') ...[
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _customVehicleTypeController,
-                      style: AppTextStyles.bodyMedium,
-                      decoration: _inputDecoration(hintText: 'Enter Vehicle Type (e.g. RV, Bus, ATV)'),
+                  const SizedBox(height: 24),
+
+                  // --- VEHICLE FORM ---
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.grey[900] : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
                     ),
-                  ],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Add a $vName',
+                          style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        // Vehicle Type
+                        Text(
+                          '$vName Type',
+                          style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.grey[700]),
+                        ),
+                        const SizedBox(height: 6),
+                        TextFormField(
+                          controller: _vehicleTypeController,
+                          textCapitalization: TextCapitalization.words,
+                          style: AppTextStyles.bodyMedium,
+                          decoration: _inputDecoration(hintText: getTypePlaceholder()),
+                        ),
+                        const SizedBox(height: 14),
 
-                  const SizedBox(height: 14),
-
-                  // Vehicle Make & Model Row
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
+                        // Vehicle Make & Model Row
+                        Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Vehicle Make',
-                              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.grey[700]),
-                            ),
-                            const SizedBox(height: 6),
-                            DropdownButtonFormField<String>(
-                              value: _selectedVehicleMake,
-                              hint: Text('Select Make', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey)),
-                              decoration: _inputDecoration(),
-                              items: _vehicleMakes.map((make) => DropdownMenuItem(value: make, child: Text(make, style: AppTextStyles.bodyMedium))).toList(),
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setState(() {
-                                    _selectedVehicleMake = val;
-                                    final models = _makeModelsMap[_selectedVehicleMake] ?? ['Other Model'];
-                                    _selectedVehicleModel = models.first;
-                                  });
-                                }
-                              },
-                            ),
-                            if (_selectedVehicleMake == 'Other') ...[
-                              const SizedBox(height: 8),
-                              TextFormField(
-                                controller: _customMakeController,
-                                style: AppTextStyles.bodyMedium,
-                                decoration: _inputDecoration(hintText: 'Enter Make (e.g. Tesla)'),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '$vName Make',
+                                    style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.grey[700]),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  TextFormField(
+                                    controller: _vehicleMakeController,
+                                    textCapitalization: TextCapitalization.words,
+                                    style: AppTextStyles.bodyMedium,
+                                    decoration: _inputDecoration(hintText: getMakePlaceholder()),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Vehicle Model',
-                              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.grey[700]),
                             ),
-                            const SizedBox(height: 6),
-                            DropdownButtonFormField<String>(
-                              value: _selectedVehicleModel,
-                              hint: Text('Select Model', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey)),
-                              decoration: _inputDecoration(),
-                              items: currentModels.map((model) => DropdownMenuItem(value: model, child: Text(model, style: AppTextStyles.bodyMedium))).toList(),
-                              onChanged: (val) => setState(() => _selectedVehicleModel = val),
-                            ),
-                            if (_selectedVehicleModel == 'Other' || _selectedVehicleModel == 'Other Model') ...[
-                              const SizedBox(height: 8),
-                              TextFormField(
-                                controller: _customModelController,
-                                style: AppTextStyles.bodyMedium,
-                                decoration: _inputDecoration(hintText: 'Enter Model (e.g. Model Y)'),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '$vName Model',
+                                    style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.grey[700]),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  TextFormField(
+                                    controller: _vehicleModelController,
+                                    textCapitalization: TextCapitalization.words,
+                                    style: AppTextStyles.bodyMedium,
+                                    decoration: _inputDecoration(hintText: getModelPlaceholder()),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // Colour & Registration Row
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Colour',
-                              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.grey[700]),
-                            ),
-                            const SizedBox(height: 6),
-                            DropdownButtonFormField<String>(
-                              value: _selectedColour,
-                              hint: Text('Select Colour', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey)),
-                              decoration: _inputDecoration(),
-                              items: _colours.map((c) => DropdownMenuItem(value: c, child: Text(c, style: AppTextStyles.bodyMedium))).toList(),
-                              onChanged: (val) => setState(() => _selectedColour = val),
-                            ),
-                            if (_selectedColour == 'Other') ...[
-                              const SizedBox(height: 8),
-                              TextFormField(
-                                controller: _customColourController,
-                                style: AppTextStyles.bodyMedium,
-                                decoration: _inputDecoration(hintText: 'Enter Colour (e.g. Gold)'),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Registration Number',
-                              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.grey[700]),
-                            ),
-                            const SizedBox(height: 6),
-                            TextFormField(
-                              controller: _registrationController,
-                              style: AppTextStyles.bodyMedium,
-                              decoration: _inputDecoration(hintText: 'e.g. ABC 123'),
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
 
-                  const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
-                  // Select Wash Package
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Flexible(
-                        child: Text(
+                        // Select Wash Package
+                        Text(
                           'Select Wash Package',
                           style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      const SizedBox(width: 6),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text('Vehicles: ', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700])),
-                          Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                              borderRadius: BorderRadius.circular(6),
+                        const SizedBox(height: 10),
+                        Column(
+                          children: _washPackages.map((package) {
+                            final title = package['title'] as String;
+                            final price = package['price'] as double;
+                            final displayPrice = package['displayPrice'] as String;
+                            final isSelected = _selectedWashPackage == title;
+
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedWashPackage = title;
+                                  _selectedPackagePrice = price;
+                                });
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).cardTheme.color,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: isSelected ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
+                                    width: isSelected ? 2 : 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                                      color: isSelected ? AppColors.primaryGold : Colors.grey,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        title,
+                                        style: AppTextStyles.bodyMedium.copyWith(
+                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                    Text(
+                                      displayPrice,
+                                      style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Vehicle Condition
+                        Text(
+                          '$vName Condition',
+                          style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: _vehicleConditions.map((condition) {
+                            final isSelected = _selectedCondition == condition;
+                            return GestureDetector(
+                              onTap: () => setState(() => _selectedCondition = condition),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: isSelected ? AppColors.primaryGold.withValues(alpha: 0.1) : Theme.of(context).cardTheme.color,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: isSelected ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
+                                    width: isSelected ? 1.5 : 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  condition,
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    color: isSelected ? (isDark ? AppColors.primaryGold : const Color(0xFFD97706)) : null,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Add Vehicle Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton(
+                            onPressed: () => _addVehicle(vName),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: isDark ? AppColors.primaryGold : const Color(0xFFD97706),
+                              side: BorderSide(color: isDark ? AppColors.primaryGold : const Color(0xFFD97706)),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
                             child: Row(
-                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                InkWell(
-                                  onTap: () {
-                                    if (_vehicleCount > 1) {
-                                      setState(() => _vehicleCount--);
-                                    }
-                                  },
-                                  borderRadius: const BorderRadius.horizontal(left: Radius.circular(5)),
-                                  child: const Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                                    child: Icon(Icons.remove, size: 14),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                                  child: Text(
-                                    '$_vehicleCount',
-                                    style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                                InkWell(
-                                  onTap: () {
-                                    setState(() => _vehicleCount++);
-                                  },
-                                  borderRadius: const BorderRadius.horizontal(right: Radius.circular(5)),
-                                  child: const Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                                    child: Icon(Icons.add, size: 14),
-                                  ),
-                                ),
+                                const Icon(Icons.add_circle_outline, size: 20),
+                                const SizedBox(width: 8),
+                                Text('Add $vName', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
                               ],
                             ),
                           ),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 10),
 
-                  // Package options
-                  Column(
-                    children: _washPackages.map((package) {
-                      final title = package['title'] as String;
-                      final price = package['price'] as double;
-                      final displayPrice = package['displayPrice'] as String;
-                      final isSelected = _selectedWashPackage == title;
-
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _selectedWashPackage = title;
-                            _selectedPackagePrice = price;
-                          });
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  // --- LIST OF ADDED VEHICLES ---
+                  if (_savedVehicles.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    Text(
+                      'Added ${vName}s (${_savedVehicles.length})',
+                      style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    ListView.separated(
+                      padding: EdgeInsets.zero,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _savedVehicles.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final vehicle = _savedVehicles[index];
+                        return Container(
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).cardTheme.color,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: isSelected ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
-                              width: isSelected ? 2 : 1,
-                            ),
+                            color: isDark ? Colors.grey[850] : Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
                           ),
-                          child: Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-                                color: isSelected ? AppColors.primaryGold : Colors.grey,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  title,
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryGold.withValues(alpha: 0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.directions_car, color: AppColors.primaryGold, size: 20),
                                   ),
-                                ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${vehicle.make} ${vehicle.model}',
+                                          style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'Type: ${vehicle.type}',
+                                          style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600]),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                                    onPressed: () => _removeVehicle(index),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                ],
                               ),
-                              Text(
-                                displayPrice,
-                                style: AppTextStyles.bodyMedium.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: isSelected ? (isDark ? AppColors.primaryGold : Colors.black) : Colors.grey[700],
-                                ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 12.0),
+                                child: Divider(height: 1),
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        vehicle.washPackage,
+                                        style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Condition: ${vehicle.condition}',
+                                        style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600]),
+                                      ),
+                                    ],
+                                  ),
+                                  Text(
+                                    '€${vehicle.washPackagePrice.toStringAsFixed(0)}',
+                                    style: AppTextStyles.titleMedium.copyWith(
+                                      color: isDark ? AppColors.primaryGold : const Color(0xFFD97706),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
+                        );
+                      },
+                    ),
+                  ],
+                  
 
-                  const SizedBox(height: 16),
 
-                  // Vehicle Condition
+                  const SizedBox(height: 40),
+
+                  // Cleaning Materials Selection
                   Text(
-                    'Vehicle Condition',
-                    style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.grey[700]),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _vehicleConditions.map((cond) {
-                      final isSelected = _selectedCondition == cond;
-                      return GestureDetector(
-                        onTap: () => setState(() => _selectedCondition = cond),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? (isDark ? Colors.amber.shade900.withOpacity(0.3) : const Color(0xFFFFF8E1))
-                                : Theme.of(context).cardTheme.color,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: isSelected ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
-                              width: isSelected ? 1.5 : 1,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                cond,
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                  color: isSelected ? (isDark ? AppColors.primaryGold : const Color(0xFFD97706)) : null,
-                                ),
-                              ),
-                              if (isSelected) ...[
-                                const SizedBox(width: 4),
-                                const Icon(Icons.check_circle, size: 14, color: AppColors.primaryGold),
-                              ],
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // On-Site Facilities
-                  Text(
-                    'On-Site Facilities',
+                    'Cleaning materials',
                     style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 10),
-
-                  // Water Access
-                  Row(
-                    children: [
-                      SizedBox(
-                        width: 120,
-                        child: Text(
-                          'Water Access',
-                          style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[700]),
-                        ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
+                        width: _materialPreference == 'Bring materials' ? 1.5 : 1,
                       ),
-                      Expanded(
-                        child: Row(
-                          children: ['Available', 'Not Available'].map((opt) {
-                            final isSelected = _waterAccess == opt;
-                            return Expanded(
-                              child: GestureDetector(
-                                onTap: () => setState(() => _waterAccess = opt),
-                                child: Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                                  padding: const EdgeInsets.symmetric(vertical: 8),
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? (isDark ? Colors.amber.shade900.withOpacity(0.3) : const Color(0xFFFFF8E1))
-                                        : Theme.of(context).cardTheme.color,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: isSelected ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
-                                      width: isSelected ? 1.5 : 1,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        opt,
-                                        style: AppTextStyles.bodySmall.copyWith(
-                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                          color: isSelected ? (isDark ? AppColors.primaryGold : const Color(0xFFD97706)) : null,
-                                        ),
-                                      ),
-                                      if (isSelected) ...[
-                                        const SizedBox(width: 4),
-                                        const Icon(Icons.check_circle, size: 14, color: AppColors.primaryGold),
-                                      ],
-                                    ],
-                                  ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGold.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.cleaning_services, size: 24, color: AppColors.primaryGold),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Bring materials', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 2),
+                              Text(
+                                _materialPreference == 'Bring materials' ? '+€5.00 extra charge' : 'Use my materials (No extra charge)',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey[600],
+                                  fontWeight: _materialPreference == 'Bring materials' ? FontWeight.bold : FontWeight.normal,
                                 ),
                               ),
-                            );
-                          }).toList(),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 10),
-
-                  // Electricity Access
-                  Row(
-                    children: [
-                      SizedBox(
-                        width: 120,
-                        child: Text(
-                          'Electricity Access',
-                          style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[700]),
+                        Transform.scale(
+                          scale: 0.8,
+                          child: Switch.adaptive(
+                            value: _materialPreference == 'Bring materials',
+                            activeTrackColor: AppColors.primaryGold,
+                            inactiveTrackColor: Colors.grey[300],
+                            onChanged: (val) {
+                              setState(() {
+                                _materialPreference = val ? 'Bring materials' : 'Use my materials';
+                              });
+                            },
+                          ),
                         ),
-                      ),
-                      Expanded(
-                        child: Row(
-                          children: ['Available', 'Not Available'].map((opt) {
-                            final isSelected = _electricityAccess == opt;
-                            return Expanded(
-                              child: GestureDetector(
-                                onTap: () => setState(() => _electricityAccess = opt),
-                                child: Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                                  padding: const EdgeInsets.symmetric(vertical: 8),
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? (isDark ? Colors.amber.shade900.withOpacity(0.3) : const Color(0xFFFFF8E1))
-                                        : Theme.of(context).cardTheme.color,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: isSelected ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
-                                      width: isSelected ? 1.5 : 1,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        opt,
-                                        style: AppTextStyles.bodySmall.copyWith(
-                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                          color: isSelected ? (isDark ? AppColors.primaryGold : const Color(0xFFD97706)) : null,
-                                        ),
-                                      ),
-                                      if (isSelected) ...[
-                                        const SizedBox(width: 4),
-                                        const Icon(Icons.check_circle, size: 14, color: AppColors.primaryGold),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
 
                   const SizedBox(height: 20),
@@ -607,71 +621,41 @@ class _TruckWashDetailsScreenState extends State<TruckWashDetailsScreen> {
 
                   const SizedBox(height: 20),
 
-                  // Notice Banner
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E3A8A).withOpacity(0.3) : const Color(0xFFE3F2FD),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isDark ? Colors.blue.shade700 : Colors.blue.shade200,
-                      ),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(Icons.info_outline, color: Colors.blue, size: 20),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Final price may change for heavy dirt, stains or additional work.',
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: isDark ? Colors.blue.shade200 : Colors.blue.shade900,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
 
-                  const SizedBox(height: 32),
 
                   // Continue Button
                   ElevatedButton(
                     onPressed: () {
-                      final finalVehicleType = _selectedVehicleType == 'Other' && _customVehicleTypeController.text.trim().isNotEmpty
-                          ? _customVehicleTypeController.text.trim()
-                          : _selectedVehicleType;
-                      final finalMake = _selectedVehicleMake == 'Other' && _customMakeController.text.trim().isNotEmpty
-                          ? _customMakeController.text.trim()
-                          : _selectedVehicleMake;
-                      final finalModel = (_selectedVehicleModel == 'Other' || _selectedVehicleModel == 'Other Model') && _customModelController.text.trim().isNotEmpty
-                          ? _customModelController.text.trim()
-                          : _selectedVehicleModel;
-                      final finalColour = _selectedColour == 'Other' && _customColourController.text.trim().isNotEmpty
-                          ? _customColourController.text.trim()
-                          : _selectedColour;
+                      if (_savedVehicles.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Please add at least one $vName to proceed.'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
 
-                      final calculatedSubtotal = _selectedPackagePrice * _vehicleCount;
+                      double calculatedSubtotal = _savedVehicles.fold(
+                        0.0,
+                        (sum, vehicle) => sum + vehicle.washPackagePrice,
+                      );
+
+                      double pickupFee = _serviceMode == 'Pickup & Return' ? 10.0 * _savedVehicles.length : 0.0;
+
                       final updatedData = widget.bookingData.copyWith(
-                        selectedServiceTitle: 'Truck Wash',
-                        truckType: finalVehicleType,
-                        vehicleMake: finalMake,
-                        vehicleModel: finalModel,
-                        vehicleColour: finalColour,
-                        vehicleRegistration: _registrationController.text.trim().isNotEmpty
-                            ? _registrationController.text.trim()
-                            : null,
-                        carWashPackage: _selectedWashPackage,
-                        carWashPackagePrice: _selectedPackagePrice,
-                        vehicleCount: _vehicleCount,
-                        vehicleCondition: _selectedCondition,
+                        selectedServiceTitle: fullServiceName,
+                        carWashVehicles: _savedVehicles,
                         waterAccess: _waterAccess,
                         electricityAccess: _electricityAccess,
-                        subtotal: 0.0,
+                        subtotal: calculatedSubtotal,
                         baseEstimatedHours: 0.0,
                         materialPreference: _materialPreference,
+                        vehicleServiceMode: _serviceMode,
+                        pickupAndReturnFee: pickupFee,
+                        comments: _whatYouNeedController.text.trim().isNotEmpty
+                            ? _whatYouNeedController.text.trim()
+                            : null,
                         describeIssue: _describeIssueController.text.trim().isNotEmpty
                             ? _describeIssueController.text.trim()
                             : null,
@@ -710,11 +694,11 @@ class _TruckWashDetailsScreenState extends State<TruckWashDetailsScreen> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+        borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+        borderSide: BorderSide(color: Colors.grey.withValues(alpha: 0.3)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
