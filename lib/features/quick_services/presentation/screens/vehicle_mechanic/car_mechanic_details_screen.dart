@@ -74,6 +74,7 @@ class _CarMechanicDetailsScreenState extends State<CarMechanicDetailsScreen> {
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 1,
             title: 'Service Requirements',
             subtitle: 'Car Mechanic',
           ),

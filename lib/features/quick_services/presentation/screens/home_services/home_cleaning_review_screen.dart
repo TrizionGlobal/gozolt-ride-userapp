@@ -7,6 +7,7 @@ import '../../../../rewards/presentation/providers/rewards_providers.dart';
 import '../../../../../core/constants/asset_paths.dart';
 
 import 'package:go_router/go_router.dart';
+import '../../widgets/quick_services_additional_details_review.dart';
 import '../../../../../core/router/route_names.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/constants/app_text_styles.dart';
@@ -41,56 +42,91 @@ class _HomeCleaningReviewScreenState extends ConsumerState<HomeCleaningReviewScr
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(title: 'Review & Book', subtitle: 'Home Cleaning'),
+          const QuickServicesHeader(
+            currentStep: 2,title: 'Review & Book', subtitle: 'Home Cleaning'),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20.0),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
               child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Container(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(border: Border.all(color: Colors.grey.withOpacity(0.3)), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardTheme.color,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.calendar_today, size: 16),
-                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGold.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.cleaning_services,
+                            color: AppColors.primaryGold,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
                         Text(
-                          'Appointment Summary\n${_formatDate(_bookingData.scheduleDate)} • ${_bookingData.scheduleTime.format(context)}',
-                          style: const TextStyle(fontSize: 12),
+                          'Booking Summary',
+                          style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
-                    const Divider(height: 24),
+                    const SizedBox(height: 16),
+                    // Date & Time
                     Row(
                       children: [
-                        const Icon(Icons.location_on, size: 16),
-                        const SizedBox(width: 8),
+                        const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
+                        const SizedBox(width: 10),
+                        Text('${_formatDate(_bookingData.scheduleDate)} • ${_bookingData.scheduleTime.format(context)}', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+
+                    // Location
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.location_on, size: 18, color: Colors.grey),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Service Location\n${_bookingData.location.address}',
-                            style: const TextStyle(fontSize: 12),
+                            _bookingData.location.address,
+                            style: AppTextStyles.bodySmall,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 10),
 
+                    // Customer
+                    Row(
+                      children: [
+                        const Icon(Icons.person, size: 18, color: Colors.grey),
+                        const SizedBox(width: 10),
+                        Text('Customer: ${_bookingData.userName}', style: AppTextStyles.bodySmall),
+                      ],
+                    ),
                     if (_bookingData.materialPreference != null && _bookingData.materialPreference!.isNotEmpty) ...[
-                      const Divider(height: 24),
+                      const SizedBox(height: 10),
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.cleaning_services, size: 16),
-                          const SizedBox(width: 8),
+                          const Icon(Icons.inventory_2_outlined, size: 18, color: Colors.grey),
+                          const SizedBox(width: 10),
                           Expanded(
-                            child: Text(
-                              'Materials\n${_bookingData.materialPreference}',
-                              style: const TextStyle(fontSize: 12),
-                            ),
+                            child: Text('Materials: ${_bookingData.materialPreference}', style: AppTextStyles.bodySmall),
                           ),
                         ],
                       ),
@@ -98,53 +134,8 @@ class _HomeCleaningReviewScreenState extends ConsumerState<HomeCleaningReviewScr
                   ],
                 ),
               ),
-              if (_bookingData.whatYouNeed != null || _bookingData.describeIssue != null || (_bookingData.uploadedImages?.isNotEmpty ?? false)) ...[
-                const SizedBox(height: 20),
-                Text('Additional Details', style: AppTextStyles.titleSmall),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(border: Border.all(color: Colors.grey.withOpacity(0.3)), borderRadius: BorderRadius.circular(8)),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (_bookingData.whatYouNeed != null) ...[
-                        const Text('What you need:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF324461))),
-                        const SizedBox(height: 4),
-                        Text(_bookingData.whatYouNeed!, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                        if (_bookingData.describeIssue != null || (_bookingData.uploadedImages?.isNotEmpty ?? false)) const SizedBox(height: 12),
-                      ],
-                      if (_bookingData.describeIssue != null) ...[
-                        const Text('Issue Description:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF324461))),
-                        const SizedBox(height: 4),
-                        Text(_bookingData.describeIssue!, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                        if (_bookingData.uploadedImages?.isNotEmpty ?? false) const SizedBox(height: 12),
-                      ],
-                      if (_bookingData.uploadedImages?.isNotEmpty ?? false) ...[
-                        const Text('Uploaded Photos:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF324461))),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: _bookingData.uploadedImages!.map((path) {
-                            return ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.file(
-                                File(path),
-                                width: 60,
-                                height: 60,
-                                fit: BoxFit.cover,
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-              const SizedBox(height: 20),
-                            QuickServicesPriceSummary(bookingData: _bookingData, useGoCoins: _useGoCoins, onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),),
+              const SizedBox(height: 12),
+              QuickServicesPriceSummary(bookingData: _bookingData, useGoCoins: _useGoCoins, onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),),
               const SizedBox(height: 20),
               
                             

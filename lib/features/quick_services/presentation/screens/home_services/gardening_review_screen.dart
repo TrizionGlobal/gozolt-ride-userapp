@@ -53,6 +53,7 @@ class _GardeningReviewScreenState extends ConsumerState<GardeningReviewScreen> {
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 2,
             title: 'Review & Book',
             subtitle: 'Gardening',
           ),

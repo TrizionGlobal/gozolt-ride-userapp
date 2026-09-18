@@ -81,6 +81,7 @@ class _EventOrganisersDetailsScreenState extends State<EventOrganisersDetailsScr
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 1,
               title: 'Service Requirements',
             subtitle: 'Event Organisers',
             ),

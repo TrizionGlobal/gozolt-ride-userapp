@@ -106,6 +106,7 @@ class _GardeningDetailsScreenState extends State<GardeningDetailsScreen> {
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 1,
             title: 'Service Requirements',
             subtitle: 'Gardening',
           ),

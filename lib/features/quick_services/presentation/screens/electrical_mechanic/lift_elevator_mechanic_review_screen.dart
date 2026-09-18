@@ -91,6 +91,7 @@ class _LiftElevatorMechanicReviewScreenState extends ConsumerState<LiftElevatorM
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 2,
             title: 'Review & Book',
             subtitle: 'Lift/Elevator Mechanic',
           ),

@@ -84,6 +84,7 @@ class _LaundryDetailsScreenState extends State<LaundryDetailsScreen> {
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 1,
             title: 'Service Requirements',
             subtitle: 'Laundry & Ironing',
           ),

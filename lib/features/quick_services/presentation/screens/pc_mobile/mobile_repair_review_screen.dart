@@ -94,6 +94,7 @@ class _MobileRepairReviewScreenState extends ConsumerState<MobileRepairReviewScr
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 2,
             title: 'Review & Book',
             subtitle: 'Mobile Repair',
           ),

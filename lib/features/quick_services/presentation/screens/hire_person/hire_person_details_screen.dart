@@ -112,6 +112,7 @@ class _HirePersonDetailsScreenState extends State<HirePersonDetailsScreen> {
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 1,
             title: 'Service Requirements',
             subtitle: 'Hire Person',
           ),

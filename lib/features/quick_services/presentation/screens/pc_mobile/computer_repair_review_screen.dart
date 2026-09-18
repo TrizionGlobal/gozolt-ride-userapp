@@ -94,6 +94,7 @@ class _ComputerRepairReviewScreenState extends ConsumerState<ComputerRepairRevie
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 2,
             title: 'Review & Book',
             subtitle: 'Computer Repair',
           ),

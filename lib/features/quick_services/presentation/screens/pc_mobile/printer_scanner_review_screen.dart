@@ -100,6 +100,7 @@ class _PrinterScannerReviewScreenState extends ConsumerState<PrinterScannerRevie
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 2,
             title: 'Review & Book',
             subtitle: 'Printer & Scanner Repair',
           ),

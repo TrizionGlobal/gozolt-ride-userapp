@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/quick_service_booking_data.dart';
@@ -23,6 +24,121 @@ class QuickServicesPriceSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        if (bookingData.selectedAddons.isNotEmpty || bookingData.describeIssue?.trim().isNotEmpty == true || bookingData.uploadedImages?.isNotEmpty == true) ...[
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardTheme.color,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.withOpacity(0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  (bookingData.selectedAddons.isNotEmpty && (bookingData.describeIssue?.trim().isNotEmpty == true || bookingData.uploadedImages?.isNotEmpty == true))
+                      ? 'Selected Add-ons & Details'
+                      : (bookingData.selectedAddons.isNotEmpty)
+                          ? 'Selected Add-ons'
+                          : 'Additional Details',
+                  style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                if (bookingData.selectedAddons.isNotEmpty) ...[
+                  ...bookingData.selectedAddons.map((addon) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              addon.count > 1 ? '${addon.name} (x${addon.count})' : addon.name,
+                              style: AppTextStyles.bodyMedium,
+                            ),
+                          ),
+                          Text(
+                            addon.isFixedPrice
+                                ? '€${addon.totalPrice.toStringAsFixed(2)}'
+                                : '${addon.totalHours.toStringAsFixed(1)} hrs',
+                            style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
+                if (bookingData.wallType != null) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text('Wall Type', style: AppTextStyles.bodyMedium),
+                        ),
+                        Text(bookingData.wallType!, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                ],
+                if ((bookingData.selectedAddons.isNotEmpty || bookingData.wallType != null) && (bookingData.describeIssue?.trim().isNotEmpty == true || bookingData.uploadedImages?.isNotEmpty == true))
+                  const Divider(height: 24),
+                if (bookingData.describeIssue?.trim().isNotEmpty == true) ...[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.note_alt_outlined, size: 18, color: Colors.grey),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Issue description: ${bookingData.describeIssue!}',
+                          style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700]),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (bookingData.uploadedImages?.isNotEmpty == true) const SizedBox(height: 10),
+                ],
+                if (bookingData.uploadedImages?.isNotEmpty == true) ...[
+                  Row(
+                    children: [
+                      const Icon(Icons.image_outlined, size: 18, color: Colors.grey),
+                      const SizedBox(width: 10),
+                      Text('Attached Photo (${bookingData.uploadedImages!.length})', style: AppTextStyles.bodySmall),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: SizedBox(
+                          height: 40,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: bookingData.uploadedImages!.length,
+                          itemBuilder: (context, index) {
+                            final path = bookingData.uploadedImages![index];
+                            return Padding(
+                              padding: const EdgeInsets.only(left: 4.0),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: Image.file(
+                                  File(path),
+                                  width: 40,
+                                  height: 40,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -39,34 +155,6 @@ class QuickServicesPriceSummary extends StatelessWidget {
                     .copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
-              if (bookingData.selectedAddons.isNotEmpty) ...[
-                ...bookingData.selectedAddons.map((addon) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            addon.count > 1
-                                ? '${addon.name} (x${addon.count})'
-                                : addon.name,
-                            style: AppTextStyles.bodyMedium,
-                          ),
-                        ),
-                        Text(
-                          addon.isFixedPrice
-                              ? '€${addon.totalPrice.toStringAsFixed(2)}'
-                              : '${addon.totalHours.toStringAsFixed(1)} hrs',
-                          style: AppTextStyles.bodyMedium
-                              .copyWith(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-                const Divider(height: 24),
-              ],
               if (bookingData.baseEstimatedHours > 0) ...[
                 Builder(builder: (context) {
                   String label = 'Base / Inspection Time';
@@ -186,7 +274,10 @@ class QuickServicesPriceSummary extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                        child: Text('Materials Included Charge',
+                        child: Text(
+                            bookingData.materialPreference?.toLowerCase().contains('tool') == true
+                                ? 'Tools Included Charge'
+                                : 'Materials Included Charge',
                             style: AppTextStyles.bodyMedium)),
                     Text(
                       '€${bookingData.materialCost.toStringAsFixed(2)}',

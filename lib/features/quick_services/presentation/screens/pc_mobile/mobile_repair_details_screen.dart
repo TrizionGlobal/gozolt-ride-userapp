@@ -176,6 +176,7 @@ class _MobileRepairDetailsScreenState extends State<MobileRepairDetailsScreen> {
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 1,
             title: 'Device & Issue Details',
             subtitle: 'Mobile Repair at Home',
           ),

@@ -59,6 +59,7 @@ class _CarWashReviewScreenState extends ConsumerState<CarWashReviewScreen> {
       body: Column(
         children: [
           QuickServicesHeader(
+            currentStep: 2,
             title: 'Review & Book',
             subtitle: _bookingData.selectedServiceTitle ?? 'Car Wash',
           ),

@@ -49,7 +49,8 @@ class _OtherServicesReviewScreenState extends ConsumerState<OtherServicesReviewS
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(title: 'Review & Book', subtitle: 'Other Services'),
+          const QuickServicesHeader(
+            currentStep: 2,title: 'Review & Book', subtitle: 'Other Services'),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),

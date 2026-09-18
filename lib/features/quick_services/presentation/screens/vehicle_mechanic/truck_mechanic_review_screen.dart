@@ -41,7 +41,8 @@ class _TruckMechanicReviewScreenState extends ConsumerState<TruckMechanicReviewS
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(title: 'Review & Book', subtitle: 'Truck Mechanic'),
+          const QuickServicesHeader(
+            currentStep: 2,title: 'Review & Book', subtitle: 'Truck Mechanic'),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),

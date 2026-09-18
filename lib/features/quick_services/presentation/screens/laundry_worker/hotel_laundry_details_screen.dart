@@ -296,6 +296,7 @@ class _HotelLaundryDetailsScreenState extends State<HotelLaundryDetailsScreen> {
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 1,
             title: 'Hotel Laundry Requirements',
           ),
           Expanded(

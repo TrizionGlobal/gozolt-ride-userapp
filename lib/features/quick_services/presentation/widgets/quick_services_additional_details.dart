@@ -27,36 +27,6 @@ class QuickServicesAdditionalDetails extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (showTellUsWhatYouNeed) ...[
-          // Tell us what you need
-          Text(
-            'Tell us what you need',
-            style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold, color: const Color(0xFF324461)),
-          ),
-          const SizedBox(height: 6),
-          TextField(
-            controller: whatYouNeedController,
-            maxLines: 4,
-            decoration: InputDecoration(
-              hintText: 'Provide specific instructions...',
-              filled: true,
-              fillColor: Theme.of(context).cardTheme.color,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.primaryGold),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
 
         // Describe issue
         Text(

@@ -13,6 +13,7 @@ import '../../../../../core/constants/app_text_styles.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_price_summary.dart';
+import '../../widgets/quick_services_booking_summary.dart';
 
 class ApplianceRepairReviewScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
@@ -41,108 +42,18 @@ class _ApplianceRepairReviewScreenState extends ConsumerState<ApplianceRepairRev
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(title: 'Review & Book', subtitle: 'Appliance Repair'),
+          const QuickServicesHeader(
+            currentStep: 2,title: 'Review & Book', subtitle: 'Appliance Repair'),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),
               child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(border: Border.all(color: Colors.grey.withOpacity(0.3)), borderRadius: BorderRadius.circular(8)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.calendar_today, size: 16),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Appointment Summary\n${_formatDate(_bookingData.scheduleDate)} • ${_bookingData.scheduleTime.format(context)}',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ],
-                    ),
-                    const Divider(height: 24),
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on, size: 16),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Service Location\n${_bookingData.location.address}',
-                            style: const TextStyle(fontSize: 12),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    if (_bookingData.materialPreference != null && _bookingData.materialPreference!.isNotEmpty) ...[
-                      const Divider(height: 24),
-                      Row(
-                        children: [
-                          const Icon(Icons.cleaning_services, size: 16),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Materials\n${_bookingData.materialPreference}',
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
+              QuickServicesBookingSummary(
+                bookingData: _bookingData,
+                icon: Icons.kitchen,
               ),
-              if (_bookingData.whatYouNeed != null || _bookingData.describeIssue != null || (_bookingData.uploadedImages?.isNotEmpty ?? false)) ...[
-                const SizedBox(height: 20),
-                Text('Additional Details', style: AppTextStyles.titleSmall),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(border: Border.all(color: Colors.grey.withOpacity(0.3)), borderRadius: BorderRadius.circular(8)),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (_bookingData.whatYouNeed != null) ...[
-                        const Text('What you need:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF324461))),
-                        const SizedBox(height: 4),
-                        Text(_bookingData.whatYouNeed!, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                        if (_bookingData.describeIssue != null || (_bookingData.uploadedImages?.isNotEmpty ?? false)) const SizedBox(height: 12),
-                      ],
-                      if (_bookingData.describeIssue != null) ...[
-                        const Text('Issue Description:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF324461))),
-                        const SizedBox(height: 4),
-                        Text(_bookingData.describeIssue!, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                        if (_bookingData.uploadedImages?.isNotEmpty ?? false) const SizedBox(height: 12),
-                      ],
-                      if (_bookingData.uploadedImages?.isNotEmpty ?? false) ...[
-                        const Text('Uploaded Photos:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF324461))),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: _bookingData.uploadedImages!.map((path) {
-                            return ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.file(
-                                File(path),
-                                width: 60,
-                                height: 60,
-                                fit: BoxFit.cover,
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
               const SizedBox(height: 20),
                             QuickServicesPriceSummary(bookingData: _bookingData, useGoCoins: _useGoCoins, onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),),
               const SizedBox(height: 20),

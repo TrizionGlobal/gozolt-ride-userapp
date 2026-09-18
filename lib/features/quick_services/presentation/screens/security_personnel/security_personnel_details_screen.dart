@@ -362,6 +362,7 @@ class _SecurityPersonnelDetailsScreenState extends State<SecurityPersonnelDetail
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 1,
             title: 'Security Requirements',
           ),
           Expanded(

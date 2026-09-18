@@ -96,6 +96,7 @@ class _SecurityPersonnelReviewScreenState extends ConsumerState<SecurityPersonne
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 2,
             title: 'Review & Book',
             subtitle: 'Security Personnel',
           ),

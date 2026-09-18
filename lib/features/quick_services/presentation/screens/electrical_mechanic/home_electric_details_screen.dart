@@ -19,41 +19,38 @@ class HomeElectricDetailsScreen extends StatefulWidget {
 }
 
 class _HomeElectricDetailsScreenState extends State<HomeElectricDetailsScreen> {
-  String _materialPreference = 'Bring materials';
+  String _materialPreference = 'Bring tools';
   final Map<String, int> _counts = {
-    'Switch / Socket Repair': 0,
-    'Light Installation / Repair': 0,
-    'Ceiling Fan Installation / Repair': 0,
+    'Switch / Socket': 0,
+    'Light Installation': 0,
+    'Ceiling Fan Installation': 0,
     'Circuit Breaker / Tripping': 0,
     'Electrical Wiring Issue': 0,
-    'Doorbell Installation / Repair': 0,
+    'Doorbell Installation': 0,
     'Appliance Electrical Connection': 0,
-    'CCTV Installation / Repair': 0,
-    'Other Electrical Issue': 0,
+    'CCTV Installation': 0,
   };
 
   final Map<String, IconData> _icons = {
-    'Switch / Socket Repair': Icons.power_outlined,
-    'Light Installation / Repair': Icons.lightbulb_outline,
-    'Ceiling Fan Installation / Repair': Icons.mode_fan_off_outlined,
+    'Switch / Socket': Icons.power_outlined,
+    'Light Installation': Icons.lightbulb_outline,
+    'Ceiling Fan Installation': Icons.mode_fan_off_outlined,
     'Circuit Breaker / Tripping': Icons.electric_meter_outlined,
     'Electrical Wiring Issue': Icons.cable_outlined,
-    'Doorbell Installation / Repair': Icons.notifications_outlined,
+    'Doorbell Installation': Icons.notifications_outlined,
     'Appliance Electrical Connection': Icons.electrical_services_outlined,
-    'CCTV Installation / Repair': Icons.videocam_outlined,
-    'Other Electrical Issue': Icons.build_outlined,
+    'CCTV Installation': Icons.videocam_outlined,
   };
 
   final Map<String, double> _hours = {
-    'Switch / Socket Repair': 0.5,
-    'Light Installation / Repair': 0.5,
-    'Ceiling Fan Installation / Repair': 1.0,
+    'Switch / Socket': 0.5,
+    'Light Installation': 0.5,
+    'Ceiling Fan Installation': 1.0,
     'Circuit Breaker / Tripping': 1.5,
     'Electrical Wiring Issue': 2.0,
-    'Doorbell Installation / Repair': 0.5,
+    'Doorbell Installation': 0.5,
     'Appliance Electrical Connection': 1.0,
-    'CCTV Installation / Repair': 2.0,
-    'Other Electrical Issue': 1.0,
+    'CCTV Installation': 2.0,
   };
 
 
@@ -110,6 +107,16 @@ class _HomeElectricDetailsScreenState extends State<HomeElectricDetailsScreen> {
 
   void _onContinue() {
     final selectedKeys = _counts.keys.where((k) => (_counts[k] ?? 0) > 0).toList();
+    if (selectedKeys.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please select at least one add-on to continue.', style: TextStyle(color: Colors.white)),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
     List<ServiceAddon> selectedAddons = selectedKeys.map((key) {
       return ServiceAddon(name: key, count: _counts[key]!, hoursPerUnit: _hours[key]!);
@@ -142,6 +149,7 @@ class _HomeElectricDetailsScreenState extends State<HomeElectricDetailsScreen> {
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 1,
             title: 'Service Requirements',
             subtitle: 'Home Electric',
           ),
@@ -233,7 +241,7 @@ class _HomeElectricDetailsScreenState extends State<HomeElectricDetailsScreen> {
                     const SizedBox(height: 24),
 
                   Text(
-                    'Materials / Parts',
+                    'Required Tools',
                     style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
@@ -244,8 +252,8 @@ class _HomeElectricDetailsScreenState extends State<HomeElectricDetailsScreen> {
                       color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
-                        width: _materialPreference == 'Bring materials' ? 1.5 : 1,
+                        color: _materialPreference == 'Bring tools' ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
+                        width: _materialPreference == 'Bring tools' ? 1.5 : 1,
                       ),
                     ),
                     child: Row(
@@ -264,13 +272,13 @@ class _HomeElectricDetailsScreenState extends State<HomeElectricDetailsScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Bring materials', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                              Text('Bring tools', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 2),
                               Text(
-                                _materialPreference == 'Bring materials' ? '+€5.00 extra charge' : 'Use my materials (No extra charge)',
+                                _materialPreference == 'Bring tools' ? '+€5.00 extra charge' : 'Use my tools (No extra charge)',
                                 style: AppTextStyles.bodySmall.copyWith(
-                                  color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey[600],
-                                  fontWeight: _materialPreference == 'Bring materials' ? FontWeight.bold : FontWeight.normal,
+                                  color: _materialPreference == 'Bring tools' ? AppColors.primaryGold : Colors.grey[600],
+                                  fontWeight: _materialPreference == 'Bring tools' ? FontWeight.bold : FontWeight.normal,
                                 ),
                               ),
                             ],
@@ -279,13 +287,13 @@ class _HomeElectricDetailsScreenState extends State<HomeElectricDetailsScreen> {
                         Transform.scale(
                           scale: 0.8,
                           child: Switch.adaptive(
-                            value: _materialPreference == 'Bring materials',
+                            value: _materialPreference == 'Bring tools',
                             activeColor: isDark ? AppColors.backgroundDark : Colors.white,
                             activeTrackColor: AppColors.primaryGold,
                             inactiveTrackColor: Colors.grey[300],
                             onChanged: (val) {
                               setState(() {
-                                _materialPreference = val ? 'Bring materials' : 'Use my materials';
+                                _materialPreference = val ? 'Bring tools' : 'Use my tools';
                               });
                             },
                           ),
@@ -312,66 +320,26 @@ class _HomeElectricDetailsScreenState extends State<HomeElectricDetailsScreen> {
                       },
                     ),
                     const SizedBox(height: 20),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFF8E1),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFFFE082)),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.warning_amber_rounded, color: Color(0xFFD84315), size: 24),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text(
-                                  'Fire, smoke or active sparking?',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFFD84315),
-                                    fontSize: 13,
-                                  ),
-                                ),
-                                SizedBox(height: 2),
-                                Text(
-                                  'Switch off main power if safe and call 112.',
-                                  style: TextStyle(
-                                    color: Color(0xFF5D4037),
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
+
+                    const SizedBox(height: 32),
+                    SafeArea(
+                      top: false,
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _onContinue,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryGold,
+                            foregroundColor: Colors.black,
+                            minimumSize: const Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
                           ),
-                        ],
+                          child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 20),
                   ],
-                ),
-              ),
-            ),
-            SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _onContinue,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGold,
-                      foregroundColor: Colors.black,
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 0,
-                    ),
-                    child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
-                  ),
                 ),
               ),
             ),

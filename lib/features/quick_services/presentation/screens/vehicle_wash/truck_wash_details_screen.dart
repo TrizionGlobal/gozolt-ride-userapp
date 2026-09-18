@@ -160,6 +160,7 @@ class _TruckWashDetailsScreenState extends State<TruckWashDetailsScreen> {
       body: Column(
         children: [
           QuickServicesHeader(
+            currentStep: 1,
             title: 'Service Requirements',
             subtitle: fullServiceName,
           ),

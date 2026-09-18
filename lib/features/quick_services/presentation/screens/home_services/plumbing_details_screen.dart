@@ -20,14 +20,13 @@ class PlumbingDetailsScreen extends StatefulWidget {
 }
 
 class _PlumbingDetailsScreenState extends State<PlumbingDetailsScreen> {
-  String _materialPreference = 'Bring materials';
+  String _materialPreference = 'Bring tools';
   final Map<String, int> _counts = {
     'Leaking Tap': 0,
     'Blocked Drain': 0,
     'Pipe Leakage': 0,
     'Toilet Repair': 0,
     'Water Heater': 0,
-    'Other Plumbing Issue': 0,
   };
 
   final Map<String, IconData> _icons = {
@@ -36,7 +35,6 @@ class _PlumbingDetailsScreenState extends State<PlumbingDetailsScreen> {
     'Pipe Leakage': Icons.plumbing,
     'Toilet Repair': Icons.bathroom,
     'Water Heater': Icons.hot_tub,
-    'Other Plumbing Issue': Icons.miscellaneous_services,
   };
 
   final Map<String, double> _hours = {
@@ -45,7 +43,6 @@ class _PlumbingDetailsScreenState extends State<PlumbingDetailsScreen> {
     'Pipe Leakage': 1.5,
     'Toilet Repair': 1.0,
     'Water Heater': 2.0,
-    'Other Plumbing Issue': 1.0,
   };
 
 
@@ -97,6 +94,7 @@ class _PlumbingDetailsScreenState extends State<PlumbingDetailsScreen> {
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 1,
             title: 'Service Requirements',
             subtitle: 'Plumbing Repair',
           ),
@@ -129,12 +127,12 @@ class _PlumbingDetailsScreenState extends State<PlumbingDetailsScreen> {
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                               child: Row(
                                 children: [
-                                  Icon(_icons[key], size: 24, color: Colors.grey.shade600),
-                                  const SizedBox(width: 16),
+                                  Icon(_icons[key], size: 22, color: Colors.grey.shade600),
+                                  const SizedBox(width: 14),
                                   Expanded(
                                     child: Text(
                                       key,
-                                      style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                                      style: AppTextStyles.titleMedium.copyWith(fontSize: 14),
                                     ),
                                   ),
                                   Row(
@@ -190,7 +188,7 @@ class _PlumbingDetailsScreenState extends State<PlumbingDetailsScreen> {
                   const SizedBox(height: 24),
 
                   Text(
-                    'Materials / Parts',
+                    'Required Tools',
                     style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
@@ -201,8 +199,8 @@ class _PlumbingDetailsScreenState extends State<PlumbingDetailsScreen> {
                       color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
-                        width: _materialPreference == 'Bring materials' ? 1.5 : 1,
+                        color: _materialPreference == 'Bring tools' ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
+                        width: _materialPreference == 'Bring tools' ? 1.5 : 1,
                       ),
                     ),
                     child: Row(
@@ -221,13 +219,13 @@ class _PlumbingDetailsScreenState extends State<PlumbingDetailsScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Bring materials', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                              Text('Bring tools', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 2),
                               Text(
-                                _materialPreference == 'Bring materials' ? '+€5.00 extra charge' : 'Use my materials (No extra charge)',
+                                _materialPreference == 'Bring tools' ? '+€5.00 extra charge' : 'Use my tools (No extra charge)',
                                 style: AppTextStyles.bodySmall.copyWith(
-                                  color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey[600],
-                                  fontWeight: _materialPreference == 'Bring materials' ? FontWeight.bold : FontWeight.normal,
+                                  color: _materialPreference == 'Bring tools' ? AppColors.primaryGold : Colors.grey[600],
+                                  fontWeight: _materialPreference == 'Bring tools' ? FontWeight.bold : FontWeight.normal,
                                 ),
                               ),
                             ],
@@ -236,13 +234,13 @@ class _PlumbingDetailsScreenState extends State<PlumbingDetailsScreen> {
                         Transform.scale(
                           scale: 0.8,
                           child: Switch.adaptive(
-                            value: _materialPreference == 'Bring materials',
+                            value: _materialPreference == 'Bring tools',
                             activeColor: isDark ? AppColors.backgroundDark : Colors.white,
                             activeTrackColor: AppColors.primaryGold,
                             inactiveTrackColor: Colors.grey[300],
                             onChanged: (val) {
                               setState(() {
-                                _materialPreference = val ? 'Bring materials' : 'Use my materials';
+                                _materialPreference = val ? 'Bring tools' : 'Use my tools';
                               });
                             },
                           ),
@@ -269,49 +267,56 @@ class _PlumbingDetailsScreenState extends State<PlumbingDetailsScreen> {
                     },
                   ),
                   const SizedBox(height: 32),
-                  ElevatedButton(
-                    onPressed: () {
-                      final selectedKeys = _counts.keys.where((k) => (_counts[k] ?? 0) > 0).toList();
-                      
-                      if (selectedKeys.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Please select at least one issue.')),
+                  SafeArea(
+                    top: false,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        final selectedKeys = _counts.keys.where((k) => (_counts[k] ?? 0) > 0).toList();
+                        
+                        if (selectedKeys.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('Please select at least one add-on to continue.', style: TextStyle(color: Colors.white)),
+                              backgroundColor: Colors.red.shade600,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                          return;
+                        }
+  
+                        List<ServiceAddon> selectedAddons = selectedKeys.map((key) {
+                          return ServiceAddon(name: key, count: _counts[key]!, hoursPerUnit: _hours[key]!); 
+                        }).toList();
+  
+                        double newSubtotal = 0;
+                        for (var key in selectedKeys) {
+                          newSubtotal += 15.00 * _counts[key]!;
+                        }
+  
+                        final updatedData = widget.bookingData.copyWith(
+                          selectedAddons: selectedAddons,
+                          subtotal: 0.0,
+                          baseEstimatedHours: 0.0,
+                          materialPreference: _materialPreference,
+                          whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty ? _whatYouNeedController.text.trim() : null,
+                          describeIssue: _describeIssueController.text.trim().isNotEmpty ? _describeIssueController.text.trim() : null,
+                          uploadedImages: _selectedImages.map((e) => e.path).toList(),
                         );
-                        return;
-                      }
-
-                      List<ServiceAddon> selectedAddons = selectedKeys.map((key) {
-                        return ServiceAddon(name: key, count: _counts[key]!, hoursPerUnit: _hours[key]!); 
-                      }).toList();
-
-                      double newSubtotal = 0;
-                      for (var key in selectedKeys) {
-                        newSubtotal += 15.00 * _counts[key]!;
-                      }
-
-                      final updatedData = widget.bookingData.copyWith(
-                        selectedAddons: selectedAddons,
-                        subtotal: 0.0,
-                        baseEstimatedHours: 0.0,
-                        materialPreference: _materialPreference,
-                        whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty ? _whatYouNeedController.text.trim() : null,
-                        describeIssue: _describeIssueController.text.trim().isNotEmpty ? _describeIssueController.text.trim() : null,
-                        uploadedImages: _selectedImages.map((e) => e.path).toList(),
-                      );
-
-                      context.pushNamed(
-                        RouteNames.quickServicesPlumbingReview,
-                        extra: updatedData,
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGold,
-                      foregroundColor: Colors.black,
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 0,
+  
+                        context.pushNamed(
+                          RouteNames.quickServicesPlumbingReview,
+                          extra: updatedData,
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGold,
+                        foregroundColor: Colors.black,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
                     ),
-                    child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
                   ),
                 ],
               ),

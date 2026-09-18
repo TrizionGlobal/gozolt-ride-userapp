@@ -239,7 +239,7 @@ class QuickServiceBookingData {
   final String? requirementDescription;
 
   double get materialCost =>
-      (materialPreference == 'Bring materials') ? 5.0 : 0.0;
+      (materialPreference == 'Bring materials' || materialPreference == 'Bring tools') ? 5.0 : 0.0;
 
   double get totalEstimatedHours {
     double addonHours = 0.0;

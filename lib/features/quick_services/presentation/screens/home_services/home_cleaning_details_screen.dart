@@ -25,6 +25,7 @@ class _HomeCleaningDetailsScreenState extends State<HomeCleaningDetailsScreen> {
     'Kitchen Cleaning': 0,
     'Hall': 0,
     'Fans': 0,
+    'Exhaust Fans': 0,
     'Cupboards': 0,
     'Chimney': 0,
     'Corridor / Terrace': 0,
@@ -36,6 +37,7 @@ class _HomeCleaningDetailsScreenState extends State<HomeCleaningDetailsScreen> {
     'Kitchen Cleaning': 1.5,
     'Hall': 1.0,
     'Fans': 0.25,
+    'Exhaust Fans': 0.25,
     'Cupboards': 0.5,
     'Chimney': 0.5,
     'Corridor / Terrace': 0.5,
@@ -46,7 +48,8 @@ class _HomeCleaningDetailsScreenState extends State<HomeCleaningDetailsScreen> {
     'Bedrooms': Icons.bed_outlined,
     'Kitchen Cleaning': Icons.countertops_outlined,
     'Hall': Icons.weekend_outlined,
-    'Fans': Icons.mode_fan_off_outlined,
+    'Fans': Icons.wind_power_outlined,
+    'Exhaust Fans': Icons.cyclone_outlined,
     'Cupboards': Icons.kitchen_outlined,
     'Chimney': Icons.fireplace_outlined,
     'Corridor / Terrace': Icons.balcony_outlined,
@@ -110,6 +113,7 @@ class _HomeCleaningDetailsScreenState extends State<HomeCleaningDetailsScreen> {
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 1,
             title: 'Service Requirements',
             subtitle: 'Home Cleaning',
           ),
@@ -140,12 +144,12 @@ class _HomeCleaningDetailsScreenState extends State<HomeCleaningDetailsScreen> {
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                               child: Row(
                                 children: [
-                                  Icon(_icons[key], size: 24, color: Colors.grey.shade600),
-                                  const SizedBox(width: 16),
+                                  Icon(_icons[key], size: 22, color: Colors.grey.shade600),
+                                  const SizedBox(width: 14),
                                   Expanded(
                                     child: Text(
                                       key,
-                                      style: AppTextStyles.titleMedium,
+                                      style: AppTextStyles.titleMedium.copyWith(fontSize: 14),
                                     ),
                                   ),
                                   Row(
@@ -278,49 +282,56 @@ class _HomeCleaningDetailsScreenState extends State<HomeCleaningDetailsScreen> {
                     },
                   ),
                   const SizedBox(height: 32),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (_subtotal == 0) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Please select at least one area to clean.')),
-                        );
-                        return;
-                      }
-
-                      List<ServiceAddon> selectedAddons = [];
-                      _counts.forEach((key, count) {
-                        if (count > 0) {
-                          selectedAddons.add(ServiceAddon(
-                            name: key,
-                            count: count,
-                            hoursPerUnit: _hours[key]!,
-                          ));
+                  SafeArea(
+                    top: false,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (_subtotal == 0) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('Please select at least one area to clean to continue.', style: TextStyle(color: Colors.white)),
+                              backgroundColor: Colors.red.shade600,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                          return;
                         }
-                      });
+                        List<ServiceAddon> selectedAddons = [];
+                        _counts.forEach((key, count) {
+                          if (count > 0) {
+                            selectedAddons.add(ServiceAddon(
+                              name: key,
+                              count: count,
+                              hoursPerUnit: _hours[key]!,
+                            ));
+                          }
+                        });
 
-                      final updatedData = widget.bookingData.copyWith(
-                        selectedAddons: selectedAddons,
-                        materialPreference: _materialPreference,
-                        subtotal: 0.0,
-                        baseEstimatedHours: 0.0,
-                        whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty ? _whatYouNeedController.text.trim() : null,
-                        describeIssue: _describeIssueController.text.trim().isNotEmpty ? _describeIssueController.text.trim() : null,
-                        uploadedImages: _selectedImages.map((e) => e.path).toList(),
-                      );
 
-                      context.pushNamed(
-                        RouteNames.quickServicesHomeCleaningReview,
-                        extra: updatedData,
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGold,
-                      foregroundColor: Colors.black,
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 0,
+                        final updatedData = widget.bookingData.copyWith(
+                          selectedAddons: selectedAddons,
+                          materialPreference: _materialPreference,
+                          subtotal: 0.0,
+                          baseEstimatedHours: 0.0,
+                          whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty ? _whatYouNeedController.text.trim() : null,
+                          describeIssue: _describeIssueController.text.trim().isNotEmpty ? _describeIssueController.text.trim() : null,
+                          uploadedImages: _selectedImages.map((e) => e.path).toList(),
+                        );
+  
+                        context.pushNamed(
+                          RouteNames.quickServicesHomeCleaningReview,
+                          extra: updatedData,
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGold,
+                        foregroundColor: Colors.black,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
                     ),
-                    child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
                   ),
                 ],
               ),

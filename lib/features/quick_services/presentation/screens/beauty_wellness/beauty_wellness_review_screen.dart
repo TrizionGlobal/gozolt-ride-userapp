@@ -73,6 +73,7 @@ class _BeautyWellnessReviewScreenState extends ConsumerState<BeautyWellnessRevie
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 2,
             title: 'Review & Book',
             subtitle: 'Beauty & Wellness',
           ),

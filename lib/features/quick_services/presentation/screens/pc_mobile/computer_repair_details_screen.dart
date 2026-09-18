@@ -183,6 +183,7 @@ class _ComputerRepairDetailsScreenState extends State<ComputerRepairDetailsScree
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 1,
             title: 'Service Requirements',
             subtitle: 'Computer & Laptop Repair',
           ),

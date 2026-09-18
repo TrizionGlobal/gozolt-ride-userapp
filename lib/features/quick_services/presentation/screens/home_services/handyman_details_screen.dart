@@ -18,7 +18,7 @@ class HandymanDetailsScreen extends StatefulWidget {
 }
 
 class _HandymanDetailsScreenState extends State<HandymanDetailsScreen> {
-  String _materialPreference = 'Bring materials';
+  String _materialPreference = 'Bring tools';
   final Map<String, int> _counts = {
     'TV / Wall Mounting': 0,
     'Shelf Installation': 0,
@@ -28,7 +28,6 @@ class _HandymanDetailsScreenState extends State<HandymanDetailsScreen> {
     'Door Handle / Minor Repair': 0,
     'Silicone / Sealant Work': 0,
     'Drilling / Minor Fixing': 0,
-    'Other Handyman Work': 0,
   };
 
   final Map<String, IconData> _icons = {
@@ -40,7 +39,6 @@ class _HandymanDetailsScreenState extends State<HandymanDetailsScreen> {
     'Door Handle / Minor Repair': Icons.door_front_door_outlined,
     'Silicone / Sealant Work': Icons.format_paint_outlined,
     'Drilling / Minor Fixing': Icons.handyman_outlined,
-    'Other Handyman Work': Icons.build_outlined,
   };
 
   final Map<String, double> _hours = {
@@ -52,7 +50,6 @@ class _HandymanDetailsScreenState extends State<HandymanDetailsScreen> {
     'Door Handle / Minor Repair': 0.5,
     'Silicone / Sealant Work': 1.0,
     'Drilling / Minor Fixing': 0.5,
-    'Other Handyman Work': 1.0,
   };
 
 
@@ -115,6 +112,16 @@ class _HandymanDetailsScreenState extends State<HandymanDetailsScreen> {
 
   void _onContinue() {
     final selectedKeys = _counts.keys.where((k) => (_counts[k] ?? 0) > 0).toList();
+    if (selectedKeys.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please select at least one add-on to continue.', style: TextStyle(color: Colors.white)),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
     List<ServiceAddon> selectedAddons = selectedKeys.map((key) {
       return ServiceAddon(name: key, count: _counts[key]!, hoursPerUnit: _hours[key]!);
@@ -148,6 +155,7 @@ class _HandymanDetailsScreenState extends State<HandymanDetailsScreen> {
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 1,
             title: 'Service Requirements',
             subtitle: 'Handyman',
           ),
@@ -247,39 +255,52 @@ class _HandymanDetailsScreenState extends State<HandymanDetailsScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                  Row(
                     children: _wallTypes.map((type) {
                       final isSelected = _selectedWallType == type;
-                      return ChoiceChip(
-                        label: Text(type),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          setState(() {
-                            _selectedWallType = selected ? type : null;
-                          });
-                        },
-                        selectedColor: AppColors.primaryGold,
-                        backgroundColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          side: BorderSide(
-                            color: isSelected ? AppColors.primaryGold : Colors.grey.shade400,
+                      final isLast = type == _wallTypes.last;
+                      return Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(right: isLast ? 0 : 8.0),
+                          child: ChoiceChip(
+                            padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
+                            labelPadding: EdgeInsets.zero,
+                            label: SizedBox(
+                              width: double.infinity,
+                              child: Text(
+                                type,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isSelected ? Colors.black : Colors.black87,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              setState(() {
+                                _selectedWallType = selected ? type : null;
+                              });
+                            },
+                            selectedColor: AppColors.primaryGold,
+                            backgroundColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              side: BorderSide(
+                                color: isSelected ? AppColors.primaryGold : Colors.grey.shade400,
+                              ),
+                            ),
+                            showCheckmark: false,
                           ),
                         ),
-                        labelStyle: TextStyle(
-                          color: isSelected ? Colors.black : Colors.black87,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
-                        showCheckmark: false,
                       );
                     }).toList(),
                   ),
                   const SizedBox(height: 24),
 
                   Text(
-                    'Materials / Parts',
+                    'Required Tools',
                     style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
@@ -290,8 +311,8 @@ class _HandymanDetailsScreenState extends State<HandymanDetailsScreen> {
                       color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
-                        width: _materialPreference == 'Bring materials' ? 1.5 : 1,
+                        color: _materialPreference == 'Bring tools' ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
+                        width: _materialPreference == 'Bring tools' ? 1.5 : 1,
                       ),
                     ),
                     child: Row(
@@ -310,13 +331,13 @@ class _HandymanDetailsScreenState extends State<HandymanDetailsScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Bring materials', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                              Text('Bring tools', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 2),
                               Text(
-                                _materialPreference == 'Bring materials' ? '+€5.00 extra charge' : 'Use my materials (No extra charge)',
+                                _materialPreference == 'Bring tools' ? '+€5.00 extra charge' : 'Use my tools (No extra charge)',
                                 style: AppTextStyles.bodySmall.copyWith(
-                                  color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey[600],
-                                  fontWeight: _materialPreference == 'Bring materials' ? FontWeight.bold : FontWeight.normal,
+                                  color: _materialPreference == 'Bring tools' ? AppColors.primaryGold : Colors.grey[600],
+                                  fontWeight: _materialPreference == 'Bring tools' ? FontWeight.bold : FontWeight.normal,
                                 ),
                               ),
                             ],
@@ -325,13 +346,13 @@ class _HandymanDetailsScreenState extends State<HandymanDetailsScreen> {
                         Transform.scale(
                           scale: 0.8,
                           child: Switch.adaptive(
-                            value: _materialPreference == 'Bring materials',
+                            value: _materialPreference == 'Bring tools',
                             activeColor: isDark ? AppColors.backgroundDark : Colors.white,
                             activeTrackColor: AppColors.primaryGold,
                             inactiveTrackColor: Colors.grey[300],
                             onChanged: (val) {
                               setState(() {
-                                _materialPreference = val ? 'Bring materials' : 'Use my materials';
+                                _materialPreference = val ? 'Bring tools' : 'Use my tools';
                               });
                             },
                           ),
@@ -358,55 +379,26 @@ class _HandymanDetailsScreenState extends State<HandymanDetailsScreen> {
                       });
                     },
                   ),
-                  const SizedBox(height: 20),
 
-                  // Specialist Warning Box
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8EAF6),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFC5CAE9)),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Icon(Icons.info_outline, color: Color(0xFF3F51B5), size: 22),
-                        SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Electrical, plumbing, gas or structural work must be booked with the appropriate specialist.',
-                            style: TextStyle(
-                              color: Color(0xFF1A237E),
-                              fontSize: 12,
-                            ),
+                  const SizedBox(height: 32),
+                  SafeArea(
+                    top: false,
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _onContinue,
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryGold,
+                            foregroundColor: Colors.black,
+                            minimumSize: const Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
                           ),
-                        ),
-                      ],
+                          child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 20),
                 ],
-              ),
-            ),
-          ),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _onContinue,
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGold,
-                      foregroundColor: Colors.black,
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 0,
-                    ),
-                    child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
-                ),
               ),
             ),
           ),

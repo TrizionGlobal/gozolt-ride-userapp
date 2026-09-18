@@ -102,6 +102,7 @@ class _BeautyWellnessDetailsScreenState extends State<BeautyWellnessDetailsScree
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 1,
             title: 'Select Services',
             subtitle: 'Beauty & Wellness',
           ),

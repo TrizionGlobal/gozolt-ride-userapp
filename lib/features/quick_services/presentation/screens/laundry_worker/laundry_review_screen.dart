@@ -67,6 +67,7 @@ class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 2,
             title: 'Review & Book',
             subtitle: 'Laundry Service',
           ),

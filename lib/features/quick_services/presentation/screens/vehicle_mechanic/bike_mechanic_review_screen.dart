@@ -41,7 +41,8 @@ class _BikeMechanicReviewScreenState extends ConsumerState<BikeMechanicReviewScr
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(title: 'Review & Book', subtitle: 'Bike Mechanic'),
+          const QuickServicesHeader(
+            currentStep: 2,title: 'Review & Book', subtitle: 'Bike Mechanic'),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),

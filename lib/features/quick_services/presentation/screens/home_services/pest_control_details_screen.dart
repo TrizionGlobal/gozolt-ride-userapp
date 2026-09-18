@@ -254,6 +254,7 @@ class _PestControlDetailsScreenState extends State<PestControlDetailsScreen> {
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 1,
             title: 'Pest Control Requirements',
           ),
           Expanded(

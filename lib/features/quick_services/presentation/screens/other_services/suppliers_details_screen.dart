@@ -86,6 +86,7 @@ class _SuppliersDetailsScreenState extends State<SuppliersDetailsScreen> {
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 1,
             title: 'Service Requirements',
             subtitle: 'Suppliers',
           ),

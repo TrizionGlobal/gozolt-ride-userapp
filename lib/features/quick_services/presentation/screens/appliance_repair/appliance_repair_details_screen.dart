@@ -19,7 +19,7 @@ class ApplianceRepairDetailsScreen extends StatefulWidget {
 }
 
 class _ApplianceRepairDetailsScreenState extends State<ApplianceRepairDetailsScreen> {
-  String _materialPreference = 'Bring materials';
+  String _materialPreference = 'Bring tools';
   // Counters for appliances
   final Map<String, int> _applianceCounts = {
     'Air Conditioner': 0,
@@ -29,7 +29,6 @@ class _ApplianceRepairDetailsScreenState extends State<ApplianceRepairDetailsScr
     'Oven / Microwave': 0,
     'Water Heater': 0,
     'Television': 0,
-    'Other Appliance': 0,
   };
 
   final TextEditingController _brandController = TextEditingController();
@@ -98,7 +97,7 @@ class _ApplianceRepairDetailsScreenState extends State<ApplianceRepairDetailsScr
       case 'Television':
         return Icons.tv;
       default:
-        return Icons.devices_other;
+        return Icons.build;
     }
   }
 
@@ -110,6 +109,7 @@ class _ApplianceRepairDetailsScreenState extends State<ApplianceRepairDetailsScr
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 1,
             title: 'Service Requirements',
             subtitle: 'Appliance Repair',
           ),
@@ -122,7 +122,7 @@ class _ApplianceRepairDetailsScreenState extends State<ApplianceRepairDetailsScr
                   // Appliance selection with counters
                   Text(
                     'Which appliance needs service?',
-                    style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold, color: const Color(0xFF324461)),
+                    style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
                   Container(
@@ -139,15 +139,15 @@ class _ApplianceRepairDetailsScreenState extends State<ApplianceRepairDetailsScr
                         return Column(
                           children: [
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                               child: Row(
                                 children: [
-                                  Icon(_getApplianceIcon(key), size: 24, color: Colors.grey.shade600),
-                                  const SizedBox(width: 16),
+                                  Icon(_getApplianceIcon(key), size: 22, color: Colors.grey.shade600),
+                                  const SizedBox(width: 14),
                                   Expanded(
                                     child: Text(
                                       key,
-                                      style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                                      style: AppTextStyles.titleMedium.copyWith(fontSize: 14),
                                     ),
                                   ),
                                   Row(
@@ -203,65 +203,8 @@ class _ApplianceRepairDetailsScreenState extends State<ApplianceRepairDetailsScr
                   const SizedBox(height: 24),
 
 
-
-                  // Brand - Optional
                   Text(
-                    'Brand — Optional',
-                    style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold, color: const Color(0xFF324461)),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _brandController,
-                    decoration: InputDecoration(
-                      hintText: 'Daikin',
-                      filled: true,
-                      fillColor: Theme.of(context).cardTheme.color,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.primaryGold),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Model Number - Optional
-                  Text(
-                    'Model Number — Optional',
-                    style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold, color: const Color(0xFF324461)),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _modelController,
-                    decoration: InputDecoration(
-                      hintText: 'FTKF35',
-                      filled: true,
-                      fillColor: Theme.of(context).cardTheme.color,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.primaryGold),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  Text(
-                    'Materials / Parts',
+                    'Required Tools',
                     style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
@@ -272,8 +215,8 @@ class _ApplianceRepairDetailsScreenState extends State<ApplianceRepairDetailsScr
                       color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
-                        width: _materialPreference == 'Bring materials' ? 1.5 : 1,
+                        color: _materialPreference == 'Bring tools' ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
+                        width: _materialPreference == 'Bring tools' ? 1.5 : 1,
                       ),
                     ),
                     child: Row(
@@ -292,13 +235,13 @@ class _ApplianceRepairDetailsScreenState extends State<ApplianceRepairDetailsScr
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Bring materials', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                              Text('Bring tools', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 2),
                               Text(
-                                _materialPreference == 'Bring materials' ? '+€5.00 extra charge' : 'Use my materials (No extra charge)',
+                                _materialPreference == 'Bring tools' ? '+€5.00 extra charge' : 'Use my tools (No extra charge)',
                                 style: AppTextStyles.bodySmall.copyWith(
-                                  color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey[600],
-                                  fontWeight: _materialPreference == 'Bring materials' ? FontWeight.bold : FontWeight.normal,
+                                  color: _materialPreference == 'Bring tools' ? AppColors.primaryGold : Colors.grey[600],
+                                  fontWeight: _materialPreference == 'Bring tools' ? FontWeight.bold : FontWeight.normal,
                                 ),
                               ),
                             ],
@@ -307,13 +250,13 @@ class _ApplianceRepairDetailsScreenState extends State<ApplianceRepairDetailsScr
                         Transform.scale(
                           scale: 0.8,
                           child: Switch.adaptive(
-                            value: _materialPreference == 'Bring materials',
+                            value: _materialPreference == 'Bring tools',
                             activeColor: isDark ? AppColors.backgroundDark : Colors.white,
                             activeTrackColor: AppColors.primaryGold,
                             inactiveTrackColor: Colors.grey[300],
                             onChanged: (val) {
                               setState(() {
-                                _materialPreference = val ? 'Bring materials' : 'Use my materials';
+                                _materialPreference = val ? 'Bring tools' : 'Use my tools';
                               });
                             },
                           ),
@@ -341,71 +284,54 @@ class _ApplianceRepairDetailsScreenState extends State<ApplianceRepairDetailsScr
                   ),
                   const SizedBox(height: 24),
 
-                  // Warning Banner
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGold.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.primaryGold.withOpacity(0.5)),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Burning smell, smoke or sparking? Switch off the appliance if safe and call 112 for immediate danger.',
-                            style: TextStyle(fontSize: 12, color: Colors.black87),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
                   // Continue Button
-                  ElevatedButton(
-                    onPressed: () {
-                      int totalCount = _applianceCounts.values.fold(0, (sum, count) => sum + count);
-                      if (totalCount == 0) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Please select at least one appliance.')),
-                        );
-                        return;
-                      }
-                      
-                      List<ServiceAddon> selectedAddons = [];
-                      _applianceCounts.forEach((appliance, count) {
-                        if (count > 0) {
-                          selectedAddons.add(ServiceAddon(name: appliance, count: count, hoursPerUnit: 1.0)); // The price is not per addon here, it's a fixed visit fee
+                  SafeArea(
+                    top: false,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        int totalCount = _applianceCounts.values.fold(0, (sum, count) => sum + count);
+                        if (totalCount == 0) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text('Please select at least one appliance to continue.', style: TextStyle(color: Colors.white)),
+                              backgroundColor: Colors.red.shade600,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                          return;
                         }
-                      });
+                        
+                        List<ServiceAddon> selectedAddons = [];
+                        _applianceCounts.forEach((appliance, count) {
+                          if (count > 0) {
+                            selectedAddons.add(ServiceAddon(name: appliance, count: count, hoursPerUnit: 1.0)); // The price is not per addon here, it's a fixed visit fee
+                          }
+                        });
 
-                      final updatedData = widget.bookingData.copyWith(
-                        selectedAddons: selectedAddons,
-                        whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty ? _whatYouNeedController.text.trim() : null,
-                        describeIssue: _describeIssueController.text.trim().isNotEmpty ? _describeIssueController.text.trim() : null,
-                        uploadedImages: _selectedImages.map((e) => e.path).toList(),
-                        subtotal: 0.0,
-                        baseEstimatedHours: 0.0,
-                        materialPreference: _materialPreference,
-                      );
+                        final updatedData = widget.bookingData.copyWith(
+                          selectedAddons: selectedAddons,
+                          whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty ? _whatYouNeedController.text.trim() : null,
+                          describeIssue: _describeIssueController.text.trim().isNotEmpty ? _describeIssueController.text.trim() : null,
+                          uploadedImages: _selectedImages.map((e) => e.path).toList(),
+                          subtotal: 0.0,
+                          baseEstimatedHours: 0.0,
+                          materialPreference: _materialPreference,
+                        );
 
-                      context.pushNamed(
-                        RouteNames.quickServicesApplianceRepairReview,
-                        extra: updatedData,
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGold,
-                      foregroundColor: Colors.black,
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 0,
+                        context.pushNamed(
+                          RouteNames.quickServicesApplianceRepairReview,
+                          extra: updatedData,
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGold,
+                        foregroundColor: Colors.black,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
                     ),
-                    child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
                   ),
                 ],
               ),

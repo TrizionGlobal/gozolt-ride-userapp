@@ -295,6 +295,7 @@ class _HospitalLaundryDetailsScreenState extends State<HospitalLaundryDetailsScr
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 1,
             title: 'Hospital Laundry Requirements',
           ),
           Expanded(

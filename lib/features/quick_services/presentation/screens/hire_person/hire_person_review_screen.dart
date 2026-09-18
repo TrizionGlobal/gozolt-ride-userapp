@@ -49,6 +49,7 @@ class _HirePersonReviewScreenState extends ConsumerState<HirePersonReviewScreen>
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 2,
             title: 'Review & Book',
             subtitle: 'Hire Person',
           ),

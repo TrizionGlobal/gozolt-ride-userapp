@@ -57,6 +57,7 @@ class _PestControlReviewScreenState extends ConsumerState<PestControlReviewScree
       body: Column(
         children: [
           const QuickServicesHeader(
+            currentStep: 2,
             title: 'Review & Book',
             subtitle: 'Pest Control',
           ),
