@@ -9,6 +9,7 @@ import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_image_picker.dart';
 import '../../widgets/quick_services_additional_details.dart';
 import '../../../data/models/quick_service_booking_data.dart';
+import '../../../../../core/config/quick_services_pricing_config.dart';
 
 class PlumbingDetailsScreen extends StatefulWidget {
   final QuickServiceBookingData bookingData;
@@ -222,7 +223,7 @@ class _PlumbingDetailsScreenState extends State<PlumbingDetailsScreen> {
                               Text('Bring tools', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 2),
                               Text(
-                                _materialPreference == 'Bring tools' ? '+€5.00 extra charge' : 'Use my tools (No extra charge)',
+                                _materialPreference == 'Bring tools' ? '+€${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.category).toStringAsFixed(2)} extra charge' : 'Use my tools (No extra charge)',
                                 style: AppTextStyles.bodySmall.copyWith(
                                   color: _materialPreference == 'Bring tools' ? AppColors.primaryGold : Colors.grey[600],
                                   fontWeight: _materialPreference == 'Bring tools' ? FontWeight.bold : FontWeight.normal,

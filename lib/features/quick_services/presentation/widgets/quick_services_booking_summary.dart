@@ -201,6 +201,88 @@ class QuickServicesBookingSummary extends StatelessWidget {
               ],
             ),
           ],
+          
+          // Gardening specific (if present)
+          if (bookingData.gardeningServices != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.yard_outlined, size: 18, color: Colors.grey),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text('Gardening Services: ${bookingData.gardeningServices}', style: AppTextStyles.bodySmall),
+                ),
+              ],
+            ),
+          ],
+          if (bookingData.gardeningServiceArea != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.maps_home_work, size: 18, color: Colors.grey),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text('Service Area: ${bookingData.gardeningServiceArea}', style: AppTextStyles.bodySmall),
+                ),
+              ],
+            ),
+          ],
+
+          // Pest Control specific (if present)
+          if (bookingData.pestType != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.bug_report, size: 18, color: Colors.grey),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text('Pest Type: ${bookingData.pestType}', style: AppTextStyles.bodySmall),
+                ),
+              ],
+            ),
+          ],
+          if (bookingData.propertyType != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.home_work, size: 18, color: Colors.grey),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text('Property Type: ${bookingData.propertyType}', style: AppTextStyles.bodySmall),
+                ),
+              ],
+            ),
+          ],
+          if (bookingData.pestAffectedAreas != null && bookingData.pestAffectedAreas!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.maps_home_work, size: 18, color: Colors.grey),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text('Affected Areas: ${bookingData.pestAffectedAreas!.join(', ')}', style: AppTextStyles.bodySmall),
+                ),
+              ],
+            ),
+          ],
+          if (bookingData.pestObservedLevel != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.warning_amber_rounded, size: 18, color: Colors.grey),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text('Observed Level: ${bookingData.pestObservedLevel}', style: AppTextStyles.bodySmall),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

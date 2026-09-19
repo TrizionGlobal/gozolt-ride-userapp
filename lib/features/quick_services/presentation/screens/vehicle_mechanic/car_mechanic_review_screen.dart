@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import '../../../../../core/widgets/booking_payment_sheet.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -13,6 +14,8 @@ import '../../../../../core/constants/app_text_styles.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_price_summary.dart';
+import '../../../../ride/data/models/saved_payment_method.dart';
+
 
 class CarMechanicReviewScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
@@ -37,235 +40,342 @@ class _CarMechanicReviewScreenState extends ConsumerState<CarMechanicReviewScree
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    String getVehicleName() {
+      final title = _bookingData.selectedServiceTitle?.toLowerCase() ?? '';
+      if (title.contains('bike')) return 'Bike';
+      if (title.contains('truck')) return 'Truck';
+      if (title.contains('car')) return 'Car';
+      return 'Car';
+    }
+    final vName = getVehicleName();
+    final dateStr = DateFormat('dd MMM yyyy').format(_bookingData.scheduleDate);
+    final timeStr = _bookingData.scheduleTime.format(context);
+
+    final vehicles = _bookingData.mechanicVehicles ?? [];
+
+    final discount = _useGoCoins ? 2.0 : 0.0;
+    
+    final estimatedTotal = (_bookingData.estimatedTotalMin - discount).clamp(0.0, 9999.0);
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(
-            currentStep: 2,title: 'Review & Book', subtitle: 'Car Mechanic'),
+          QuickServicesHeader(
+            currentStep: 2,
+            title: 'Review & Book',
+            subtitle: _bookingData.selectedServiceTitle ?? 'Car Mechanic',
+          ),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),
+              physics: const BouncingScrollPhysics(),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Car Details Container
+                  // Service Title Card
                   Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(border: Border.all(color: Colors.grey.withOpacity(0.3)), borderRadius: BorderRadius.circular(8)),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.directions_car, size: 20),
-                            const SizedBox(width: 8),
-                            Text('Car Mechanic', style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                        const Divider(height: 24),
-                        _buildDetailRow('Vehicle Type', _bookingData.carType ?? '-'),
-                        const SizedBox(height: 8),
-                        _buildDetailRow('Make & Model', '${_bookingData.vehicleMake ?? ''} ${_bookingData.vehicleModel ?? ''}'.trim()),
-                        if (_bookingData.vehicleYear != null) ...[
-                          const SizedBox(height: 8),
-                          _buildDetailRow('Year', _bookingData.vehicleYear!),
-                        ],
-                        if (_bookingData.vehicleRegistration != null) ...[
-                          const SizedBox(height: 8),
-                          _buildDetailRow('Registration Number', _bookingData.vehicleRegistration!),
-                        ],
-                        if (_bookingData.mileage != null) ...[
-                          const SizedBox(height: 8),
-                          _buildDetailRow('Mileage', _bookingData.mileage!),
-                        ],
-                        const SizedBox(height: 8),
-                        _buildDetailRow('Issue', _bookingData.vehicleIssue ?? '-'),
-                        const Divider(height: 24),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(Icons.calendar_today, size: 16),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Schedule\n${_formatDate(_bookingData.scheduleDate)} • ${_bookingData.scheduleTime.format(context)}',
-                                style: const TextStyle(fontSize: 12),
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGold.withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
                               ),
+                              child: const Icon(
+                                Icons.build,
+                                color: AppColors.primaryGold,
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Booking details',
+                              style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 16),
+                        // Date & Time
+                        Row(
+                          children: [
+                            const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
+                            const SizedBox(width: 10),
+                            Text('$dateStr • $timeStr', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Location
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.location_on, size: 16),
-                            const SizedBox(width: 8),
+                            const Icon(Icons.location_on, size: 18, color: Colors.grey),
+                            const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'Service Address\n${_bookingData.location.address}',
-                                style: const TextStyle(fontSize: 12),
+                                _bookingData.location.address,
+                                style: AppTextStyles.bodyMedium,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 10),
+
+                        // Customer
                         Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.person, size: 16),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Customer\n${_bookingData.userName}\n${_bookingData.userPhone} • ${_bookingData.userEmail}',
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                            ),
+                            const Icon(Icons.person, size: 18, color: Colors.grey),
+                            const SizedBox(width: 10),
+                            Text('Customer: ${_bookingData.userName}', style: AppTextStyles.bodyMedium),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Service Mode
+                        Row(
+                          children: [
+                            const Icon(Icons.local_shipping, size: 18, color: Colors.grey),
+                            const SizedBox(width: 10),
+                            Text('Service Mode: ${_bookingData.vehicleServiceMode ?? 'On-Site'}', style: AppTextStyles.bodyMedium),
                           ],
                         ),
                       ],
                     ),
                   ),
 
-                  if (_bookingData.whatYouNeed != null || _bookingData.describeIssue != null || (_bookingData.uploadedImages?.isNotEmpty ?? false)) ...[
-                    const SizedBox(height: 20),
-                    Text('Issue Description', style: AppTextStyles.titleSmall),
-                    const SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(border: Border.all(color: Colors.grey.withOpacity(0.3)), borderRadius: BorderRadius.circular(8)),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (_bookingData.whatYouNeed != null) ...[
-                            const Text('What You Need:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF324461))),
-                            const SizedBox(height: 4),
-                            Text(_bookingData.whatYouNeed!, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                            if (_bookingData.describeIssue != null || (_bookingData.uploadedImages?.isNotEmpty ?? false)) const SizedBox(height: 12),
-                          ],
-                          if (_bookingData.describeIssue != null) ...[
-                            const Text('Issue Description:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF324461))),
-                            const SizedBox(height: 4),
-                            Text(_bookingData.describeIssue!, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                            if (_bookingData.uploadedImages?.isNotEmpty ?? false) const SizedBox(height: 12),
-                          ],
-                          if (_bookingData.uploadedImages?.isNotEmpty ?? false) ...[
-                            const Text('Uploaded Photos:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF324461))),
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: _bookingData.uploadedImages!.map((path) {
-                                return ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.file(
-                                    File(path),
-                                    width: 60,
-                                    height: 60,
-                                    fit: BoxFit.cover,
+                  const SizedBox(height: 16),
+
+                  // Vehicles & Additional Details Summary Card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${vName}s (${vehicles.length})',
+                          style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 12),
+                        ...vehicles.map((v) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12.0),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.grey[850] : Colors.grey[50],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        '${v.make} ${v.model}',
+                                        style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                _buildDetailRow('Type:', v.type ?? 'Car'),
+                                _buildDetailRow('Issue:', v.issue),
+                                if (v.year != null || v.mileage != null)
+                                  _buildDetailRow('Details:', [if (v.year != null) 'Year: ${v.year}', if (v.mileage != null) 'Mileage: ${v.mileage}'].join(', ')),
+                              ],
+                            ),
+                          ),
+                        )),
+                        
+                        if ((_bookingData.whatYouNeed != null && _bookingData.whatYouNeed!.isNotEmpty) ||
+                            (_bookingData.describeIssue != null && _bookingData.describeIssue!.isNotEmpty) ||
+                            (_bookingData.uploadedImages != null && _bookingData.uploadedImages!.isNotEmpty)) ...[
+                          const SizedBox(height: 8),
+                          const Divider(),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Additional Details',
+                            style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 12),
+                          if (_bookingData.whatYouNeed != null && _bookingData.whatYouNeed!.isNotEmpty) ...[
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(Icons.chat_bubble_outline, size: 18, color: Colors.grey),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'What You Need: ${_bookingData.whatYouNeed!}',
+                                    style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700]),
                                   ),
-                                );
-                              }).toList(),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                          ],
+                          if (_bookingData.describeIssue != null && _bookingData.describeIssue!.isNotEmpty) ...[
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(Icons.note_alt_outlined, size: 18, color: Colors.grey),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Issue description: ${_bookingData.describeIssue!}',
+                                    style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700]),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (_bookingData.uploadedImages != null && _bookingData.uploadedImages!.isNotEmpty)
+                              const SizedBox(height: 10),
+                          ],
+                          if (_bookingData.uploadedImages != null && _bookingData.uploadedImages!.isNotEmpty) ...[
+                            Row(
+                              children: [
+                                const Icon(Icons.image_outlined, size: 18, color: Colors.grey),
+                                const SizedBox(width: 10),
+                                Text('Attached Photo (${_bookingData.uploadedImages!.length})', style: AppTextStyles.bodySmall),
+                                const Spacer(),
+                                SizedBox(
+                                  height: 40,
+                                  child: ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    shrinkWrap: true,
+                                    itemCount: _bookingData.uploadedImages!.length,
+                                    itemBuilder: (context, index) {
+                                      final path = _bookingData.uploadedImages![index];
+                                      return Padding(
+                                        padding: const EdgeInsets.only(left: 4.0),
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(4),
+                                          child: Image.file(
+                                            File(path),
+                                            width: 40,
+                                            height: 40,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ],
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
+
                   const SizedBox(height: 20),
-                  
-                                    QuickServicesPriceSummary(
+
+                  // Payment Section
+                  QuickServicesPriceSummary(
                     bookingData: _bookingData,
                     useGoCoins: _useGoCoins,
                     onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),
+                    showAdditionalDetails: false, // Additional details are shown in the vehicles card above
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      const Icon(Icons.info_outline, size: 16, color: AppColors.primaryGold),
-                      const SizedBox(width: 8),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-          child: ElevatedButton(
-            onPressed: () {
-                  final finalTotal = _bookingData.upfrontBookingFee - (_useGoCoins ? 2.0 : 0.0);
+                  const SizedBox(height: 40),
+
+                  // Confirm Booking Button
+                  ElevatedButton(
+                    onPressed: () {
+                      final finalTotal = (_bookingData.upfrontBookingFee - (_useGoCoins ? _bookingData.upfrontBookingFee.clamp(0.0, 6.0) : 0.0)).clamp(0.0, double.infinity);
                       
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (ctx) => BookingPaymentSheet(
-                      currentType: _bookingData.paymentMethodType,
-                      currentCardId: _bookingData.paymentMethodId,
-                      isQuickService: true,
-                      amount: finalTotal,
-                      onConfirm: (type, {cardId}) {
+                      if (finalTotal <= 0.0) {
                         final updatedData = _bookingData.copyWith(
-                          paymentMethodType: type,
-                          paymentMethodId: cardId,
+                          paymentMethodType: PaymentMethodType.cash,
                           useGoCoins: _useGoCoins,
                         );
                         context.pushNamed(
                           RouteNames.quickServicesCarMechanicConfirmation,
                           extra: updatedData,
                         );
-                      },
-                    ),
-                  );
-                },
-            style: ElevatedButton.styleFrom(
+                      } else {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (ctx) => BookingPaymentSheet(
+                            currentType: _bookingData.paymentMethodType,
+                            currentCardId: _bookingData.paymentMethodId,
+                            isQuickService: true,
+                            amount: finalTotal,
+                            onConfirm: (type, {cardId}) {
+                              final updatedData = _bookingData.copyWith(
+                                paymentMethodType: type,
+                                paymentMethodId: cardId,
+                                useGoCoins: _useGoCoins,
+                              );
+                              context.pushNamed(
+                                RouteNames.quickServicesCarMechanicConfirmation,
+                                extra: updatedData,
+                              );
+                            },
+                          ),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,
                       foregroundColor: Colors.black,
                       minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       elevation: 0,
                     ),
                     child: Text('Confirm Booking', style: AppTextStyles.button.copyWith(color: Colors.black)),
+                  ),
+                  const SizedBox(height: 40),
+                ],
+              ),
+            ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-      ],
-    );
-  }
-
-  Widget _buildPriceRow(String label, String price, {bool isDiscount = false, TextStyle? valueStyle}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 14)),
-          Text(price, style: valueStyle ?? TextStyle(fontSize: 14, color: isDiscount ? Colors.red : null)),
         ],
       ),
     );
   }
 
-  String _formatDate(DateTime date) {
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    final weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    return '${date.day} ${months[date.month - 1]} ${date.year} • ${weekdays[date.weekday - 1]}';
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(label, style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600])),
+          ),
+          Expanded(
+            child: Text(value, style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w500)),
+          ),
+        ],
+      ),
+    );
   }
 }

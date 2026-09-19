@@ -11,6 +11,8 @@ import '../../../../../core/router/route_names.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_price_summary.dart';
 import '../../widgets/quick_services_header.dart';
+import '../../../../ride/data/models/saved_payment_method.dart';
+
 
 class TruckWashReviewScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
@@ -155,7 +157,7 @@ class _TruckWashReviewScreenState extends ConsumerState<TruckWashReviewScreen> {
 
                   const SizedBox(height: 16),
 
-                  // Vehicles Summary Card
+                  // Vehicles & Additional Details Summary Card
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -192,13 +194,6 @@ class _TruckWashReviewScreenState extends ConsumerState<TruckWashReviewScreen> {
                                         style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
                                       ),
                                     ),
-                                    Text(
-                                      '€${v.washPackagePrice.toStringAsFixed(0)}',
-                                      style: AppTextStyles.bodyMedium.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: isDark ? AppColors.primaryGold : const Color(0xFFD97706),
-                                      ),
-                                    ),
                                   ],
                                 ),
                                 const SizedBox(height: 4),
@@ -209,28 +204,13 @@ class _TruckWashReviewScreenState extends ConsumerState<TruckWashReviewScreen> {
                             ),
                           ),
                         )),
-
-                      ],
-                    ),
-                  ),
-
-
-
-                  const SizedBox(height: 20),
-
-                  if ((_bookingData.comments != null && _bookingData.comments!.isNotEmpty) ||
-                      (_bookingData.describeIssue != null && _bookingData.describeIssue!.isNotEmpty) ||
-                      (_bookingData.uploadedImages != null && _bookingData.uploadedImages!.isNotEmpty))
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardTheme.color,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+                        
+                        if ((_bookingData.comments != null && _bookingData.comments!.isNotEmpty) ||
+                            (_bookingData.describeIssue != null && _bookingData.describeIssue!.isNotEmpty) ||
+                            (_bookingData.uploadedImages != null && _bookingData.uploadedImages!.isNotEmpty)) ...[
+                          const SizedBox(height: 8),
+                          const Divider(),
+                          const SizedBox(height: 8),
                           Text(
                             'Additional Details',
                             style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
@@ -303,8 +283,9 @@ class _TruckWashReviewScreenState extends ConsumerState<TruckWashReviewScreen> {
                             ),
                           ],
                         ],
-                      ),
+                      ],
                     ),
+                  ),
 
                   const SizedBox(height: 20),
 
@@ -313,36 +294,48 @@ class _TruckWashReviewScreenState extends ConsumerState<TruckWashReviewScreen> {
                     bookingData: _bookingData,
                     useGoCoins: _useGoCoins,
                     onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),
+                    showAdditionalDetails: false, // Additional details are shown in the vehicles card above
                   ),
                   const SizedBox(height: 40),
 
                   // Confirm Booking Button
                   ElevatedButton(
                     onPressed: () {
-                      final finalTotal = estimatedTotal;
+                      final finalTotal = (_bookingData.upfrontBookingFee - (_useGoCoins ? _bookingData.upfrontBookingFee.clamp(0.0, 6.0) : 0.0)).clamp(0.0, double.infinity);
                       
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (ctx) => BookingPaymentSheet(
-                          currentType: _bookingData.paymentMethodType,
-                          currentCardId: _bookingData.paymentMethodId,
-                          isQuickService: true,
-                          amount: finalTotal,
-                          onConfirm: (type, {cardId}) {
-                            final updatedData = _bookingData.copyWith(
-                              paymentMethodType: type,
-                              paymentMethodId: cardId,
-                              useGoCoins: _useGoCoins,
-                            );
-                            context.pushNamed(
-                              RouteNames.quickServicesTruckWashConfirmation,
-                              extra: updatedData,
-                            );
-                          },
-                        ),
-                      );
+                      if (finalTotal <= 0.0) {
+                        final updatedData = _bookingData.copyWith(
+                          paymentMethodType: PaymentMethodType.cash,
+                          useGoCoins: _useGoCoins,
+                        );
+                        context.pushNamed(
+                          RouteNames.quickServicesTruckWashConfirmation,
+                          extra: updatedData,
+                        );
+                      } else {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (ctx) => BookingPaymentSheet(
+                            currentType: _bookingData.paymentMethodType,
+                            currentCardId: _bookingData.paymentMethodId,
+                            isQuickService: true,
+                            amount: finalTotal,
+                            onConfirm: (type, {cardId}) {
+                              final updatedData = _bookingData.copyWith(
+                                paymentMethodType: type,
+                                paymentMethodId: cardId,
+                                useGoCoins: _useGoCoins,
+                              );
+                              context.pushNamed(
+                                RouteNames.quickServicesTruckWashConfirmation,
+                                extra: updatedData,
+                              );
+                            },
+                          ),
+                        );
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,
@@ -355,6 +348,7 @@ class _TruckWashReviewScreenState extends ConsumerState<TruckWashReviewScreen> {
                     ),
                     child: Text('Confirm Booking', style: AppTextStyles.button.copyWith(color: Colors.black)),
                   ),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),

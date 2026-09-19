@@ -7,6 +7,7 @@ import '../../../../../core/router/route_names.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_additional_details.dart';
+import '../../../../../core/config/quick_services_pricing_config.dart';
 
 class CarWashDetailsScreen extends StatefulWidget {
   final QuickServiceBookingData bookingData;
@@ -46,14 +47,14 @@ class _CarWashDetailsScreenState extends State<CarWashDetailsScreen> {
     final title = widget.bookingData.selectedServiceTitle ?? '';
     if (title.contains('Bike')) {
       return [
-        {'title': 'Standard Wash', 'price': 10.0, 'displayPrice': '€10'},
-        {'title': 'Detailed Wash', 'price': 15.0, 'displayPrice': '€15'},
+        {'title': 'Standard Wash', 'price': 10.0, 'displayPrice': ''},
+        {'title': 'Detailed Wash', 'price': 15.0, 'displayPrice': ''},
       ];
     }
     return [
-      {'title': 'Exterior Wash', 'price': 15.0, 'displayPrice': '€15'},
-      {'title': 'Interior Cleaning', 'price': 18.0, 'displayPrice': '€18'},
-      {'title': 'Full Wash', 'price': 30.0, 'displayPrice': '€30'},
+      {'title': 'Exterior Wash', 'price': 15.0, 'displayPrice': ''},
+      {'title': 'Interior Cleaning', 'price': 18.0, 'displayPrice': ''},
+      {'title': 'Full Wash', 'price': 30.0, 'displayPrice': ''},
     ];
   }
 
@@ -588,7 +589,7 @@ class _CarWashDetailsScreenState extends State<CarWashDetailsScreen> {
                               Text('Bring materials', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 2),
                               Text(
-                                _materialPreference == 'Bring materials' ? '+€5.00 extra charge' : 'Use my materials (No extra charge)',
+                                _materialPreference == 'Bring materials' ? '+€${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.selectedServiceTitle?.contains('Bike') == true ? 'bike_wash' : 'car_wash').toStringAsFixed(2)} extra charge' : 'Use my materials (No extra charge)',
                                 style: AppTextStyles.bodySmall.copyWith(
                                   color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey[600],
                                   fontWeight: _materialPreference == 'Bring materials' ? FontWeight.bold : FontWeight.normal,
@@ -646,19 +647,14 @@ class _CarWashDetailsScreenState extends State<CarWashDetailsScreen> {
                         return;
                       }
 
-                      double calculatedSubtotal = _savedVehicles.fold(
-                        0.0,
-                        (sum, vehicle) => sum + vehicle.washPackagePrice,
-                      );
-
-                      double pickupFee = _serviceMode == 'Pickup & Return' ? 10.0 * _savedVehicles.length : 0.0;
+                      double pickupFee = _serviceMode == 'Pickup & Return' ? QuickServicesPricingConfig.getPickupFee(widget.bookingData.selectedServiceTitle?.contains('Bike') == true ? 'bike_wash' : 'car_wash') * _savedVehicles.length : 0.0;
 
                       final updatedData = widget.bookingData.copyWith(
                         selectedServiceTitle: fullServiceName,
                         carWashVehicles: _savedVehicles,
                         waterAccess: _waterAccess,
                         electricityAccess: _electricityAccess,
-                        subtotal: calculatedSubtotal,
+                        subtotal: 0.0,
                         baseEstimatedHours: 0.0,
                         materialPreference: _materialPreference,
                         vehicleServiceMode: _serviceMode,
@@ -688,6 +684,7 @@ class _CarWashDetailsScreenState extends State<CarWashDetailsScreen> {
                     ),
                     child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
                   ),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),

@@ -8,6 +8,7 @@ import '../../widgets/quick_services_additional_details.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../../data/models/quick_service_booking_data.dart' as model;
 import 'package:image_picker/image_picker.dart';
+import '../../../../../core/config/quick_services_pricing_config.dart';
 
 class TruckMechanicDetailsScreen extends StatefulWidget {
   final QuickServiceBookingData bookingData;
@@ -18,10 +19,60 @@ class TruckMechanicDetailsScreen extends StatefulWidget {
 }
 
 class _TruckMechanicDetailsScreenState extends State<TruckMechanicDetailsScreen> {
-  String _materialPreference = 'Bring materials';
-  String? _selectedTruckType;
-  final List<String> _truckTypes = ['Light Duty', 'Heavy Duty', 'Trailer', 'Box Truck'];
+  String _materialPreference = 'Bring tools';
+  
+  final List<MechanicVehicle> _savedVehicles = [];
 
+  void _addVehicle() {
+    if (
+        _typeController.text.trim().isEmpty ||
+        _makeController.text.trim().isEmpty ||
+        _modelController.text.trim().isEmpty ||
+        _selectedIssue == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fill all required car details and select an issue.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _savedVehicles.add(MechanicVehicle(
+        type: _typeController.text.trim(),
+        make: _makeController.text.trim(),
+        model: _modelController.text.trim(),
+        year: _yearController.text.trim().isNotEmpty ? _yearController.text.trim() : null,
+        registration: _registrationController.text.trim().isNotEmpty ? _registrationController.text.trim() : null,
+        mileage: _mileageController.text.trim().isNotEmpty ? _mileageController.text.trim() : null,
+        issue: _selectedIssue!,
+      ));
+
+      // Reset form
+      _selectedCarType = null;
+      _typeController.clear();
+      _makeController.clear();
+      _modelController.clear();
+      _yearController.clear();
+      _registrationController.clear();
+      _mileageController.clear();
+      _selectedIssue = null;
+
+      FocusScope.of(context).unfocus();
+    });
+  }
+
+  void _removeVehicle(int index) {
+    setState(() {
+      _savedVehicles.removeAt(index);
+    });
+  }
+
+  String? _selectedCarType;
+  final List<String> _carTypes = ['Hatchback', 'Sedan', 'SUV', 'Van', 'Electric / Hybrid'];
+
+  final TextEditingController _typeController = TextEditingController();
   final TextEditingController _makeController = TextEditingController();
   final TextEditingController _modelController = TextEditingController();
   final TextEditingController _yearController = TextEditingController();
@@ -56,6 +107,7 @@ class _TruckMechanicDetailsScreenState extends State<TruckMechanicDetailsScreen>
 
   @override
   void dispose() {
+    _typeController.dispose();
     _makeController.dispose();
     _modelController.dispose();
     _yearController.dispose();
@@ -84,59 +136,29 @@ class _TruckMechanicDetailsScreenState extends State<TruckMechanicDetailsScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Vehicle Type',
-                    style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold, color: const Color(0xFF324461)),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _truckTypes.map((type) {
-                      final isSelected = _selectedTruckType == type;
-                      IconData icon;
-                      switch (type) {
-                        case 'Light Duty': icon = Icons.local_shipping_outlined; break;
-                        case 'Heavy Duty': icon = Icons.fire_truck_outlined; break;
-                        case 'Trailer': icon = Icons.rv_hookup_outlined; break;
-                        case 'Box Truck': icon = Icons.delivery_dining_outlined; break;
-                        default: icon = Icons.local_shipping;
-                      }
-                      
-                      return GestureDetector(
-                        onTap: () => setState(() => _selectedTruckType = type),
-                        child: Container(
-                          width: (MediaQuery.of(context).size.width - 40 - 8) / 2,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: isSelected ? AppColors.primaryGold : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: isSelected ? AppColors.primaryGold : Colors.grey.withOpacity(0.3)),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(icon, size: 18, color: isSelected ? Colors.black : const Color(0xFF324461)),
-                              const SizedBox(width: 6),
-                              Flexible(
-                                child: Text(
-                                  type,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                    color: isSelected ? Colors.black : const Color(0xFF324461),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 6),
-                              Icon(Icons.check_circle, size: 16, color: isSelected ? Colors.black : Colors.transparent),
-                            ],
-                          ),
+
+
+                  // --- VEHICLE FORM ---
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Add a Truck',
+                          style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
                         ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 24),
+                        const SizedBox(height: 16),
+
+                  _buildLabel('Truck Type'),
+                  const SizedBox(height: 8),
+                  _buildTextField(_typeController, 'e.g. Box Truck, Pickup', false),
+                  const SizedBox(height: 16),
                   
                   Row(
                     children: [
@@ -144,9 +166,9 @@ class _TruckMechanicDetailsScreenState extends State<TruckMechanicDetailsScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildLabel('Make'),
+                            _buildLabel('Truck Make'),
                             const SizedBox(height: 8),
-                            _buildTextField(_makeController, '', false),
+                            _buildTextField(_makeController, 'e.g. Volvo', false),
                           ],
                         ),
                       ),
@@ -155,9 +177,9 @@ class _TruckMechanicDetailsScreenState extends State<TruckMechanicDetailsScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildLabel('Model'),
+                            _buildLabel('Truck Model'),
                             const SizedBox(height: 8),
-                            _buildTextField(_modelController, '', false),
+                            _buildTextField(_modelController, 'e.g. FH16', false),
                           ],
                         ),
                       ),
@@ -173,7 +195,7 @@ class _TruckMechanicDetailsScreenState extends State<TruckMechanicDetailsScreen>
                           children: [
                             _buildLabel('Year — Optional'),
                             const SizedBox(height: 8),
-                            _buildTextField(_yearController, '', false),
+                            _buildTextField(_yearController, 'e.g. 2018', false),
                           ],
                         ),
                       ),
@@ -184,7 +206,7 @@ class _TruckMechanicDetailsScreenState extends State<TruckMechanicDetailsScreen>
                           children: [
                             _buildLabel('Registration Number'),
                             const SizedBox(height: 8),
-                            _buildTextField(_registrationController, '', false),
+                            _buildTextField(_registrationController, 'e.g. AB12 CDE', false),
                           ],
                         ),
                       ),
@@ -194,7 +216,7 @@ class _TruckMechanicDetailsScreenState extends State<TruckMechanicDetailsScreen>
                   
                   _buildLabel('Mileage — Optional'),
                   const SizedBox(height: 8),
-                  _buildTextField(_mileageController, '', false),
+                  _buildTextField(_mileageController, 'e.g. 50,000 km', false),
                   const SizedBox(height: 24),
 
                   Text(
@@ -214,7 +236,7 @@ class _TruckMechanicDetailsScreenState extends State<TruckMechanicDetailsScreen>
                           });
                         },
                         child: Container(
-                          width: (MediaQuery.of(context).size.width - 40 - 16) / 3, // 3 columns
+                          width: (MediaQuery.of(context).size.width - 100) / 3, // 3 columns
                           height: 40,
                           decoration: BoxDecoration(
                             color: isSelected ? AppColors.primaryGold : Colors.transparent,
@@ -240,20 +262,141 @@ class _TruckMechanicDetailsScreenState extends State<TruckMechanicDetailsScreen>
                   ),
                   const SizedBox(height: 24),
 
-                  Text(
-                    'Materials / Parts',
+                  
+                        const SizedBox(height: 24),
+                        // Add Vehicle Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton(
+                            onPressed: _addVehicle,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: isDark ? AppColors.primaryGold : const Color(0xFFD97706),
+                              side: BorderSide(color: isDark ? AppColors.primaryGold : const Color(0xFFD97706)),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.add_circle_outline, size: 20),
+                                const SizedBox(width: 8),
+                                Text('Add Truck', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // --- LIST OF ADDED VEHICLES ---
+                  if (_savedVehicles.isNotEmpty) ...[
+                    const SizedBox(height: 32),
+                    Text(
+                      'Added Trucks (${_savedVehicles.length})',
+                      style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    ListView.separated(
+                      padding: EdgeInsets.zero,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _savedVehicles.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final vehicle = _savedVehicles[index];
+                        return Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.grey[850] : Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryGold.withOpacity(0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.local_shipping, color: AppColors.primaryGold, size: 20),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${vehicle.make} ${vehicle.model}',
+                                          style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'Type: ${vehicle.type}',
+                                          style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600]),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
+                                    onPressed: () => _removeVehicle(index),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                ],
+                              ),
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 12.0),
+                                child: Divider(height: 1),
+                              ),
+                              Text(
+                                'Issue: ${vehicle.issue}',
+                                style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.red[700]),
+                              ),
+                              if (vehicle.registration != null || vehicle.year != null || vehicle.mileage != null) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  [
+                                    if (vehicle.year != null) 'Year: ${vehicle.year}',
+                                    if (vehicle.registration != null) 'Reg: ${vehicle.registration}',
+                                    if (vehicle.mileage != null) 'Mileage: ${vehicle.mileage}',
+                                  ].join(' | '),
+                                  style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600]),
+                                ),
+                              ],
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                  const SizedBox(height: 32),
+Text(
+                    'Required Tools',
                     style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _materialPreference = _materialPreference == 'Bring tools' ? 'Use my tools' : 'Bring tools';
+                      });
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
-                        width: _materialPreference == 'Bring materials' ? 1.5 : 1,
+                        color: _materialPreference == 'Bring tools' ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
+                        width: _materialPreference == 'Bring tools' ? 1.5 : 1,
                       ),
                     ),
                     child: Row(
@@ -272,13 +415,13 @@ class _TruckMechanicDetailsScreenState extends State<TruckMechanicDetailsScreen>
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Bring materials', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                              Text('Bring tools', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 2),
                               Text(
-                                _materialPreference == 'Bring materials' ? '+€5.00 extra charge' : 'Use my materials (No extra charge)',
+                                _materialPreference == 'Bring tools' ? '+€${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.category).toStringAsFixed(2)} extra charge' : 'Use my tools (No extra charge)',
                                 style: AppTextStyles.bodySmall.copyWith(
-                                  color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey[600],
-                                  fontWeight: _materialPreference == 'Bring materials' ? FontWeight.bold : FontWeight.normal,
+                                  color: _materialPreference == 'Bring tools' ? AppColors.primaryGold : Colors.grey[600],
+                                  fontWeight: _materialPreference == 'Bring tools' ? FontWeight.bold : FontWeight.normal,
                                 ),
                               ),
                             ],
@@ -287,19 +430,20 @@ class _TruckMechanicDetailsScreenState extends State<TruckMechanicDetailsScreen>
                         Transform.scale(
                           scale: 0.8,
                           child: Switch.adaptive(
-                            value: _materialPreference == 'Bring materials',
+                            value: _materialPreference == 'Bring tools',
                             activeColor: isDark ? AppColors.backgroundDark : Colors.white,
                             activeTrackColor: AppColors.primaryGold,
                             inactiveTrackColor: Colors.grey[300],
                             onChanged: (val) {
                               setState(() {
-                                _materialPreference = val ? 'Bring materials' : 'Use my materials';
+                                _materialPreference = val ? 'Bring materials' : 'Use my tools';
                               });
                             },
                           ),
                         ),
                       ],
                     ),
+                  ),
                   ),
                   const SizedBox(height: 24),
 
@@ -370,44 +514,36 @@ class _TruckMechanicDetailsScreenState extends State<TruckMechanicDetailsScreen>
                     ),
                   ),
                   
-                  const SizedBox(height: 40), // Bottom padding
-                ],
-              ),
-            ),
-          ),
-          // Continue Button
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              child: ElevatedButton(
-                onPressed: () {
-                  if (_selectedTruckType == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a Truck Type.')));
-                    return;
-                  }
-                  final updatedBookingData = widget.bookingData.copyWith(
-                    truckType: _selectedTruckType,
-                    vehicleMake: _makeController.text.isNotEmpty ? _makeController.text : null,
-                    vehicleModel: _modelController.text.isNotEmpty ? _modelController.text : null,
-                    vehicleYear: _yearController.text.isNotEmpty ? _yearController.text : null,
-                    vehicleRegistration: _registrationController.text.isNotEmpty ? _registrationController.text : null,
-                    mileage: _mileageController.text.isNotEmpty ? _mileageController.text : null,
-                    vehicleIssue: _selectedIssue,
-                    whatYouNeed: _whatYouNeedController.text.isNotEmpty ? _whatYouNeedController.text : null,
-                    describeIssue: _describeIssueController.text.isNotEmpty ? _describeIssueController.text : null,
-                    uploadedImages: _selectedImages.map((f) => f.path).toList(),
-                    selectedServiceTitle: 'Truck Mechanic',
-                    subtotal: 0.0,
+                  const SizedBox(height: 24),
+                  // Continue Button
+                  ElevatedButton(
+                    onPressed: () {
+                      if (_savedVehicles.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please add at least one truck to proceed.'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
+                      final updatedBookingData = widget.bookingData.copyWith(
+                        mechanicVehicles: _savedVehicles,
+                        whatYouNeed: _whatYouNeedController.text.isNotEmpty ? _whatYouNeedController.text : null,
+                        describeIssue: _describeIssueController.text.isNotEmpty ? _describeIssueController.text : null,
+                        uploadedImages: _selectedImages.map((f) => f.path).toList(),
+                        selectedServiceTitle: 'Truck Mechanic',
+                        subtotal: 0.0,
                         baseEstimatedHours: 0.0,
                         materialPreference: _materialPreference,
-                  );
-                  context.pushNamed(
-                    RouteNames.quickServicesTruckMechanicReview,
-                    extra: updatedBookingData,
-                  );
-                },
-                style: ElevatedButton.styleFrom(
+                      );
+                      context.pushNamed(
+                        RouteNames.quickServicesTruckMechanicReview,
+                        extra: updatedBookingData,
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,
                       foregroundColor: Colors.black,
                       minimumSize: const Size(double.infinity, 50),
@@ -415,6 +551,9 @@ class _TruckMechanicDetailsScreenState extends State<TruckMechanicDetailsScreen>
                       elevation: 0,
                     ),
                     child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
+                  ),
+                  const SizedBox(height: 40), // Bottom padding
+                ],
               ),
             ),
           ),
@@ -434,6 +573,7 @@ class _TruckMechanicDetailsScreenState extends State<TruckMechanicDetailsScreen>
     return TextField(
       controller: controller,
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+      textCapitalization: isNumber ? TextCapitalization.none : TextCapitalization.words,
       decoration: InputDecoration(
         hintText: hint,
         filled: true,

@@ -38,6 +38,46 @@ class ServiceAddon {
   }
 }
 
+class MechanicVehicle {
+  final String type;
+  final String make;
+  final String model;
+  final String? year;
+  final String? registration;
+  final String? mileage;
+  final String issue;
+
+  const MechanicVehicle({
+    required this.type,
+    required this.make,
+    required this.model,
+    this.year,
+    this.registration,
+    this.mileage,
+    required this.issue,
+  });
+
+  MechanicVehicle copyWith({
+    String? type,
+    String? make,
+    String? model,
+    String? year,
+    String? registration,
+    String? mileage,
+    String? issue,
+  }) {
+    return MechanicVehicle(
+      type: type ?? this.type,
+      make: make ?? this.make,
+      model: model ?? this.model,
+      year: year ?? this.year,
+      registration: registration ?? this.registration,
+      mileage: mileage ?? this.mileage,
+      issue: issue ?? this.issue,
+    );
+  }
+}
+
 
 class CarWashVehicle {
   final String type;
@@ -105,6 +145,7 @@ class QuickServiceBookingData {
   final String? vehicleRegistration;
   final String? mileage;
   final String? vehicleIssue;
+  final List<MechanicVehicle>? mechanicVehicles;
   final String? taskCategory;
   final String? projectScope;
 
@@ -215,6 +256,7 @@ class QuickServiceBookingData {
   final String? customBeautyService;
 
   // Gardening specific fields
+  final String? gardeningServices;
   final String? gardeningServiceArea;
   final String? gardeningApproximateArea;
   final String? greenWasteRemoval;
@@ -238,8 +280,40 @@ class QuickServiceBookingData {
   final String? requestType;
   final String? requirementDescription;
 
+  String get servicePricingKey {
+    if (category == 'Vehicle Wash') {
+      if (selectedServiceTitle?.contains('Bike') == true) return 'bike_wash';
+      if (selectedServiceTitle?.contains('Truck') == true) return 'truck_wash';
+      return 'car_wash';
+    }
+    if (category == 'Vehicle Mechanic') {
+       if (selectedServiceTitle?.contains('Bike') == true) return 'bike_mechanic';
+       if (selectedServiceTitle?.contains('Truck') == true) return 'truck_mechanic';
+       return 'car_mechanic';
+    }
+    return category.toLowerCase().replaceAll(' ', '_');
+  }
+
+  String get expertVisitName {
+    final lowerCat = category.toLowerCase();
+    if (lowerCat.contains('mechanic')) {
+      return 'Mechanic Visit/hr';
+    } else if (lowerCat.contains('engineer') || 
+               lowerCat.contains('appliance') ||
+               lowerCat.contains('electric') ||
+               lowerCat.contains('computer') ||
+               lowerCat.contains('printer') ||
+               lowerCat.contains('mobile') ||
+               lowerCat.contains('technician')) {
+      return 'Engineering Visit/hr';
+    } else if (lowerCat.contains('wash')) {
+      return 'Service Agent Visit/hr';
+    }
+    return 'Expert Visit/hr';
+  }
+
   double get materialCost =>
-      (materialPreference == 'Bring materials' || materialPreference == 'Bring tools') ? 5.0 : 0.0;
+      (materialPreference == 'Bring materials' || materialPreference == 'Bring tools') ? QuickServicesPricingConfig.getMaterialCost(servicePricingKey) : 0.0;
 
   double get totalEstimatedHours {
     double addonHours = 0.0;
@@ -262,7 +336,7 @@ class QuickServiceBookingData {
   bool get hasRateRange =>
       maxHourlyRate != null && maxHourlyRate! > minHourlyRate;
 
-  double get upfrontBookingFee => 10.0;
+  double get upfrontBookingFee => QuickServicesPricingConfig.getUpfrontFee(servicePricingKey);
 
   double get estimatedTotalMin =>
       (totalEstimatedHours * minHourlyRate) +
@@ -310,6 +384,7 @@ class QuickServiceBookingData {
     this.vehicleRegistration,
     this.mileage,
     this.vehicleIssue,
+    this.mechanicVehicles,
     this.taskCategory,
     this.projectScope,
     this.pestType,
@@ -389,6 +464,7 @@ class QuickServiceBookingData {
     this.peopleCount,
     this.professionalPreference,
     this.customBeautyService,
+    this.gardeningServices,
     this.gardeningServiceArea,
     this.gardeningApproximateArea,
     this.greenWasteRemoval,
@@ -435,6 +511,7 @@ class QuickServiceBookingData {
     String? vehicleRegistration,
     String? mileage,
     String? vehicleIssue,
+    List<MechanicVehicle>? mechanicVehicles,
     String? taskCategory,
     String? projectScope,
     String? pestType,
@@ -517,6 +594,7 @@ class QuickServiceBookingData {
     int? peopleCount,
     String? professionalPreference,
     String? customBeautyService,
+    String? gardeningServices,
     String? gardeningServiceArea,
     String? gardeningApproximateArea,
     String? greenWasteRemoval,
@@ -548,14 +626,8 @@ class QuickServiceBookingData {
       materialPreference: materialPreference ?? this.materialPreference,
       subtotal: subtotal ?? this.subtotal,
       baseEstimatedHours: baseEstimatedHours ?? this.baseEstimatedHours,
-      minHourlyRate: minHourlyRate ??
-          (selectedService != null
-              ? QuickServicesPricingConfig.getMinRate(selectedService)
-              : this.minHourlyRate),
-      maxHourlyRate: maxHourlyRate ??
-          (selectedService != null
-              ? QuickServicesPricingConfig.getMaxRate(selectedService)
-              : this.maxHourlyRate),
+      minHourlyRate: minHourlyRate ?? QuickServicesPricingConfig.getMinRate(this.servicePricingKey),
+      maxHourlyRate: maxHourlyRate ?? QuickServicesPricingConfig.getMaxRate(this.servicePricingKey),
       whatYouNeed: whatYouNeed ?? this.whatYouNeed,
       describeIssue: describeIssue ?? this.describeIssue,
       uploadedImages: uploadedImages ?? this.uploadedImages,
@@ -568,6 +640,7 @@ class QuickServiceBookingData {
       vehicleRegistration: vehicleRegistration ?? this.vehicleRegistration,
       mileage: mileage ?? this.mileage,
       vehicleIssue: vehicleIssue ?? this.vehicleIssue,
+      mechanicVehicles: mechanicVehicles ?? this.mechanicVehicles,
       taskCategory: taskCategory ?? this.taskCategory,
       projectScope: projectScope ?? this.projectScope,
       pestType: pestType ?? this.pestType,
@@ -662,6 +735,7 @@ class QuickServiceBookingData {
       professionalPreference:
           professionalPreference ?? this.professionalPreference,
       customBeautyService: customBeautyService ?? this.customBeautyService,
+      gardeningServices: gardeningServices ?? this.gardeningServices,
       gardeningServiceArea: gardeningServiceArea ?? this.gardeningServiceArea,
       gardeningApproximateArea:
           gardeningApproximateArea ?? this.gardeningApproximateArea,

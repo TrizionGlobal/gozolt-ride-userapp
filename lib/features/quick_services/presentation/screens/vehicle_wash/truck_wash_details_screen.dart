@@ -7,6 +7,7 @@ import '../../../../../core/router/route_names.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_additional_details.dart';
+import '../../../../../core/config/quick_services_pricing_config.dart';
 
 class TruckWashDetailsScreen extends StatefulWidget {
   final QuickServiceBookingData bookingData;
@@ -43,9 +44,9 @@ class _TruckWashDetailsScreenState extends State<TruckWashDetailsScreen> {
   final ImagePicker _picker = ImagePicker();
 
   final List<Map<String, dynamic>> _washPackages = [
-    {'title': 'Exterior Wash', 'price': 15.0, 'displayPrice': '€15'},
-    {'title': 'Interior Cleaning', 'price': 18.0, 'displayPrice': '€18'},
-    {'title': 'Full Wash', 'price': 30.0, 'displayPrice': '€30'},
+    {'title': 'Exterior Wash', 'price': 25.0, 'displayPrice': ''},
+    {'title': 'Interior Cleaning', 'price': 35.0, 'displayPrice': ''},
+    {'title': 'Full Wash', 'price': 50.0, 'displayPrice': ''},
   ];
 
   final List<String> _vehicleConditions = [
@@ -579,7 +580,7 @@ class _TruckWashDetailsScreenState extends State<TruckWashDetailsScreen> {
                               Text('Bring materials', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 2),
                               Text(
-                                _materialPreference == 'Bring materials' ? '+€5.00 extra charge' : 'Use my materials (No extra charge)',
+                                _materialPreference == 'Bring materials' ? '+€${QuickServicesPricingConfig.getMaterialCost('truck_wash').toStringAsFixed(2)} extra charge' : 'Use my materials (No extra charge)',
                                 style: AppTextStyles.bodySmall.copyWith(
                                   color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey[600],
                                   fontWeight: _materialPreference == 'Bring materials' ? FontWeight.bold : FontWeight.normal,
@@ -637,19 +638,14 @@ class _TruckWashDetailsScreenState extends State<TruckWashDetailsScreen> {
                         return;
                       }
 
-                      double calculatedSubtotal = _savedVehicles.fold(
-                        0.0,
-                        (sum, vehicle) => sum + vehicle.washPackagePrice,
-                      );
-
-                      double pickupFee = _serviceMode == 'Pickup & Return' ? 10.0 * _savedVehicles.length : 0.0;
+                      double pickupFee = _serviceMode == 'Pickup & Return' ? QuickServicesPricingConfig.getPickupFee('truck_wash') * _savedVehicles.length : 0.0;
 
                       final updatedData = widget.bookingData.copyWith(
                         selectedServiceTitle: fullServiceName,
                         carWashVehicles: _savedVehicles,
                         waterAccess: _waterAccess,
                         electricityAccess: _electricityAccess,
-                        subtotal: calculatedSubtotal,
+                        subtotal: 0.0,
                         baseEstimatedHours: 0.0,
                         materialPreference: _materialPreference,
                         vehicleServiceMode: _serviceMode,
@@ -679,6 +675,7 @@ class _TruckWashDetailsScreenState extends State<TruckWashDetailsScreen> {
                     ),
                     child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
                   ),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),

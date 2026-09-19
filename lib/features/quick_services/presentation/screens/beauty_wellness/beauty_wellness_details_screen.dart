@@ -33,16 +33,16 @@ class _BeautyWellnessDetailsScreenState extends State<BeautyWellnessDetailsScree
   };
 
   final List<Map<String, dynamic>> _treatments = [
-    {'title': 'Haircut & Styling', 'priceText': 'From €25', 'price': 25.0, 'icon': Icons.content_cut, 'image': 'assets/images/beauty/beauty_haircut.jpg'},
-    {'title': 'Hair Colouring', 'priceText': 'From €45', 'price': 45.0, 'icon': Icons.color_lens, 'image': 'assets/images/beauty/beauty_hair_colouring.jpg'},
-    {'title': 'Facial Treatment', 'priceText': 'From €30', 'price': 30.0, 'icon': Icons.face, 'image': 'assets/images/beauty/beauty_facial.jpg'},
-    {'title': 'Manicure', 'priceText': 'From €20', 'price': 20.0, 'icon': Icons.back_hand, 'image': 'assets/images/beauty/beauty_manicure.jpg'},
-    {'title': 'Pedicure', 'priceText': 'From €25', 'price': 25.0, 'icon': Icons.dry, 'image': 'assets/images/beauty/beauty_pedicure.jpg'},
-    {'title': 'Waxing', 'priceText': 'From €15', 'price': 15.0, 'icon': Icons.spa, 'image': 'assets/images/beauty/beauty_waxing.jpg'},
-    {'title': 'Threading', 'priceText': 'From €10', 'price': 10.0, 'icon': Icons.design_services, 'image': 'assets/images/beauty/beauty_threading.jpg'},
-    {'title': 'Makeup Service', 'priceText': 'From €35', 'price': 35.0, 'icon': Icons.brush, 'image': 'assets/images/beauty/beauty_makeup.jpg'},
-    {'title': 'Massage & Relaxation', 'priceText': 'From €40', 'price': 40.0, 'icon': Icons.self_improvement, 'image': 'assets/images/beauty/beauty_massage.jpg'},
-    {'title': "Men's Grooming", 'priceText': 'From €20', 'price': 20.0, 'icon': Icons.face_retouching_natural, 'image': 'assets/images/beauty/beauty_mens_grooming.jpg'},
+    {'title': 'Haircut & Styling', 'priceText': '', 'price': 25.0, 'icon': Icons.content_cut, 'image': 'assets/images/beauty/beauty_haircut.jpg'},
+    {'title': 'Hair Colouring', 'priceText': '', 'price': 45.0, 'icon': Icons.color_lens, 'image': 'assets/images/beauty/beauty_hair_colouring.jpg'},
+    {'title': 'Facial Treatment', 'priceText': '', 'price': 30.0, 'icon': Icons.face, 'image': 'assets/images/beauty/beauty_facial.jpg'},
+    {'title': 'Manicure', 'priceText': '', 'price': 20.0, 'icon': Icons.back_hand, 'image': 'assets/images/beauty/beauty_manicure.jpg'},
+    {'title': 'Pedicure', 'priceText': '', 'price': 25.0, 'icon': Icons.dry, 'image': 'assets/images/beauty/beauty_pedicure.jpg'},
+    {'title': 'Waxing', 'priceText': '', 'price': 15.0, 'icon': Icons.spa, 'image': 'assets/images/beauty/beauty_waxing.jpg'},
+    {'title': 'Threading', 'priceText': '', 'price': 10.0, 'icon': Icons.design_services, 'image': 'assets/images/beauty/beauty_threading.jpg'},
+    {'title': 'Makeup Service', 'priceText': '', 'price': 35.0, 'icon': Icons.brush, 'image': 'assets/images/beauty/beauty_makeup.jpg'},
+    {'title': 'Massage & Relaxation', 'priceText': '', 'price': 40.0, 'icon': Icons.self_improvement, 'image': 'assets/images/beauty/beauty_massage.jpg'},
+    {'title': "Men's Grooming", 'priceText': '', 'price': 20.0, 'icon': Icons.face_retouching_natural, 'image': 'assets/images/beauty/beauty_mens_grooming.jpg'},
   ];
 
   int _peopleCount = 1;

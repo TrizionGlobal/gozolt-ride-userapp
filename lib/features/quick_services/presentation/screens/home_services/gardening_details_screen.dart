@@ -8,6 +8,7 @@ import '../../../../../core/router/route_names.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_additional_details.dart';
+import '../../../../../core/config/quick_services_pricing_config.dart';
 
 class GardeningDetailsScreen extends StatefulWidget {
   final QuickServiceBookingData bookingData;
@@ -47,7 +48,7 @@ class _GardeningDetailsScreenState extends State<GardeningDetailsScreen> {
   };
 
 
-  String? _selectedServiceArea;
+  final List<String> _selectedServiceAreas = [];
   final List<String> _serviceAreas = ['Garden', 'Yard', 'Terrace / Balcony'];
 
   String? _selectedApproxArea;
@@ -90,6 +91,16 @@ class _GardeningDetailsScreenState extends State<GardeningDetailsScreen> {
     });
   }
 
+  void _toggleServiceArea(String area) {
+    setState(() {
+      if (_selectedServiceAreas.contains(area)) {
+        _selectedServiceAreas.remove(area);
+      } else {
+        _selectedServiceAreas.add(area);
+      }
+    });
+  }
+
   @override
   void dispose() {
     _descriptionController.dispose();
@@ -118,9 +129,9 @@ class _GardeningDetailsScreenState extends State<GardeningDetailsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Select Gardening Services Section
+                  // Select Services Section
                   Text(
-                    'Select Gardening Services',
+                    'Select Services',
                     style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 6),
@@ -134,6 +145,7 @@ class _GardeningDetailsScreenState extends State<GardeningDetailsScreen> {
                         onTap: () => _toggleService(key),
                         child: Container(
                           width: (MediaQuery.of(context).size.width - 50) / 2,
+                          height: 100, // Fixed height to fit Icon and Text vertically
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? AppColors.primaryGold.withValues(alpha: 0.15)
@@ -146,31 +158,38 @@ class _GardeningDetailsScreenState extends State<GardeningDetailsScreen> {
                               width: isSelected ? 1.5 : 1.0,
                             ),
                           ),
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                          child: Row(
+                          child: Stack(
                             children: [
-                              Icon(
-                                _icons[key] ?? Icons.yard,
-                                size: 18,
-                                color: isSelected ? Colors.black : (isDark ? Colors.white70 : Colors.black87),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  key,
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                    color: isDark ? Colors.white : Colors.black87,
-                                    fontSize: 12,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
+                              Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      _icons[key] ?? Icons.yard,
+                                      size: 32,
+                                      color: isSelected ? AppColors.primaryGold : const Color(0xFF324461),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      key,
+                                      textAlign: TextAlign.center,
+                                      style: AppTextStyles.bodySmall.copyWith(
+                                        color: isDark ? Colors.white : Colors.black87,
+                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                        fontSize: 10,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
                                 ),
                               ),
-                              if (isSelected) ...[
-                                const SizedBox(width: 4),
-                                const Icon(Icons.check_circle, size: 16, color: Colors.black),
-                              ],
+                              if (isSelected)
+                                const Positioned(
+                                  top: 4,
+                                  right: 4,
+                                  child: Icon(Icons.check_circle, color: AppColors.primaryGold, size: 16),
+                                ),
                             ],
                           ),
                         ),
@@ -187,10 +206,10 @@ class _GardeningDetailsScreenState extends State<GardeningDetailsScreen> {
                   const SizedBox(height: 6),
                   Row(
                     children: _serviceAreas.map((area) {
-                      final isSelected = _selectedServiceArea == area;
+                      final isSelected = _selectedServiceAreas.contains(area);
                       return Expanded(
                         child: GestureDetector(
-                          onTap: () => setState(() => _selectedServiceArea = area),
+                          onTap: () => _toggleServiceArea(area),
                           child: Container(
                             margin: const EdgeInsets.only(right: 8),
                             padding: const EdgeInsets.symmetric(vertical: 12),
@@ -206,146 +225,95 @@ class _GardeningDetailsScreenState extends State<GardeningDetailsScreen> {
                                 width: isSelected ? 1.5 : 1.0,
                               ),
                             ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 4),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      area,
-                                      textAlign: TextAlign.center,
-                                      style: AppTextStyles.bodyMedium.copyWith(
-                                        fontSize: 12,
-                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                        color: isDark ? Colors.white : Colors.black87,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                            child: Stack(
+                              children: [
+                                Center(
+                                  child: Text(
+                                    area,
+                                    textAlign: TextAlign.center,
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      fontSize: 12,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                      color: isDark ? Colors.white : Colors.black87,
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  if (isSelected) ...[
-                                    const SizedBox(width: 4),
-                                    const Icon(Icons.check_circle, size: 14, color: Colors.black),
-                                  ],
-                                ],
-                              ),
+                                ),
+                                if (isSelected)
+                                  const Positioned(
+                                    top: 2,
+                                    right: 2,
+                                    child: Icon(Icons.check_circle, color: AppColors.primaryGold, size: 14),
+                                  ),
+                              ],
                             ),
                           ),
                         ),
                       );
                     }).toList(),
                   ),
-                  const SizedBox(height: 20),
-
-                  // Approximate Area Section
+                  const SizedBox(height: 24),
                   Text(
-                    'Approximate Area',
+                    'Materials & Tools',
                     style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 6),
-                  GridView.builder(
-                    padding: EdgeInsets.zero,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 3.2,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
+                        width: _materialPreference == 'Bring materials' ? 1.5 : 1,
+                      ),
                     ),
-                    itemCount: _approxAreas.length,
-                    itemBuilder: (context, index) {
-                      final approx = _approxAreas[index];
-                      final isSelected = _selectedApproxArea == approx;
-                      return GestureDetector(
-                        onTap: () => setState(() => _selectedApproxArea = approx),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppColors.primaryGold.withValues(alpha: 0.15)
-                                : (isDark ? Colors.grey[850] : Colors.white),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: isSelected
-                                  ? AppColors.primaryGold
-                                  : (isDark ? Colors.grey[700]! : Colors.grey[300]!),
-                              width: isSelected ? 1.5 : 1.0,
-                            ),
+                            color: AppColors.primaryGold.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          child: const Icon(Icons.handyman, size: 24, color: AppColors.primaryGold),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Flexible(
-                                child: Text(
-                                  approx,
-                                  textAlign: TextAlign.center,
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                    color: isDark ? Colors.white : Colors.black87,
-                                  ),
+                              Text('Bring materials', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 2),
+                              Text(
+                                _materialPreference == 'Bring materials' ? '+€${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.category).toStringAsFixed(2)} extra charge' : 'Use my materials (No extra charge)',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey[600],
+                                  fontWeight: _materialPreference == 'Bring materials' ? FontWeight.bold : FontWeight.normal,
                                 ),
                               ),
-                              if (isSelected) ...[
-                                const SizedBox(width: 4),
-                                const Icon(Icons.check_circle, size: 14, color: Colors.black),
-                              ],
                             ],
                           ),
                         ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Green waste removal required? Section
-                  Text(
-                    'Green waste removal required?',
-                    style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: _wasteOptions.map((opt) {
-                      final isSelected = _greenWasteRemoval == opt;
-                      return Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => _greenWasteRemoval = opt),
-                          child: Container(
-                            margin: const EdgeInsets.only(right: 8),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppColors.primaryGold.withValues(alpha: 0.15)
-                                  : (isDark ? Colors.grey[850] : Colors.white),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: isSelected
-                                    ? AppColors.primaryGold
-                                    : (isDark ? Colors.grey[700]! : Colors.grey[300]!),
-                                width: isSelected ? 1.5 : 1.0,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  opt,
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                    color: isDark ? Colors.white : Colors.black87,
-                                  ),
-                                ),
-                                if (isSelected) ...[
-                                  const SizedBox(width: 6),
-                                  const Icon(Icons.check_circle, size: 16, color: Colors.black),
-                                ],
-                              ],
-                            ),
+                        Transform.scale(
+                          scale: 0.8,
+                          child: Switch.adaptive(
+                            value: _materialPreference == 'Bring materials',
+                            activeColor: isDark ? AppColors.backgroundDark : Colors.white,
+                            activeTrackColor: AppColors.primaryGold,
+                            inactiveTrackColor: Colors.grey[300],
+                            onChanged: (val) {
+                              setState(() {
+                                _materialPreference = val ? 'Bring materials' : 'Use my materials';
+                              });
+                            },
                           ),
                         ),
-                      );
-                    }).toList(),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 20),
 
@@ -363,52 +331,23 @@ class _GardeningDetailsScreenState extends State<GardeningDetailsScreen> {
                     },
                   ),
                   const SizedBox(height: 20),
-
-                  // Info Notice Box
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.blue.withValues(alpha: 0.1) : const Color(0xFFF0F4F8),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.info_outline, color: Colors.blue, size: 20),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Final price may change after the professional inspects the garden.',
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: isDark ? Colors.blue[200] : const Color(0xFF2C3E50),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 28),
-
                   // CONTINUE Button
                   ElevatedButton(
                     onPressed: () {
                       final selectedKeys = _selectedServices.toList();
 
-                      List<ServiceAddon> selectedAddons = selectedKeys.map((key) {
-                        return ServiceAddon(name: key, count: 1, hoursPerUnit: _hours[key]!);
-                      }).toList();
-
                       double newSubtotal = selectedKeys.length * 25.00;
 
                       final updatedData = widget.bookingData.copyWith(
                         selectedServiceTitle: 'Gardening',
-                        selectedAddons: selectedAddons,
+                        selectedAddons: [], // Clear addons so it doesn't show in price summary
+                        gardeningServices: selectedKeys.isNotEmpty ? selectedKeys.join(', ') : null,
                         subtotal: 0.0,
                         baseEstimatedHours: 0.0,
                         materialPreference: _materialPreference,
-                        gardeningServiceArea: _selectedServiceArea,
-                        gardeningApproximateArea: _selectedApproxArea,
-                        greenWasteRemoval: _greenWasteRemoval,
+                        gardeningServiceArea: _selectedServiceAreas.isNotEmpty ? _selectedServiceAreas.join(', ') : null,
+                        gardeningApproximateArea: null,
+                        greenWasteRemoval: null,
                         describeIssue: _descriptionController.text.trim().isNotEmpty
                             ? _descriptionController.text.trim()
                             : null,
@@ -432,6 +371,7 @@ class _GardeningDetailsScreenState extends State<GardeningDetailsScreen> {
                     ),
                     child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
                   ),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),

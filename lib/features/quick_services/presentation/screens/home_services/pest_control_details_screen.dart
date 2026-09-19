@@ -8,6 +8,7 @@ import '../../../../../core/router/route_names.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_additional_details.dart';
+import '../../../../../core/config/quick_services_pricing_config.dart';
 
 class PestControlDetailsScreen extends StatefulWidget {
   final QuickServiceBookingData bookingData;
@@ -20,8 +21,8 @@ class PestControlDetailsScreen extends StatefulWidget {
 
 class _PestControlDetailsScreenState extends State<PestControlDetailsScreen> {
   String _materialPreference = 'Bring materials';
-  String? _selectedPestType;
-  String? _selectedPropertyType;
+  List<String> _selectedPestTypes = [];
+  List<String> _selectedPropertyTypes = [];
   final List<String> _selectedAffectedAreas = [];
   int _affectedRoomsCount = 2;
   String? _selectedObservedLevel;
@@ -48,22 +49,16 @@ class _PestControlDetailsScreenState extends State<PestControlDetailsScreen> {
   }
 
   final List<Map<String, dynamic>> _pestTypes = [
-    {'name': 'Cockroaches', 'icon': Icons.bug_report},
-    {'name': 'Ants', 'icon': Icons.bug_report_outlined},
-    {'name': 'Rodents', 'icon': Icons.pest_control_rodent},
-    {'name': 'Bed Bugs', 'icon': Icons.bed},
-    {'name': 'Mosquitoes', 'icon': Icons.water_drop_outlined},
-    {'name': 'Flies', 'icon': Icons.air},
-    {'name': 'Wasps / Other Insects', 'icon': Icons.flutter_dash},
-    {'name': 'Termites / Wood Pests', 'icon': Icons.home_repair_service},
+    {'name': 'Ants / Mosquitoes', 'icon': Icons.pest_control},
+    {'name': 'Cockroaches / Flies', 'icon': Icons.bug_report},
+    {'name': 'Wasps / Wood Pests', 'icon': Icons.emoji_nature},
+    {'name': 'Rodents / Bed Bugs', 'icon': Icons.pest_control_rodent},
   ];
 
   final List<Map<String, dynamic>> _propertyTypes = [
-    {'name': 'Apartment', 'icon': Icons.apartment},
-    {'name': 'House', 'icon': Icons.house},
+    {'name': 'Home', 'icon': Icons.house},
     {'name': 'Office', 'icon': Icons.chair_alt},
-    {'name': 'Shop / Commercial', 'icon': Icons.store},
-    {'name': 'Farm House', 'icon': Icons.agriculture},
+    {'name': 'Commercial', 'icon': Icons.store},
   ];
 
   final List<String> _affectedAreasOptions = [
@@ -83,12 +78,12 @@ class _PestControlDetailsScreenState extends State<PestControlDetailsScreen> {
   }
 
   void _onContinue() {
-    if (_selectedPestType == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a Pest Type.')));
+    if (_selectedPestTypes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select at least one Pest Type.')));
       return;
     }
-    if (_selectedPropertyType == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a Property Type.')));
+    if (_selectedPropertyTypes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select at least one Property Type.')));
       return;
     }
     if (_selectedAffectedAreas.isEmpty) {
@@ -101,14 +96,12 @@ class _PestControlDetailsScreenState extends State<PestControlDetailsScreen> {
     }
 
 
-    final pestType = _selectedPestType == 'Other Pest' 
-        ? (_otherPestController.text.isNotEmpty ? _otherPestController.text : 'Other Pest')
-        : _selectedPestType;
+    final pestType = _selectedPestTypes.join(', ');
 
     final updatedData = widget.bookingData.copyWith(
       selectedServiceTitle: 'Pest Control',
       pestType: pestType,
-      propertyType: _selectedPropertyType,
+      propertyType: _selectedPropertyTypes.join(', '),
       pestAffectedAreas: _selectedAffectedAreas,
       pestAffectedRooms: _affectedRoomsCount,
       pestObservedLevel: _selectedObservedLevel,
@@ -176,24 +169,24 @@ class _PestControlDetailsScreenState extends State<PestControlDetailsScreen> {
     );
   }
 
-  Widget _buildGridSelection(List<Map<String, dynamic>> items, String? selectedValue, ValueChanged<String> onChanged) {
+  Widget _buildGridSelection(List<Map<String, dynamic>> items, List<String> selectedValues, ValueChanged<String> onToggle) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return GridView.builder(
       padding: EdgeInsets.zero,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: items.length == 4 ? 2 : 3,
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
-        childAspectRatio: 0.9,
+        childAspectRatio: items.length == 4 ? 2.0 : 1.2,
       ),
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
-        final isSelected = selectedValue == item['name'];
+        final isSelected = selectedValues.contains(item['name']);
         return GestureDetector(
-          onTap: () => onChanged(item['name']),
+          onTap: () => onToggle(item['name']),
           child: Container(
             decoration: BoxDecoration(
               color: isSelected ? AppColors.primaryGold.withOpacity(0.15) : Theme.of(context).cardTheme.color,
@@ -244,6 +237,58 @@ class _PestControlDetailsScreenState extends State<PestControlDetailsScreen> {
       },
     );
   }
+  Widget _buildTextGridSelection(List<String> items, List<String> selectedValues, ValueChanged<String> onToggle, {int crossAxisCount = 3, double childAspectRatio = 2.5}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return GridView.builder(
+      padding: EdgeInsets.zero,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: childAspectRatio,
+      ),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        final isSelected = selectedValues.contains(item);
+        return GestureDetector(
+          onTap: () => onToggle(item),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isSelected ? AppColors.primaryGold.withOpacity(0.15) : Theme.of(context).cardTheme.color,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isSelected ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
+              ),
+            ),
+            child: Stack(
+              children: [
+                Center(
+                  child: Text(
+                    item,
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: isDark ? Colors.white : Colors.black87,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+                if (isSelected)
+                  const Positioned(
+                    top: 4,
+                    right: 4,
+                    child: Icon(Icons.check_circle, color: AppColors.primaryGold, size: 14),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -255,7 +300,8 @@ class _PestControlDetailsScreenState extends State<PestControlDetailsScreen> {
         children: [
           const QuickServicesHeader(
             currentStep: 1,
-            title: 'Pest Control Requirements',
+            title: 'Service Requirements',
+            subtitle: 'Pest Control',
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -266,134 +312,128 @@ class _PestControlDetailsScreenState extends State<PestControlDetailsScreen> {
                 children: [
                   // 1. Select Pest Type
                   _buildSectionHeader('1', 'Select Pest Type'),
-                  _buildGridSelection(_pestTypes, _selectedPestType, (val) => setState(() => _selectedPestType = val)),
+                  _buildGridSelection(
+                    _pestTypes,
+                    _selectedPestTypes,
+                    (val) {
+                      setState(() {
+                        if (_selectedPestTypes.contains(val)) {
+                          _selectedPestTypes.remove(val);
+                        } else {
+                          _selectedPestTypes.add(val);
+                        }
+                      });
+                    },
+                  ),
 
                   // 2. Property Type
                   _buildSectionHeader('2', 'Property Type'),
-                  _buildGridSelection(_propertyTypes, _selectedPropertyType, (val) => setState(() => _selectedPropertyType = val)),
+                  _buildGridSelection(
+                    _propertyTypes,
+                    _selectedPropertyTypes,
+                    (val) {
+                      setState(() {
+                        if (_selectedPropertyTypes.contains(val)) {
+                          _selectedPropertyTypes.remove(val);
+                        } else {
+                          _selectedPropertyTypes.add(val);
+                        }
+                      });
+                    },
+                  ),
 
                   // 3. Affected Areas
                   _buildSectionHeader('3', 'Affected Areas', subtitle: '(Select all that apply)'),
-                  Wrap(
-                    spacing: 8.0,
-                    runSpacing: 8.0,
-                    children: _affectedAreasOptions.map((area) {
-                      final isSelected = _selectedAffectedAreas.contains(area);
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            if (isSelected) {
-                              _selectedAffectedAreas.remove(area);
-                            } else {
-                              _selectedAffectedAreas.add(area);
-                            }
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  _buildTextGridSelection(
+                    _affectedAreasOptions,
+                    _selectedAffectedAreas,
+                    (val) {
+                      setState(() {
+                        if (_selectedAffectedAreas.contains(val)) {
+                          _selectedAffectedAreas.remove(val);
+                        } else {
+                          _selectedAffectedAreas.add(val);
+                        }
+                      });
+                    },
+                  ),
+                  
+                  // 4. Observed Pest Level
+                  _buildSectionHeader('4', 'Observed Pest Level', subtitle: '\nThis helps the professional estimate the required treatment.'),
+                  _buildTextGridSelection(
+                    _observedLevels,
+                    _selectedObservedLevel != null ? [_selectedObservedLevel!] : [],
+                    (val) {
+                      setState(() {
+                        _selectedObservedLevel = val;
+                      });
+                    },
+                    crossAxisCount: 4,
+                    childAspectRatio: 2.2,
+                  ),
+
+
+                  const SizedBox(height: 24),
+                  
+                  _buildSectionHeader('5', 'Required Materials'),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
+                        width: _materialPreference == 'Bring materials' ? 1.5 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: isSelected ? AppColors.primaryGold : Theme.of(context).cardTheme.color,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isSelected ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
-                            ),
+                            color: AppColors.primaryGold.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
+                          child: const Icon(Icons.cleaning_services, size: 24, color: AppColors.primaryGold),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              Text('Bring materials', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 2),
                               Text(
-                                area,
+                                _materialPreference == 'Bring materials' ? '+€${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.category).toStringAsFixed(2)} extra charge' : 'Use my materials (No extra charge)',
                                 style: AppTextStyles.bodySmall.copyWith(
-                                  color: isSelected ? Colors.black : (isDark ? Colors.white : Colors.black87),
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey[600],
+                                  fontWeight: _materialPreference == 'Bring materials' ? FontWeight.bold : FontWeight.normal,
                                 ),
                               ),
-                              if (isSelected) ...[
-                                const SizedBox(width: 4),
-                                const Icon(Icons.check_circle, color: Colors.black, size: 16),
-                              ],
                             ],
                           ),
                         ),
-                      );
-                    }).toList(),
-                  ),
-
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Number of Affected Rooms', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            InkWell(
-                              onTap: () {
-                                if (_affectedRoomsCount > 1) {
-                                  setState(() => _affectedRoomsCount--);
-                                }
-                              },
-                              child: const Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: Icon(Icons.remove, size: 20),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                              child: Text('$_affectedRoomsCount', style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold)),
-                            ),
-                            InkWell(
-                              onTap: () {
-                                setState(() => _affectedRoomsCount++);
-                              },
-                              child: const Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: Icon(Icons.add, size: 20),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // 4. Observed Pest Level
-                  _buildSectionHeader('4', 'Observed Pest Level', subtitle: '\nThis helps the professional estimate the required treatment.'),
-                  Wrap(
-                    spacing: 8.0,
-                    runSpacing: 8.0,
-                    children: _observedLevels.map((level) {
-                      final isSelected = _selectedObservedLevel == level;
-                      return GestureDetector(
-                        onTap: () => setState(() => _selectedObservedLevel = level),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                          decoration: BoxDecoration(
-                            color: isSelected ? AppColors.primaryGold : Theme.of(context).cardTheme.color,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: isSelected ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
-                            ),
-                          ),
-                          child: Text(
-                            level,
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: isSelected ? Colors.black : (isDark ? Colors.white : Colors.black87),
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            ),
+                        Transform.scale(
+                          scale: 0.8,
+                          child: Switch.adaptive(
+                            value: _materialPreference == 'Bring materials',
+                            activeColor: isDark ? AppColors.backgroundDark : Colors.white,
+                            activeTrackColor: AppColors.primaryGold,
+                            inactiveTrackColor: Colors.grey[300],
+                            onChanged: (val) {
+                              setState(() {
+                                _materialPreference = val ? 'Bring materials' : 'Use my materials';
+                              });
+                            },
                           ),
                         ),
-                      );
-                    }).toList(),
+                      ],
+                    ),
                   ),
 
-
-                  
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
 
                   // Standardized details section
                   QuickServicesAdditionalDetails(

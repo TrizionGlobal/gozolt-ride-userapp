@@ -14,6 +14,8 @@ import '../../../../../core/router/route_names.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_price_summary.dart';
+import '../../../../ride/data/models/saved_payment_method.dart';
+
 
 class LaundryReviewScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
@@ -326,7 +328,7 @@ class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
                             Expanded(
                               child: Text(
                                 (data.laundryPackagePrice != null && data.laundryPackagePrice! > 0)
-                                    ? '${data.laundryServiceType ?? 'Service'} (${data.laundryQuantityKg ?? 5} kg x €${data.laundryPackagePrice!.toStringAsFixed(2)})'
+                                    ? '${data.laundryServiceType ?? 'Service'} (${data.laundryQuantityKg ?? 5} kg )'
                                     : data.laundryServiceType ?? 'Service',
                                 style: AppTextStyles.bodyMedium,
                               ),
@@ -334,7 +336,7 @@ class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
                             const SizedBox(width: 8),
                             Text(
                               (data.laundryPackagePrice != null && data.laundryPackagePrice! > 0)
-                                  ? '€${rawSubtotal.toStringAsFixed(2)}'
+                                  ? ''
                                   : 'Price after inspection',
                               style: AppTextStyles.bodyMedium.copyWith(
                                 fontWeight: FontWeight.bold,
@@ -462,30 +464,41 @@ class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
                   // Confirm Booking Button
                   ElevatedButton(
                     onPressed: () {
-                  final finalTotal = _bookingData.upfrontBookingFee - (_useGoCoins ? 2.0 : 0.0);
+                  final finalTotal = (_bookingData.upfrontBookingFee - (_useGoCoins ? _bookingData.upfrontBookingFee.clamp(0.0, 6.0) : 0.0)).clamp(0.0, double.infinity);
                       
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (ctx) => BookingPaymentSheet(
-                      currentType: _bookingData.paymentMethodType,
-                      currentCardId: _bookingData.paymentMethodId,
-                      isQuickService: true,
-                      amount: finalTotal,
-                      onConfirm: (type, {cardId}) {
-                        final updatedData = _bookingData.copyWith(
-                          paymentMethodType: type,
-                          paymentMethodId: cardId,
-                          useGoCoins: _useGoCoins,
-                        );
-                        context.pushNamed(
-                          RouteNames.quickServicesLaundryConfirmation,
-                          extra: updatedData,
-                        );
-                      },
-                    ),
-                  );
+                  if (finalTotal <= 0.0) {
+                    final updatedData = _bookingData.copyWith(
+                      paymentMethodType: PaymentMethodType.cash,
+                      useGoCoins: _useGoCoins,
+                    );
+                    context.pushNamed(
+                      RouteNames.quickServicesLaundryConfirmation,
+                      extra: updatedData,
+                    );
+                  } else {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (ctx) => BookingPaymentSheet(
+                        currentType: _bookingData.paymentMethodType,
+                        currentCardId: _bookingData.paymentMethodId,
+                        isQuickService: true,
+                        amount: finalTotal,
+                        onConfirm: (type, {cardId}) {
+                          final updatedData = _bookingData.copyWith(
+                            paymentMethodType: type,
+                            paymentMethodId: cardId,
+                            useGoCoins: _useGoCoins,
+                          );
+                          context.pushNamed(
+                            RouteNames.quickServicesLaundryConfirmation,
+                            extra: updatedData,
+                          );
+                        },
+                      ),
+                    );
+                  }
                 },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,

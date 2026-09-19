@@ -136,9 +136,7 @@ class SharedQuickServiceConfirmationScreen extends StatelessWidget {
                           ),
                           _buildDetailRow(
                             'Remaining Amount (After Service)',
-                            bookingData.hasRateRange
-                                ? '€${bookingData.estimatedTotalMin.toStringAsFixed(2)} - €${bookingData.estimatedTotalMax.toStringAsFixed(2)}'
-                                : '€${bookingData.estimatedTotalMin.toStringAsFixed(2)}',
+                            'Based on hours spent × hourly rate',
                             isTotal: true,
                           ),
                         ],

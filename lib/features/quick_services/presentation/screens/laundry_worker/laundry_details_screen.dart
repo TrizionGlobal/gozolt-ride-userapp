@@ -7,6 +7,7 @@ import '../../../../../core/router/route_names.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_additional_details.dart';
 import '../../../data/models/quick_service_booking_data.dart';
+import '../../../../../core/config/quick_services_pricing_config.dart';
 
 class LaundryDetailsScreen extends StatefulWidget {
   final QuickServiceBookingData bookingData;
@@ -37,13 +38,13 @@ class _LaundryDetailsScreenState extends State<LaundryDetailsScreen> {
   final ImagePicker _picker = ImagePicker();
 
   final List<Map<String, dynamic>> _laundryServices = [
-    {'title': 'Wash & Fold', 'priceText': 'From €3/kg', 'unitPrice': 3.0},
-    {'title': 'Wash & Iron', 'priceText': 'From €5/kg', 'unitPrice': 5.0},
-    {'title': 'Ironing Only', 'priceText': 'From €3/kg', 'unitPrice': 3.0},
-    {'title': 'Dry Cleaning', 'priceText': 'Price after inspection', 'unitPrice': 0.0},
-    {'title': 'Bedding / Linen', 'priceText': 'From €8/item', 'unitPrice': 8.0},
-    {'title': 'Curtains', 'priceText': 'Price after inspection', 'unitPrice': 0.0},
-    {'title': 'Delicate Garments', 'priceText': 'Price after inspection', 'unitPrice': 0.0},
+    {'title': 'Wash & Fold', 'priceText': '', 'unitPrice': 3.0},
+    {'title': 'Wash & Iron', 'priceText': '', 'unitPrice': 5.0},
+    {'title': 'Ironing Only', 'priceText': '', 'unitPrice': 3.0},
+    {'title': 'Dry Cleaning', 'priceText': '', 'unitPrice': 0.0},
+    {'title': 'Bedding / Linen', 'priceText': '', 'unitPrice': 8.0},
+    {'title': 'Curtains', 'priceText': '', 'unitPrice': 0.0},
+    {'title': 'Delicate Garments', 'priceText': '', 'unitPrice': 0.0},
     {'title': 'Other Laundry Service', 'priceText': '', 'unitPrice': 0.0},
   ];
 
@@ -436,7 +437,7 @@ class _LaundryDetailsScreenState extends State<LaundryDetailsScreen> {
                               Text('Bring materials', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 2),
                               Text(
-                                _materialPreference == 'Bring materials' ? '+€5.00 extra charge' : 'Use my materials (No extra charge)',
+                                _materialPreference == 'Bring materials' ? '+€${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.category).toStringAsFixed(2)} extra charge' : 'Use my materials (No extra charge)',
                                 style: AppTextStyles.bodySmall.copyWith(
                                   color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey[600],
                                   fontWeight: _materialPreference == 'Bring materials' ? FontWeight.bold : FontWeight.normal,
