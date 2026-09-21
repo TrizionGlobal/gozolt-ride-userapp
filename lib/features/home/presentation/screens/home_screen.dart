@@ -8,7 +8,7 @@ import '../providers/home_providers.dart';
 
 import '../widgets/greeting_header.dart';
 import '../widgets/promo_banner.dart';
-import '../widgets/book_schedule_buttons.dart';
+
 import '../widgets/transport_grid.dart';
 import '../widgets/rewards_home_banner.dart';
 import '../widgets/go_places_section.dart';
@@ -106,8 +106,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   const SizedBox(height: 20),
                   const PromoBanner(),
                   const SizedBox(height: 20),
-                  const BookScheduleButtons(),
-                  const SizedBox(height: 24),
+
                   const TransportGrid(),
                   const SizedBox(height: 24),
                   const RewardsHomeBanner(),

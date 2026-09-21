@@ -120,4 +120,5 @@ flutter:
   assets:
     - assets/images/
     - assets/images/beauty/
-    - assets/
+    - assets/images/updated_userapp_images/
+    - assets/images/updated_userapp_images/quick_services_images/

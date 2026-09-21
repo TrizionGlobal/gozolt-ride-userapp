@@ -34,7 +34,7 @@ class TransportGrid extends StatelessWidget {
             children: [
               Expanded(
                 child: _TransportTile(
-                  iconData: Icons.emoji_transportation_rounded,
+                  iconPath: 'assets/images/updated_userapp_images/transport.png',
                   label: 'Transport',
                   isActive: true,
                   onTap: () => _showTransportModal(context),
@@ -43,7 +43,7 @@ class TransportGrid extends StatelessWidget {
               const SizedBox(width: 14),
               Expanded(
                 child: _TransportTile(
-                  iconData: Icons.cleaning_services_rounded,
+                  iconPath: 'assets/images/updated_userapp_images/quick_services.png',
                   label: 'Quick Services',
                   isActive: true,
                   onTap: () {
@@ -58,7 +58,7 @@ class TransportGrid extends StatelessWidget {
             children: [
               Expanded(
                 child: _TransportTile(
-                  iconData: Icons.local_grocery_store_rounded,
+                  iconPath: 'assets/images/updated_userapp_images/groceries.png',
                   label: 'Groceries',
                   isActive: true,
                   onTap: () => _showComingSoon(context),
@@ -96,7 +96,7 @@ class TransportGrid extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _TransportTile(
-                      iconPath: AssetPaths.iconRide,
+                      iconPath: 'assets/images/updated_userapp_images/cab_booking.png',
                       label: 'Ride',
                       isActive: true,
                       onTap: () {
@@ -108,7 +108,7 @@ class TransportGrid extends StatelessWidget {
                   const SizedBox(width: 14),
                   Expanded(
                     child: _TransportTile(
-                      iconPath: AssetPaths.iconCarRental,
+                      iconPath: 'assets/images/updated_userapp_images/car_rental.png',
                       label: 'Car Rental',
                       isActive: true,
                       onTap: () {
@@ -124,9 +124,7 @@ class TransportGrid extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _TransportTile(
-                      iconPath: Theme.of(context).brightness == Brightness.dark 
-                          ? AssetPaths.iconBikeRentalDarkTheme 
-                          : AssetPaths.iconBikeRental,
+                      iconPath: 'assets/images/updated_userapp_images/bike_rental.png',
                       label: 'Bike Rental',
                       isActive: true,
                       onTap: () {
@@ -138,7 +136,7 @@ class TransportGrid extends StatelessWidget {
                   const SizedBox(width: 14),
                   Expanded(
                     child: _TransportTile(
-                      iconPath: AssetPaths.iconAirportTransfer,
+                      iconPath: 'assets/images/updated_userapp_images/airport_transport.png',
                       label: 'Airport Transfer',
                       isActive: false,
                       onTap: () {

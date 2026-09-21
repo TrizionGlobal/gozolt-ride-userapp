@@ -9,48 +9,49 @@ import '../../data/models/quick_service_booking_data.dart';
 class _SubService {
   final String title;
   final IconData icon;
+  final String? iconPath;
 
-  const _SubService(this.title, this.icon);
+  const _SubService(this.title, this.icon, {this.iconPath});
 }
 
 class _ServiceCategory {
   final String title;
   final IconData icon;
+  final String? iconPath;
   final List<_SubService> subServices;
 
-  const _ServiceCategory(this.title, this.icon, this.subServices);
+  const _ServiceCategory(this.title, this.icon, this.subServices, {this.iconPath});
 }
 
 const List<_ServiceCategory> _categories = [
-  _ServiceCategory('Home Services', Icons.home, [
+  _ServiceCategory('Home Services', Icons.home_repair_service, iconPath: 'assets/images/updated_userapp_images/quick_services_images/home_electronic.png', [
     _SubService('Home Cleaning', Icons.cleaning_services),
     _SubService('Pest Control', Icons.pest_control),
     _SubService('Gardening', Icons.yard),
-    _SubService('Plumbing', Icons.plumbing),
-    _SubService('Carpenter', Icons.carpenter),
+    _SubService('Plumbing', Icons.plumbing, iconPath: 'assets/images/updated_userapp_images/quick_services_images/plumber.png'),
+    _SubService('Carpenter', Icons.carpenter, iconPath: 'assets/images/updated_userapp_images/quick_services_images/carpentar.png'),
     _SubService('Handyman', Icons.handyman),
   ]),
-  _ServiceCategory('PC & Mobile', Icons.computer, [
+  _ServiceCategory('PC & Mobile Repair', Icons.computer, iconPath: 'assets/images/updated_userapp_images/quick_services_images/pc&mobile_repair.png', [
     _SubService('Mobile', Icons.smartphone),
     _SubService('Laptop/Computer', Icons.laptop),
     _SubService('Printer / Scanner', Icons.print),
   ]),
-  _ServiceCategory('Vehicle Mechanic', Icons.directions_car, [
-    _SubService('Car', Icons.directions_car),
+  _ServiceCategory('Vehicle Mechanic', Icons.directions_car, iconPath: 'assets/images/updated_userapp_images/quick_services_images/vehicle_mechanic.png', [
+    _SubService('Car', Icons.directions_car, iconPath: 'assets/images/updated_userapp_images/quick_services_images/car_mechanic.png'),
     _SubService('Bike', Icons.two_wheeler),
     _SubService('Truck', Icons.local_shipping),
   ]),
-  _ServiceCategory('Electrical Mechanic', Icons.electrical_services, [
+  _ServiceCategory('Vehicle Wash', Icons.local_car_wash, iconPath: 'assets/images/updated_userapp_images/quick_services_images/vehicle_wash.png', [
+    _SubService('Car', Icons.directions_car, iconPath: 'assets/images/updated_userapp_images/quick_services_images/car_wash.png'),
+    _SubService('Bike', Icons.two_wheeler),
+    _SubService('Truck', Icons.local_shipping),
+  ]),
+  _ServiceCategory('Electrical Repair', Icons.electrical_services, iconPath: 'assets/images/updated_userapp_images/quick_services_images/electric_mechanic.png', [
     _SubService('Home', Icons.home_repair_service),
     _SubService('Lift / Elevator', Icons.elevator),
   ]),
-  _ServiceCategory('Beautician / Wellness', Icons.spa, [
-    _SubService('Male', Icons.man),
-    _SubService('Female', Icons.woman),
-    _SubService('Kids', Icons.child_care),
-    _SubService('Others', Icons.diversity_3),
-  ]),
-  _ServiceCategory('AC & Appliance Repair', Icons.ac_unit, [
+  _ServiceCategory('Appliance Repair', Icons.ac_unit, iconPath: 'assets/images/updated_userapp_images/quick_services_images/appliances.png', [
     _SubService('Refrigerator', Icons.kitchen),
     _SubService('Air Conditioner', Icons.ac_unit),
     _SubService('Washing Machine', Icons.local_laundry_service),
@@ -61,29 +62,29 @@ const List<_ServiceCategory> _categories = [
     _SubService('Water Purifier', Icons.water_drop),
     _SubService('Others', Icons.miscellaneous_services),
   ]),
-  _ServiceCategory('Hire a Person', Icons.person_outline, [
+  _ServiceCategory('Beautician /Wellness', Icons.spa, iconPath: 'assets/images/updated_userapp_images/quick_services_images/beautician.png', [
     _SubService('Male', Icons.man),
     _SubService('Female', Icons.woman),
-    _SubService('Others', Icons.group),
+    _SubService('Kids', Icons.child_care),
+    _SubService('Others', Icons.diversity_3),
   ]),
-  _ServiceCategory('Security Personnel', Icons.security, [
-    _SubService('Event Security', Icons.event),
-    _SubService('Bouncer / Door Security', Icons.security),
-    _SubService('Others', Icons.group),
-  ]),
-
-  _ServiceCategory('Laundry Worker', Icons.local_laundry_service, [
+  _ServiceCategory('Laundry', Icons.local_laundry_service, iconPath: 'assets/images/updated_userapp_images/quick_services_images/laundry.png', [
     _SubService('Home', Icons.home),
     _SubService('Hospital', Icons.local_hospital),
     _SubService('Hotel', Icons.hotel),
     _SubService('Commercials', Icons.business),
   ]),
-  _ServiceCategory('Vehicle Wash', Icons.local_car_wash, [
-    _SubService('Car', Icons.directions_car),
-    _SubService('Bike', Icons.two_wheeler),
-    _SubService('Truck', Icons.local_shipping),
+  _ServiceCategory('Hire a Person', Icons.person_outline, iconPath: 'assets/images/updated_userapp_images/quick_services_images/hire_a_person.png', [
+    _SubService('Male', Icons.man),
+    _SubService('Female', Icons.woman),
+    _SubService('Others', Icons.group),
   ]),
-  _ServiceCategory('Other Services', Icons.miscellaneous_services, [
+  _ServiceCategory('Security/Bouncer', Icons.security, iconPath: 'assets/images/updated_userapp_images/quick_services_images/security_personal.png', [
+    _SubService('Event Security', Icons.event),
+    _SubService('Bouncer / Door Security', Icons.security),
+    _SubService('Others', Icons.group),
+  ]),
+  _ServiceCategory('Other Services', Icons.miscellaneous_services, iconPath: 'assets/images/updated_userapp_images/quick_services_images/other_services.png', [
     _SubService('Painter', Icons.format_paint),
     _SubService('Event Organisers', Icons.event),
     _SubService('Suppliers', Icons.inventory),
@@ -120,7 +121,10 @@ class _QuickServicesListScreenState extends State<QuickServicesListScreen> {
                   children: [
                   Row(
                     children: [
-                      Icon(category.icon, size: 28),
+                      if (category.iconPath != null)
+                        Image.asset(category.iconPath!, width: 32, height: 32, fit: BoxFit.contain)
+                      else
+                        Icon(category.icon, size: 28),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -151,7 +155,7 @@ class _QuickServicesListScreenState extends State<QuickServicesListScreen> {
                             context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesPlumbing});
                           } else if (subService.title == 'Carpenter') {
                             context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesCarpenter});
-                          } else if (category.title == 'AC & Appliance Repair') {
+                          } else if (category.title == 'Appliance Repair') {
                             context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesApplianceRepair});
                           } else if (category.title == 'Vehicle Mechanic' && subService.title == 'Bike') {
                             context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesBikeMechanic});
@@ -159,9 +163,9 @@ class _QuickServicesListScreenState extends State<QuickServicesListScreen> {
                             context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesCarMechanic});
                           } else if (category.title == 'Vehicle Mechanic' && subService.title == 'Truck') {
                             context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesTruckMechanic});
-                          } else if (category.title == 'Electrical Mechanic' && subService.title == 'Lift / Elevator') {
+                          } else if (category.title == 'Electrical Repair' && subService.title == 'Lift / Elevator') {
                             context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesLiftElevator});
-                          } else if (category.title == 'Electrical Mechanic' && subService.title == 'Home') {
+                          } else if (category.title == 'Electrical Repair' && subService.title == 'Home') {
                             context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesElectrical});
                           } else if (subService.title == 'Handyman' || subService.title == 'Handyman Services') {
                             context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesHandyman});
@@ -199,7 +203,7 @@ class _QuickServicesListScreenState extends State<QuickServicesListScreen> {
                                 ),
                               );
                             }
-                          } else if (category.title == 'Beautician / Wellness' || category.title == 'Beauty & Wellness') {
+                          } else if (category.title == 'Beautician /Wellness') {
                             context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesBeautyWellness});
                           } else if (subService.title == 'Gardening' || category.title == 'Gardening') {
                             context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': updatedData, 'nextRoute': RouteNames.quickServicesGardening});
@@ -229,7 +233,10 @@ class _QuickServicesListScreenState extends State<QuickServicesListScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(subService.icon, color: const Color(0xFF324461), size: 36),
+                              if (subService.iconPath != null)
+                                Image.asset(subService.iconPath!, width: 42, height: 42, fit: BoxFit.contain)
+                              else
+                                Icon(subService.icon, color: const Color(0xFF324461), size: 36),
                               const SizedBox(height: 8),
                               Text(
                                 subService.title,
@@ -297,17 +304,17 @@ class _QuickServicesListScreenState extends State<QuickServicesListScreen> {
                                 final width = isLastOddItem ? constraints.maxWidth : itemWidth;
                           return GestureDetector(
                             onTap: () {
-                              if (category.title == 'AC & Appliance Repair') {
+                              if (category.title == 'Appliance Repair') {
                                 context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': widget.bookingData.copyWith(selectedServiceTitle: null), 'nextRoute': RouteNames.quickServicesApplianceRepair});
                               } else if (category.title == 'Hire a Person') {
                                 context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': widget.bookingData.copyWith(selectedServiceTitle: 'Hire a Person'), 'nextRoute': RouteNames.quickServicesHirePerson});
-                              } else if (category.title == 'Security Personnel' || category.title == 'Security / Bouncer') {
+                              } else if (category.title == 'Security/Bouncer') {
                                 context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': widget.bookingData.copyWith(selectedServiceTitle: 'Security Personnel'), 'nextRoute': RouteNames.quickServicesSecurityPersonnel});
                               } else if (category.title == 'Mobile Repair at Home') {
                                 context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': widget.bookingData.copyWith(selectedServiceTitle: 'Mobile Repair at Home'), 'nextRoute': RouteNames.quickServicesMobileRepair});
                               } else if (category.title == 'Computer & Laptop Repair' || category.title == 'Computer & Laptop') {
                                 context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': widget.bookingData.copyWith(selectedServiceTitle: 'Computer & Laptop Repair'), 'nextRoute': RouteNames.quickServicesComputerRepair});
-                              } else if (category.title == 'Beautician / Wellness' || category.title == 'Beauty & Wellness') {
+                              } else if (category.title == 'Beautician /Wellness') {
                                 context.pushNamed(RouteNames.quickServicesLocation, extra: {'bookingData': widget.bookingData.copyWith(selectedServiceTitle: 'Beauty & Wellness'), 'nextRoute': RouteNames.quickServicesBeautyWellness});
                               } else {
                                 _showSubServicesModal(context, category);
@@ -356,7 +363,15 @@ class _ServiceCategoryCard extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(category.icon, color: isSelected ? AppColors.primaryGold : const Color(0xFF324461), size: 40),
+          if (category.iconPath != null)
+            Image.asset(
+              category.iconPath!, 
+              width: (category.title == 'Vehicle Mechanic' || category.title == 'Vehicle Wash') ? 75 : 50, 
+              height: (category.title == 'Vehicle Mechanic' || category.title == 'Vehicle Wash') ? 60 : 50, 
+              fit: BoxFit.contain
+            )
+          else
+            Icon(category.icon, color: isSelected ? AppColors.primaryGold : const Color(0xFF324461), size: 40),
           const SizedBox(height: 10),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4.0),
