@@ -156,7 +156,7 @@ class _HomeCleaningReviewScreenState extends ConsumerState<HomeCleaningReviewScr
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
               child: ElevatedButton(
                 onPressed: () {
-                  final finalTotal = (_bookingData.upfrontBookingFee - (_useGoCoins ? _bookingData.upfrontBookingFee.clamp(0.0, 6.0) : 0.0)).clamp(0.0, double.infinity);
+                  final finalTotal = ((_bookingData.upfrontBookingFee + _bookingData.materialCost) - (_useGoCoins ? (_bookingData.upfrontBookingFee + _bookingData.materialCost).clamp(0.0, 6.0) : 0.0)).clamp(0.0, double.infinity);
                       
                   if (finalTotal <= 0.0) {
                     final updatedData = _bookingData.copyWith(

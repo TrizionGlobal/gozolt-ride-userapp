@@ -115,6 +115,102 @@ class CarWashVehicle {
   }
 }
 
+class MobileDevice {
+  final String deviceType;
+  final String deviceBrand;
+  final String deviceModel;
+  final String? operatingSystem;
+  final String issue;
+
+  const MobileDevice({
+    required this.deviceType,
+    required this.deviceBrand,
+    required this.deviceModel,
+    this.operatingSystem,
+    required this.issue,
+  });
+
+  MobileDevice copyWith({
+    String? deviceType,
+    String? deviceBrand,
+    String? deviceModel,
+    String? operatingSystem,
+    String? issue,
+  }) {
+    return MobileDevice(
+      deviceType: deviceType ?? this.deviceType,
+      deviceBrand: deviceBrand ?? this.deviceBrand,
+      deviceModel: deviceModel ?? this.deviceModel,
+      operatingSystem: operatingSystem ?? this.operatingSystem,
+      issue: issue ?? this.issue,
+    );
+  }
+}
+
+class ComputerDevice {
+  final String deviceType;
+  final String brand;
+  final String model;
+  final String? operatingSystem;
+  final String issue;
+
+  const ComputerDevice({
+    required this.deviceType,
+    required this.brand,
+    required this.model,
+    this.operatingSystem,
+    required this.issue,
+  });
+
+  ComputerDevice copyWith({
+    String? deviceType,
+    String? brand,
+    String? model,
+    String? operatingSystem,
+    String? issue,
+  }) {
+    return ComputerDevice(
+      deviceType: deviceType ?? this.deviceType,
+      brand: brand ?? this.brand,
+      model: model ?? this.model,
+      operatingSystem: operatingSystem ?? this.operatingSystem,
+      issue: issue ?? this.issue,
+    );
+  }
+}
+
+class PrinterDevice {
+  final String deviceType;
+  final String brand;
+  final String model;
+  final String? serialNumber;
+  final List<String> issues;
+
+  const PrinterDevice({
+    required this.deviceType,
+    required this.brand,
+    required this.model,
+    this.serialNumber,
+    required this.issues,
+  });
+
+  PrinterDevice copyWith({
+    String? deviceType,
+    String? brand,
+    String? model,
+    String? serialNumber,
+    List<String>? issues,
+  }) {
+    return PrinterDevice(
+      deviceType: deviceType ?? this.deviceType,
+      brand: brand ?? this.brand,
+      model: model ?? this.model,
+      serialNumber: serialNumber ?? this.serialNumber,
+      issues: issues ?? this.issues,
+    );
+  }
+}
+
 class QuickServiceBookingData {
   final String category;
   final String selectedService;
@@ -191,6 +287,7 @@ class QuickServiceBookingData {
   final String? operatingSystem;
   final String? mobileIssue;
   final int? deviceCount;
+  final List<MobileDevice>? mobileDevices;
 
   // Computer Repair specific fields
   final String? computerDeviceType;
@@ -198,6 +295,7 @@ class QuickServiceBookingData {
   final String? computerModel;
   final String? computerOS;
   final String? computerIssue;
+  final List<ComputerDevice>? computerDevices;
 
   // Printer & Scanner specific fields
   final String? printerDeviceType;
@@ -208,6 +306,7 @@ class QuickServiceBookingData {
   final List<String>? printerIssues;
   final int? printerDeviceCount;
   final String? printerErrorCode;
+  final List<PrinterDevice>? printerDevices;
 
   // Car Wash specific fields
   final String? carWashPackage;
@@ -291,6 +390,16 @@ class QuickServiceBookingData {
        if (selectedServiceTitle?.contains('Truck') == true) return 'truck_mechanic';
        return 'car_mechanic';
     }
+    if (category == 'Electrical Repair') {
+       if (selectedServiceTitle?.contains('Commercial') == true || selectedServiceTitle?.contains('Lift') == true) return 'lift_elevator_mechanic';
+       if (selectedServiceTitle?.contains('Events') == true) return 'events_electric';
+       return 'home_electric';
+    }
+    if (category == 'PC & Mobile Repair' || category == 'PC & Mobile') {
+       if (selectedServiceTitle?.contains('Printer') == true) return 'printer_scanner';
+       if (selectedServiceTitle?.contains('Mobile') == true) return 'mobile_repair';
+       return 'computer_repair';
+    }
     return category.toLowerCase().replaceAll(' ', '_');
   }
 
@@ -298,9 +407,12 @@ class QuickServiceBookingData {
     final lowerCat = category.toLowerCase();
     if (lowerCat.contains('mechanic')) {
       return 'Mechanic Visit/hr';
+    } else if (lowerCat.contains('electric')) {
+      if (selectedServiceTitle?.contains('Commercial') == true || selectedServiceTitle?.contains('Lift') == true || selectedServiceTitle?.contains('Events') == true) {
+        return 'Mechanic Visit/hr';
+      }
+      return 'Expert Visit/hr';
     } else if (lowerCat.contains('engineer') || 
-               lowerCat.contains('appliance') ||
-               lowerCat.contains('electric') ||
                lowerCat.contains('computer') ||
                lowerCat.contains('printer') ||
                lowerCat.contains('mobile') ||
@@ -414,11 +526,13 @@ class QuickServiceBookingData {
     this.operatingSystem,
     this.mobileIssue,
     this.deviceCount,
+    this.mobileDevices,
     this.computerDeviceType,
     this.computerBrand,
     this.computerModel,
     this.computerOS,
     this.computerIssue,
+    this.computerDevices,
     this.printerDeviceType,
     this.printerBrand,
     this.printerModel,
@@ -427,6 +541,7 @@ class QuickServiceBookingData {
     this.printerIssues,
     this.printerDeviceCount,
     this.printerErrorCode,
+    this.printerDevices,
     this.carWashPackage,
     this.carWashPackagePrice,
     this.vehicleColour,
@@ -544,11 +659,13 @@ class QuickServiceBookingData {
     String? operatingSystem,
     String? mobileIssue,
     int? deviceCount,
+    List<MobileDevice>? mobileDevices,
     String? computerDeviceType,
     String? computerBrand,
     String? computerModel,
     String? computerOS,
     String? computerIssue,
+    List<ComputerDevice>? computerDevices,
     String? printerDeviceType,
     String? printerBrand,
     String? printerModel,
@@ -557,6 +674,7 @@ class QuickServiceBookingData {
     List<String>? printerIssues,
     int? printerDeviceCount,
     String? printerErrorCode,
+    List<PrinterDevice>? printerDevices,
     String? vehicleServiceMode,
     double? pickupAndReturnFee,
     String? carWashPackage,
@@ -673,11 +791,13 @@ class QuickServiceBookingData {
       operatingSystem: operatingSystem ?? this.operatingSystem,
       mobileIssue: mobileIssue ?? this.mobileIssue,
       deviceCount: deviceCount ?? this.deviceCount,
+      mobileDevices: mobileDevices ?? this.mobileDevices,
       computerDeviceType: computerDeviceType ?? this.computerDeviceType,
       computerBrand: computerBrand ?? this.computerBrand,
       computerModel: computerModel ?? this.computerModel,
       computerOS: computerOS ?? this.computerOS,
       computerIssue: computerIssue ?? this.computerIssue,
+      computerDevices: computerDevices ?? this.computerDevices,
       printerDeviceType: printerDeviceType ?? this.printerDeviceType,
       printerBrand: printerBrand ?? this.printerBrand,
       printerModel: printerModel ?? this.printerModel,
@@ -687,6 +807,7 @@ class QuickServiceBookingData {
       printerIssues: printerIssues ?? this.printerIssues,
       printerDeviceCount: printerDeviceCount ?? this.printerDeviceCount,
       printerErrorCode: printerErrorCode ?? this.printerErrorCode,
+      printerDevices: printerDevices ?? this.printerDevices,
       vehicleServiceMode: vehicleServiceMode ?? this.vehicleServiceMode,
       pickupAndReturnFee: pickupAndReturnFee ?? this.pickupAndReturnFee,
       carWashPackage: carWashPackage ?? this.carWashPackage,

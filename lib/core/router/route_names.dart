@@ -114,6 +114,9 @@ abstract final class RouteNames {
   static const String quickServicesElectrical = 'quick-services-electrical';
   static const String quickServicesElectricalReview = 'quick-services-electrical-review';
   static const String quickServicesElectricalConfirmation = 'quick-services-electrical-confirmation';
+  static const String quickServicesEventsElectric = 'quick-services-events-electric';
+  static const String quickServicesEventsElectricReview = 'quick-services-events-electric-review';
+  static const String quickServicesEventsElectricConfirmation = 'quick-services-events-electric-confirmation';
 
   static const String quickServicesHandyman = 'quick-services-handyman';
   static const String quickServicesHandymanReview = 'quick-services-handyman-review';

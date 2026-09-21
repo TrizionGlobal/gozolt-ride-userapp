@@ -5,6 +5,7 @@ import 'dart:io';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/constants/app_text_styles.dart';
 import '../../../../../core/router/route_names.dart';
+import '../../../../../core/config/quick_services_pricing_config.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_additional_details.dart';
@@ -19,13 +20,17 @@ class PrinterScannerDetailsScreen extends StatefulWidget {
 }
 
 class _PrinterScannerDetailsScreenState extends State<PrinterScannerDetailsScreen> {
-  String _materialPreference = 'Bring materials';
+  String _materialPreference = 'Bring tools';
   String? _selectedDeviceType;
-  final TextEditingController _brandController = TextEditingController();
-  final TextEditingController _modelController = TextEditingController();
+  String? _selectedBrand;
+  String? _selectedModel;
+  
+  final List<PrinterDevice> _savedPrinters = [];
+  final TextEditingController _customBrandController = TextEditingController();
+  final TextEditingController _customModelController = TextEditingController();
   final TextEditingController _serialNumberController = TextEditingController();
   
-  final Set<String> _selectedIssues = {};
+  String? _selectedIssue;
   final TextEditingController _whatYouNeedController = TextEditingController();
   final TextEditingController _problemDescriptionController = TextEditingController();
   
@@ -33,11 +38,10 @@ class _PrinterScannerDetailsScreenState extends State<PrinterScannerDetailsScree
   final ImagePicker _picker = ImagePicker();
 
   final List<Map<String, dynamic>> _deviceTypes = [
-    {'name': 'Printer', 'icon': Icons.print},
+    {'name': 'Printer / All-In-One Printer', 'icon': Icons.print},
     {'name': 'Scanner', 'icon': Icons.scanner},
-    {'name': 'All-in-One Printer', 'icon': Icons.print},
-    {'name': 'Photo Printer', 'icon': Icons.camera_alt},
-    {'name': 'Label Printer', 'icon': Icons.label},
+    {'name': 'Photo Printer', 'icon': Icons.photo},
+    {'name': 'Label Printer', 'icon': Icons.receipt_long},
   ];
 
 
@@ -54,6 +58,33 @@ class _PrinterScannerDetailsScreenState extends State<PrinterScannerDetailsScree
     'Other Issue',
   ];
 
+  final List<String> _brands = [
+    'HP',
+    'Canon',
+    'Epson',
+    'Brother',
+    'Lexmark',
+    'Xerox',
+    'Ricoh',
+    'Kyocera',
+    'Other',
+  ];
+
+  static const Map<String, List<String>> _brandModelsMap = {
+    'HP': ['LaserJet Pro', 'DeskJet', 'Envy', 'OfficeJet Pro', 'Other Model'],
+    'Canon': ['PIXMA', 'MAXIFY', 'i-SENSYS', 'imageRUNNER', 'Other Model'],
+    'Epson': ['EcoTank', 'WorkForce', 'Expression Home', 'Other Model'],
+    'Brother': ['HL Series', 'MFC Series', 'DCP Series', 'Other Model'],
+    'Lexmark': ['GO Line', 'MB Series', 'CX Series', 'Other Model'],
+    'Xerox': ['Phaser', 'VersaLink', 'AltaLink', 'Other Model'],
+    'Ricoh': ['SP Series', 'IM Series', 'Other Model'],
+    'Kyocera': ['ECOSYS', 'TASKalfa', 'Other Model'],
+    'Other': ['Other Model'],
+  };
+
+  List<String> get _currentModels =>
+      _selectedBrand != null ? (_brandModelsMap[_selectedBrand] ?? const ['Other Model']) : const [];
+
   @override
   void initState() {
     super.initState();
@@ -67,12 +98,42 @@ class _PrinterScannerDetailsScreenState extends State<PrinterScannerDetailsScree
 
   @override
   void dispose() {
-    _brandController.dispose();
-    _modelController.dispose();
+    _customBrandController.dispose();
+    _customModelController.dispose();
     _serialNumberController.dispose();
     _whatYouNeedController.dispose();
     _problemDescriptionController.dispose();
     super.dispose();
+  }
+
+  Widget _buildCustomTextField(TextEditingController controller, String hint) {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      child: TextFormField(
+        controller: controller,
+        style: AppTextStyles.bodyMedium,
+        textCapitalization: TextCapitalization.words,
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: AppTextStyles.bodyMedium.copyWith(color: Colors.grey),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.primaryGold),
+          ),
+          filled: true,
+          fillColor: Theme.of(context).cardTheme.color,
+        ),
+      ),
+    );
   }
 
   Future<void> _pickImages() async {
@@ -82,6 +143,59 @@ class _PrinterScannerDetailsScreenState extends State<PrinterScannerDetailsScree
         _selectedImages.addAll(images);
       });
     }
+  }
+
+  void _addPrinter() {
+    if (_selectedDeviceType == null) {
+      _showError('Please select a device type');
+      return;
+    }
+    
+    final brand = _selectedBrand == 'Other' ? _customBrandController.text.trim() : _selectedBrand;
+    if (brand == null || brand.isEmpty) {
+      _showError('Please select or enter the brand');
+      return;
+    }
+
+    final model = _selectedModel == 'Other Model' ? _customModelController.text.trim() : _selectedModel;
+    if (model == null || model.isEmpty) {
+      _showError('Please select or enter the model');
+      return;
+    }
+
+    if (_selectedIssue == null) {
+      _showError('Please select an issue');
+      return;
+    }
+
+    setState(() {
+      _savedPrinters.add(
+        PrinterDevice(
+          deviceType: _selectedDeviceType!,
+          brand: brand,
+          model: model,
+          serialNumber: _serialNumberController.text.trim().isNotEmpty ? _serialNumberController.text.trim() : null,
+          issues: [_selectedIssue!],
+        ),
+      );
+
+      // Reset form
+      _selectedDeviceType = null;
+      _selectedBrand = null;
+      _selectedModel = null;
+      _customBrandController.clear();
+      _customModelController.clear();
+      _serialNumberController.clear();
+      _selectedIssue = null;
+    });
+
+    FocusScope.of(context).unfocus();
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
   }
 
   @override
@@ -95,7 +209,7 @@ class _PrinterScannerDetailsScreenState extends State<PrinterScannerDetailsScree
           const QuickServicesHeader(
             currentStep: 1,
             title: 'Service Requirements',
-            subtitle: 'Printer & Scanner Service',
+            subtitle: 'Printer & Scanner Repair',
           ),
             
           Expanded(
@@ -105,18 +219,35 @@ class _PrinterScannerDetailsScreenState extends State<PrinterScannerDetailsScree
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 1. Select Device Type
-                  Text('1. Select Device Type', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 10),
+                  // --- PRINTER FORM ---
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Add a Printer/Scanner',
+                          style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        // 1. Select Device Type
+                        Text('1. Select Device Type', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 10),
                   GridView.builder(
                     padding: EdgeInsets.zero,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
+                      crossAxisCount: 2,
                       crossAxisSpacing: 10,
                       mainAxisSpacing: 10,
-                      childAspectRatio: 0.9,
+                      childAspectRatio: 2.0,
                     ),
                     itemCount: _deviceTypes.length,
                     itemBuilder: (context, index) {
@@ -141,16 +272,16 @@ class _PrinterScannerDetailsScreenState extends State<PrinterScannerDetailsScree
                                     Icon(
                                       device['icon'],
                                       color: isSelected ? AppColors.primaryGold : const Color(0xFF324461),
-                                      size: 32,
+                                      size: 28,
                                     ),
-                                    const SizedBox(height: 8),
+                                    const SizedBox(height: 6),
                                     Text(
                                       device['name'],
                                       textAlign: TextAlign.center,
                                       style: AppTextStyles.bodySmall.copyWith(
                                         color: isDark ? Colors.white : Colors.black87,
                                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                        fontSize: 11,
+                                        fontSize: 12,
                                       ),
                                     ),
                                   ],
@@ -173,98 +304,256 @@ class _PrinterScannerDetailsScreenState extends State<PrinterScannerDetailsScree
                   // 2. Device Information
                   Text('2. Device Information', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Brand', style: AppTextStyles.bodySmall),
-                            const SizedBox(height: 4),
-                            _buildTextField(_brandController, ''),
-                          ],
-                        ),
+                  
+                  Text('Brand', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.grey[700])),
+                  const SizedBox(height: 6),
+                  DropdownButtonFormField<String>(
+                    value: _selectedBrand,
+                    hint: Text('Select Brand', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey)),
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Model', style: AppTextStyles.bodySmall),
-                            const SizedBox(height: 4),
-                            _buildTextField(_modelController, ''),
-                          ],
-                        ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Device Number /\nSerial Number', style: AppTextStyles.bodySmall.copyWith(fontSize: 10)),
-                            const SizedBox(height: 4),
-                            _buildTextField(_serialNumberController, ''),
-                          ],
-                        ),
-                      ),
-                    ],
+                      filled: true,
+                      fillColor: Theme.of(context).cardTheme.color,
+                    ),
+                    items: _brands.map((b) {
+                      return DropdownMenuItem(value: b, child: Text(b, style: AppTextStyles.bodyMedium, maxLines: 1, overflow: TextOverflow.ellipsis));
+                    }).toList(),
+                    onChanged: (val) {
+                      setState(() {
+                        _selectedBrand = val;
+                        _selectedModel = null;
+                      });
+                    },
                   ),
+                  if (_selectedBrand == 'Other')
+                    _buildCustomTextField(_customBrandController, 'Enter Brand Name (e.g. Epson, Brother)'),
+
+                  const SizedBox(height: 16),
+
+                  Text('Model', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.grey[700])),
+                  const SizedBox(height: 6),
+                  DropdownButtonFormField<String>(
+                    value: _selectedModel,
+                    hint: Text('Select Model', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey)),
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                      ),
+                      filled: true,
+                      fillColor: _selectedBrand == null ? Colors.grey.withOpacity(0.1) : Theme.of(context).cardTheme.color,
+                    ),
+                    items: _currentModels.map((m) {
+                      return DropdownMenuItem(value: m, child: Text(m, style: AppTextStyles.bodyMedium, maxLines: 1, overflow: TextOverflow.ellipsis));
+                    }).toList(),
+                    onChanged: _selectedBrand == null ? null : (val) {
+                      setState(() => _selectedModel = val);
+                    },
+                  ),
+                  if (_selectedModel == 'Other Model')
+                    _buildCustomTextField(_customModelController, 'Enter model'),
+
+                  const SizedBox(height: 16),
+
+                  Text('Serial Number (Optional)', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.grey[700])),
+                  const SizedBox(height: 6),
+                  _buildTextField(_serialNumberController, 'Enter serial number'),
+
                   const SizedBox(height: 24),
 
                   // 3. Select Issue
+                  Text('3. Select Issue', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 10),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('3. Select Issue', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                      Expanded(
+                        child: Column(
+                          children: _leftIssues.map((issue) => _buildRadioTile(issue)).toList(),
+                        ),
+                      ),
                       const SizedBox(width: 8),
-                      Text('(You can select more than one)', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey, fontSize: 11)),
+                      Expanded(
+                        child: Column(
+                          children: _rightIssues.map((issue) => _buildRadioTile(issue)).toList(),
+                        ),
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _issues.map((issue) {
-                      final isSelected = _selectedIssues.contains(issue);
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            if (isSelected) {
-                              _selectedIssues.remove(issue);
-                            } else {
-                              _selectedIssues.add(issue);
-                            }
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: isSelected ? AppColors.primaryGold : Theme.of(context).cardTheme.color,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isSelected ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
+                  const SizedBox(height: 24),
+                  
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: _addPrinter,
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: const BorderSide(color: AppColors.primaryGold),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text('Add Device', style: TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // --- LIST OF ADDED PRINTERS ---
+            if (_savedPrinters.isNotEmpty) ...[
+              const SizedBox(height: 32),
+              Text(
+                'Printers & Scanners (${_savedPrinters.length})',
+                style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              ListView.separated(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _savedPrinters.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 10),
+                itemBuilder: (context, index) {
+                  final printer = _savedPrinters[index];
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.grey[850] : Colors.grey[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                issue,
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  color: isSelected ? Colors.black : null,
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                ),
+                                '${printer.brand} ${printer.model}',
+                                style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
                               ),
-                              if (isSelected) ...[
-                                const SizedBox(width: 4),
-                                const Icon(Icons.check_circle, size: 14, color: Colors.black),
-                              ]
+                              const SizedBox(height: 4),
+                              Text(
+                                'Type: ${printer.deviceType}',
+                                style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700]),
+                              ),
+                              if (printer.serialNumber != null && printer.serialNumber!.isNotEmpty)
+                                Text(
+                                  'S/N: ${printer.serialNumber}',
+                                  style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700]),
+                                ),
+                              Text(
+                                'Issues: ${printer.issues.join(", ")}',
+                                style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700]),
+                              ),
                             ],
                           ),
                         ),
-                      );
-                    }).toList(),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, color: Colors.red),
+                          onPressed: () {
+                            setState(() {
+                              _savedPrinters.removeAt(index);
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+
+            const SizedBox(height: 32),
+
+            // Required Tools Section
+            Text(
+              'Required Tools',
+              style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _materialPreference = _materialPreference == 'Bring tools' ? 'Use my tools' : 'Bring tools';
+                });
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardTheme.color,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _materialPreference == 'Bring tools' ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
+                    width: _materialPreference == 'Bring tools' ? 1.5 : 1,
                   ),
-                  const SizedBox(height: 24),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGold.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.handyman, size: 24, color: AppColors.primaryGold),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Bring tools', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 2),
+                          Text(
+                            _materialPreference == 'Bring tools'
+                                ? '+\u20ac${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.category).toStringAsFixed(2)} extra charge'
+                                : 'Use my tools (No extra charge)',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: _materialPreference == 'Bring tools' ? AppColors.primaryGold : Colors.grey[600],
+                              fontWeight: _materialPreference == 'Bring tools' ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Transform.scale(
+                      scale: 0.8,
+                      child: Switch.adaptive(
+                        value: _materialPreference == 'Bring tools',
+                        activeColor: isDark ? AppColors.backgroundDark : Colors.white,
+                        activeTrackColor: AppColors.primaryGold,
+                        inactiveTrackColor: Colors.grey[300],
+                        onChanged: (val) {
+                          setState(() {
+                            _materialPreference = val ? 'Bring tools' : 'Use my tools';
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
 
 
                   // Reusable Tell Us What You Need, Describe Issue & Image Picker Section
@@ -302,38 +591,25 @@ class _PrinterScannerDetailsScreenState extends State<PrinterScannerDetailsScree
                       ],
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF8E1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.info_outline, color: Colors.orange, size: 18),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Final price and replacement parts will be confirmed after inspection.',
-                            style: AppTextStyles.bodySmall.copyWith(color: Colors.brown[800], fontSize: 11),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+
                   const SizedBox(height: 32),
 
                   // CONTINUE
                   ElevatedButton(
                     onPressed: () {
+                      if (_savedPrinters.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please add at least one device before continuing.'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
+
                       final updatedData = widget.bookingData.copyWith(
-                        selectedServiceTitle: 'Printer & Scanner Service',
-                        printerDeviceType: _selectedDeviceType,
-                        printerBrand: _brandController.text.trim().isNotEmpty ? _brandController.text.trim() : null,
-                        printerModel: _modelController.text.trim().isNotEmpty ? _modelController.text.trim() : null,
-                        printerSerialNumber: _serialNumberController.text.trim().isNotEmpty ? _serialNumberController.text.trim() : null,
-                        printerIssues: _selectedIssues.toList(),
+                        selectedServiceTitle: 'Printer & Scanner Repair',
+                        printerDevices: _savedPrinters,
                         whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty ? _whatYouNeedController.text.trim() : null,
                         describeIssue: _problemDescriptionController.text.trim().isNotEmpty ? _problemDescriptionController.text.trim() : null,
                         uploadedImages: _selectedImages.map((e) => e.path).toList(),
@@ -356,6 +632,7 @@ class _PrinterScannerDetailsScreenState extends State<PrinterScannerDetailsScree
                     ),
                     child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
                   ),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
@@ -387,6 +664,39 @@ class _PrinterScannerDetailsScreenState extends State<PrinterScannerDetailsScree
             borderRadius: BorderRadius.all(Radius.circular(6)),
             borderSide: BorderSide(color: AppColors.primaryGold),
           ),
+        ),
+      ),
+    );
+  }
+
+  List<String> get _leftIssues => _issues.sublist(0, (_issues.length / 2).ceil());
+  List<String> get _rightIssues => _issues.sublist((_issues.length / 2).ceil());
+
+  Widget _buildRadioTile(String issue) {
+    final isSelected = _selectedIssue == issue;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedIssue = issue),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4.0),
+        child: Row(
+          children: [
+            Icon(
+              isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+              size: 20,
+              color: isSelected ? AppColors.primaryGold : Colors.grey,
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                issue,
+                style: AppTextStyles.bodySmall.copyWith(
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
       ),
     );

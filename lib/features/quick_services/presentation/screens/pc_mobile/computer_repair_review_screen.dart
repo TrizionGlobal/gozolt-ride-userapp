@@ -75,17 +75,12 @@ class _ComputerRepairReviewScreenState extends ConsumerState<ComputerRepairRevie
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final dateStr = DateFormat('dd MMM yyyy').format(_bookingData.scheduleDate);
     final timeStr = _bookingData.scheduleTime.format(context);
     final addressStr = _bookingData.location.address;
 
-    final deviceType = _bookingData.computerDeviceType ?? 'Laptop';
-    final deviceBrand = _bookingData.computerBrand ?? 'Dell';
-    final deviceModel = _bookingData.computerModel ?? 'Inspiron 15';
-    final os = _bookingData.computerOS ?? 'Windows';
-    final issue = _bookingData.computerIssue ?? 'Battery / Charging';
-
-    final fullDeviceSpec = '$deviceType - $deviceBrand $deviceModel - $os';
+    final devices = _bookingData.computerDevices ?? [];
 
     final whatYouNeed = _bookingData.whatYouNeed;
     final describeIssue = _bookingData.describeIssue;
@@ -122,50 +117,63 @@ class _ComputerRepairReviewScreenState extends ConsumerState<ComputerRepairRevie
                           children: [
                             Container(
                               padding: const EdgeInsets.all(8),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFFFF8E1),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGold.withOpacity(0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
                                 Icons.computer,
-                                color: Color(0xFFF57F17),
-                                size: 22,
+                                color: AppColors.primaryGold,
+                                size: 24,
                               ),
                             ),
                             const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Computer & Laptop Repair',
-                                    style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
-                                  ),
-                                  Text(
-                                    fullDeviceSpec,
-                                    style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700]),
-                                  ),
-                                ],
-                              ),
+                            Text(
+                              'Booking details',
+                              style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
                         const Divider(height: 24),
+                        // Date & Time
+                        Row(
+                          children: [
+                            const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
+                            const SizedBox(width: 10),
+                            Text('$dateStr • $timeStr', style: AppTextStyles.bodyMedium),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
 
-                        _buildDetailRow('Issue:', issue),
-                        _buildDetailRow('Date & Time:', '$dateStr • $timeStr'),
-                        _buildDetailRow('Location:', addressStr),
-                        _buildDetailRow('Customer:', _bookingData.userName),
+                        // Location
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.location_on, size: 18, color: Colors.grey),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(addressStr, style: AppTextStyles.bodyMedium),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Customer
+                        Row(
+                          children: [
+                            const Icon(Icons.person, size: 18, color: Colors.grey),
+                            const SizedBox(width: 10),
+                            Text('Customer: ${_bookingData.userName}', style: AppTextStyles.bodyMedium),
+                          ],
+                        ),
                       ],
                     ),
                   ),
 
                   const SizedBox(height: 16),
 
-                  // Customer & Additional Details Card
-                  if ((whatYouNeed != null && whatYouNeed.trim().isNotEmpty) ||
-                      (describeIssue != null && describeIssue.trim().isNotEmpty) ||
-                      (uploadedImages != null && uploadedImages.isNotEmpty))
+                  // Devices Card
+                  if (devices.isNotEmpty)
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -176,97 +184,151 @@ class _ComputerRepairReviewScreenState extends ConsumerState<ComputerRepairRevie
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Tell Us What You Need section
+                          Text(
+                            'Computers/Laptops (${devices.length})',
+                            style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 12),
+                          ...devices.asMap().entries.map((entry) {
+                            final i = entry.key;
+                            final d = entry.value;
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12.0),
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: isDark ? Colors.grey[850] : Colors.grey[50],
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${d.brand} ${d.model}',
+                                      style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    _buildDetailRow('Type:', d.deviceType),
+                                    if (d.operatingSystem != null && d.operatingSystem!.isNotEmpty)
+                                      _buildDetailRow('OS:', d.operatingSystem!),
+                                    _buildDetailRow('Issue:', d.issue),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        // Additional Details section (inline, like car mechanic)
+                        if ((whatYouNeed != null && whatYouNeed.trim().isNotEmpty) ||
+                            (describeIssue != null && describeIssue.trim().isNotEmpty) ||
+                            (uploadedImages != null && uploadedImages.isNotEmpty)) ...[
+                          const SizedBox(height: 8),
+                          const Divider(),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Additional Details',
+                            style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 12),
                           if (whatYouNeed != null && whatYouNeed.trim().isNotEmpty) ...[
-                            Text(
-                              'Tell us what you need',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: Colors.grey,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(Icons.chat_bubble_outline, size: 18, color: Colors.grey),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'What You Need: $whatYouNeed',
+                                    style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700]),
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              whatYouNeed,
-                              style: AppTextStyles.bodyMedium,
-                            ),
+                            const SizedBox(height: 10),
                           ],
-
-                          // Describe Issue section
                           if (describeIssue != null && describeIssue.trim().isNotEmpty) ...[
-                            if (whatYouNeed != null && whatYouNeed.trim().isNotEmpty) const Divider(height: 20),
-                            Text(
-                              'Description',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: Colors.grey,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(Icons.note_alt_outlined, size: 18, color: Colors.grey),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Issue description: $describeIssue',
+                                    style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700]),
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              describeIssue,
-                              style: AppTextStyles.bodyMedium,
-                            ),
+                            const SizedBox(height: 10),
                           ],
-
-                          // Uploaded Images section
                           if (uploadedImages != null && uploadedImages.isNotEmpty) ...[
-                            const Divider(height: 20),
-                            Text(
-                              'Attached Photos (${uploadedImages.length})',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: Colors.grey,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            SizedBox(
-                              height: 75,
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: uploadedImages.length,
-                                itemBuilder: (context, index) {
-                                  final imgPath = uploadedImages[index];
-                                  final file = File(imgPath);
-                                  return GestureDetector(
-                                    onTap: () {
-                                      if (file.existsSync()) {
-                                        _showFullImage(context, file);
-                                      }
-                                    },
-                                    child: Container(
-                                      margin: const EdgeInsets.only(right: 10),
-                                      width: 75,
-                                      height: 75,
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: file.existsSync()
-                                            ? Image.file(file, fit: BoxFit.cover)
-                                            : Container(
-                                                color: Colors.grey.shade300,
-                                                child: const Icon(Icons.image, color: Colors.grey),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(Icons.image_outlined, size: 18, color: Colors.grey),
+                                const SizedBox(width: 10),
+                                Text('Attached Photo (${uploadedImages.length})', style: AppTextStyles.bodySmall),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: SizedBox(
+                                    height: 40,
+                                    child: Align(
+                                      alignment: Alignment.centerRight,
+                                      child: ListView.builder(
+                                        scrollDirection: Axis.horizontal,
+                                        shrinkWrap: true,
+                                        itemCount: uploadedImages.length,
+                                        itemBuilder: (context, index) {
+                                          final imgPath = uploadedImages[index];
+                                          final file = File(imgPath);
+                                          return GestureDetector(
+                                            onTap: () {
+                                              if (file.existsSync()) {
+                                                _showFullImage(context, file);
+                                              }
+                                            },
+                                            child: Padding(
+                                              padding: const EdgeInsets.only(left: 4.0),
+                                              child: ClipRRect(
+                                                borderRadius: BorderRadius.circular(4),
+                                                child: file.existsSync()
+                                                    ? Image.file(
+                                                        file,
+                                                        width: 40,
+                                                        height: 40,
+                                                        fit: BoxFit.cover,
+                                                      )
+                                                    : Container(
+                                                        width: 40,
+                                                        height: 40,
+                                                        color: Colors.grey.shade300,
+                                                        child: const Icon(Icons.image, color: Colors.grey, size: 20),
+                                                      ),
                                               ),
+                                            ),
+                                          );
+                                        },
                                       ),
                                     ),
-                                  );
-                                },
-                              ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ],
-                      ),
+                      ],
                     ),
+                  ),
 
-                  if ((whatYouNeed != null && whatYouNeed.trim().isNotEmpty) ||
-                      (describeIssue != null && describeIssue.trim().isNotEmpty) ||
-                      (uploadedImages != null && uploadedImages.isNotEmpty))
-                    const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
                   // Price Summary Card
                   QuickServicesPriceSummary(
                     bookingData: _bookingData, 
                     useGoCoins: _useGoCoins, 
                     onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),
+                    showAdditionalDetails: false,
                   ),
 
                   const SizedBox(height: 16),
@@ -281,7 +343,7 @@ class _ComputerRepairReviewScreenState extends ConsumerState<ComputerRepairRevie
                   // Confirm Booking Button
                   ElevatedButton(
                     onPressed: () {
-                  final finalTotal = (_bookingData.upfrontBookingFee - (_useGoCoins ? _bookingData.upfrontBookingFee.clamp(0.0, 6.0) : 0.0)).clamp(0.0, double.infinity);
+                  final finalTotal = ((_bookingData.upfrontBookingFee + _bookingData.materialCost) - (_useGoCoins ? (_bookingData.upfrontBookingFee + _bookingData.materialCost).clamp(0.0, 6.0) : 0.0)).clamp(0.0, double.infinity);
                       
                   if (finalTotal <= 0.0) {
                     final updatedData = _bookingData.copyWith(
@@ -344,16 +406,16 @@ class _ComputerRepairReviewScreenState extends ConsumerState<ComputerRepairRevie
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 110,
+            width: 100,
             child: Text(
               label,
-              style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey),
+              style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600]),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+              style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w500),
             ),
           ),
         ],

@@ -7,24 +7,29 @@ import '../../../../rewards/presentation/providers/rewards_providers.dart';
 import '../../../../../core/constants/asset_paths.dart';
 
 import 'package:go_router/go_router.dart';
-import '../../../../../core/router/route_names.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/constants/app_text_styles.dart';
-import '../../widgets/quick_services_header.dart';
+import '../../../../../core/router/route_names.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_price_summary.dart';
+import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_booking_summary.dart';
 import '../../../../ride/data/models/saved_payment_method.dart';
 
-class PlumbingReviewScreen extends ConsumerStatefulWidget {
+
+class EventsElectricReviewScreen extends ConsumerStatefulWidget {
+  const EventsElectricReviewScreen({
+    super.key,
+    required this.bookingData,
+  });
+
   final QuickServiceBookingData bookingData;
-  const PlumbingReviewScreen({super.key, required this.bookingData});
 
   @override
-  ConsumerState<PlumbingReviewScreen> createState() => _PlumbingReviewScreenState();
+  ConsumerState<EventsElectricReviewScreen> createState() => _EventsElectricReviewScreenState();
 }
 
-class _PlumbingReviewScreenState extends ConsumerState<PlumbingReviewScreen> {
+class _EventsElectricReviewScreenState extends ConsumerState<EventsElectricReviewScreen> {
   bool _useGoCoins = false;
   late QuickServiceBookingData _bookingData;
   bool _useCoins = false;
@@ -35,8 +40,6 @@ class _PlumbingReviewScreenState extends ConsumerState<PlumbingReviewScreen> {
     _bookingData = widget.bookingData;
   }
 
-  bool useCoins = false;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -44,7 +47,10 @@ class _PlumbingReviewScreenState extends ConsumerState<PlumbingReviewScreen> {
       body: Column(
         children: [
           const QuickServicesHeader(
-            currentStep: 2,title: 'Review & Book', subtitle: 'Plumbing Repair'),
+            currentStep: 2,
+            title: 'Review & Book',
+            subtitle: 'Events Electric',
+          ),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
@@ -53,7 +59,7 @@ class _PlumbingReviewScreenState extends ConsumerState<PlumbingReviewScreen> {
             children: [
               QuickServicesBookingSummary(
                 bookingData: _bookingData,
-                icon: Icons.plumbing,
+                icon: Icons.bolt,
               ),
               const SizedBox(height: 12),
                             QuickServicesPriceSummary(bookingData: _bookingData, useGoCoins: _useGoCoins, onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),),
@@ -69,12 +75,14 @@ class _PlumbingReviewScreenState extends ConsumerState<PlumbingReviewScreen> {
           
           const SizedBox(height: 16),
 
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-              child: ElevatedButton(
-                onPressed: () {
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
                   final finalTotal = ((_bookingData.upfrontBookingFee + _bookingData.materialCost) - (_useGoCoins ? (_bookingData.upfrontBookingFee + _bookingData.materialCost).clamp(0.0, 6.0) : 0.0)).clamp(0.0, double.infinity);
                       
                   if (finalTotal <= 0.0) {
@@ -83,7 +91,7 @@ class _PlumbingReviewScreenState extends ConsumerState<PlumbingReviewScreen> {
                       useGoCoins: _useGoCoins,
                     );
                     context.pushNamed(
-                      RouteNames.quickServicesPlumbingConfirmation,
+                      RouteNames.quickServicesEventsElectricConfirmation,
                       extra: updatedData,
                     );
                   } else {
@@ -103,7 +111,7 @@ class _PlumbingReviewScreenState extends ConsumerState<PlumbingReviewScreen> {
                             useGoCoins: _useGoCoins,
                           );
                           context.pushNamed(
-                            RouteNames.quickServicesPlumbingConfirmation,
+                            RouteNames.quickServicesEventsElectricConfirmation,
                             extra: updatedData,
                           );
                         },
@@ -111,7 +119,7 @@ class _PlumbingReviewScreenState extends ConsumerState<PlumbingReviewScreen> {
                     );
                   }
                 },
-                style: ElevatedButton.styleFrom(
+                    style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,
                       foregroundColor: Colors.black,
                       minimumSize: const Size(double.infinity, 50),
@@ -119,36 +127,18 @@ class _PlumbingReviewScreenState extends ConsumerState<PlumbingReviewScreen> {
                       elevation: 0,
                     ),
                     child: Text('Confirm Booking', style: AppTextStyles.button.copyWith(color: Colors.black)),
+                  ),
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPriceRow(String label, String price, {bool isDiscount = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(fontSize: 14)),
-          Text(price, style: TextStyle(fontSize: 14, color: isDiscount ? Colors.red : null)),
-        ],
-      ),
-    );
-  }
-
-  double _calculateTotal() {
-    double total = _bookingData.estimatedTotalMin;
-    if (useCoins) total -= 2.00;
-    return total > 0 ? total : 0;
-  }
+          ],
+        ),
+      );
+    }
+  
 
   String _formatDate(DateTime date) {
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    final weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    return '${date.day} ${months[date.month - 1]} ${date.year} • ${weekdays[date.weekday - 1]}';
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${date.day} ${months[date.month - 1]}, ${date.year}';
   }
 }

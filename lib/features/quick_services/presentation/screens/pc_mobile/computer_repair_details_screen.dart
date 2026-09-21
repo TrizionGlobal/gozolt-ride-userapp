@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/constants/app_text_styles.dart';
 import '../../../../../core/router/route_names.dart';
+import '../../../../../core/config/quick_services_pricing_config.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_additional_details.dart';
@@ -18,13 +19,15 @@ class ComputerRepairDetailsScreen extends StatefulWidget {
 }
 
 class _ComputerRepairDetailsScreenState extends State<ComputerRepairDetailsScreen> {
-  String _materialPreference = 'Bring materials';
+  String _materialPreference = 'Bring tools';
   String? _selectedDeviceType;
   String? _selectedBrand;
   String? _selectedModel;
-  String? _selectedOS;
   String? _selectedIssue;
 
+  final List<ComputerDevice> _savedComputers = [];
+
+  final TextEditingController _customDeviceTypeController = TextEditingController();
   final TextEditingController _customBrandController = TextEditingController();
   final TextEditingController _customModelController = TextEditingController();
   final TextEditingController _whatYouNeedController = TextEditingController();
@@ -117,14 +120,6 @@ class _ComputerRepairDetailsScreenState extends State<ComputerRepairDetailsScree
   List<String> get _currentModels =>
       _selectedBrand != null ? (_brandModelsMap[_selectedBrand] ?? const ['Other Model']) : const [];
 
-  final List<String> _operatingSystems = [
-    'Windows',
-    'macOS',
-    'Linux',
-    'Not Sure',
-    'Other',
-  ];
-
   final List<String> _leftIssues = [
     "Won't Power On",
     'Keyboard / Touchpad',
@@ -152,8 +147,72 @@ class _ComputerRepairDetailsScreenState extends State<ComputerRepairDetailsScree
     }
   }
 
+
+  void _addComputer() {
+    final finalDeviceType = _selectedDeviceType == 'Other Device'
+        ? _customDeviceTypeController.text.trim()
+        : _selectedDeviceType;
+        
+    if (finalDeviceType == null || finalDeviceType.isEmpty) {
+      _showError('Please select or enter a device type');
+      return;
+    }
+
+    final finalBrand = _selectedBrand == 'Other'
+        ? _customBrandController.text.trim()
+        : _selectedBrand;
+
+    if (finalBrand == null || finalBrand.isEmpty) {
+      _showError('Please select or enter a brand');
+      return;
+    }
+
+    final finalModel = (_selectedModel == 'Other' || _selectedModel == 'Other Model')
+        ? _customModelController.text.trim()
+        : _selectedModel;
+
+    if (finalModel == null || finalModel.isEmpty) {
+      _showError('Please select or enter a model');
+      return;
+    }
+
+    if (_selectedIssue == null) {
+      _showError('Please select an issue');
+      return;
+    }
+
+    setState(() {
+      _savedComputers.add(
+        ComputerDevice(
+          deviceType: _selectedDeviceType!,
+          brand: finalBrand,
+          model: finalModel,
+          issue: _selectedIssue!,
+        ),
+      );
+      
+      // Reset form
+      _selectedDeviceType = null;
+      _selectedBrand = null;
+      _selectedModel = null;
+      _selectedIssue = null;
+      _customDeviceTypeController.clear();
+      _customBrandController.clear();
+      _customModelController.clear();
+    });
+    
+    FocusScope.of(context).unfocus();
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
+
   @override
   void dispose() {
+    _customDeviceTypeController.dispose();
     _customBrandController.dispose();
     _customModelController.dispose();
     _whatYouNeedController.dispose();
@@ -195,28 +254,56 @@ class _ComputerRepairDetailsScreenState extends State<ComputerRepairDetailsScree
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Device Type Section (2 Column Wrap - No Scroll)
-                  Text(
-                    'Device Type',
-                    style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _deviceTypes.map((type) {
+                  // --- COMPUTER FORM ---
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Add a Computer/Laptop',
+                          style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        // Device Type Section (2 Column Wrap - No Scroll)
+                        Text(
+                          'Device Type',
+                          style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 10),
+                  GridView.builder(
+                    padding: EdgeInsets.zero,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: 2.0,
+                    ),
+                    itemCount: _deviceTypes.length,
+                    itemBuilder: (context, index) {
+                      final type = _deviceTypes[index];
                       final isSelected = _selectedDeviceType == type;
                       IconData iconData;
                       switch (type) {
                         case 'Desktop':
-                        case 'Gaming PC':
                           iconData = Icons.desktop_windows;
                           break;
+                        case 'Gaming PC':
+                          iconData = Icons.sports_esports;
+                          break;
                         case 'All-in-One':
-                          iconData = Icons.computer;
+                          iconData = Icons.tablet_mac;
                           break;
                         case 'Mac':
-                          iconData = Icons.laptop_mac;
+                          iconData = Icons.apple;
                           break;
                         case 'Other Device':
                           iconData = Icons.devices_other;
@@ -229,43 +316,75 @@ class _ComputerRepairDetailsScreenState extends State<ComputerRepairDetailsScree
                       return GestureDetector(
                         onTap: () => setState(() => _selectedDeviceType = type),
                         child: Container(
-                          width: (MediaQuery.of(context).size.width - 40 - 8) / 2,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).cardTheme.color,
-                            borderRadius: BorderRadius.circular(10),
+                            color: isSelected ? AppColors.primaryGold.withValues(alpha: 0.15) : Theme.of(context).cardTheme.color,
+                            borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: isSelected ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
-                              width: isSelected ? 2 : 1,
+                              color: isSelected ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
                             ),
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          child: Stack(
                             children: [
-                              Icon(
-                                iconData,
-                                size: 18,
-                                color: isSelected ? AppColors.primaryGold : Colors.grey,
-                              ),
-                              const SizedBox(width: 6),
-                              Flexible(
-                                child: Text(
-                                  type,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                    color: isSelected
-                                        ? (isDark ? AppColors.primaryGold : Colors.black)
-                                        : null,
-                                  ),
+                              Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      iconData,
+                                      color: isSelected ? AppColors.primaryGold : const Color(0xFF324461),
+                                      size: 28,
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      type,
+                                      textAlign: TextAlign.center,
+                                      style: AppTextStyles.bodySmall.copyWith(
+                                        color: isDark ? Colors.white : Colors.black87,
+                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
+                              if (isSelected)
+                                const Positioned(
+                                  top: 6,
+                                  right: 6,
+                                  child: Icon(Icons.check_circle, color: AppColors.primaryGold, size: 16),
+                                ),
                             ],
                           ),
                         ),
                       );
-                    }).toList(),
+                    },
                   ),
+                  if (_selectedDeviceType == 'Other Device') ...[
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _customDeviceTypeController,
+                      style: AppTextStyles.bodyMedium,
+                      decoration: InputDecoration(
+                        hintText: 'Enter Custom Device Type',
+                        hintStyle: AppTextStyles.bodyMedium.copyWith(color: Colors.grey),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.primaryGold),
+                        ),
+                        filled: true,
+                        fillColor: Theme.of(context).cardTheme.color,
+                      ),
+                    ),
+                  ],
 
                   const SizedBox(height: 20),
 
@@ -399,46 +518,7 @@ class _ComputerRepairDetailsScreenState extends State<ComputerRepairDetailsScree
 
                   const SizedBox(height: 16),
 
-                  // Operating System Chips
-                  Text(
-                    'Operating System',
-                    style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.grey[700]),
-                  ),
-                  const SizedBox(height: 8),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: _operatingSystems.map((os) {
-                        final isSelected = _selectedOS == os;
-                        return GestureDetector(
-                          onTap: () => setState(() => _selectedOS = os),
-                          child: Container(
-                            margin: const EdgeInsets.only(right: 8),
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? (isDark ? Colors.blue.shade900 : const Color(0xFFE3F2FD))
-                                  : Theme.of(context).cardTheme.color,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: isSelected ? Colors.blue : Colors.grey.withOpacity(0.3),
-                                width: isSelected ? 1.5 : 1,
-                              ),
-                            ),
-                            child: Text(
-                              os,
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                color: isSelected ? Colors.blue.shade800 : null,
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
 
-                  const SizedBox(height: 24),
 
                   // What is the issue? (2 Column Radio List)
                   Text(
@@ -463,7 +543,168 @@ class _ComputerRepairDetailsScreenState extends State<ComputerRepairDetailsScree
                     ],
                   ),
 
+
+                  
                   const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: _addComputer,
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        side: const BorderSide(color: AppColors.primaryGold),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text('Add Computer', style: TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // --- LIST OF ADDED COMPUTERS ---
+            if (_savedComputers.isNotEmpty) ...[
+              const SizedBox(height: 32),
+              Text(
+                'Computers & Laptops (${_savedComputers.length})',
+                style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              ListView.separated(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _savedComputers.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 10),
+                itemBuilder: (context, index) {
+                  final computer = _savedComputers[index];
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.grey[850] : Colors.grey[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${computer.brand} ${computer.model}',
+                                style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Type: ${computer.deviceType}',
+                                style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700]),
+                              ),
+                              if (computer.operatingSystem != null && computer.operatingSystem!.isNotEmpty)
+                                Text(
+                                  'OS: ${computer.operatingSystem}',
+                                  style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700]),
+                                ),
+                              Text(
+                                'Issue: ${computer.issue}',
+                                style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700]),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete_outline, color: Colors.red),
+                          onPressed: () {
+                            setState(() {
+                              _savedComputers.removeAt(index);
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+
+            const SizedBox(height: 32),
+
+            // Required Tools Section
+            Text(
+              'Required Tools',
+              style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _materialPreference = _materialPreference == 'Bring tools' ? 'Use my tools' : 'Bring tools';
+                });
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardTheme.color,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _materialPreference == 'Bring tools' ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
+                    width: _materialPreference == 'Bring tools' ? 1.5 : 1,
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGold.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.handyman, size: 24, color: AppColors.primaryGold),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Bring tools', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 2),
+                          Text(
+                            _materialPreference == 'Bring tools'
+                                ? '+\u20ac${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.category).toStringAsFixed(2)} extra charge'
+                                : 'Use my tools (No extra charge)',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: _materialPreference == 'Bring tools' ? AppColors.primaryGold : Colors.grey[600],
+                              fontWeight: _materialPreference == 'Bring tools' ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Transform.scale(
+                      scale: 0.8,
+                      child: Switch.adaptive(
+                        value: _materialPreference == 'Bring tools',
+                        activeColor: isDark ? AppColors.backgroundDark : Colors.white,
+                        activeTrackColor: AppColors.primaryGold,
+                        inactiveTrackColor: Colors.grey[300],
+                        onChanged: (val) {
+                          setState(() {
+                            _materialPreference = val ? 'Bring tools' : 'Use my tools';
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
 
                   // Reusable Tell Us What You Need, Describe Issue & Image Picker Section
                   QuickServicesAdditionalDetails(
@@ -525,21 +766,19 @@ class _ComputerRepairDetailsScreenState extends State<ComputerRepairDetailsScree
                   // Continue Button
                   ElevatedButton(
                     onPressed: () {
-                      final finalBrand = (_selectedBrand == 'Other' && _customBrandController.text.trim().isNotEmpty)
-                          ? _customBrandController.text.trim()
-                          : _selectedBrand;
-
-                      final finalModel = ((_selectedModel == 'Other' || _selectedModel == 'Other Model') && _customModelController.text.trim().isNotEmpty)
-                          ? _customModelController.text.trim()
-                          : _selectedModel;
+                      if (_savedComputers.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please add at least one computer before continuing.'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
 
                       final updatedData = widget.bookingData.copyWith(
                         selectedServiceTitle: 'Computer & Laptop Repair',
-                        computerDeviceType: _selectedDeviceType,
-                        computerBrand: finalBrand,
-                        computerModel: finalModel,
-                        computerOS: _selectedOS,
-                        computerIssue: _selectedIssue,
+                        computerDevices: _savedComputers,
                         whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty
                             ? _whatYouNeedController.text.trim()
                             : null,
@@ -568,6 +807,7 @@ class _ComputerRepairDetailsScreenState extends State<ComputerRepairDetailsScree
                     ),
                     child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
                   ),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),

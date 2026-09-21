@@ -39,6 +39,15 @@ class SharedQuickServiceConfirmationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String qrData = '''
+Booking Reference: GZT-QS-260905-1845
+Service: ${bookingData.selectedServiceTitle ?? defaultTitle}
+Date: ${_formatDate(bookingData.scheduleDate)}
+Time: ${bookingData.scheduleTime.format(context)}
+Location: ${bookingData.location.address}
+Amount Paid: €${((bookingData.upfrontBookingFee + bookingData.materialCost) - (bookingData.useGoCoins ? (bookingData.upfrontBookingFee + bookingData.materialCost).clamp(0.0, 6.0) : 0.0)).toStringAsFixed(2)}
+'''.trim();
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
@@ -51,14 +60,14 @@ class SharedQuickServiceConfirmationScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const Icon(Icons.check_circle,
-                        color: Colors.green, size: 64),
-                    const SizedBox(height: 16),
+                        color: Colors.green, size: 48),
+                    const SizedBox(height: 8),
                     Text(
                       'Your booking is confirmed!',
                       textAlign: TextAlign.center,
-                      style: AppTextStyles.titleLarge,
+                      style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     Text(
                       'Service ID',
                       textAlign: TextAlign.center,
@@ -69,15 +78,15 @@ class SharedQuickServiceConfirmationScreen extends StatelessWidget {
                     Text(
                       'GZT-QS-260905-1845', // Hardcoded dummy ID for now
                       textAlign: TextAlign.center,
-                      style: AppTextStyles.titleLarge.copyWith(
-                          fontWeight: FontWeight.w900, letterSpacing: 1.5),
+                      style: AppTextStyles.titleMedium.copyWith(
+                          fontWeight: FontWeight.bold, letterSpacing: 1.2),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 12),
                     Center(
                       child: QrImageView(
-                        data: 'GZT-QS-260905-1845',
+                        data: qrData,
                         version: QrVersions.auto,
-                        size: 160.0,
+                        size: 120.0,
                         backgroundColor: Colors.white,
                         eyeStyle: const QrEyeStyle(
                             eyeShape: QrEyeShape.square, color: Colors.black),
@@ -86,13 +95,13 @@ class SharedQuickServiceConfirmationScreen extends StatelessWidget {
                             color: Colors.black),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
                     const Text(
                       'Show QR code to the service professional',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 12, color: Colors.grey),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 16),
 
                     // Booking Details Box
                     Container(
@@ -131,7 +140,7 @@ class SharedQuickServiceConfirmationScreen extends StatelessWidget {
                           const Divider(height: 24),
                           _buildDetailRow(
                             'Amount Paid Now',
-                            '€${(bookingData.upfrontBookingFee - (bookingData.useGoCoins ? 2.0 : 0.0)).toStringAsFixed(2)}',
+                            '€${((bookingData.upfrontBookingFee + bookingData.materialCost) - (bookingData.useGoCoins ? (bookingData.upfrontBookingFee + bookingData.materialCost).clamp(0.0, 6.0) : 0.0)).toStringAsFixed(2)}',
                             isTotal: false,
                           ),
                           _buildDetailRow(
@@ -142,7 +151,7 @@ class SharedQuickServiceConfirmationScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),
@@ -178,24 +187,28 @@ class SharedQuickServiceConfirmationScreen extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: Colors.grey.shade600,
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+          Expanded(
+            flex: 1,
+            child: Text(
+              label,
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Colors.grey.shade600,
+                fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+              ),
             ),
           ),
+          const SizedBox(width: 16),
           Expanded(
+            flex: 1,
             child: Text(
               value,
               textAlign: TextAlign.right,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
               style: AppTextStyles.bodyMedium.copyWith(
                 fontWeight: FontWeight.bold,
                 color: isTotal ? AppColors.primaryGold : null,
-                fontSize: isTotal ? 16 : null,
+                fontSize: isTotal ? 14 : null, // 16 might be too large for long text
               ),
             ),
           ),

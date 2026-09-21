@@ -79,6 +79,8 @@ import '../../features/quick_services/presentation/screens/electrical_mechanic/l
 
 import '../../features/quick_services/presentation/screens/electrical_mechanic/home_electric_details_screen.dart';
 import '../../features/quick_services/presentation/screens/electrical_mechanic/home_electric_review_screen.dart';
+import '../../features/quick_services/presentation/screens/electrical_mechanic/events_electric_details_screen.dart';
+import '../../features/quick_services/presentation/screens/electrical_mechanic/events_electric_review_screen.dart';
 
 import '../../features/quick_services/presentation/screens/home_services/handyman_details_screen.dart';
 import '../../features/quick_services/presentation/screens/home_services/handyman_review_screen.dart';
@@ -1257,6 +1259,30 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
           return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.electrical_services, defaultTitle: 'Electrical');
+        },
+      ),
+      GoRoute(
+        path: '/events-electric',
+        name: RouteNames.quickServicesEventsElectric,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return EventsElectricDetailsScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/events-electric-review',
+        name: RouteNames.quickServicesEventsElectricReview,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return EventsElectricReviewScreen(bookingData: bookingData);
+        },
+      ),
+      GoRoute(
+        path: '/events-electric-confirmation',
+        name: RouteNames.quickServicesEventsElectricConfirmation,
+        builder: (context, state) {
+          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.event, defaultTitle: 'Events Electric');
         },
       ),
       GoRoute(

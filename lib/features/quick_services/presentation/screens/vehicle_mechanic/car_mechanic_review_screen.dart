@@ -258,28 +258,33 @@ class _CarMechanicReviewScreenState extends ConsumerState<CarMechanicReviewScree
                                 const Icon(Icons.image_outlined, size: 18, color: Colors.grey),
                                 const SizedBox(width: 10),
                                 Text('Attached Photo (${_bookingData.uploadedImages!.length})', style: AppTextStyles.bodySmall),
-                                const Spacer(),
-                                SizedBox(
-                                  height: 40,
-                                  child: ListView.builder(
-                                    scrollDirection: Axis.horizontal,
-                                    shrinkWrap: true,
-                                    itemCount: _bookingData.uploadedImages!.length,
-                                    itemBuilder: (context, index) {
-                                      final path = _bookingData.uploadedImages![index];
-                                      return Padding(
-                                        padding: const EdgeInsets.only(left: 4.0),
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(4),
-                                          child: Image.file(
-                                            File(path),
-                                            width: 40,
-                                            height: 40,
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                      );
-                                    },
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: SizedBox(
+                                    height: 40,
+                                    child: Align(
+                                      alignment: Alignment.centerRight,
+                                      child: ListView.builder(
+                                        scrollDirection: Axis.horizontal,
+                                        shrinkWrap: true,
+                                        itemCount: _bookingData.uploadedImages!.length,
+                                        itemBuilder: (context, index) {
+                                          final path = _bookingData.uploadedImages![index];
+                                          return Padding(
+                                            padding: const EdgeInsets.only(left: 4.0),
+                                            child: ClipRRect(
+                                              borderRadius: BorderRadius.circular(4),
+                                              child: Image.file(
+                                                File(path),
+                                                width: 40,
+                                                height: 40,
+                                                fit: BoxFit.cover,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -304,7 +309,7 @@ class _CarMechanicReviewScreenState extends ConsumerState<CarMechanicReviewScree
                   // Confirm Booking Button
                   ElevatedButton(
                     onPressed: () {
-                      final finalTotal = (_bookingData.upfrontBookingFee - (_useGoCoins ? _bookingData.upfrontBookingFee.clamp(0.0, 6.0) : 0.0)).clamp(0.0, double.infinity);
+                      final finalTotal = ((_bookingData.upfrontBookingFee + _bookingData.materialCost) - (_useGoCoins ? (_bookingData.upfrontBookingFee + _bookingData.materialCost).clamp(0.0, 6.0) : 0.0)).clamp(0.0, double.infinity);
                       
                       if (finalTotal <= 0.0) {
                         final updatedData = _bookingData.copyWith(

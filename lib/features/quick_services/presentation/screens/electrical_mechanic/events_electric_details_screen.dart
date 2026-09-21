@@ -10,48 +10,42 @@ import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_additional_details.dart';
 import '../../../../../core/config/quick_services_pricing_config.dart';
 
-class HomeElectricDetailsScreen extends StatefulWidget {
+class EventsElectricDetailsScreen extends StatefulWidget {
   final QuickServiceBookingData bookingData;
 
-  const HomeElectricDetailsScreen({super.key, required this.bookingData});
+  const EventsElectricDetailsScreen({super.key, required this.bookingData});
 
   @override
-  State<HomeElectricDetailsScreen> createState() => _HomeElectricDetailsScreenState();
+  State<EventsElectricDetailsScreen> createState() => _EventsElectricDetailsScreenState();
 }
 
-class _HomeElectricDetailsScreenState extends State<HomeElectricDetailsScreen> {
+class _EventsElectricDetailsScreenState extends State<EventsElectricDetailsScreen> {
   String _materialPreference = 'Bring tools';
   final Map<String, int> _counts = {
-    'Switch / Socket': 0,
-    'Light Installation': 0,
-    'Ceiling Fan Installation': 0,
-    'Circuit Breaker / Tripping': 0,
-    'Electrical Wiring Issue': 0,
-    'Doorbell Installation': 0,
-    'Appliance Electrical Connection': 0,
-    'CCTV Installation': 0,
+    'Stage Lighting Setup': 0,
+    'Sound System Power': 0,
+    'Generator Connection': 0,
+    'Temporary Event Wiring': 0,
+    'AV Equipment Setup': 0,
+    'Special Effects Power': 0,
   };
 
   final Map<String, IconData> _icons = {
-    'Switch / Socket': Icons.power_outlined,
-    'Light Installation': Icons.lightbulb_outline,
-    'Ceiling Fan Installation': Icons.mode_fan_off_outlined,
-    'Circuit Breaker / Tripping': Icons.electric_meter_outlined,
-    'Electrical Wiring Issue': Icons.cable_outlined,
-    'Doorbell Installation': Icons.notifications_outlined,
-    'Appliance Electrical Connection': Icons.electrical_services_outlined,
-    'CCTV Installation': Icons.videocam_outlined,
+    'Stage Lighting Setup': Icons.light,
+    'Sound System Power': Icons.speaker,
+    'Generator Connection': Icons.power,
+    'Temporary Event Wiring': Icons.cable,
+    'AV Equipment Setup': Icons.tv,
+    'Special Effects Power': Icons.auto_awesome,
   };
 
   final Map<String, double> _hours = {
-    'Switch / Socket': 0.5,
-    'Light Installation': 0.5,
-    'Ceiling Fan Installation': 1.0,
-    'Circuit Breaker / Tripping': 1.5,
-    'Electrical Wiring Issue': 2.0,
-    'Doorbell Installation': 0.5,
-    'Appliance Electrical Connection': 1.0,
-    'CCTV Installation': 2.0,
+    'Stage Lighting Setup': 2.0,
+    'Sound System Power': 1.5,
+    'Generator Connection': 1.0,
+    'Temporary Event Wiring': 2.0,
+    'AV Equipment Setup': 1.5,
+    'Special Effects Power': 1.0,
   };
 
 
@@ -129,7 +123,7 @@ class _HomeElectricDetailsScreenState extends State<HomeElectricDetailsScreen> {
     }
 
     final updatedData = widget.bookingData.copyWith(
-      selectedServiceTitle: 'Home Electric',
+      selectedServiceTitle: 'Events Electric',
       selectedAddons: selectedAddons,
       whatYouNeed: _whatYouNeedController.text.trim(),
       describeIssue: _describeIssueController.text.trim(),
@@ -139,7 +133,7 @@ class _HomeElectricDetailsScreenState extends State<HomeElectricDetailsScreen> {
                         materialPreference: _materialPreference,
     );
 
-    context.pushNamed(RouteNames.quickServicesElectricalReview, extra: updatedData);
+    context.pushNamed(RouteNames.quickServicesEventsElectricReview, extra: updatedData);
   }
 
   @override
@@ -152,7 +146,7 @@ class _HomeElectricDetailsScreenState extends State<HomeElectricDetailsScreen> {
           const QuickServicesHeader(
             currentStep: 1,
             title: 'Service Requirements',
-            subtitle: 'Home Electric',
+            subtitle: 'Events Electric',
           ),
           Expanded(
             child: SingleChildScrollView(

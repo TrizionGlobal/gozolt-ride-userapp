@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/constants/app_text_styles.dart';
 import '../../../../../core/router/route_names.dart';
+import '../../../../../core/config/quick_services_pricing_config.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_additional_details.dart';
@@ -18,21 +19,65 @@ class MobileRepairDetailsScreen extends StatefulWidget {
 }
 
 class _MobileRepairDetailsScreenState extends State<MobileRepairDetailsScreen> {
-  String _materialPreference = 'Bring materials';
+  String _materialPreference = 'Bring tools';
+  String? _selectedIssue;
+  
+  final List<MobileDevice> _savedDevices = [];
+
+  void _addDevice() {
+    final finalDeviceType = _selectedDeviceType == 'Other Device' ? _customDeviceTypeController.text.trim() : _selectedDeviceType;
+    final finalBrand = _selectedBrand == 'Other' ? _customBrandController.text.trim() : _selectedBrand;
+    final finalModel = _selectedModel == 'Other Model' ? _customModelController.text.trim() : _selectedModel;
+
+    if (finalDeviceType == null || finalDeviceType.isEmpty ||
+        finalBrand == null || finalBrand.isEmpty ||
+        finalModel == null || finalModel.isEmpty ||
+        _selectedIssue == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select or enter device type, brand, model, and an issue.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _savedDevices.add(MobileDevice(
+        deviceType: finalDeviceType,
+        deviceBrand: finalBrand,
+        deviceModel: finalModel,
+        issue: _selectedIssue!,
+      ));
+
+      // Reset form
+      _selectedDeviceType = null;
+      _selectedBrand = null;
+      _selectedModel = null;
+      _selectedIssue = null;
+      
+      _customDeviceTypeController.clear();
+      _customBrandController.clear();
+      _customModelController.clear();
+
+      FocusScope.of(context).unfocus();
+    });
+  }
+
+  void _removeDevice(int index) {
+    setState(() {
+      _savedDevices.removeAt(index);
+    });
+  }
+
   String? _selectedDeviceType;
   String? _selectedBrand;
   String? _selectedModel;
-  String? _selectedOS;
-  String? _selectedIssue;
-  int _deviceCount = 1;
-
+  
+  final TextEditingController _customDeviceTypeController = TextEditingController();
   final TextEditingController _customBrandController = TextEditingController();
   final TextEditingController _customModelController = TextEditingController();
-  final TextEditingController _whatYouNeedController = TextEditingController();
-  final TextEditingController _describeIssueController = TextEditingController();
-  final List<XFile> _selectedImages = [];
-  final ImagePicker _picker = ImagePicker();
-
+  
   final List<String> _deviceTypes = ['Smartphone', 'Tablet', 'Smartwatch', 'Other Device'];
   
   final List<String> _brands = [
@@ -116,7 +161,10 @@ class _MobileRepairDetailsScreenState extends State<MobileRepairDetailsScreen> {
   List<String> get _currentModels =>
       _selectedBrand != null ? (_brandModelsMap[_selectedBrand] ?? const ['Other Model']) : const [];
 
-  final List<String> _operatingSystems = ['Android', 'iOS', 'Other'];
+  final TextEditingController _whatYouNeedController = TextEditingController();
+  final TextEditingController _describeIssueController = TextEditingController();
+  final List<XFile> _selectedImages = [];
+  final ImagePicker _picker = ImagePicker();
 
   final List<String> _leftIssues = [
     'Screen / Display Damage',
@@ -147,12 +195,73 @@ class _MobileRepairDetailsScreenState extends State<MobileRepairDetailsScreen> {
 
   @override
   void dispose() {
+    _customDeviceTypeController.dispose();
     _customBrandController.dispose();
     _customModelController.dispose();
     _whatYouNeedController.dispose();
     _describeIssueController.dispose();
     super.dispose();
   }
+
+  Widget _buildCustomTextField(TextEditingController controller, String hint) {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      child: TextFormField(
+        controller: controller,
+        style: AppTextStyles.bodyMedium,
+        textCapitalization: TextCapitalization.words,
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: AppTextStyles.bodyMedium.copyWith(color: Colors.grey),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.primaryGold),
+          ),
+          filled: true,
+          fillColor: Theme.of(context).cardTheme.color,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLabel(String text) {
+    return Text(
+      text,
+      style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.grey[700]),
+    );
+  }
+
+  Widget _buildDeviceDetailRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 52,
+          child: Text(
+            '$label:',
+            style: AppTextStyles.bodySmall.copyWith(color: Colors.grey, fontWeight: FontWeight.w500),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600),
+          ),
+        ),
+      ],
+    );
+  }
+
+
 
   Future<void> _pickImages() async {
     final List<XFile> images = await _picker.pickMultiImage();
@@ -166,10 +275,6 @@ class _MobileRepairDetailsScreenState extends State<MobileRepairDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final currentModels = _currentModels;
-    if (_selectedBrand != null && _selectedModel != null && !currentModels.contains(_selectedModel)) {
-      _selectedModel = currentModels.isNotEmpty ? currentModels.first : null;
-    }
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -177,8 +282,8 @@ class _MobileRepairDetailsScreenState extends State<MobileRepairDetailsScreen> {
         children: [
           const QuickServicesHeader(
             currentStep: 1,
-            title: 'Device & Issue Details',
-            subtitle: 'Mobile Repair at Home',
+            title: 'Service Requirements',
+            subtitle: 'Mobile Repair',
           ),
             
           Expanded(
@@ -188,312 +293,354 @@ class _MobileRepairDetailsScreenState extends State<MobileRepairDetailsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Device Type Section (2 Column Wrap - No Scroll)
-                  Text(
-                    'Device Type',
-                    style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _deviceTypes.map((type) {
-                      final isSelected = _selectedDeviceType == type;
-                      IconData iconData;
-                      switch (type) {
-                        case 'Tablet':
-                          iconData = Icons.tablet_android;
-                          break;
-                        case 'Smartwatch':
-                          iconData = Icons.watch;
-                          break;
-                        case 'Other Device':
-                          iconData = Icons.devices_other;
-                          break;
-                        case 'Smartphone':
-                        default:
-                          iconData = Icons.smartphone;
-                          break;
-                      }
-                      return GestureDetector(
-                        onTap: () => setState(() => _selectedDeviceType = type),
-                        child: Container(
-                          width: (MediaQuery.of(context).size.width - 40 - 8) / 2,
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).cardTheme.color,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: isSelected ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
-                              width: isSelected ? 2 : 1,
-                            ),
+                  // --- DEVICE FORM ---
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Add a Device',
+                          style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        // Device Type Section (2 Column Wrap - No Scroll)
+                        Text(
+                          'Device Type',
+                          style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 10),
+                        GridView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                            childAspectRatio: 2.0,
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                iconData,
-                                size: 18,
-                                color: isSelected ? AppColors.primaryGold : Colors.grey,
-                              ),
-                              const SizedBox(width: 6),
-                              Flexible(
-                                child: Text(
-                                  type,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTextStyles.bodyMedium.copyWith(
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                    color: isSelected
-                                        ? (isDark ? AppColors.primaryGold : Colors.black)
-                                        : null,
+                          itemCount: _deviceTypes.length,
+                          itemBuilder: (context, index) {
+                            final type = _deviceTypes[index];
+                            final isSelected = _selectedDeviceType == type;
+                            IconData iconData;
+                            switch (type) {
+                              case 'Smartphone':
+                                iconData = Icons.smartphone;
+                                break;
+                              case 'Tablet':
+                                iconData = Icons.tablet_mac;
+                                break;
+                              case 'Smartwatch':
+                                iconData = Icons.watch;
+                                break;
+                              default:
+                                iconData = Icons.devices;
+                            }
+                            return GestureDetector(
+                              onTap: () => setState(() => _selectedDeviceType = type),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: isSelected ? AppColors.primaryGold.withValues(alpha: 0.15) : Theme.of(context).cardTheme.color,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: isSelected ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
                                   ),
                                 ),
+                                child: Stack(
+                                  children: [
+                                    Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            iconData,
+                                            color: isSelected ? AppColors.primaryGold : const Color(0xFF324461),
+                                            size: 28,
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            type,
+                                            textAlign: TextAlign.center,
+                                            style: AppTextStyles.bodySmall.copyWith(
+                                              color: isDark ? Colors.white : Colors.black87,
+                                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    if (isSelected)
+                                      const Positioned(
+                                        top: 6,
+                                        right: 6,
+                                        child: Icon(Icons.check_circle, color: AppColors.primaryGold, size: 16),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        if (_selectedDeviceType == 'Other Device')
+                          _buildCustomTextField(_customDeviceTypeController, 'Enter custom device type'),
+                        const SizedBox(height: 24),
+                        
+                        // Brand Dropdown & Manual Input
+                        Text(
+                          'Brand',
+                          style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        DropdownButtonFormField<String>(
+                          value: _selectedBrand,
+                          hint: Text('Select Brand', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey)),
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                            ),
+                            filled: true,
+                            fillColor: Theme.of(context).cardTheme.color,
+                          ),
+                          items: _brands.map((brand) {
+                            return DropdownMenuItem<String>(
+                              value: brand,
+                              child: Text(brand, style: AppTextStyles.bodyMedium),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            setState(() {
+                              _selectedBrand = val;
+                              _selectedModel = null;
+                            });
+                          },
+                        ),
+                        if (_selectedBrand == 'Other')
+                          _buildCustomTextField(_customBrandController, 'Enter Brand Name (e.g. Asus, Nothing)'),
+                        
+                        const SizedBox(height: 16),
+                        
+                        // Model Dropdown & Manual Input
+                        Text(
+                          'Model',
+                          style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        DropdownButtonFormField<String>(
+                          value: _selectedModel,
+                          hint: Text('Select Model', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey)),
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                            ),
+                            filled: true,
+                            fillColor: _selectedBrand == null ? Colors.grey.withOpacity(0.1) : Theme.of(context).cardTheme.color,
+                          ),
+                          items: _currentModels.map((model) {
+                            return DropdownMenuItem<String>(
+                              value: model,
+                              child: Text(model, style: AppTextStyles.bodyMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
+                            );
+                          }).toList(),
+                          onChanged: _selectedBrand == null
+                              ? null
+                              : (val) {
+                                  setState(() {
+                                    _selectedModel = val;
+                                  });
+                                },
+                        ),
+                        if (_selectedModel == 'Other Model')
+                          _buildCustomTextField(_customModelController, 'Enter Model Name (e.g. Zenfone 10)'),
+                        const SizedBox(height: 24),
+                        // Select Issue
+                        Text(
+                          'Select Issue',
+                          style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                children: _leftIssues.map((issue) => _buildRadioTile(issue)).toList(),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                children: _rightIssues.map((issue) => _buildRadioTile(issue)).toList(),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton(
+                            onPressed: _addDevice,
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              side: const BorderSide(color: AppColors.primaryGold),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: const Text('Add Device', style: TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // --- LIST OF ADDED DEVICES ---
+                  if (_savedDevices.isNotEmpty) ...[
+                    const SizedBox(height: 32),
+                    Text(
+                      'Mobile Devices (${_savedDevices.length})',
+                      style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    ListView.separated(
+                      padding: EdgeInsets.zero,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _savedDevices.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        final device = _savedDevices[index];
+                        return Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.grey[850] : Colors.grey[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _buildDeviceDetailRow('Type', device.deviceType),
+                                    const SizedBox(height: 4),
+                                    _buildDeviceDetailRow('Device', '${device.deviceBrand} ${device.deviceModel}'),
+                                    if (device.operatingSystem != null && device.operatingSystem!.isNotEmpty) ...[
+                                      const SizedBox(height: 4),
+                                      _buildDeviceDetailRow('OS', device.operatingSystem!),
+                                    ],
+                                    const SizedBox(height: 4),
+                                    _buildDeviceDetailRow('Issue', device.issue),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              GestureDetector(
+                                onTap: () => _removeDevice(index),
+                                child: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
                               ),
                             ],
                           ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Brand Dropdown & Manual Input
-                  Text(
-                    'Brand',
-                    style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.grey[700]),
-                  ),
-                  const SizedBox(height: 6),
-                  DropdownButtonFormField<String>(
-                    value: _selectedBrand,
-                    hint: Text('Select Brand', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey)),
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                      ),
-                      filled: true,
-                      fillColor: Theme.of(context).cardTheme.color,
-                    ),
-                    items: _brands.map((brand) {
-                      return DropdownMenuItem<String>(
-                        value: brand,
-                        child: Text(brand, style: AppTextStyles.bodyMedium),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() {
-                          _selectedBrand = val;
-                          final models = _brandModelsMap[_selectedBrand] ?? ['Other Model'];
-                          _selectedModel = models.first;
-                        });
-                      }
-                    },
-                  ),
-                  if (_selectedBrand == 'Other') ...[
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _customBrandController,
-                      style: AppTextStyles.bodyMedium,
-                      decoration: InputDecoration(
-                        hintText: 'Enter Brand Name (e.g. Motorola, Asus, LG)',
-                        hintStyle: AppTextStyles.bodyMedium.copyWith(color: Colors.grey),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.primaryGold),
-                        ),
-                        filled: true,
-                        fillColor: Theme.of(context).cardTheme.color,
-                      ),
+                        );
+                      },
                     ),
                   ],
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 32),
 
-                  // Model Dropdown & Manual Input
+                  // Required Tools Section
                   Text(
-                    'Model',
-                    style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.grey[700]),
-                  ),
-                  const SizedBox(height: 6),
-                  DropdownButtonFormField<String>(
-                    value: _selectedModel,
-                    hint: Text('Select Model', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey)),
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                      ),
-                      filled: true,
-                      fillColor: Theme.of(context).cardTheme.color,
-                    ),
-                    items: currentModels.map((model) {
-                      return DropdownMenuItem<String>(
-                        value: model,
-                        child: Text(model, style: AppTextStyles.bodyMedium),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() => _selectedModel = val);
-                      }
-                    },
-                  ),
-                  if (_selectedModel == 'Other' || _selectedModel == 'Other Model') ...[
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _customModelController,
-                      style: AppTextStyles.bodyMedium,
-                      decoration: InputDecoration(
-                        hintText: 'Enter Model Name (e.g. Moto G84, ROG Phone)',
-                        hintStyle: AppTextStyles.bodyMedium.copyWith(color: Colors.grey),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.primaryGold),
-                        ),
-                        filled: true,
-                        fillColor: Theme.of(context).cardTheme.color,
-                      ),
-                    ),
-                  ],
-
-                  const SizedBox(height: 16),
-
-                  // Operating System Dropdown
-                  Text(
-                    'Operating System',
-                    style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.grey[700]),
-                  ),
-                  const SizedBox(height: 6),
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedOS,
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                      ),
-                      filled: true,
-                      fillColor: Theme.of(context).cardTheme.color,
-                    ),
-                    items: _operatingSystems.map((os) {
-                      return DropdownMenuItem<String>(
-                        value: os,
-                        child: Text(os, style: AppTextStyles.bodyMedium),
-                      );
-                    }).toList(),
-                    onChanged: (val) => setState(() => _selectedOS = val!),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Select Issue (2 Column Radio List)
-                  Text(
-                    'Select Issue',
+                    'Required Tools',
                     style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          children: _leftIssues.map((issue) => _buildRadioTile(issue)).toList(),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _materialPreference = _materialPreference == 'Bring tools' ? 'Use my tools' : 'Bring tools';
+                      });
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardTheme.color,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _materialPreference == 'Bring tools' ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
+                          width: _materialPreference == 'Bring tools' ? 1.5 : 1,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          children: _rightIssues.map((issue) => _buildRadioTile(issue)).toList(),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Compact Number of Devices Counter
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Number of Devices',
-                        style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      Row(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          GestureDetector(
-                            onTap: _deviceCount > 1
-                                ? () => setState(() => _deviceCount--)
-                                : null,
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Icon(
-                                Icons.remove,
-                                size: 16,
-                                color: _deviceCount > 1 ? null : Colors.grey,
-                              ),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryGold.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.handyman, size: 24, color: AppColors.primaryGold),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Bring tools', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 2),
+                                Text(
+                                  _materialPreference == 'Bring tools'
+                                      ? '+\u20ac${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.category).toStringAsFixed(2)} extra charge'
+                                      : 'Use my tools (No extra charge)',
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: _materialPreference == 'Bring tools' ? AppColors.primaryGold : Colors.grey[600],
+                                    fontWeight: _materialPreference == 'Bring tools' ? FontWeight.bold : FontWeight.normal,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          SizedBox(
-                            width: 32,
-                            child: Text(
-                              '$_deviceCount',
-                              textAlign: TextAlign.center,
-                              style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () => setState(() => _deviceCount++),
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: const Icon(Icons.add, size: 16),
+                          Transform.scale(
+                            scale: 0.8,
+                            child: Switch.adaptive(
+                              value: _materialPreference == 'Bring tools',
+                              activeColor: isDark ? AppColors.backgroundDark : Colors.white,
+                              activeTrackColor: AppColors.primaryGold,
+                              inactiveTrackColor: Colors.grey[300],
+                              onChanged: (val) {
+                                setState(() {
+                                  _materialPreference = val ? 'Bring tools' : 'Use my tools';
+                                });
+                              },
                             ),
                           ),
                         ],
                       ),
-                    ],
+                    ),
                   ),
 
                   const SizedBox(height: 24),
@@ -555,53 +702,25 @@ class _MobileRepairDetailsScreenState extends State<MobileRepairDetailsScreen> {
 
                   const SizedBox(height: 12),
 
-                  // Workshop Disclaimer Banner (Grey Box)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.grey[850] : Colors.grey[100],
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.info_outline, color: Colors.grey[600], size: 20),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'If repair cannot be completed at home, workshop collection requires your approval.',
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: isDark ? Colors.grey[300] : Colors.grey[800],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
 
                   const SizedBox(height: 32),
 
                   // Continue Button
                   ElevatedButton(
                     onPressed: () {
-                      final finalBrand = (_selectedBrand == 'Other' && _customBrandController.text.trim().isNotEmpty)
-                          ? _customBrandController.text.trim()
-                          : _selectedBrand;
-
-                      final finalModel = ((_selectedModel == 'Other' || _selectedModel == 'Other Model') && _customModelController.text.trim().isNotEmpty)
-                          ? _customModelController.text.trim()
-                          : _selectedModel;
+                      if (_savedDevices.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Please add at least one device before continuing.'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                        return;
+                      }
 
                       final updatedData = widget.bookingData.copyWith(
-                        selectedServiceTitle: 'Mobile Repair at Home',
-                        deviceType: _selectedDeviceType,
-                        deviceBrand: finalBrand,
-                        deviceModel: finalModel,
-                        operatingSystem: _selectedOS,
-                        mobileIssue: _selectedIssue,
-                        deviceCount: _deviceCount,
+                        selectedServiceTitle: 'Mobile Repair',
+                        mobileDevices: _savedDevices,
                         whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty
                             ? _whatYouNeedController.text.trim()
                             : null,
@@ -630,6 +749,7 @@ class _MobileRepairDetailsScreenState extends State<MobileRepairDetailsScreen> {
                     ),
                     child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
                   ),
+                  const SizedBox(height: 40),
                 ],
               ),
             ),

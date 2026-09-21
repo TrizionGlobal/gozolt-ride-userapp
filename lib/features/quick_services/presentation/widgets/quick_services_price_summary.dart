@@ -202,7 +202,7 @@ class QuickServicesPriceSummary extends StatelessWidget {
                   ],
                 ),
               ],
-              if (QuickServicesPricingConfig.getEstimatedSparePrice(bookingData.category) != null) ...[
+              if (QuickServicesPricingConfig.getEstimatedSparePrice(bookingData.servicePricingKey) != null) ...[
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -214,7 +214,7 @@ class QuickServicesPriceSummary extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      QuickServicesPricingConfig.getEstimatedSparePrice(bookingData.category)!,
+                      QuickServicesPricingConfig.getEstimatedSparePrice(bookingData.servicePricingKey)!,
                       style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -247,7 +247,7 @@ class QuickServicesPriceSummary extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Upfront Payment',
+              Text('Payable Now',
                   style: AppTextStyles.titleSmall
                       .copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 12),
@@ -262,6 +262,25 @@ class QuickServicesPriceSummary extends StatelessWidget {
                           .copyWith(fontWeight: FontWeight.bold)),
                 ],
               ),
+              if (bookingData.materialCost > 0) ...[
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                        child: Text(
+                          bookingData.category.toLowerCase().contains('wash')
+                              ? 'Cleaning Materials'
+                              : (bookingData.materialPreference?.toLowerCase().contains('tool') == true
+                                  ? 'Tools Included'
+                                  : 'Materials Included'),
+                            style: AppTextStyles.bodyMedium)),
+                    Text('€${bookingData.materialCost.toStringAsFixed(2)}',
+                        style: AppTextStyles.bodyMedium
+                            .copyWith(fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ],
               // ── GoCoins Redeem Section ──
               if (onGoCoinsChanged != null) ...[
                 Container(
@@ -300,7 +319,7 @@ class QuickServicesPriceSummary extends StatelessWidget {
                                 style: AppTextStyles.titleSmall
                                     .copyWith(fontWeight: FontWeight.bold)),
                             const SizedBox(height: 2),
-                            Text('Balance: ${useGoCoins ? (600 - (bookingData.upfrontBookingFee * 100).clamp(0, 600)).toInt() : 600} Coins',
+                            Text('Balance: ${useGoCoins ? (600 - ((bookingData.upfrontBookingFee + bookingData.materialCost) * 100).clamp(0, 600)).toInt() : 600} Coins',
                                 style: AppTextStyles.bodySmall
                                     .copyWith(color: Colors.grey)),
                           ],
@@ -333,7 +352,7 @@ class QuickServicesPriceSummary extends StatelessWidget {
                             style: AppTextStyles.bodyMedium
                                 .copyWith(color: AppColors.primaryGold))),
                     Text(
-                      '-€${(bookingData.upfrontBookingFee).clamp(0.0, 6.0).toStringAsFixed(2)}', // 600 coins = max €6 discount
+                      '-€${((bookingData.upfrontBookingFee + bookingData.materialCost)).clamp(0.0, 6.0).toStringAsFixed(2)}', // 600 coins = max €6 discount
                       style: AppTextStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.bold,
                           color: AppColors.primaryGold),
@@ -351,7 +370,7 @@ class QuickServicesPriceSummary extends StatelessWidget {
                         .copyWith(fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    '€${(bookingData.upfrontBookingFee - (useGoCoins ? bookingData.upfrontBookingFee.clamp(0.0, 6.0) : 0.0)).clamp(0.0, double.infinity).toStringAsFixed(2)}',
+                    '€${(bookingData.upfrontBookingFee + bookingData.materialCost - (useGoCoins ? (bookingData.upfrontBookingFee + bookingData.materialCost).clamp(0.0, 6.0) : 0.0)).clamp(0.0, double.infinity).toStringAsFixed(2)}',
                     style: AppTextStyles.titleMedium.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).primaryColor,
@@ -378,10 +397,10 @@ class QuickServicesPriceSummary extends StatelessWidget {
                       child: Text(
                         (() {
                           String baseNote = note != null && note!.isNotEmpty
-                              ? '$note\n\nNote: Pay the upfront fee now. The remaining balance (hours × rate + materials) is paid directly to the provider after the service.'
-                              : 'Note: Pay the upfront fee now. The remaining balance (hours × rate + materials) is paid directly to the provider after the service.';
-                          if (QuickServicesPricingConfig.getEstimatedSparePrice(bookingData.category) != null) {
-                            baseNote += '\n\n* Estimated Spare Price: Providers do not carry spare parts by default. The exact parts needed will be determined after inspection, and you will be informed of the actual price then. This is just an estimate for your reference.';
+                              ? '$note\n\nNote: Pay the upfront fee${bookingData.materialCost > 0 ? " and materials/tools cost" : ""} now. The remaining balance (hours × rate) is paid directly to the service person after the service.'
+                              : 'Note: Pay the upfront fee${bookingData.materialCost > 0 ? " and materials/tools cost" : ""} now. The remaining balance (hours × rate) is paid directly to the service person after the service completed.';
+                          if (QuickServicesPricingConfig.getEstimatedSparePrice(bookingData.servicePricingKey) != null) {
+                            baseNote += '\n\n* Note: Final price and replacement parts will be confirmed after inspection.';
                           }
                           return baseNote;
                         })(),

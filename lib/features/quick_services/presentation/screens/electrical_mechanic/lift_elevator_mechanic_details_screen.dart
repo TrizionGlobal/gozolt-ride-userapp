@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/constants/app_text_styles.dart';
 import '../../../../../core/router/route_names.dart';
@@ -13,6 +12,7 @@ import '../../../../../core/config/quick_services_pricing_config.dart';
 
 class LiftElevatorMechanicDetailsScreen extends StatefulWidget {
   final QuickServiceBookingData bookingData;
+
   const LiftElevatorMechanicDetailsScreen({super.key, required this.bookingData});
 
   @override
@@ -20,142 +20,122 @@ class LiftElevatorMechanicDetailsScreen extends StatefulWidget {
 }
 
 class _LiftElevatorMechanicDetailsScreenState extends State<LiftElevatorMechanicDetailsScreen> {
-  String _materialPreference = 'Bring materials';
-  String? _selectedPropertyType;
-  String? _selectedLiftType;
-  
-  final TextEditingController _manufacturerController = TextEditingController();
-  final TextEditingController _modelController = TextEditingController();
-  final TextEditingController _floorsController = TextEditingController();
-  
-  final List<String> _issues = [
-    'Lift Not Moving', 'Door Problem', 'Unusual Noise',
-    'Uneven Leveling', 'Button / Display Fault', 'Routine Maintenance', 'Other Issue'
-  ];
-  String? _selectedIssue;
+  String _materialPreference = 'Bring tools';
+  final Map<String, int> _counts = {
+    'Commercial Lighting': 0,
+    'Panel Upgrade': 0,
+    'Heavy Duty Wiring': 0,
+    'Switchgear Maintenance': 0,
+    'Generator Backup': 0,
+    'Three-Phase Power': 0,
+    'Transformer Servicing': 0,
+  };
+
+  final Map<String, IconData> _icons = {
+    'Commercial Lighting': Icons.lightbulb_outline,
+    'Panel Upgrade': Icons.electric_meter_outlined,
+    'Heavy Duty Wiring': Icons.cable_outlined,
+    'Switchgear Maintenance': Icons.settings_outlined,
+    'Generator Backup': Icons.power_outlined,
+    'Three-Phase Power': Icons.bolt_outlined,
+    'Transformer Servicing': Icons.ev_station_outlined,
+  };
+
+  final Map<String, double> _hours = {
+    'Commercial Lighting': 1.5,
+    'Panel Upgrade': 2.5,
+    'Heavy Duty Wiring': 2.0,
+    'Switchgear Maintenance': 2.0,
+    'Generator Backup': 1.5,
+    'Three-Phase Power': 2.5,
+    'Transformer Servicing': 3.0,
+  };
 
   final TextEditingController _whatYouNeedController = TextEditingController();
   final TextEditingController _describeIssueController = TextEditingController();
-  final List<XFile> _selectedImages = [];
+
   final ImagePicker _picker = ImagePicker();
+  final List<XFile> _selectedImages = [];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.bookingData.whatYouNeed != null) {
+      _whatYouNeedController.text = widget.bookingData.whatYouNeed!;
+    }
+    if (widget.bookingData.describeIssue != null) {
+      _describeIssueController.text = widget.bookingData.describeIssue!;
+    }
+  }
 
   @override
   void dispose() {
-    _manufacturerController.dispose();
-    _modelController.dispose();
-    _floorsController.dispose();
     _whatYouNeedController.dispose();
     _describeIssueController.dispose();
     super.dispose();
   }
 
   Future<void> _pickImages() async {
-    final List<XFile> images = await _picker.pickMultiImage();
-    if (images.isNotEmpty) {
-      setState(() {
-        _selectedImages.addAll(images);
-      });
+    try {
+      final List<XFile> pickedFiles = await _picker.pickMultiImage();
+      if (pickedFiles.isNotEmpty) {
+        setState(() {
+          _selectedImages.addAll(pickedFiles);
+        });
+      }
+    } catch (e) {
+      debugPrint("Error picking images: $e");
     }
   }
 
-  Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: AppTextStyles.titleSmall.copyWith(
-        fontWeight: FontWeight.bold, 
-        color: const Color(0xFF324461)
-      ),
-    );
+  void _increment(String key) {
+    setState(() {
+      _counts[key] = (_counts[key] ?? 0) + 1;
+    });
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint, {bool isNumber = false}) {
-    return TextField(
-      controller: controller,
-      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-      decoration: InputDecoration(
-        hintText: hint,
-        filled: true,
-        fillColor: Theme.of(context).cardTheme.color,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primaryGold),
-        ),
-      ),
-    );
+  void _decrement(String key) {
+    setState(() {
+      if ((_counts[key] ?? 0) > 0) {
+        _counts[key] = (_counts[key] ?? 0) - 1;
+      }
+    });
   }
 
-  Widget _buildChips(List<String> options, String? selectedValue, ValueChanged<String?> onSelected) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: options.map((option) {
-        final isSelected = selectedValue == option;
+  void _onContinue() {
+    final selectedKeys = _counts.keys.where((k) => (_counts[k] ?? 0) > 0).toList();
+    if (selectedKeys.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please select at least one add-on to continue.', style: TextStyle(color: Colors.white)),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
-        return GestureDetector(
-          onTap: () {
-            onSelected(isSelected ? null : option);
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              color: isSelected ? AppColors.primaryGold : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: isSelected ? AppColors.primaryGold : Colors.grey.withOpacity(0.3)),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Text(
-              option,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? Colors.black : const Color(0xFF324461),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
+    List<ServiceAddon> selectedAddons = selectedKeys.map((key) {
+      return ServiceAddon(name: key, count: _counts[key]!, hoursPerUnit: _hours[key]!);
+    }).toList();
 
-  Widget _buildIssueChips() {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: _issues.map((issue) {
-        final isSelected = _selectedIssue == issue;
-        return GestureDetector(
-          onTap: () {
-            setState(() {
-              _selectedIssue = isSelected ? null : issue;
-            });
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: isSelected ? AppColors.primaryGold : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: isSelected ? AppColors.primaryGold : Colors.grey.withOpacity(0.3)),
-            ),
-            child: Text(
-              issue,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? Colors.black : const Color(0xFF324461),
-              ),
-            ),
-          ),
-        );
-      }).toList(),
+    double calculatedSubtotal = selectedAddons.fold(0.0, (sum, item) => sum + item.totalPrice);
+    if (calculatedSubtotal == 0) {
+      calculatedSubtotal = 15.0; // Base visit fee
+    }
+
+    final updatedData = widget.bookingData.copyWith(
+      selectedServiceTitle: 'Commercial Electric',
+      selectedAddons: selectedAddons,
+      whatYouNeed: _whatYouNeedController.text.trim(),
+      describeIssue: _describeIssueController.text.trim(),
+      uploadedImages: _selectedImages.map((img) => img.path).toList(),
+      subtotal: 0.0,
+      baseEstimatedHours: 0.0,
+      materialPreference: _materialPreference,
     );
+
+    context.pushNamed(RouteNames.quickServicesLiftElevatorReview, extra: updatedData);
   }
 
   @override
@@ -163,115 +143,102 @@ class _LiftElevatorMechanicDetailsScreenState extends State<LiftElevatorMechanic
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-          child: ElevatedButton(
-            onPressed: () {
-              if (_selectedPropertyType == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please select a Property Type.')),
-                );
-                return;
-              }
-              if (_selectedLiftType == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please select a Lift Type.')),
-                );
-                return;
-              }
-              if (_selectedIssue == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please select an issue.')),
-                );
-                return;
-              }
-              
-              if (_selectedImages.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please upload at least one photo or video of the issue.')),
-                );
-                return;
-              }
-
-              final updatedData = widget.bookingData.copyWith(
-                selectedServiceTitle: 'Lift / Elevator Mechanic',
-                subtotal: 0.0,
-                        baseEstimatedHours: 0.0,
-                        materialPreference: _materialPreference,
-                propertyType: _selectedPropertyType,
-                liftType: _selectedLiftType,
-                vehicleMake: _manufacturerController.text.trim().isNotEmpty ? _manufacturerController.text.trim() : null, // Reusing vehicleMake for Manufacturer
-                vehicleModel: _modelController.text.trim().isNotEmpty ? _modelController.text.trim() : null, // Reusing vehicleModel for Model
-                floorsServed: _floorsController.text.trim().isNotEmpty ? _floorsController.text.trim() : null,
-                vehicleIssue: _selectedIssue, // Reusing vehicleIssue for Issue
-                whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty ? _whatYouNeedController.text.trim() : null,
-                describeIssue: _describeIssueController.text.trim().isNotEmpty ? _describeIssueController.text.trim() : null,
-                uploadedImages: _selectedImages.map((e) => e.path).toList(),
-              );
-
-              context.pushNamed(
-                RouteNames.quickServicesLiftElevatorReview,
-                extra: updatedData,
-              );
-            },
-            child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
-          ),
-        ),
-      ),
       body: Column(
         children: [
           const QuickServicesHeader(
             currentStep: 1,
             title: 'Service Requirements',
-            subtitle: 'Lift/Elevator Mechanic',
+            subtitle: 'Commercial Electric',
           ),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildLabel('Property Type'),
-                  const SizedBox(height: 12),
-                  _buildChips(
-                    ['Residential Building', 'Commercial Building', 'Hotel', 'Other'], 
-                    _selectedPropertyType, 
-                    (val) => setState(() => _selectedPropertyType = val)
-                  ),
-                  const SizedBox(height: 24),
-
-                  _buildLabel('Lift Type'),
-                  const SizedBox(height: 12),
-                  _buildChips(
-                    ['Passenger Lift', 'Goods Lift', 'Platform Lift', 'Stairlift', 'Not Sure'], 
-                    _selectedLiftType, 
-                    (val) => setState(() => _selectedLiftType = val)
-                  ),
-                  const SizedBox(height: 24),
-                  
-                  _buildLabel('Manufacturer / Brand — Optional'),
-                  const SizedBox(height: 8),
-                  _buildTextField(_manufacturerController, ''),
-                  const SizedBox(height: 16),
-                  
-                  _buildLabel('Model / Serial Number — Optional'),
-                  const SizedBox(height: 8),
-                  _buildTextField(_modelController, ''),
-                  const SizedBox(height: 16),
-                  
-                  _buildLabel('Floors Served — Optional'),
-                  const SizedBox(height: 8),
-                  _buildTextField(_floorsController, '', isNumber: true),
-                  const SizedBox(height: 24),
-
-                  _buildLabel('What is the issue?'),
-                  const SizedBox(height: 12),
-                  _buildIssueChips(),
-                  const SizedBox(height: 24),
+                padding: const EdgeInsets.all(20.0),
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'What electrical repair work is needed?',
+                      style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardTheme.color,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                      ),
+                      child: Column(
+                        children: _counts.keys.map((key) {
+                          final isLast = key == _counts.keys.last;
+                          return Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                child: Row(
+                                  children: [
+                                    Icon(_icons[key], size: 22, color: Colors.grey.shade600),
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Text(
+                                        key,
+                                        style: AppTextStyles.titleMedium.copyWith(fontSize: 14),
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        GestureDetector(
+                                          onTap: () => _decrement(key),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: const Icon(Icons.remove, size: 16),
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          width: 32,
+                                          child: Text(
+                                            '${_counts[key]}',
+                                            textAlign: TextAlign.center,
+                                            style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                        GestureDetector(
+                                          onTap: () => _increment(key),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: BoxDecoration(
+                                              color: Colors.grey.withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child: const Icon(Icons.add, size: 16),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (!isLast)
+                                Divider(
+                                  height: 1,
+                                  thickness: 1,
+                                  color: Colors.grey.withOpacity(0.2),
+                                  indent: 16,
+                                  endIndent: 16,
+                                ),
+                            ],
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
 
                   Text(
-                    'Materials / Parts',
+                    'Required Tools',
                     style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
@@ -282,8 +249,8 @@ class _LiftElevatorMechanicDetailsScreenState extends State<LiftElevatorMechanic
                       color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
-                        width: _materialPreference == 'Bring materials' ? 1.5 : 1,
+                        color: _materialPreference == 'Bring tools' ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
+                        width: _materialPreference == 'Bring tools' ? 1.5 : 1,
                       ),
                     ),
                     child: Row(
@@ -302,13 +269,13 @@ class _LiftElevatorMechanicDetailsScreenState extends State<LiftElevatorMechanic
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Bring materials', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                              Text('Bring tools', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 2),
                               Text(
-                                _materialPreference == 'Bring materials' ? '+€${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.category).toStringAsFixed(2)} extra charge' : 'Use my materials (No extra charge)',
+                                _materialPreference == 'Bring tools' ? '+€${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.category).toStringAsFixed(2)} extra charge' : 'Use my tools (No extra charge)',
                                 style: AppTextStyles.bodySmall.copyWith(
-                                  color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey[600],
-                                  fontWeight: _materialPreference == 'Bring materials' ? FontWeight.bold : FontWeight.normal,
+                                  color: _materialPreference == 'Bring tools' ? AppColors.primaryGold : Colors.grey[600],
+                                  fontWeight: _materialPreference == 'Bring tools' ? FontWeight.bold : FontWeight.normal,
                                 ),
                               ),
                             ],
@@ -317,13 +284,13 @@ class _LiftElevatorMechanicDetailsScreenState extends State<LiftElevatorMechanic
                         Transform.scale(
                           scale: 0.8,
                           child: Switch.adaptive(
-                            value: _materialPreference == 'Bring materials',
+                            value: _materialPreference == 'Bring tools',
                             activeColor: isDark ? AppColors.backgroundDark : Colors.white,
                             activeTrackColor: AppColors.primaryGold,
                             inactiveTrackColor: Colors.grey[300],
                             onChanged: (val) {
                               setState(() {
-                                _materialPreference = val ? 'Bring materials' : 'Use my materials';
+                                _materialPreference = val ? 'Bring tools' : 'Use my tools';
                               });
                             },
                           ),
@@ -333,30 +300,48 @@ class _LiftElevatorMechanicDetailsScreenState extends State<LiftElevatorMechanic
                   ),
                   const SizedBox(height: 24),
 
+                    Text(
+                      'Additional Details',
+                      style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 12),
+                    QuickServicesAdditionalDetails(
+                      whatYouNeedController: _whatYouNeedController,
+                      describeIssueController: _describeIssueController,
+                      images: _selectedImages,
+                      onAddImages: _pickImages,
+                      onRemoveImage: (image) {
+                        setState(() {
+                          _selectedImages.remove(image);
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 20),
 
-                  Text(
-                    'Additional Details',
-                    style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-                  QuickServicesAdditionalDetails(
-                    whatYouNeedController: _whatYouNeedController,
-                    describeIssueController: _describeIssueController,
-                    images: _selectedImages,
-                    onAddImages: _pickImages,
-                    onRemoveImage: (image) {
-                      setState(() {
-                        _selectedImages.remove(image);
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                ],
+                    const SizedBox(height: 32),
+                    SafeArea(
+                      top: false,
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _onContinue,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primaryGold,
+                            foregroundColor: Colors.black,
+                            minimumSize: const Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            elevation: 0,
+                          ),
+                          child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
+    }
   }
-}
