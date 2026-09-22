@@ -63,31 +63,30 @@ class QuickServicesAdditionalDetailsReview extends StatelessWidget {
                 const Icon(Icons.image_outlined, size: 18, color: Colors.grey),
                 const SizedBox(width: 10),
                 Text('Attached Photo (${uploadedImages!.length})', style: AppTextStyles.bodySmall),
-                const Spacer(),
-                SizedBox(
-                  height: 40,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    shrinkWrap: true,
-                    itemCount: uploadedImages!.length,
-                    itemBuilder: (context, index) {
-                      final path = uploadedImages![index];
-                      return Padding(
-                        padding: const EdgeInsets.only(left: 4.0),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: Image.file(
-                            File(path),
-                            width: 40,
-                            height: 40,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
               ],
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 48,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: uploadedImages!.length,
+                itemBuilder: (context, index) {
+                  final path = uploadedImages![index];
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 6.0),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.file(
+                        File(path),
+                        width: 48,
+                        height: 48,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
           ],
         ],

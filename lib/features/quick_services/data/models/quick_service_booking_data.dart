@@ -405,7 +405,9 @@ class QuickServiceBookingData {
 
   String get expertVisitName {
     final lowerCat = category.toLowerCase();
-    if (lowerCat.contains('mechanic')) {
+    if (lowerCat.contains('security') || lowerCat.contains('bouncer')) {
+      return 'Hiring Person/hr';
+    } else if (lowerCat.contains('mechanic')) {
       return 'Mechanic Visit/hr';
     } else if (lowerCat.contains('electric')) {
       if (selectedServiceTitle?.contains('Commercial') == true || selectedServiceTitle?.contains('Lift') == true || selectedServiceTitle?.contains('Events') == true) {

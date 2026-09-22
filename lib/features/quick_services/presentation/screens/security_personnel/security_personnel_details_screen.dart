@@ -50,12 +50,10 @@ class _SecurityPersonnelDetailsScreenState extends State<SecurityPersonnelDetail
 
   TimeOfDay _startTime = const TimeOfDay(hour: 18, minute: 0);
   TimeOfDay _endTime = const TimeOfDay(hour: 23, minute: 0);
-  int _personnelCount = 2;
+  int _personnelCount = 1;
 
   final TextEditingController _attendanceController = TextEditingController(text: '120');
-  final TextEditingController _dutyInstructionsController = TextEditingController(
-    text: 'Manage guest entry and monitor the main event hall.',
-  );
+  final TextEditingController _dutyInstructionsController = TextEditingController();
   final TextEditingController _whatYouNeedController = TextEditingController();
 
   final ImagePicker _picker = ImagePicker();
@@ -224,49 +222,38 @@ class _SecurityPersonnelDetailsScreenState extends State<SecurityPersonnelDetail
   void _onSecurityServiceSelected(String service) {
     setState(() {
       _selectedSecurityService = service;
-      final currentText = _dutyInstructionsController.text.trim();
-      if (currentText.isEmpty ||
-          currentText.startsWith('Manage guest entry') ||
-          currentText.startsWith('Screen guests') ||
-          currentText.startsWith('Maintain orderly') ||
-          currentText.startsWith('Perform ID') ||
-          currentText.startsWith('Patrol property') ||
-          currentText.startsWith('Provide close') ||
-          currentText.startsWith('Provide custom')) {
-        _dutyInstructionsController.text = _getDefaultDutyInstruction(service);
-      }
     });
+  }
+
+  void _showValidationError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: Colors.white)),
+        backgroundColor: Colors.red.shade600,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   void _onContinue() {
     if (_selectedSecurityService == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a Security Service.')),
-      );
+      _showValidationError('Please select a Security Service type to continue.');
       return;
     }
     if (_selectedVenueType == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a Venue Type.')),
-      );
+      _showValidationError('Please select the Venue Type for the assignment.');
       return;
     }
     if (_selectedServiceArea == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a Service Area.')),
-      );
+      _showValidationError('Please select the Service Area (Indoor / Outdoor / Both).');
       return;
     }
     if (_selectedDressPreference == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a Dress Preference.')),
-      );
+      _showValidationError('Please select the Dress Preference for your security personnel.');
       return;
     }
     if (_selectedAlcoholServed == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select whether alcohol is served.')),
-      );
+      _showValidationError('Please indicate whether alcohol is served at the venue.');
       return;
     }
 
@@ -364,6 +351,7 @@ class _SecurityPersonnelDetailsScreenState extends State<SecurityPersonnelDetail
           const QuickServicesHeader(
             currentStep: 1,
             title: 'Security Requirements',
+            subtitle: 'Security / Bouncer Service',
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -602,47 +590,24 @@ class _SecurityPersonnelDetailsScreenState extends State<SecurityPersonnelDetail
                     },
                   ),
 
-                  const SizedBox(height: 32),
 
-                  // Info Notice Banner
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE8F0FE),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.info_outline, color: Color(0xFF1967D2), size: 20),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Assignment is subject to verification, availability and service-provider approval.',
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: const Color(0xFF1967D2),
-                              height: 1.3,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
 
                   const SizedBox(height: 24),
-
-                  // Continue Button
-                  ElevatedButton(
-                    onPressed: _onContinue,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGold,
-                      foregroundColor: Colors.black,
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  SafeArea(
+                    top: false,
+                    child: ElevatedButton(
+                      onPressed: _onContinue,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGold,
+                        foregroundColor: Colors.black,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
                       ),
-                      elevation: 0,
+                      child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
                     ),
-                    child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
                   ),
                 ],
               ),

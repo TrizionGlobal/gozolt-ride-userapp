@@ -26,7 +26,7 @@ class QuickServicesPricingConfig {
     'home_electric': {'minHourlyRate': 10.00, 'upfrontFee': 5.00, 'estimatedSparePrice': '€5 - €25'},
     'events_electric': {'minHourlyRate': 10.00, 'upfrontFee': 5.00, 'estimatedSparePrice': '€5 - €25'},
     'lift_elevator_mechanic': {'minHourlyRate': 10.00, 'upfrontFee': 5.00, 'estimatedSparePrice': '€5 - €25'},
-    'security_personnel': {'minHourlyRate': 6.00},
+    'security_personnel': {'minHourlyRate': 7.00, 'upfrontFee': 5.00, 'materialCost': 0.00},
     'hotel_laundry': {'minHourlyRate': 6.00},
     'commercial_laundry': {'minHourlyRate': 6.00},
     'hospital_laundry': {'minHourlyRate': 6.00},
@@ -50,6 +50,29 @@ class QuickServicesPricingConfig {
 
   static double? getMaxRate(String serviceKey) {
     return serviceRates[serviceKey]?['maxHourlyRate'];
+  }
+
+  static String expertVisitName(String category, {String? selectedServiceTitle}) {
+    final lowerCat = category.toLowerCase();
+    if (lowerCat.contains('security') || lowerCat.contains('bouncer')) {
+      return 'Hiring Person/hr';
+    } else if (lowerCat.contains('mechanic')) {
+      return 'Mechanic Visit/hr';
+    } else if (lowerCat.contains('electric')) {
+      if (selectedServiceTitle?.contains('Commercial') == true || selectedServiceTitle?.contains('Lift') == true || selectedServiceTitle?.contains('Events') == true) {
+        return 'Mechanic Visit/hr';
+      }
+      return 'Expert Visit/hr';
+    } else if (lowerCat.contains('engineer') || 
+               lowerCat.contains('computer') ||
+               lowerCat.contains('printer') ||
+               lowerCat.contains('mobile') ||
+               lowerCat.contains('technician')) {
+      return 'Engineering Visit/hr';
+    } else if (lowerCat.contains('wash')) {
+      return 'Service Agent Visit/hr';
+    }
+    return 'Expert Visit/hr';
   }
 
   static double getMaterialCost(String serviceKey) {
