@@ -14,17 +14,17 @@ abstract final class AssetPaths {
   static const String appleLogo = '$_images/apple_logo.png';
 
   // ── Onboarding ─────────────────────────────────────────
-  static const String onboardingRide = 'assets/onboarding_ride.png';
-  static const String onboardingCoins = 'assets/onboarding_coins.png';
+  static const String onboardingRide = '$_images/onboarding_ride.png';
+  static const String onboardingCoins = '$_images/onboarding_coins.png';
   static const String onboardingTracking = '$_images/onboarding_tracking.jpg';
   static const String onboardingTrackingLight = '$_images/light_onboarding_tracking.png';
 
   // ── Transport Grid ────────────────────────────────────
-  static const String iconRide = 'assets/icon_ride.png';
-  static const String iconCarRental = 'assets/icon_car_rental.png';
-  static const String iconBikeRental = 'assets/icon_bike_rental.png';
-  static const String iconBikeRentalDarkTheme = 'assets/icon_bike_rental_light_theme.png';
-  static const String iconAirportTransfer = 'assets/icon_airport_transfer.png';
+  static const String iconRide = '$_images/icon_ride.png';
+  static const String iconCarRental = '$_images/icon_car_rental.png';
+  static const String iconBikeRental = '$_images/icon_bike_rental.png';
+  static const String iconBikeRentalDarkTheme = '$_images/icon_bike_rental_light_theme.png';
+  static const String iconAirportTransfer = '$_images/icon_airport_transfer.png';
 
   // ── Rewards ───────────────────────────────────────────
   static const String iconGoCoin = '$_images/icon_gocoin.png';

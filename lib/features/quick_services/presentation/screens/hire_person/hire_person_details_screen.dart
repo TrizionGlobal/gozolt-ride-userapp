@@ -20,6 +20,7 @@ class HirePersonDetailsScreen extends StatefulWidget {
 class _HirePersonDetailsScreenState extends State<HirePersonDetailsScreen> {
   final List<String> _durations = ['1 Hour', '2 Hours', '3 Hours', '4+ Hours'];
   String? _selectedDuration;
+  String? _selectedGender;
   int _helperCount = 1;
 
   final TextEditingController _whatYouNeedController = TextEditingController();
@@ -36,6 +37,9 @@ class _HirePersonDetailsScreenState extends State<HirePersonDetailsScreen> {
     }
     if (widget.bookingData.helperCount != null) {
       _helperCount = widget.bookingData.helperCount!;
+    }
+    if (widget.bookingData.genderPreference != null) {
+      _selectedGender = widget.bookingData.genderPreference;
     }
     if (widget.bookingData.whatYouNeed != null) {
       _whatYouNeedController.text = widget.bookingData.whatYouNeed!;
@@ -76,6 +80,12 @@ class _HirePersonDetailsScreenState extends State<HirePersonDetailsScreen> {
   }
 
   void _onContinue() {
+    if (_selectedGender == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select gender preference.')),
+      );
+      return;
+    }
     if (_selectedDuration == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select expected duration.')),
@@ -90,16 +100,36 @@ class _HirePersonDetailsScreenState extends State<HirePersonDetailsScreen> {
         ? _describeIssueController.text.trim()
         : _whatYouNeedController.text.trim();
 
+    if (commentsText.length < 50) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please provide at least 50 characters in the Additional Details section.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    int durationHours = 2;
+    if (_selectedDuration != null) {
+      final match = RegExp(r'\d+').firstMatch(_selectedDuration!);
+      if (match != null) {
+        durationHours = int.parse(match.group(0)!);
+      }
+    }
+    final double estimatedHours = (durationHours * _helperCount).toDouble();
+
     final updatedData = widget.bookingData.copyWith(
       selectedServiceTitle: 'Hire a Person',
       expectedDuration: _selectedDuration,
       helperCount: _helperCount,
+      genderPreference: _selectedGender,
       whatYouNeed: _whatYouNeedController.text.trim(),
       describeIssue: _describeIssueController.text.trim(),
       comments: commentsText,
       uploadedImages: _selectedImages.map((img) => img.path).toList(),
       subtotal: 0.0,
-                        baseEstimatedHours: 0.0,
+      baseEstimatedHours: estimatedHours,
     );
 
     context.pushNamed(RouteNames.quickServicesHirePersonReview, extra: updatedData);
@@ -219,6 +249,47 @@ class _HirePersonDetailsScreenState extends State<HirePersonDetailsScreen> {
                   ),
                   const SizedBox(height: 20),
 
+                  // Gender Preference Section
+                  Text(
+                    'Gender Preference',
+                    style: AppTextStyles.titleSmall.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF324461),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildSelectableChip(
+                          label: 'Men',
+                          icon: Icons.man,
+                          isSelected: _selectedGender == 'Men',
+                          onTap: () => setState(() => _selectedGender = 'Men'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildSelectableChip(
+                          label: 'Women',
+                          icon: Icons.woman,
+                          isSelected: _selectedGender == 'Women',
+                          onTap: () => setState(() => _selectedGender = 'Women'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildSelectableChip(
+                          label: 'Other',
+                          icon: Icons.group,
+                          isSelected: _selectedGender == 'Other',
+                          onTap: () => setState(() => _selectedGender = 'Other'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
                   // Expected Duration Section
                   Text(
                     'Expected Duration',
@@ -321,32 +392,85 @@ class _HirePersonDetailsScreenState extends State<HirePersonDetailsScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 32),
+                  SafeArea(
+                    top: false,
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _onContinue,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGold,
+                          foregroundColor: Colors.black,
+                          minimumSize: const Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                        child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _onContinue,
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGold,
-                      foregroundColor: Colors.black,
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 0,
-                    ),
-                    child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSelectableChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+    IconData? icon,
+    double? width,
+    double height = 48.0,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        width: width,
+        height: height,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryGold : Theme.of(context).cardTheme.color,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? Colors.black.withOpacity(0.3) : Colors.grey.withOpacity(0.3),
+            width: isSelected ? 1.2 : 1.0,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (icon != null) ...[
+                Icon(
+                  icon,
+                  size: 18,
+                  color: isSelected ? Colors.black : Theme.of(context).colorScheme.onSurface,
+                ),
+                const SizedBox(width: 4),
+              ],
+              Flexible(
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: isSelected ? Colors.black : Theme.of(context).colorScheme.onSurface,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

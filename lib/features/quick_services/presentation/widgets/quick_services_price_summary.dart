@@ -219,6 +219,28 @@ class QuickServicesPriceSummary extends StatelessWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.info_outline, size: 16, color: Colors.blue.shade700),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Note: The final spare parts cost may vary based on the actual requirements after inspection by the professional.',
+                          style: AppTextStyles.bodySmall.copyWith(color: Colors.blue.shade700, fontSize: 11),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
               if ((bookingData.pickupAndReturnFee ?? 0) > 0) ...[
                 const SizedBox(height: 8),

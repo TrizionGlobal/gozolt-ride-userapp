@@ -9,7 +9,9 @@ import '../../../../../core/router/route_names.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_additional_details.dart';
 import '../../../data/models/quick_service_booking_data.dart';
+import '../../../../../core/config/quick_services_pricing_config.dart';
 import 'dart:io';
+
 
 class HotelLaundryDetailsScreen extends StatefulWidget {
   final QuickServiceBookingData bookingData;
@@ -21,51 +23,78 @@ class HotelLaundryDetailsScreen extends StatefulWidget {
 }
 
 class _HotelLaundryDetailsScreenState extends State<HotelLaundryDetailsScreen> {
+  final TextEditingController _whatYouNeedController = TextEditingController();
+  final TextEditingController _describeIssueController = TextEditingController();
+  final TextEditingController _customServiceController = TextEditingController();
+  
+  String _selectedMethod = 'On-Site Service';
+  String _selectedService = '';
+  double _servicePricePerKg = 0.0;
   String _materialPreference = 'Bring materials';
+  
+  final List<XFile> _selectedImages = [];
+  final ImagePicker _picker = ImagePicker();
+
+  final List<Map<String, dynamic>> _laundryServices = [
+
+    {'title': 'Bed Linen', 'icon': Icons.bed, 'priceText': '', 'unitPrice': 0.0},
+    {'title': 'Towels', 'icon': Icons.layers, 'priceText': '', 'unitPrice': 0.0},
+    {'title': 'Staff Uniforms', 'icon': Icons.checkroom, 'priceText': '', 'unitPrice': 0.0},
+    {'title': 'Table Linen', 'icon': Icons.table_restaurant, 'priceText': '', 'unitPrice': 0.0},
+    {'title': 'Guest Laundry', 'icon': Icons.person, 'priceText': '', 'unitPrice': 0.0},
+    {'title': 'Curtains', 'icon': Icons.curtains, 'priceText': '', 'unitPrice': 0.0},
+
+  ];
+
+
   final TextEditingController _facilityNameController = TextEditingController();
   final TextEditingController _collectionPointController = TextEditingController();
   final TextEditingController _contactPersonController = TextEditingController();
   final TextEditingController _contactNumberController = TextEditingController();
-  final TextEditingController _whatYouNeedController = TextEditingController();
-  final TextEditingController _describeIssueController = TextEditingController();
-  final TextEditingController _otherLaundryTypeController = TextEditingController();
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
-
-  final List<String> _selectedLaundryTypes = [];
-  final List<String> _availableLaundryTypes = ['Bed Linen', 'Towels', 'Staff Uniforms', 'Table Linen', 'Guest Laundry', 'Curtains', 'Other Laundry'];
-
-  int _estimatedWeightKg = 1;
-  int _numberOfBags = 1;
-
-  String? _linenType;
-  String? _serviceFrequency = 'One-Time Service';
 
   DateTime? _requestedDate;
   TimeOfDay? _requestedTime;
 
-  final ImagePicker _picker = ImagePicker();
-  final List<XFile> _selectedFiles = [];
 
   @override
   void initState() {
     super.initState();
-    // Pre-fill if needed
+    if (widget.bookingData.whatYouNeed != null) {
+      _whatYouNeedController.text = widget.bookingData.whatYouNeed!;
+    }
+    if (widget.bookingData.describeIssue != null) {
+      _describeIssueController.text = widget.bookingData.describeIssue!;
+    }
+
   }
 
   @override
   void dispose() {
+    _whatYouNeedController.dispose();
+    _describeIssueController.dispose();
+    _customServiceController.dispose();
+
     _facilityNameController.dispose();
     _collectionPointController.dispose();
     _contactPersonController.dispose();
     _contactNumberController.dispose();
-    _whatYouNeedController.dispose();
-    _describeIssueController.dispose();
-    _otherLaundryTypeController.dispose();
     _dateController.dispose();
     _timeController.dispose();
+
     super.dispose();
   }
+
+  Future<void> _pickImages() async {
+    final List<XFile> images = await _picker.pickMultiImage();
+    if (images.isNotEmpty) {
+      setState(() {
+        _selectedImages.addAll(images);
+      });
+    }
+  }
+
 
   void _updateDateText() {
     if (_requestedDate == null) return;
@@ -77,7 +106,6 @@ class _HotelLaundryDetailsScreenState extends State<HotelLaundryDetailsScreen> {
     if (_requestedTime == null) return;
     _timeController.text = _requestedTime!.format(context);
   }
-
   Future<void> _pickDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -111,7 +139,6 @@ class _HotelLaundryDetailsScreenState extends State<HotelLaundryDetailsScreen> {
       });
     }
   }
-
   Future<void> _pickTime() async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
@@ -150,6 +177,7 @@ class _HotelLaundryDetailsScreenState extends State<HotelLaundryDetailsScreen> {
       ),
     );
     if (picked != null) {
+      // Round to nearest 5 minutes
       int roundedMinute = ((picked.minute / 5).round() * 5);
       int finalHour = picked.hour;
       if (roundedMinute >= 60) {
@@ -163,40 +191,373 @@ class _HotelLaundryDetailsScreenState extends State<HotelLaundryDetailsScreen> {
     }
   }
 
-  Future<void> _pickFiles() async {
-    final List<XFile> files = await _picker.pickMultiImage();
-    if (files.isNotEmpty) {
-      setState(() {
-        _selectedFiles.addAll(files);
-      });
-    }
-  }
 
-  Widget _buildNoticeBanner() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE3F2FD),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: Column(
         children: [
-          const Icon(Icons.lock, color: Color(0xFF1E3A8A)),
-          const SizedBox(width: 12),
+          QuickServicesHeader(
+            currentStep: 1,
+            title: 'Service Requirements',
+            subtitle: (widget.bookingData.selectedServiceTitle ?? 'Home').toLowerCase().endsWith('laundry') ? widget.bookingData.selectedServiceTitle! : '${widget.bookingData.selectedServiceTitle ?? 'Home'} Laundry',
+          ),
+            
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Pickup & Return',
-                  style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: const Color(0xFF1E3A8A)),
-                ),
-                Text(
-                  'Hotel laundry is collected and returned by an approved provider.',
-                  style: AppTextStyles.bodySmall.copyWith(color: const Color(0xFF1E3A8A)),
-                ),
-              ],
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20.0),
+              physics: const BouncingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Service Method
+                  Text(
+                    'Service Method',
+                    style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.grey[700]),
+                  ),
+                  const SizedBox(height: 10),
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: _buildMethodCard(
+                            title: 'On-Site Service',
+                            subtitle: 'Service performed at your facility.',
+                            icon: Icons.home_work_outlined,
+                            isSelected: _selectedMethod == 'On-Site Service',
+                            onTap: () => setState(() => _selectedMethod = 'On-Site Service'),
+                            isDark: isDark,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildMethodCard(
+                            title: 'Pickup & Return',
+                            subtitle: 'Return date & time confirmed after collection.',
+                            icon: Icons.local_shipping_outlined,
+                            isSelected: _selectedMethod == 'Pickup & Return',
+                            onTap: () => setState(() => _selectedMethod = 'Pickup & Return'),
+                            isDark: isDark,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Select Services
+                  Text(
+                    'Select Services',
+                    style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _laundryServices.map((svc) {
+                      final title = svc['title'] as String;
+                      final unitPrice = svc['unitPrice'] as double;
+                      final iconData = svc['icon'] as IconData?;
+                      final isSelected = _selectedService == title;
+
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedService = title;
+                            _servicePricePerKg = unitPrice;
+                          });
+                        },
+                        child: Container(
+                          width: (MediaQuery.of(context).size.width - 48) / 2,
+                          height: 90,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardTheme.color,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: isSelected ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (iconData != null)
+                                Icon(
+                                  iconData,
+                                  color: isSelected ? AppColors.primaryGold : Colors.grey[700],
+                                  size: 26,
+                                ),
+                              if (iconData != null) const SizedBox(height: 8),
+                              Text(
+                                title,
+                                textAlign: TextAlign.center,
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                  fontSize: 12,
+                                  height: 1.2,
+                                ),
+                                maxLines: 2,
+                                softWrap: true,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+
+                  
+
+                  const SizedBox(height: 24),
+
+
+                  // Hotel Details
+                  Text('Hotel Details', style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(child: _buildTextField('Hotel Name', _facilityNameController)),
+                      const SizedBox(width: 16),
+                      Expanded(child: _buildTextField('Collection Point', _collectionPointController)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(child: _buildTextField('Contact Person', _contactPersonController)),
+                      const SizedBox(width: 16),
+                      Expanded(child: _buildTextField('Contact Number', _contactNumberController, keyboardType: TextInputType.phone, inputFormatters: [FilteringTextInputFormatter.digitsOnly])),
+                    ],
+                  ),
+                  const Divider(height: 32),
+                  if (_selectedMethod == 'Pickup & Return') ...[
+
+                  // Requested Return
+                  Text('Requested Return', style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                                    Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: _pickDate,
+                          child: AbsorbPointer(
+                            child: TextFormField(
+                              controller: _dateController,
+                              readOnly: true,
+                              decoration: InputDecoration(
+                                hintText: 'Select Date',
+                                prefixIcon: const Icon(Icons.calendar_today, size: 18),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                                ),
+                                filled: true,
+                                fillColor: Theme.of(context).cardTheme.color,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: _pickTime,
+                          child: AbsorbPointer(
+                            child: TextFormField(
+                              controller: _timeController,
+                              readOnly: true,
+                              decoration: InputDecoration(
+                                hintText: 'Select Time',
+                                prefixIcon: const Icon(Icons.access_time, size: 18),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                                ),
+                                filled: true,
+                                fillColor: Theme.of(context).cardTheme.color,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  ],
+
+
+                  Text(
+                    'Cleaning materials',
+                    style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
+                        width: _materialPreference == 'Bring materials' ? 1.5 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGold.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.handyman, size: 24, color: AppColors.primaryGold),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Bring materials', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 2),
+                              Text(
+                                _materialPreference == 'Bring materials' ? '+€${QuickServicesPricingConfig.getMaterialCost('hotel_laundry').toStringAsFixed(2)} extra charge' : 'Use my materials (No extra charge)',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey[600],
+                                  fontWeight: _materialPreference == 'Bring materials' ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Transform.scale(
+                          scale: 0.8,
+                          child: Switch.adaptive(
+                            value: _materialPreference == 'Bring materials',
+                            activeColor: isDark ? AppColors.backgroundDark : Colors.white,
+                            activeTrackColor: AppColors.primaryGold,
+                            inactiveTrackColor: Colors.grey[300],
+                            onChanged: (val) {
+                              setState(() {
+                                _materialPreference = val ? 'Bring materials' : 'Use my materials';
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  Text(
+                    'Additional Details',
+                    style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  QuickServicesAdditionalDetails(
+                    whatYouNeedController: _whatYouNeedController,
+                    describeIssueController: _describeIssueController,
+                    images: _selectedImages,
+                    onAddImages: _pickImages,
+                    onRemoveImage: (image) {
+                      setState(() {
+                        _selectedImages.remove(image);
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 32),
+
+                  // Continue Button
+                  ElevatedButton(
+                    onPressed: () {
+
+                      if (_selectedService == null || _selectedService!.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a service.'), backgroundColor: Colors.red));
+                        return;
+                      }
+                      if ((_selectedService == 'Other Laundry Service' || _selectedService == 'Other Linen') && _customServiceController.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please specify the service type.'), backgroundColor: Colors.red));
+                        return;
+                      }
+                      if (_facilityNameController.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter Hotel Name.'), backgroundColor: Colors.red));
+                        return;
+                      }
+                      if (_collectionPointController.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter Collection Point.'), backgroundColor: Colors.red));
+                        return;
+                      }
+                      if (_contactPersonController.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter Contact Person.'), backgroundColor: Colors.red));
+                        return;
+                      }
+                      if (_contactNumberController.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter Contact Number.'), backgroundColor: Colors.red));
+                        return;
+                      }
+                      if (_selectedMethod == 'Pickup & Return' && (_requestedDate == null || _requestedTime == null)) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select Requested Return Date and Time.'), backgroundColor: Colors.red));
+                        return;
+                      }
+
+                      final finalServiceType = (_selectedService == 'Other Laundry Service' || _selectedService == 'Other Linen') && _customServiceController.text.trim().isNotEmpty
+                          ? _customServiceController.text.trim()
+                          : _selectedService;
+
+
+                      final updatedData = widget.bookingData.copyWith(
+                        selectedServiceTitle: 'Hotel Laundry',
+                        laundryServiceMethod: _selectedMethod,
+                        commercialLaundryTypes: finalServiceType.isNotEmpty ? [finalServiceType] : [],
+                        requestedReturnDate: _selectedMethod == 'Pickup & Return' ? _requestedDate : null,
+                        requestedReturnTime: _selectedMethod == 'Pickup & Return' ? _requestedTime : null,
+                        facilityName: _facilityNameController.text.trim(),
+                        collectionPoint: _collectionPointController.text.trim(),
+                        facilityContactPerson: _contactPersonController.text.trim(),
+                        facilityContactNumber: _contactNumberController.text.trim(),
+                        subtotal: 0.0,
+                        baseEstimatedHours: 0.0,
+                        materialPreference: _materialPreference,
+                        pickupAndReturnFee: _selectedMethod == 'Pickup & Return' ? QuickServicesPricingConfig.getPickupFee('hotel_laundry') : 0.0,
+                        whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty ? _whatYouNeedController.text.trim() : null,
+                        describeIssue: _describeIssueController.text.trim().isNotEmpty ? _describeIssueController.text.trim() : null,
+                        uploadedImages: _selectedImages.map((e) => e.path).toList(),
+                      );
+                      context.pushNamed(RouteNames.quickServicesLaundryReview, extra: updatedData);
+
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGold,
+                      foregroundColor: Colors.black,
+                      minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
+                  ),
+                  const SizedBox(height: 32),
+                ],
+              ),
             ),
           ),
         ],
@@ -204,17 +565,95 @@ class _HotelLaundryDetailsScreenState extends State<HotelLaundryDetailsScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Text(
-        title,
-        style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+  Widget _buildMethodCard({
+    required String title,
+    required String? subtitle,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required bool isDark,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (isDark ? Colors.amber.shade900.withOpacity(0.25) : const Color(0xFFFFF8E1))
+              : Theme.of(context).cardTheme.color,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
+            width: 1.5,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: isSelected ? AppColors.primaryGold : Colors.grey[600], size: 22),
+                const Spacer(),
+                Icon(
+                  isSelected ? Icons.check_circle : Icons.radio_button_off,
+                  color: isSelected ? AppColors.primaryGold : Colors.grey[400],
+                  size: 20,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: AppTextStyles.bodyMedium.copyWith(
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                color: isSelected ? (isDark ? AppColors.primaryGold : Colors.black87) : Colors.grey[800],
+              ),
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: AppTextStyles.bodySmall.copyWith(
+                  fontSize: 11,
+                  color: isSelected ? (isDark ? Colors.amber[200] : Colors.grey[800]) : Colors.grey[600],
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, {String? hintText, int maxLines = 1, TextInputType keyboardType = TextInputType.text, List<TextInputFormatter>? inputFormatters}) {
+
+  Widget _buildCounterField(String label, int value, VoidCallback onDecrement, VoidCallback onIncrement, {String suffix = ''}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600])),
+        const SizedBox(height: 6),
+        Container(
+          height: 48,
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.withOpacity(0.3)),
+            borderRadius: BorderRadius.circular(12),
+            color: Theme.of(context).cardTheme.color,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(icon: const Icon(Icons.remove, size: 20), onPressed: onDecrement),
+              Text('$value $suffix'.trim(), style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
+              IconButton(icon: const Icon(Icons.add, size: 20), onPressed: onIncrement),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+  
+  Widget _buildTextField(String label, TextEditingController controller, {String? hintText, int maxLines = 1, TextInputType keyboardType = TextInputType.text, List<TextInputFormatter>? inputFormatters, IconData? prefixIcon}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -226,10 +665,12 @@ class _HotelLaundryDetailsScreenState extends State<HotelLaundryDetailsScreen> {
           controller: controller,
           maxLines: maxLines,
           keyboardType: keyboardType,
+          textCapitalization: keyboardType == TextInputType.text ? TextCapitalization.words : TextCapitalization.none,
           inputFormatters: inputFormatters,
           style: AppTextStyles.bodyMedium,
           decoration: InputDecoration(
             hintText: hintText,
+            prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 18) : null,
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -251,439 +692,4 @@ class _HotelLaundryDetailsScreenState extends State<HotelLaundryDetailsScreen> {
     );
   }
 
-  Widget _buildCounterField(String label, int value, VoidCallback onDecrement, VoidCallback onIncrement, {String suffix = ''}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600])),
-        const SizedBox(height: 6),
-        Container(
-          height: 48,
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.withOpacity(0.3)),
-            borderRadius: BorderRadius.circular(12),
-            color: Theme.of(context).cardTheme.color,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.remove, size: 20),
-                onPressed: onDecrement,
-                color: Colors.black,
-              ),
-              Text(
-                '$value $suffix'.trim(),
-                style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
-              ),
-              IconButton(
-                icon: const Icon(Icons.add, size: 20),
-                onPressed: onIncrement,
-                color: Colors.black,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: Column(
-        children: [
-          const QuickServicesHeader(
-            currentStep: 1,
-            title: 'Hotel Laundry Requirements',
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildNoticeBanner(),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 1. Hotel Details
-                        _buildSectionHeader('1. Hotel Details'),
-                        Row(
-                          children: [
-                            Expanded(child: _buildTextField('Hotel Name', _facilityNameController)),
-                            const SizedBox(width: 16),
-                            Expanded(child: _buildTextField('Collection Point', _collectionPointController)),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(child: _buildTextField('Contact Person', _contactPersonController)),
-                            const SizedBox(width: 16),
-                            Expanded(child: _buildTextField('Contact Number', _contactNumberController, keyboardType: TextInputType.phone, inputFormatters: [FilteringTextInputFormatter.digitsOnly])),
-                          ],
-                        ),
-                        const Divider(height: 32),
-
-                        // 2. Select Laundry Type
-                        Row(
-                          children: [
-                            _buildSectionHeader('2. Select Laundry Type'),
-                            const SizedBox(width: 8),
-                            Text('(Select all that apply)', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey)),
-                          ],
-                        ),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 12,
-                          children: _availableLaundryTypes.map((type) {
-                            final isSelected = _selectedLaundryTypes.contains(type);
-                            return GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  if (isSelected) {
-                                    _selectedLaundryTypes.remove(type);
-                                  } else {
-                                    _selectedLaundryTypes.add(type);
-                                  }
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: isSelected ? AppColors.primaryGold.withOpacity(0.15) : (Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.white),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: isSelected ? AppColors.primaryGold : (Theme.of(context).brightness == Brightness.dark ? Colors.grey[700]! : Colors.grey[300]!),
-                                    width: isSelected ? 1.5 : 1.0,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      type,
-                                      style: AppTextStyles.bodySmall.copyWith(
-                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                        color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
-                                      ),
-                                    ),
-                                    if (isSelected) ...[
-                                      const SizedBox(width: 8),
-                                      const Icon(Icons.check_circle, size: 16, color: Colors.black),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                        if (_selectedLaundryTypes.contains('Other Laundry')) ...[
-                          const SizedBox(height: 12),
-                          _buildTextField('', _otherLaundryTypeController, hintText: 'Please specify other laundry type'),
-                        ],
-                        const Divider(height: 32),
-
-                        // 3. Estimated Quantity
-                        _buildSectionHeader('3. Estimated Quantity'),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildCounterField('Estimated Weight', _estimatedWeightKg, () {
-                                if (_estimatedWeightKg > 1) setState(() => _estimatedWeightKg--);
-                              }, () {
-                                setState(() => _estimatedWeightKg++);
-                              }, suffix: 'kg'),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildCounterField('Number of Bags', _numberOfBags, () {
-                                if (_numberOfBags > 1) setState(() => _numberOfBags--);
-                              }, () {
-                                setState(() => _numberOfBags++);
-                              }),
-                            ),
-                          ],
-                        ),
-                        const Divider(height: 32),
-
-                        // 4. Service Frequency
-                        _buildSectionHeader('4. Service Frequency'),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 12,
-                          children: ['One-Time Service', 'Recurring Service'].map((type) {
-                            final isSelected = _serviceFrequency == type;
-                            return GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _serviceFrequency = type;
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: isSelected ? AppColors.primaryGold.withOpacity(0.15) : (Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.white),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: isSelected ? AppColors.primaryGold : (Theme.of(context).brightness == Brightness.dark ? Colors.grey[700]! : Colors.grey[300]!),
-                                    width: isSelected ? 1.5 : 1.0,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-                                      size: 18,
-                                      color: isSelected ? Colors.black : Colors.grey,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      type,
-                                      style: AppTextStyles.bodySmall.copyWith(
-                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                        color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Recurring schedule can be confirmed by the provider.',
-                          style: AppTextStyles.bodySmall.copyWith(color: Colors.grey),
-                        ),
-                        const Divider(height: 32),
-
-                        // 5. Special Handling
-                        _buildSectionHeader('5. Special Handling'),
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 12,
-                          children: ['Standard', 'Special Care Required', 'Not Sure'].map((type) {
-                            final isSelected = _linenType == type;
-                            return GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _linenType = type;
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                decoration: BoxDecoration(
-                                  color: isSelected ? AppColors.primaryGold.withOpacity(0.15) : (Theme.of(context).brightness == Brightness.dark ? Colors.grey[850] : Colors.white),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: isSelected ? AppColors.primaryGold : (Theme.of(context).brightness == Brightness.dark ? Colors.grey[700]! : Colors.grey[300]!),
-                                    width: isSelected ? 1.5 : 1.0,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-                                      size: 18,
-                                      color: isSelected ? Colors.black : Colors.grey,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      type,
-                                      style: AppTextStyles.bodySmall.copyWith(
-                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                        color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black87,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'The provider will confirm special-care requirements.',
-                          style: AppTextStyles.bodySmall.copyWith(color: Colors.grey),
-                        ),
-                        const Divider(height: 32),
-
-                        // 6. Requested Return
-                        _buildSectionHeader('6. Requested Return'),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: _pickDate,
-                                child: AbsorbPointer(
-                                  child: TextFormField(
-                                    controller: _dateController,
-                                    readOnly: true,
-                                    decoration: InputDecoration(
-                                      hintText: 'Date',
-                                      prefixIcon: const Icon(Icons.calendar_today, size: 18),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                                      ),
-                                      filled: true,
-                                      fillColor: Theme.of(context).cardTheme.color,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: _pickTime,
-                                child: AbsorbPointer(
-                                  child: TextFormField(
-                                    controller: _timeController,
-                                    readOnly: true,
-                                    decoration: InputDecoration(
-                                      hintText: 'Time',
-                                      prefixIcon: const Icon(Icons.access_time, size: 18),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-                                      ),
-                                      filled: true,
-                                      fillColor: Theme.of(context).cardTheme.color,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Subject to provider confirmation.',
-                          style: AppTextStyles.bodySmall.copyWith(color: Colors.grey),
-                        ),
-                        const Divider(height: 32),
-
-                        // 7. Additional Details
-                        _buildSectionHeader('7. Additional Details'),
-                        QuickServicesAdditionalDetails(
-                          whatYouNeedController: _whatYouNeedController,
-                          describeIssueController: _describeIssueController,
-                          images: _selectedFiles,
-                          onAddImages: _pickFiles,
-                          onRemoveImage: (image) {
-                            setState(() {
-                              _selectedFiles.remove(image);
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 24),
-
-                        // Warning Banner
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFF3E0),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.orange.shade200),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.warning_amber_rounded, color: Colors.orange),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  'Provide only sealed and labelled laundry bags. Clinical waste and sharps are not accepted.',
-                                  style: AppTextStyles.bodySmall.copyWith(color: Colors.orange.shade900),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-
-                        // Continue Button
-                        ElevatedButton(
-                          onPressed: () {
-                            if (_facilityNameController.text.trim().isEmpty || _collectionPointController.text.trim().isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all required hotel details.')));
-                              return;
-                            }
-                            if (_linenType == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select special handling requirements.')));
-                              return;
-                            }
-                            if (_requestedDate == null || _requestedTime == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select requested return date and time.')));
-                              return;
-                            }
-
-                            List<String> finalLaundryTypes = List.from(_selectedLaundryTypes);
-                            if (finalLaundryTypes.contains('Other Laundry') && _otherLaundryTypeController.text.trim().isNotEmpty) {
-                              finalLaundryTypes.remove('Other Laundry');
-                              finalLaundryTypes.add(_otherLaundryTypeController.text.trim());
-                            }
-
-                            final updatedData = widget.bookingData.copyWith(
-                              selectedServiceTitle: 'Hotel Laundry',
-                              facilityName: _facilityNameController.text.trim(),
-                              collectionPoint: _collectionPointController.text.trim(),
-                              facilityContactPerson: _contactPersonController.text.trim(),
-                              facilityContactNumber: _contactNumberController.text.trim(),
-                              commercialLaundryTypes: finalLaundryTypes,
-                              laundryQuantityKg: _estimatedWeightKg,
-                              numberOfBags: _numberOfBags,
-                              serviceFrequency: _serviceFrequency,
-                              linenHandlingType: _linenType,
-                              requestedReturnDate: _requestedDate,
-                              requestedReturnTime: _requestedTime,
-                              whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty ? _whatYouNeedController.text.trim() : null,
-                              describeIssue: _describeIssueController.text.trim().isNotEmpty ? _describeIssueController.text.trim() : null,
-                              uploadedImages: _selectedFiles.map((e) => e.path).toList(),
-                              baseEstimatedHours: 0.0,
-                        materialPreference: _materialPreference,
-                            );
-
-                            context.pushNamed(RouteNames.quickServicesLaundryReview, extra: updatedData);
-                          },
-                          style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGold,
-                      foregroundColor: Colors.black,
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 0,
-                    ),
-                    child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
-                        ),
-                        const SizedBox(height: 40),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

@@ -8,6 +8,7 @@ import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_additional_details.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../../../../core/config/quick_services_pricing_config.dart';
+import '../../../../../core/config/quick_services_pricing_config.dart';
 
 class LaundryDetailsScreen extends StatefulWidget {
   final QuickServiceBookingData bookingData;
@@ -19,33 +20,39 @@ class LaundryDetailsScreen extends StatefulWidget {
 
 class _LaundryDetailsScreenState extends State<LaundryDetailsScreen> {
   String _materialPreference = 'Bring materials';
-  String? _selectedMethod;
+  String? _selectedMethod = 'At-Home Service';
   String? _selectedService;
   double _servicePricePerKg = 0.0;
-  int _laundryQuantityKg = 5;
+
 
   int _shirtCount = 0;
   int _dressCount = 0;
   int _trouserCount = 0;
   int _beddingCount = 0;
 
-  String? _detergentArrangement;
+
 
   final TextEditingController _whatYouNeedController = TextEditingController();
   final TextEditingController _describeIssueController = TextEditingController();
   final TextEditingController _customServiceController = TextEditingController();
+
+  final TextEditingController _dateController = TextEditingController();
+  final TextEditingController _timeController = TextEditingController();
+  DateTime? _requestedDate;
+  TimeOfDay? _requestedTime;
+
   final List<XFile> _selectedImages = [];
   final ImagePicker _picker = ImagePicker();
 
   final List<Map<String, dynamic>> _laundryServices = [
-    {'title': 'Wash & Fold', 'priceText': '', 'unitPrice': 3.0},
-    {'title': 'Wash & Iron', 'priceText': '', 'unitPrice': 5.0},
-    {'title': 'Ironing Only', 'priceText': '', 'unitPrice': 3.0},
-    {'title': 'Dry Cleaning', 'priceText': '', 'unitPrice': 0.0},
-    {'title': 'Bedding / Linen', 'priceText': '', 'unitPrice': 8.0},
-    {'title': 'Curtains', 'priceText': '', 'unitPrice': 0.0},
-    {'title': 'Delicate Garments', 'priceText': '', 'unitPrice': 0.0},
-    {'title': 'Other Laundry Service', 'priceText': '', 'unitPrice': 0.0},
+    {'title': 'Wash & Fold', 'icon': Icons.local_laundry_service, 'priceText': '', 'unitPrice': 3.0},
+    {'title': 'Wash & Iron', 'icon': Icons.dry_cleaning, 'priceText': '', 'unitPrice': 5.0},
+    {'title': 'Ironing Only', 'icon': Icons.iron, 'priceText': '', 'unitPrice': 3.0},
+    {'title': 'Dry Cleaning', 'icon': Icons.checkroom, 'priceText': '', 'unitPrice': 0.0},
+    {'title': 'Bedding / Linen', 'icon': Icons.bed, 'priceText': '', 'unitPrice': 8.0},
+    {'title': 'Curtains', 'icon': Icons.curtains, 'priceText': '', 'unitPrice': 0.0},
+    {'title': 'Delicate Garments', 'icon': Icons.wash, 'priceText': '', 'unitPrice': 0.0},
+    {'title': 'Other Laundry Service', 'icon': Icons.more_horiz, 'priceText': '', 'unitPrice': 0.0},
   ];
 
   @override
@@ -64,6 +71,9 @@ class _LaundryDetailsScreenState extends State<LaundryDetailsScreen> {
     _whatYouNeedController.dispose();
     _describeIssueController.dispose();
     _customServiceController.dispose();
+    
+    _dateController.dispose();
+    _timeController.dispose();
     super.dispose();
   }
 
@@ -84,10 +94,10 @@ class _LaundryDetailsScreenState extends State<LaundryDetailsScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(
+          QuickServicesHeader(
             currentStep: 1,
             title: 'Service Requirements',
-            subtitle: 'Laundry & Ironing',
+            subtitle: (widget.bookingData.selectedServiceTitle ?? 'Home').toLowerCase().endsWith('laundry') ? widget.bookingData.selectedServiceTitle! : '${widget.bookingData.selectedServiceTitle ?? 'Home'} Laundry',
           ),
             
           Expanded(
@@ -146,8 +156,8 @@ class _LaundryDetailsScreenState extends State<LaundryDetailsScreen> {
                     runSpacing: 8,
                     children: _laundryServices.map((svc) {
                       final title = svc['title'] as String;
-                      final priceText = svc['priceText'] as String;
                       final unitPrice = svc['unitPrice'] as double;
+                      final iconData = svc['icon'] as IconData?;
                       final isSelected = _selectedService == title;
 
                       return GestureDetector(
@@ -159,43 +169,36 @@ class _LaundryDetailsScreenState extends State<LaundryDetailsScreen> {
                         },
                         child: Container(
                           width: (MediaQuery.of(context).size.width - 48) / 2,
-                          padding: const EdgeInsets.all(12),
+                          height: 90,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
                           decoration: BoxDecoration(
                             color: Theme.of(context).cardTheme.color,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
                               color: isSelected ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
-                              width: isSelected ? 2 : 1,
+                              width: 1.5,
                             ),
                           ),
-                          child: Row(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-                                color: isSelected ? AppColors.primaryGold : Colors.grey,
-                                size: 18,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      title,
-                                      style: AppTextStyles.bodySmall.copyWith(
-                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                        fontSize: 12,
-                                        height: 1.1,
-                                      ),
-                                      maxLines: 2,
-                                      softWrap: true,
-                                    ),
-                                    Text(
-                                      priceText,
-                                      style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600], fontSize: 11),
-                                    ),
-                                  ],
+                              if (iconData != null)
+                                Icon(
+                                  iconData,
+                                  color: isSelected ? AppColors.primaryGold : Colors.grey[700],
+                                  size: 26,
                                 ),
+                              if (iconData != null) const SizedBox(height: 8),
+                              Text(
+                                title,
+                                textAlign: TextAlign.center,
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                  fontSize: 12,
+                                  height: 1.2,
+                                ),
+                                maxLines: 2,
+                                softWrap: true,
                               ),
                             ],
                           ),
@@ -213,65 +216,9 @@ class _LaundryDetailsScreenState extends State<LaundryDetailsScreen> {
                     ),
                   ],
 
-                  const SizedBox(height: 20),
 
-                  // Estimated Laundry Quantity
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          'Estimated Laundry Quantity',
-                          style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            InkWell(
-                              onTap: () {
-                                if (_laundryQuantityKg > 1) {
-                                  setState(() => _laundryQuantityKg--);
-                                }
-                              },
-                              borderRadius: const BorderRadius.horizontal(left: Radius.circular(5)),
-                              child: const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                                child: Icon(Icons.remove, size: 14),
-                              ),
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 6),
-                              child: Text(
-                                '$_laundryQuantityKg kg',
-                                style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            InkWell(
-                              onTap: () {
-                                setState(() => _laundryQuantityKg++);
-                              },
-                              borderRadius: const BorderRadius.horizontal(right: Radius.circular(5)),
-                              child: const Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                                child: Icon(Icons.add, size: 14),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
 
-                  const SizedBox(height: 20),
-
+                  const SizedBox(height: 24),
                   // Special-Care Items
                   Text(
                     'Special-Care Items',
@@ -339,71 +286,10 @@ class _LaundryDetailsScreenState extends State<LaundryDetailsScreen> {
                       ],
                     ),
                   ),
-
-                  const SizedBox(height: 20),
-
-                  // Detergent Arrangement
-                  Text(
-                    'Detergent Arrangement',
-                    style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 10),
-                  IntrinsicHeight(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: ['Customer Provides Detergent', 'Professional Brings Detergent'].map((opt) {
-                        final isSelected = _detergentArrangement == opt;
-                        return Expanded(
-                          child: GestureDetector(
-                            onTap: () => setState(() => _detergentArrangement = opt),
-                            child: Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? (isDark ? Colors.amber.shade900.withOpacity(0.25) : const Color(0xFFFFF8E1))
-                                    : Theme.of(context).cardTheme.color,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: isSelected ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
-                                  width: isSelected ? 1.5 : 1,
-                                ),
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-                                    color: isSelected ? AppColors.primaryGold : Colors.grey,
-                                    size: 18,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      opt,
-                                      style: AppTextStyles.bodySmall.copyWith(
-                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                        color: isSelected ? (isDark ? AppColors.primaryGold : const Color(0xFFD97706)) : null,
-                                        fontSize: 12,
-                                        height: 1.2,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-
                   const SizedBox(height: 24),
 
-                  // Additional Details (Tell us what you need, Describe issue, Upload Photos)
-
                   Text(
-                    'Materials / Parts',
+                    'Cleaning materials',
                     style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
@@ -437,7 +323,7 @@ class _LaundryDetailsScreenState extends State<LaundryDetailsScreen> {
                               Text('Bring materials', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 2),
                               Text(
-                                _materialPreference == 'Bring materials' ? '+€${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.category).toStringAsFixed(2)} extra charge' : 'Use my materials (No extra charge)',
+                                _materialPreference == 'Bring materials' ? '+€${QuickServicesPricingConfig.getMaterialCost('laundry').toStringAsFixed(2)} extra charge' : 'Use my materials (No extra charge)',
                                 style: AppTextStyles.bodySmall.copyWith(
                                   color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey[600],
                                   fontWeight: _materialPreference == 'Bring materials' ? FontWeight.bold : FontWeight.normal,
@@ -484,58 +370,48 @@ class _LaundryDetailsScreenState extends State<LaundryDetailsScreen> {
 
                   const SizedBox(height: 20),
 
-                  // Notice Banner
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E3A8A).withOpacity(0.3) : const Color(0xFFE3F2FD),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isDark ? Colors.blue.shade700 : Colors.blue.shade200,
-                      ),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(Icons.info_outline, color: Colors.blue, size: 20),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Final quantity and price will be confirmed before service begins.',
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: isDark ? Colors.blue.shade200 : Colors.blue.shade900,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+
 
                   const SizedBox(height: 32),
 
                   // Continue Button
                   ElevatedButton(
                     onPressed: () {
+
+                      if (_selectedMethod == null || _selectedMethod!.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a service method.'), backgroundColor: Colors.red));
+                        return;
+                      }
+                      if (_selectedService == null || _selectedService!.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a service.'), backgroundColor: Colors.red));
+                        return;
+                      }
+                      if (_selectedService == 'Other Laundry Service' && _customServiceController.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please specify the service type.'), backgroundColor: Colors.red));
+                        return;
+                      }
+
                       final finalServiceType = _selectedService == 'Other Laundry Service' && _customServiceController.text.trim().isNotEmpty
                           ? _customServiceController.text.trim()
                           : _selectedService;
 
-                      final calculatedSubtotal = _servicePricePerKg * _laundryQuantityKg;
+                      final calculatedSubtotal = _servicePricePerKg * 1;
                       final updatedData = widget.bookingData.copyWith(
                         selectedServiceTitle: 'Laundry & Ironing',
                         laundryServiceMethod: _selectedMethod,
+                        requestedReturnDate: _selectedMethod == 'Pickup & Return' ? _requestedDate : null,
+                        requestedReturnTime: _selectedMethod == 'Pickup & Return' ? _requestedTime : null,
                         laundryServiceType: finalServiceType,
                         laundryPackagePrice: _servicePricePerKg,
-                        laundryQuantityKg: _laundryQuantityKg,
+                        laundryQuantityKg: 1,
                         specialCareShirtCount: _shirtCount,
                         specialCareDressCount: _dressCount,
                         specialCareTrouserCount: _trouserCount,
                         specialCareBeddingCount: _beddingCount,
-                        detergentArrangement: _detergentArrangement,
                         subtotal: 0.0,
                         baseEstimatedHours: 0.0,
                         materialPreference: _materialPreference,
+                        pickupAndReturnFee: _selectedMethod == 'Pickup & Return' ? QuickServicesPricingConfig.getPickupFee('laundry') : 0.0,
                         whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty
                             ? _whatYouNeedController.text.trim()
                             : null,
@@ -561,6 +437,7 @@ class _LaundryDetailsScreenState extends State<LaundryDetailsScreen> {
                     ),
                     child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
                   ),
+                  const SizedBox(height: 32),
                 ],
               ),
             ),
@@ -589,7 +466,7 @@ class _LaundryDetailsScreenState extends State<LaundryDetailsScreen> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
-            width: isSelected ? 2 : 1,
+            width: 1.5,
           ),
         ),
         child: Column(

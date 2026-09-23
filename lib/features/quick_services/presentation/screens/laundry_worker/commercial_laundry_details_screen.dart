@@ -9,7 +9,9 @@ import '../../../../../core/router/route_names.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_additional_details.dart';
 import '../../../data/models/quick_service_booking_data.dart';
+import '../../../../../core/config/quick_services_pricing_config.dart';
 import 'dart:io';
+
 
 class CommercialLaundryDetailsScreen extends StatefulWidget {
   final QuickServiceBookingData bookingData;
@@ -21,377 +23,543 @@ class CommercialLaundryDetailsScreen extends StatefulWidget {
 }
 
 class _CommercialLaundryDetailsScreenState extends State<CommercialLaundryDetailsScreen> {
-  String _materialPreference = 'Bring materials';
-  final TextEditingController _businessNameController = TextEditingController();
-  final TextEditingController _weightController = TextEditingController();
-  final TextEditingController _bagsController = TextEditingController();
   final TextEditingController _whatYouNeedController = TextEditingController();
   final TextEditingController _describeIssueController = TextEditingController();
+  final TextEditingController _customServiceController = TextEditingController();
+  
+  String _selectedMethod = 'On-Site Service';
+  String _selectedService = '';
+  double _servicePricePerKg = 0.0;
+  String _materialPreference = 'Bring materials';
+  
+  final List<XFile> _selectedImages = [];
+  final ImagePicker _picker = ImagePicker();
+
+  final List<Map<String, dynamic>> _laundryServices = [
+
+    {'title': 'Uniforms', 'icon': Icons.checkroom, 'priceText': '', 'unitPrice': 0.0},
+    {'title': 'Towels', 'icon': Icons.layers, 'priceText': '', 'unitPrice': 0.0},
+    {'title': 'Table Linen', 'icon': Icons.table_restaurant, 'priceText': '', 'unitPrice': 0.0},
+    {'title': 'Cleaning Clothes', 'icon': Icons.cleaning_services, 'priceText': '', 'unitPrice': 0.0},
+
+  ];
+
+
+  final TextEditingController _businessNameController = TextEditingController();
+  final TextEditingController _collectionPointController = TextEditingController();
+  final TextEditingController _contactPersonController = TextEditingController();
+  final TextEditingController _contactNumberController = TextEditingController();
   final TextEditingController _otherBusinessTypeController = TextEditingController();
-  final TextEditingController _otherLaundryTypeController = TextEditingController();
+  final TextEditingController _dateController = TextEditingController();
+  final TextEditingController _timeController = TextEditingController();
 
+  DateTime? _requestedDate;
+  TimeOfDay? _requestedTime;
   String? _businessType;
-  final List<Map<String, dynamic>> _businessTypes = [
-    {'name': 'Restaurant', 'icon': Icons.restaurant},
-    {'name': 'Hotel', 'icon': Icons.hotel},
-    {'name': 'Salon / Spa', 'icon': Icons.spa},
-    {'name': 'Gym', 'icon': Icons.fitness_center},
-    {'name': 'Office', 'icon': Icons.work},
-    {'name': 'Other', 'icon': Icons.more_horiz},
-  ];
-
-  final List<String> _selectedLaundryTypes = [];
-  final List<Map<String, dynamic>> _availableLaundryTypes = [
-    {'name': 'Uniforms', 'icon': Icons.checkroom},
-    {'name': 'Towels', 'icon': Icons.layers},
-    {'name': 'Table Linen', 'icon': Icons.table_restaurant},
-    {'name': 'Cleaning Cloths', 'icon': Icons.cleaning_services},
-    {'name': 'Other', 'icon': Icons.more_horiz},
-  ];
-
   String? _serviceFrequency = 'One-Time Service';
 
-  final ImagePicker _picker = ImagePicker();
-  final List<XFile> _selectedFiles = [];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.bookingData.whatYouNeed != null) {
+      _whatYouNeedController.text = widget.bookingData.whatYouNeed!;
+    }
+    if (widget.bookingData.describeIssue != null) {
+      _describeIssueController.text = widget.bookingData.describeIssue!;
+    }
+
+  }
 
   @override
   void dispose() {
-    _businessNameController.dispose();
-    _weightController.dispose();
-    _bagsController.dispose();
     _whatYouNeedController.dispose();
     _describeIssueController.dispose();
+    _customServiceController.dispose();
+
+    _businessNameController.dispose();
+    _collectionPointController.dispose();
+    _contactPersonController.dispose();
+    _contactNumberController.dispose();
     _otherBusinessTypeController.dispose();
-    _otherLaundryTypeController.dispose();
+    _dateController.dispose();
+    _timeController.dispose();
+
     super.dispose();
   }
 
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Text(
-        title,
-        style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-
-  Widget _buildTextField(String label, TextEditingController controller, {int maxLines = 1, TextInputType keyboardType = TextInputType.text, List<TextInputFormatter>? inputFormatters, String? hintText}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (label.isNotEmpty) ...[
-          Text(label, style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 6),
-        ],
-        TextFormField(
-          controller: controller,
-          maxLines: maxLines,
-          keyboardType: keyboardType,
-          inputFormatters: inputFormatters,
-          style: AppTextStyles.bodyMedium,
-          decoration: InputDecoration(
-            hintText: hintText,
-            hintStyle: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[400]),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            filled: true,
-            fillColor: Theme.of(context).cardTheme.color,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: AppColors.primaryGold),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Future<void> _pickImages() async {
-    final List<XFile> pickedFiles = await _picker.pickMultiImage();
-    if (pickedFiles.isNotEmpty) {
+    final List<XFile> images = await _picker.pickMultiImage();
+    if (images.isNotEmpty) {
       setState(() {
-        _selectedFiles.addAll(pickedFiles);
+        _selectedImages.addAll(images);
       });
     }
   }
 
+
+  void _updateDateText() {
+    if (_requestedDate == null) return;
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    _dateController.text = '${_requestedDate!.day} ${months[_requestedDate!.month - 1]} ${_requestedDate!.year}';
+  }
+
+  void _updateTimeText() {
+    if (_requestedTime == null) return;
+    _timeController.text = _requestedTime!.format(context);
+  }
+  Future<void> _pickDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _requestedDate ?? DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: Theme.of(context).brightness == Brightness.dark
+              ? const ColorScheme.dark(
+                  primary: AppColors.primaryGold,
+                  surface: AppColors.surfaceDark,
+                  onSurface: AppColors.textPrimary,
+                )
+              : const ColorScheme.light(
+                  primary: AppColors.primaryGold,
+                  onSurface: AppColors.textPrimaryLight,
+                ),
+          dialogTheme: DialogThemeData(
+            backgroundColor: Theme.of(context).dialogBackgroundColor,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) {
+      setState(() {
+        _requestedDate = picked;
+        _updateDateText();
+      });
+    }
+  }
+  Future<void> _pickTime() async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: _requestedTime ?? TimeOfDay.now(),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: Theme.of(context).brightness == Brightness.dark
+              ? const ColorScheme.dark(
+                  primary: AppColors.primaryGold,
+                  surface: AppColors.surfaceDark,
+                  onSurface: AppColors.textPrimary,
+                )
+              : const ColorScheme.light(
+                  primary: AppColors.primaryGold,
+                  onSurface: AppColors.textPrimaryLight,
+                ),
+          dialogTheme: DialogThemeData(
+            backgroundColor: Theme.of(context).dialogBackgroundColor,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          timePickerTheme: const TimePickerThemeData(
+            hourMinuteTextStyle: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+            ),
+            dayPeriodTextStyle: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        child: Transform.scale(
+          scale: 0.85,
+          child: child!,
+        ),
+      ),
+    );
+    if (picked != null) {
+      // Round to nearest 5 minutes
+      int roundedMinute = ((picked.minute / 5).round() * 5);
+      int finalHour = picked.hour;
+      if (roundedMinute >= 60) {
+        roundedMinute = 0;
+        finalHour = (finalHour + 1) % 24;
+      }
+      setState(() {
+        _requestedTime = TimeOfDay(hour: finalHour, minute: roundedMinute);
+        _updateTimeText();
+      });
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(
+          QuickServicesHeader(
             currentStep: 1,
             title: 'Service Requirements',
-            subtitle: 'Commercial Laundry',
+            subtitle: (widget.bookingData.selectedServiceTitle ?? 'Home').toLowerCase().endsWith('laundry') ? widget.bookingData.selectedServiceTitle! : '${widget.bookingData.selectedServiceTitle ?? 'Home'} Laundry',
           ),
+            
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),
+              physics: const BouncingScrollPhysics(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Business Name
-                  _buildSectionHeader('Business Name'),
-                  _buildTextField('', _businessNameController, hintText: 'Enter business name'),
-                  const Divider(height: 32),
+                  // Service Method
+                  Text(
+                    'Service Method',
+                    style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.grey[700]),
+                  ),
+                  const SizedBox(height: 10),
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: _buildMethodCard(
+                            title: 'On-Site Service',
+                            subtitle: 'Service performed at your facility.',
+                            icon: Icons.home_work_outlined,
+                            isSelected: _selectedMethod == 'On-Site Service',
+                            onTap: () => setState(() => _selectedMethod = 'On-Site Service'),
+                            isDark: isDark,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildMethodCard(
+                            title: 'Pickup & Return',
+                            subtitle: 'Return date & time confirmed after collection.',
+                            icon: Icons.local_shipping_outlined,
+                            isSelected: _selectedMethod == 'Pickup & Return',
+                            onTap: () => setState(() => _selectedMethod = 'Pickup & Return'),
+                            isDark: isDark,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
-                  // Business Type
-                  _buildSectionHeader('Business Type'),
+                  const SizedBox(height: 20),
+
+                  // Select Services
+                  Text(
+                    'Select Services',
+                    style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+
                   Wrap(
                     spacing: 8,
-                    runSpacing: 12,
-                    children: _businessTypes.map((type) {
-                      final isSelected = _businessType == type['name'];
-                      final isDark = Theme.of(context).brightness == Brightness.dark;
+                    runSpacing: 8,
+                    children: _laundryServices.map((svc) {
+                      final title = svc['title'] as String;
+                      final unitPrice = svc['unitPrice'] as double;
+                      final iconData = svc['icon'] as IconData?;
+                      final isSelected = _selectedService == title;
+
                       return GestureDetector(
                         onTap: () {
                           setState(() {
-                            _businessType = type['name'];
+                            _selectedService = title;
+                            _servicePricePerKg = unitPrice;
                           });
                         },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          width: (MediaQuery.of(context).size.width - 48) / 2,
+                          height: 90,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
                           decoration: BoxDecoration(
-                            color: isSelected ? AppColors.primaryGold.withOpacity(0.15) : (isDark ? Colors.grey[850] : Colors.white),
+                            color: Theme.of(context).cardTheme.color,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: isSelected ? AppColors.primaryGold : (isDark ? Colors.grey[700]! : Colors.grey[300]!),
-                              width: isSelected ? 1.5 : 1.0,
+                              color: isSelected ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
+                              width: 1.5,
                             ),
                           ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(type['icon'], size: 18, color: isSelected ? Colors.black : (isDark ? Colors.white70 : Colors.black87)),
-                              const SizedBox(width: 8),
-                              Text(
-                                type['name'],
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                  color: isDark ? Colors.white : Colors.black87,
+                              if (iconData != null)
+                                Icon(
+                                  iconData,
+                                  color: isSelected ? AppColors.primaryGold : Colors.grey[700],
+                                  size: 26,
                                 ),
+                              if (iconData != null) const SizedBox(height: 8),
+                              Text(
+                                title,
+                                textAlign: TextAlign.center,
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                  fontSize: 12,
+                                  height: 1.2,
+                                ),
+                                maxLines: 2,
+                                softWrap: true,
                               ),
-                              if (isSelected) ...[
-                                const SizedBox(width: 6),
-                                const Icon(Icons.check_circle, size: 16, color: Colors.black),
-                              ],
                             ],
                           ),
                         ),
                       );
                     }).toList(),
                   ),
-                  if (_businessType == 'Other') ...[
-                    const SizedBox(height: 12),
-                    _buildTextField('', _otherBusinessTypeController, hintText: 'Please specify business type'),
-                  ],
-                  const Divider(height: 32),
 
-                  // Laundry Type
-                  _buildSectionHeader('Laundry Type'),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 12,
-                    children: _availableLaundryTypes.map((type) {
-                      final isSelected = _selectedLaundryTypes.contains(type['name']);
-                      final isDark = Theme.of(context).brightness == Brightness.dark;
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            if (isSelected) {
-                              _selectedLaundryTypes.remove(type['name']);
-                            } else {
-                              _selectedLaundryTypes.add(type['name']);
-                            }
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: isSelected ? AppColors.primaryGold.withOpacity(0.15) : (isDark ? Colors.grey[850] : Colors.white),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: isSelected ? AppColors.primaryGold : (isDark ? Colors.grey[700]! : Colors.grey[300]!),
-                              width: isSelected ? 1.5 : 1.0,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(type['icon'], size: 18, color: isSelected ? Colors.black : (isDark ? Colors.white70 : Colors.black87)),
-                              const SizedBox(width: 6),
-                              Text(
-                                type['name'],
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                  color: isDark ? Colors.white : Colors.black87,
-                                ),
-                              ),
-                              if (isSelected) ...[
-                                const SizedBox(width: 6),
-                                const Icon(Icons.check_circle, size: 16, color: Colors.black),
-                              ],
-                            ],
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  if (_selectedLaundryTypes.contains('Other')) ...[
-                    const SizedBox(height: 12),
-                    _buildTextField('', _otherLaundryTypeController, hintText: 'Please specify laundry type'),
-                  ],
-                  const Divider(height: 32),
+                  
 
-                  // Estimated Quantity
-                  _buildSectionHeader('Estimated Quantity'),
+                  const SizedBox(height: 24),
+
+
+                  // Business Details
+                  Text('Business Details', style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
-                      Expanded(
-                        child: _buildTextField('', _weightController, hintText: 'Weight (kg)', keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly]),
-                      ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('OR', style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                      Expanded(
-                        child: _buildTextField('', _bagsController, hintText: 'Number of Bags', keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly]),
-                      ),
+                      Expanded(child: _buildTextField('Business Name', _businessNameController)),
+                      const SizedBox(width: 16),
+                      Expanded(child: _buildTextField('Collection Point', _collectionPointController)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(child: _buildTextField('Contact Person', _contactPersonController)),
+                      const SizedBox(width: 16),
+                      Expanded(child: _buildTextField('Contact Number', _contactNumberController, keyboardType: TextInputType.phone, inputFormatters: [FilteringTextInputFormatter.digitsOnly])),
                     ],
                   ),
                   const Divider(height: 32),
+                  if (_selectedMethod == 'Pickup & Return') ...[
 
-                  // Service Frequency
-                  _buildSectionHeader('Service Frequency'),
-                  Row(
-                    children: ['One-Time Service', 'Recurring Service'].map((type) {
-                      final isSelected = _serviceFrequency == type;
-                      final isDark = Theme.of(context).brightness == Brightness.dark;
-                      return Expanded(
+                  // Requested Return
+                  Text('Requested Return', style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                                    Row(
+                    children: [
+                      Expanded(
                         child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _serviceFrequency = type;
-                            });
-                          },
-                          child: Container(
-                            margin: const EdgeInsets.only(right: 8),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              color: isSelected ? AppColors.primaryGold.withOpacity(0.15) : (isDark ? Colors.grey[850] : Colors.white),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                color: isSelected ? AppColors.primaryGold : (isDark ? Colors.grey[700]! : Colors.grey[300]!),
-                                width: isSelected ? 1.5 : 1.0,
+                          onTap: _pickDate,
+                          child: AbsorbPointer(
+                            child: TextFormField(
+                              controller: _dateController,
+                              readOnly: true,
+                              decoration: InputDecoration(
+                                hintText: 'Select Date',
+                                prefixIcon: const Icon(Icons.calendar_today, size: 18),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                                ),
+                                filled: true,
+                                fillColor: Theme.of(context).cardTheme.color,
                               ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-                                  color: isSelected ? Colors.black : Colors.grey,
-                                  size: 18,
-                                ),
-                                const SizedBox(width: 8),
-                                Flexible(
-                                  child: Text(
-                                    type,
-                                    style: AppTextStyles.bodySmall.copyWith(
-                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                      color: isDark ? Colors.white : Colors.black87,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
                             ),
                           ),
                         ),
-                      );
-                    }).toList(),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: _pickTime,
+                          child: AbsorbPointer(
+                            child: TextFormField(
+                              controller: _timeController,
+                              readOnly: true,
+                              decoration: InputDecoration(
+                                hintText: 'Select Time',
+                                prefixIcon: const Icon(Icons.access_time, size: 18),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+                                ),
+                                filled: true,
+                                fillColor: Theme.of(context).cardTheme.color,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const Divider(height: 32),
+                  const SizedBox(height: 24),
+                  ],
 
-                  // Additional Details (Tell us what you need, Describe issue, Upload Photos)
+
+                  Text(
+                    'Cleaning materials',
+                    style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
+                        width: _materialPreference == 'Bring materials' ? 1.5 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGold.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.handyman, size: 24, color: AppColors.primaryGold),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Bring materials', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 2),
+                              Text(
+                                _materialPreference == 'Bring materials' ? '+€${QuickServicesPricingConfig.getMaterialCost('commercial_laundry').toStringAsFixed(2)} extra charge' : 'Use my materials (No extra charge)',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey[600],
+                                  fontWeight: _materialPreference == 'Bring materials' ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Transform.scale(
+                          scale: 0.8,
+                          child: Switch.adaptive(
+                            value: _materialPreference == 'Bring materials',
+                            activeColor: isDark ? AppColors.backgroundDark : Colors.white,
+                            activeTrackColor: AppColors.primaryGold,
+                            inactiveTrackColor: Colors.grey[300],
+                            onChanged: (val) {
+                              setState(() {
+                                _materialPreference = val ? 'Bring materials' : 'Use my materials';
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  Text(
+                    'Additional Details',
+                    style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
                   QuickServicesAdditionalDetails(
                     whatYouNeedController: _whatYouNeedController,
                     describeIssueController: _describeIssueController,
-                    images: _selectedFiles,
+                    images: _selectedImages,
                     onAddImages: _pickImages,
                     onRemoveImage: (image) {
                       setState(() {
-                        _selectedFiles.remove(image);
+                        _selectedImages.remove(image);
                       });
                     },
                   ),
 
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 32),
 
                   // Continue Button
                   ElevatedButton(
                     onPressed: () {
+
+                      if (_selectedService == null || _selectedService!.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a service.'), backgroundColor: Colors.red));
+                        return;
+                      }
+                      if ((_selectedService == 'Other Laundry Service' || _selectedService == 'Other Linen') && _customServiceController.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please specify the service type.'), backgroundColor: Colors.red));
+                        return;
+                      }
                       if (_businessNameController.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter the business name.')));
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter Business Name.'), backgroundColor: Colors.red));
                         return;
                       }
-                      if (_businessType == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a business type.')));
+                      if (_collectionPointController.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter Collection Point.'), backgroundColor: Colors.red));
+                        return;
+                      }
+                      if (_contactPersonController.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter Contact Person.'), backgroundColor: Colors.red));
+                        return;
+                      }
+                      if (_contactNumberController.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter Contact Number.'), backgroundColor: Colors.red));
+                        return;
+                      }
+                      if (_selectedMethod == 'Pickup & Return' && (_requestedDate == null || _requestedTime == null)) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select Requested Return Date and Time.'), backgroundColor: Colors.red));
                         return;
                       }
 
-                      final weight = int.tryParse(_weightController.text.trim());
-                      final bags = int.tryParse(_bagsController.text.trim());
+                      final finalServiceType = (_selectedService == 'Other Laundry Service' || _selectedService == 'Other Linen') && _customServiceController.text.trim().isNotEmpty
+                          ? _customServiceController.text.trim()
+                          : _selectedService;
 
-                      String finalBusinessType = _businessType!;
-                      if (_businessType == 'Other' && _otherBusinessTypeController.text.trim().isNotEmpty) {
-                        finalBusinessType = _otherBusinessTypeController.text.trim();
-                      }
-
-                      List<String> finalLaundryTypes = List.from(_selectedLaundryTypes);
-                      if (finalLaundryTypes.contains('Other') && _otherLaundryTypeController.text.trim().isNotEmpty) {
-                        finalLaundryTypes.remove('Other');
-                        finalLaundryTypes.add(_otherLaundryTypeController.text.trim());
-                      }
 
                       final updatedData = widget.bookingData.copyWith(
                         selectedServiceTitle: 'Commercial Laundry',
-                        facilityName: _businessNameController.text.trim(),
-                        businessType: finalBusinessType,
-                        commercialLaundryTypes: finalLaundryTypes,
-                        laundryQuantityKg: weight,
-                        numberOfBags: bags,
+                        laundryServiceMethod: _selectedMethod,
+                        commercialLaundryTypes: finalServiceType.isNotEmpty ? [finalServiceType] : [],
                         serviceFrequency: _serviceFrequency,
-                        whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty ? _whatYouNeedController.text.trim() : null,
-                        describeIssue: _describeIssueController.text.trim().isNotEmpty ? _describeIssueController.text.trim() : null,
-                        uploadedImages: _selectedFiles.map((e) => e.path).toList(),
+                        businessType: _businessType == 'Other' && _otherBusinessTypeController.text.isNotEmpty ? _otherBusinessTypeController.text : _businessType,
+                        requestedReturnDate: _selectedMethod == 'Pickup & Return' ? _requestedDate : null,
+                        requestedReturnTime: _selectedMethod == 'Pickup & Return' ? _requestedTime : null,
+                        facilityName: _businessNameController.text.trim(),
+                        collectionPoint: _collectionPointController.text.trim(),
+                        facilityContactPerson: _contactPersonController.text.trim(),
+                        facilityContactNumber: _contactNumberController.text.trim(),
+                        subtotal: 0.0,
                         baseEstimatedHours: 0.0,
                         materialPreference: _materialPreference,
+                        pickupAndReturnFee: _selectedMethod == 'Pickup & Return' ? QuickServicesPricingConfig.getPickupFee('commercial_laundry') : 0.0,
+                        whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty ? _whatYouNeedController.text.trim() : null,
+                        describeIssue: _describeIssueController.text.trim().isNotEmpty ? _describeIssueController.text.trim() : null,
+                        uploadedImages: _selectedImages.map((e) => e.path).toList(),
                       );
-
                       context.pushNamed(RouteNames.quickServicesLaundryReview, extra: updatedData);
+
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,
                       foregroundColor: Colors.black,
                       minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       elevation: 0,
                     ),
                     child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 32),
                 ],
               ),
             ),
@@ -400,4 +568,132 @@ class _CommercialLaundryDetailsScreenState extends State<CommercialLaundryDetail
       ),
     );
   }
+
+  Widget _buildMethodCard({
+    required String title,
+    required String? subtitle,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+    required bool isDark,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (isDark ? Colors.amber.shade900.withOpacity(0.25) : const Color(0xFFFFF8E1))
+              : Theme.of(context).cardTheme.color,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
+            width: 1.5,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: isSelected ? AppColors.primaryGold : Colors.grey[600], size: 22),
+                const Spacer(),
+                Icon(
+                  isSelected ? Icons.check_circle : Icons.radio_button_off,
+                  color: isSelected ? AppColors.primaryGold : Colors.grey[400],
+                  size: 20,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: AppTextStyles.bodyMedium.copyWith(
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                color: isSelected ? (isDark ? AppColors.primaryGold : Colors.black87) : Colors.grey[800],
+              ),
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: AppTextStyles.bodySmall.copyWith(
+                  fontSize: 11,
+                  color: isSelected ? (isDark ? Colors.amber[200] : Colors.grey[800]) : Colors.grey[600],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+
+  Widget _buildCounterField(String label, int value, VoidCallback onDecrement, VoidCallback onIncrement, {String suffix = ''}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600])),
+        const SizedBox(height: 6),
+        Container(
+          height: 48,
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey.withOpacity(0.3)),
+            borderRadius: BorderRadius.circular(12),
+            color: Theme.of(context).cardTheme.color,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(icon: const Icon(Icons.remove, size: 20), onPressed: onDecrement),
+              Text('$value $suffix'.trim(), style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
+              IconButton(icon: const Icon(Icons.add, size: 20), onPressed: onIncrement),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+  
+  Widget _buildTextField(String label, TextEditingController controller, {String? hintText, int maxLines = 1, TextInputType keyboardType = TextInputType.text, List<TextInputFormatter>? inputFormatters, IconData? prefixIcon}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (label.isNotEmpty) ...[
+          Text(label, style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600])),
+          const SizedBox(height: 6),
+        ],
+        TextFormField(
+          controller: controller,
+          maxLines: maxLines,
+          keyboardType: keyboardType,
+          textCapitalization: keyboardType == TextInputType.text ? TextCapitalization.words : TextCapitalization.none,
+          inputFormatters: inputFormatters,
+          style: AppTextStyles.bodyMedium,
+          decoration: InputDecoration(
+            hintText: hintText,
+            prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 18) : null,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.primaryGold),
+            ),
+            filled: true,
+            fillColor: Theme.of(context).cardTheme.color,
+          ),
+        ),
+      ],
+    );
+  }
+
 }

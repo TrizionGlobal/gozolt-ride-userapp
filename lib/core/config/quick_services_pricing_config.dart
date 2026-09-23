@@ -23,24 +23,25 @@ class QuickServicesPricingConfig {
     'truck_wash': {'minHourlyRate': 8.00, 'upfrontFee': 5.00, 'materialCost': 15.00, 'pickupFee': 8.00},
     'car_wash': {'minHourlyRate': 6.00, 'upfrontFee': 5.00, 'materialCost': 8.00, 'pickupFee': 6.00},
     'bike_wash': {'minHourlyRate': 6.00, 'upfrontFee': 5.00, 'materialCost': 5.00, 'pickupFee': 6.00},
+    'commercial_electric': {'minHourlyRate': 10.00, 'upfrontFee': 5.00, 'estimatedSparePrice': '€5 - €25'},
     'home_electric': {'minHourlyRate': 10.00, 'upfrontFee': 5.00, 'estimatedSparePrice': '€5 - €25'},
     'events_electric': {'minHourlyRate': 10.00, 'upfrontFee': 5.00, 'estimatedSparePrice': '€5 - €25'},
     'lift_elevator_mechanic': {'minHourlyRate': 10.00, 'upfrontFee': 5.00, 'estimatedSparePrice': '€5 - €25'},
     'security_personnel': {'minHourlyRate': 7.00, 'upfrontFee': 5.00, 'materialCost': 0.00},
-    'hotel_laundry': {'minHourlyRate': 6.00},
-    'commercial_laundry': {'minHourlyRate': 6.00},
-    'hospital_laundry': {'minHourlyRate': 6.00},
-    'laundry': {'minHourlyRate': 6.00},
+    'hotel_laundry': {'minHourlyRate': 6.00, 'upfrontFee': 5.00, 'materialCost': 15.00, 'pickupFee': 10.00},
+    'commercial_laundry': {'minHourlyRate': 6.00, 'upfrontFee': 5.00, 'materialCost': 10.00, 'pickupFee': 10.00},
+    'hospital_laundry': {'minHourlyRate': 6.00, 'upfrontFee': 5.00, 'materialCost': 15.00, 'pickupFee': 10.00},
+    'laundry': {'minHourlyRate': 6.00, 'upfrontFee': 5.00, 'materialCost': 5.00, 'pickupFee': 10.00},
     'appliance_repair': {'minHourlyRate': 10.00, 'upfrontFee': 5.00, 'estimatedSparePrice': '€20 - €40'},
     'painter': {'minHourlyRate': 6.00},
     'suppliers': {'minHourlyRate': 6.00},
     'event_organisers': {'minHourlyRate': 6.00},
     'printer_scanner': {'minHourlyRate': 10.00, 'upfrontFee': 5.00, 'materialCost': 0.00, 'estimatedSparePrice': '€25 - €50'},
     'mobile_repair': {'minHourlyRate': 10.00, 'upfrontFee': 5.00, 'materialCost': 0.00, 'estimatedSparePrice': '€40 - €80'},
-    'bike_mechanic': {'minHourlyRate': 10.00, 'upfrontFee': 5.00, 'materialCost': 10.00, 'estimatedSparePrice': '€25 - €50'},
-    'car_mechanic': {'minHourlyRate': 10.00, 'upfrontFee': 5.00, 'materialCost': 10.00, 'estimatedSparePrice': '€50 - €110'},
-    'truck_mechanic': {'minHourlyRate': 10.00, 'upfrontFee': 5.00, 'materialCost': 10.00, 'estimatedSparePrice': '€25 - €50'},
-    'hire_person': {'minHourlyRate': 6.00},
+    'bike_mechanic': {'minHourlyRate': 8.00, 'upfrontFee': 5.00, 'materialCost': 10.00, 'estimatedSparePrice': '€25 - €50'},
+    'car_mechanic': {'minHourlyRate': 9.00, 'upfrontFee': 5.00, 'materialCost': 10.00, 'estimatedSparePrice': '€50 - €110'},
+    'truck_mechanic': {'minHourlyRate': 9.00, 'upfrontFee': 5.00, 'materialCost': 10.00, 'estimatedSparePrice': '€50 - €110'},
+    'hire_person': {'minHourlyRate': 7.00, 'upfrontFee': 5.00, 'materialCost': 0.00},
     'other_services': {'minHourlyRate': 6.00},
   };
 
@@ -54,7 +55,7 @@ class QuickServicesPricingConfig {
 
   static String expertVisitName(String category, {String? selectedServiceTitle}) {
     final lowerCat = category.toLowerCase();
-    if (lowerCat.contains('security') || lowerCat.contains('bouncer')) {
+    if (lowerCat.contains('security') || lowerCat.contains('bouncer') || lowerCat.contains('hire') || lowerCat.contains('person')) {
       return 'Hiring Person/hr';
     } else if (lowerCat.contains('mechanic')) {
       return 'Mechanic Visit/hr';
@@ -68,7 +69,7 @@ class QuickServicesPricingConfig {
                lowerCat.contains('printer') ||
                lowerCat.contains('mobile') ||
                lowerCat.contains('technician')) {
-      return 'Engineering Visit/hr';
+      return 'Engineer Visit/hr';
     } else if (lowerCat.contains('wash')) {
       return 'Service Agent Visit/hr';
     }

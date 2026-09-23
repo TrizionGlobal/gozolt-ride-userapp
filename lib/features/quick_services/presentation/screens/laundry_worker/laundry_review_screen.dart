@@ -14,6 +14,7 @@ import '../../../../../core/router/route_names.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_price_summary.dart';
+import '../../widgets/quick_services_booking_summary.dart';
 import '../../../../ride/data/models/saved_payment_method.dart';
 
 
@@ -68,10 +69,10 @@ class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(
+          QuickServicesHeader(
             currentStep: 2,
-            title: 'Review & Book',
-            subtitle: 'Laundry Service',
+            title: 'Review Booking',
+            subtitle: (data.selectedServiceTitle ?? 'Home').toLowerCase().endsWith('laundry') ? data.selectedServiceTitle! : '${data.selectedServiceTitle ?? 'Home'} Laundry',
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -81,13 +82,20 @@ class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Service Overview Card
+                  QuickServicesBookingSummary(
+                    bookingData: data,
+                    icon: Icons.local_laundry_service_outlined,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Service Summary Card
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardTheme.color,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.withOpacity(0.3)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,49 +103,51 @@ class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.all(10),
+                              padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: AppColors.primaryGold.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(10),
+                                color: AppColors.primaryGold.withOpacity(0.1),
+                                shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.local_laundry_service, color: AppColors.primaryGold, size: 24),
+                              child: const Icon(
+                                Icons.assignment_outlined,
+                                color: AppColors.primaryGold,
+                                size: 24,
+                              ),
                             ),
                             const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                data.selectedServiceTitle ?? 'Laundry & Ironing',
-                                style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
-                              ),
+                            Text(
+                              'Service Summary',
+                              style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
-                        const Divider(height: 24),
+                        const SizedBox(height: 16),
                         if (data.selectedServiceTitle == 'Hospital Laundry' || data.selectedServiceTitle == 'Hotel Laundry' || data.selectedServiceTitle == 'Commercial Laundry') ...[
-                          if (data.facilityName != null) _buildDetailRow(data.selectedServiceTitle == 'Commercial Laundry' ? 'Business Name:' : (data.selectedServiceTitle == 'Hotel Laundry' ? 'Hotel Name:' : 'Facility Name:'), data.facilityName!),
-                          if (data.businessType != null) _buildDetailRow('Business Type:', data.businessType!),
-                          if (data.collectionPoint != null) _buildDetailRow('Collection Point:', data.collectionPoint!),
-                          if (data.facilityContactPerson != null) _buildDetailRow('Contact Person:', data.facilityContactPerson!),
-                          if (data.facilityContactNumber != null) _buildDetailRow('Contact Number:', data.facilityContactNumber!),
+                          if (data.facilityName != null) _buildDetailRow(data.selectedServiceTitle == 'Commercial Laundry' ? 'Business Name' : (data.selectedServiceTitle == 'Hotel Laundry' ? 'Hotel Name' : 'Facility Name'), data.facilityName!),
+                          if (data.businessType != null) _buildDetailRow('Business Type', data.businessType!),
+                          if (data.collectionPoint != null) _buildDetailRow('Collection Point', data.collectionPoint!),
+                          if (data.facilityContactPerson != null) _buildDetailRow('Contact Person', data.facilityContactPerson!),
+                          if (data.facilityContactNumber != null) _buildDetailRow('Contact Number', data.facilityContactNumber!),
                           if (data.commercialLaundryTypes != null && data.commercialLaundryTypes!.isNotEmpty)
-                            _buildDetailRow('Laundry Types:', data.commercialLaundryTypes!.join(', ')),
-                          if (data.laundryQuantityKg != null) _buildDetailRow('Estimated Weight:', '${data.laundryQuantityKg} kg'),
-                          if (data.numberOfBags != null) _buildDetailRow('Number of Bags:', '${data.numberOfBags}'),
-                          if (data.serviceFrequency != null) _buildDetailRow('Frequency:', data.serviceFrequency!),
-                          if (data.linenHandlingType != null) _buildDetailRow(data.selectedServiceTitle == 'Hotel Laundry' ? 'Special Handling:' : 'Linen Type:', data.linenHandlingType!),
-                          if (data.requestedReturnDate != null) _buildDetailRow('Return Date:', DateFormat('dd MMM yyyy').format(data.requestedReturnDate!)),
-                          if (data.requestedReturnTime != null) _buildDetailRow('Return Time:', data.requestedReturnTime!.format(context)),
+                            _buildDetailRow('Laundry Types', data.commercialLaundryTypes!.join(', ')),
+                          if (data.serviceFrequency != null) _buildDetailRow('Frequency', data.serviceFrequency!),
+                          if (data.requestedReturnDate != null) _buildDetailRow('Return Date', DateFormat('dd MMM yyyy').format(data.requestedReturnDate!)),
+                          if (data.requestedReturnTime != null) _buildDetailRow('Return Time', data.requestedReturnTime!.format(context)),
                         ] else ...[
                           if (data.laundryServiceMethod != null)
-                            _buildDetailRow('Method:', data.laundryServiceMethod!),
+                            _buildDetailRow('Method', data.laundryServiceMethod!),
+                          if (data.requestedReturnDate != null) _buildDetailRow('Return Date', DateFormat('dd MMM yyyy').format(data.requestedReturnDate!)),
+                          if (data.requestedReturnTime != null) _buildDetailRow('Return Time', data.requestedReturnTime!.format(context)),
                           if (data.laundryServiceType != null)
-                            _buildDetailRow('Service:', data.laundryServiceType!),
-                          _buildDetailRow('Estimated Quantity:', '${data.laundryQuantityKg ?? 5} kg'),
+                            _buildDetailRow('Service', data.laundryServiceType!),
+                          _buildDetailRow('Estimated Quantity', '${data.laundryQuantityKg ?? 1} kg'),
                           if (specialCareList.isNotEmpty) ...[
                             const SizedBox(height: 4),
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Special-Care Items:', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600])),
+                                Text('Special-Care Items', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade700)),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Wrap(
@@ -168,296 +178,92 @@ class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
                             ),
                             const SizedBox(height: 6),
                           ] else ...[
-                            _buildDetailRow('Special-Care Items:', 'None'),
+                            _buildDetailRow('Special-Care Items', 'None'),
                           ],
-                          if (data.detergentArrangement != null)
-                            _buildDetailRow('Detergent:', data.detergentArrangement!),
                         ],
-                      ],
-                    ),
-                  ),
 
-                  const SizedBox(height: 16),
-
-                  // Location, Schedule & Customer Info Card
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardTheme.color,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.calendar_today, size: 18, color: AppColors.primaryGold),
-                            const SizedBox(width: 10),
-                            Text(
-                              '$formattedDate • $formattedTime',
-                              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(Icons.location_on, size: 18, color: AppColors.primaryGold),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                data.location.address,
-                                style: AppTextStyles.bodyMedium,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            const Icon(Icons.person, size: 18, color: AppColors.primaryGold),
-                            const SizedBox(width: 10),
-                            Text(
-                              'Customer: ${data.userName}',
-                              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w500),
-                            ),
-                          ],
-                        ),
-                        if (data.whatYouNeed != null && data.whatYouNeed!.isNotEmpty) ...[
+                        if ((data.whatYouNeed != null && data.whatYouNeed!.isNotEmpty) ||
+                            (data.describeIssue != null && data.describeIssue!.isNotEmpty) ||
+                            (data.uploadedImages != null && data.uploadedImages!.isNotEmpty)) ...[
+                          const SizedBox(height: 16),
+                          const Divider(),
                           const SizedBox(height: 12),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.assignment_outlined, size: 18, color: AppColors.primaryGold),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  'Requirements: ${data.whatYouNeed}',
-                                  style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[700]),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                        if (data.describeIssue != null && data.describeIssue!.isNotEmpty) ...[
-                          const SizedBox(height: 12),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.note_alt_outlined, size: 18, color: AppColors.primaryGold),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  'Description: ${data.describeIssue}',
-                                  style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[700]),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                        if (data.uploadedImages != null && data.uploadedImages!.isNotEmpty) ...[
-                          const SizedBox(height: 14),
-                          Row(
-                            children: [
-                              const Icon(Icons.photo_library_outlined, size: 18, color: AppColors.primaryGold),
-                              const SizedBox(width: 10),
-                              Text(
-                                'Attached Photos (${data.uploadedImages!.length})',
-                                style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            height: 60,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: data.uploadedImages!.length,
-                              itemBuilder: (context, index) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 8.0),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Image.file(
-                                      File(data.uploadedImages![index]),
-                                      width: 60,
-                                      height: 60,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Price Summary Card
-                  if (data.selectedServiceTitle == 'Hospital Laundry' || data.selectedServiceTitle == 'Hotel Laundry' || data.selectedServiceTitle == 'Commercial Laundry') ...[
-                    QuickServicesPriceSummary(
-                      bookingData: data,
-                      useGoCoins: _useGoCoins,
-                      onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),
-                    ),
-                  ] else ...[
-                    Text(
-                      'Price Summary',
-                      style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 10),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardTheme.color,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                    ),
-                    child: Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                (data.laundryPackagePrice != null && data.laundryPackagePrice! > 0)
-                                    ? '${data.laundryServiceType ?? 'Service'} (${data.laundryQuantityKg ?? 5} kg )'
-                                    : data.laundryServiceType ?? 'Service',
-                                style: AppTextStyles.bodyMedium,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
+                          if (data.whatYouNeed != null && data.whatYouNeed!.isNotEmpty) ...[
                             Text(
-                              (data.laundryPackagePrice != null && data.laundryPackagePrice! > 0)
-                                  ? ''
-                                  : 'Price after inspection',
-                              style: AppTextStyles.bodyMedium.copyWith(
+                              'Requirements',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: Colors.grey,
                                 fontWeight: FontWeight.bold,
-                                color: (data.laundryPackagePrice == null || data.laundryPackagePrice == 0)
-                                    ? Colors.orange[800]
-                                    : null,
                               ),
                             ),
-                          ],
-                        ),
-                        if (data.detergentArrangement != null) ...[
-                          const SizedBox(height: 6),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Detergent Charge:', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600])),
-                              Text('Included', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600])),
-                            ],
-                          ),
-                        ],
-                        const Divider(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('Subtotal', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
-                            Text('€${rawSubtotal.toStringAsFixed(2)}', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-
-                        // GO Coins Discount Box
-                        
-                        // ── GoCoins Redeem Section ──
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          margin: const EdgeInsets.only(top: 16, bottom: 8),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).cardTheme.color,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: _useGoCoins ? AppColors.primaryGold : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
-                              width: _useGoCoins ? 1.5 : 0.5,
-                            ),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryGold.withOpacity(0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Image.asset(AssetPaths.iconGoCoin, width: 24, height: 24),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('Redeem GoCoins', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'Balance: 250 Coins',
-                                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
-                                    ),
-                                    if (_useGoCoins)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 2),
-                                        child: Text(
-                                          'Save €2.00 with 200 coins',
-                                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              Transform.scale(
-                                scale: 0.8,
-                                child: Switch.adaptive(
-                                  value: _useGoCoins,
-                                  activeColor: AppColors.backgroundDark,
-                                  activeTrackColor: AppColors.primaryGold,
-                                  inactiveTrackColor: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
-                                  onChanged: (val) => setState(() => _useGoCoins = val),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        if (_useGoCoins) ...[
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(child: Text('GoCoins Discount', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primaryGold))),
-                              Text(
-                                '-€2.00',
-                                style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: AppColors.primaryGold),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                        ],
-
-
-                        const Divider(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('Estimated Total', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 4),
                             Text(
-                              '€${estimatedTotal.toStringAsFixed(2)}',
-                              style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold, color: AppColors.primaryGold),
+                              data.whatYouNeed!,
+                              style: AppTextStyles.bodyMedium,
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                          if (data.describeIssue != null && data.describeIssue!.isNotEmpty) ...[
+                            Text(
+                              'Issue Description',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: Colors.grey,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              data.describeIssue!,
+                              style: AppTextStyles.bodyMedium,
+                            ),
+                            const SizedBox(height: 12),
+                          ],
+                          if (data.uploadedImages != null && data.uploadedImages!.isNotEmpty) ...[
+                            Text(
+                              'Uploaded Photos',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: Colors.grey,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              height: 70,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: data.uploadedImages!.length,
+                                itemBuilder: (context, index) {
+                                  final path = data.uploadedImages![index];
+                                  return Container(
+                                    margin: const EdgeInsets.only(right: 8),
+                                    width: 70,
+                                    height: 70,
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.file(
+                                        File(path),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
                             ),
                           ],
-                        ),
+                        ],
                       ],
                     ),
                   ),
-                  ],
+
+                  const SizedBox(height: 12),
+
+                  // Pricing Details Card
+                  QuickServicesPriceSummary(
+                    bookingData: data, 
+                    useGoCoins: _useGoCoins, 
+                    onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),
+                    showAdditionalDetails: false,
+                  ),
 
                   const SizedBox(height: 24),
 
@@ -525,15 +331,16 @@ class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6.0),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600])),
+          Text(label, style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade700)),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600),
+              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
         ],

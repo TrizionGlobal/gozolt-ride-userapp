@@ -264,6 +264,7 @@ class QuickServiceBookingData {
   final String? expectedDuration;
   final String? comments;
   final int? helperCount;
+  final String? genderPreference;
 
   // Security Personnel specific fields
   final String? securityService;
@@ -400,6 +401,12 @@ class QuickServiceBookingData {
        if (selectedServiceTitle?.contains('Mobile') == true) return 'mobile_repair';
        return 'computer_repair';
     }
+    if (category == 'Laundry') {
+       if (selectedServiceTitle?.contains('Hospital') == true) return 'hospital_laundry';
+       if (selectedServiceTitle?.contains('Hotel') == true) return 'hotel_laundry';
+       if (selectedServiceTitle?.contains('Commercial') == true) return 'commercial_laundry';
+       return 'laundry';
+    }
     return category.toLowerCase().replaceAll(' ', '_');
   }
 
@@ -513,6 +520,7 @@ class QuickServiceBookingData {
     this.expectedDuration,
     this.comments,
     this.helperCount,
+    this.genderPreference,
     this.securityService,
     this.venueType,
     this.dutyStartTime,
@@ -643,6 +651,7 @@ class QuickServiceBookingData {
     String? expectedDuration,
     String? comments,
     int? helperCount,
+    String? genderPreference,
     String? securityService,
     String? venueType,
     String? dutyStartTime,
@@ -775,6 +784,7 @@ class QuickServiceBookingData {
       expectedDuration: expectedDuration ?? this.expectedDuration,
       comments: comments ?? this.comments,
       helperCount: helperCount ?? this.helperCount,
+      genderPreference: genderPreference ?? this.genderPreference,
       securityService: securityService ?? this.securityService,
       venueType: venueType ?? this.venueType,
       dutyStartTime: dutyStartTime ?? this.dutyStartTime,

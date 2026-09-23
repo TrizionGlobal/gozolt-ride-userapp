@@ -13,6 +13,8 @@ import '../../../../../core/router/route_names.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_price_summary.dart';
 import '../../widgets/quick_services_header.dart';
+import '../../widgets/quick_services_booking_summary.dart';
+import '../../widgets/quick_services_additional_details_review.dart';
 import '../../../../ride/data/models/saved_payment_method.dart';
 
 
@@ -61,6 +63,12 @@ class _HirePersonReviewScreenState extends ConsumerState<HirePersonReviewScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  QuickServicesBookingSummary(
+                    bookingData: _bookingData,
+                    icon: Icons.person_outline,
+                  ),
+                  const SizedBox(height: 12),
+
                   // Service Summary Card
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -73,30 +81,27 @@ class _HirePersonReviewScreenState extends ConsumerState<HirePersonReviewScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'Service Summary',
-                              style: AppTextStyles.titleMedium.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: const Color(0xFF324461),
-                              ),
-                            ),
                             Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFFFF8E1),
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGold.withOpacity(0.1),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
-                                Icons.person,
-                                color: Color(0xFFF57F17),
-                                size: 20,
+                                Icons.assignment_outlined,
+                                color: AppColors.primaryGold,
+                                size: 24,
                               ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              'Service Summary',
+                              style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -116,94 +121,23 @@ class _HirePersonReviewScreenState extends ConsumerState<HirePersonReviewScreen>
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
+                            Text('Gender Preference', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade700)),
+                            Text(_bookingData.genderPreference ?? 'Any', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
                             Text('Duration', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade700)),
                             Text(_bookingData.expectedDuration ?? '2 Hours', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
                           ],
                         ),
-                        const Divider(height: 24),
-                        Row(
-                          children: [
-                            const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
-                            const SizedBox(width: 8),
-                            Text(
-                              '${_formatDate(_bookingData.scheduleDate)} • ${_bookingData.scheduleTime.format(context)}',
-                              style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade800),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _bookingData.location.address,
-                                style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade800),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.person_outline, size: 16, color: Colors.grey),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                '${_bookingData.userName} • ${_bookingData.userPhone}',
-                                style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade800),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Additional Details Section
-                  if ((_bookingData.whatYouNeed != null && _bookingData.whatYouNeed!.isNotEmpty) ||
-                      (_bookingData.describeIssue != null && _bookingData.describeIssue!.isNotEmpty) ||
-                      (_bookingData.uploadedImages != null && _bookingData.uploadedImages!.isNotEmpty)) ...[
-                    Text(
-                      'Additional Details',
-                      style: AppTextStyles.titleSmall.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF324461),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardTheme.color,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (_bookingData.whatYouNeed != null && _bookingData.whatYouNeed!.isNotEmpty) ...[
-                            Text(
-                              'What You Need',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: Colors.grey,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _bookingData.whatYouNeed!,
-                              style: AppTextStyles.bodyMedium,
-                            ),
-                            const SizedBox(height: 12),
-                          ],
+                        if ((_bookingData.describeIssue != null && _bookingData.describeIssue!.isNotEmpty) ||
+                            (_bookingData.uploadedImages != null && _bookingData.uploadedImages!.isNotEmpty)) ...[
+                          const SizedBox(height: 16),
+                          const Divider(),
+                          const SizedBox(height: 12),
                           if (_bookingData.describeIssue != null && _bookingData.describeIssue!.isNotEmpty) ...[
                             Text(
                               'Issue Description',
@@ -252,13 +186,18 @@ class _HirePersonReviewScreenState extends ConsumerState<HirePersonReviewScreen>
                             ),
                           ],
                         ],
-                      ),
+                      ],
                     ),
-                    const SizedBox(height: 20),
-                  ],
+                  ),
+                  const SizedBox(height: 12),
 
                   // Pricing Details Card
-                  QuickServicesPriceSummary(bookingData: _bookingData, useGoCoins: _useGoCoins, onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),),
+                  QuickServicesPriceSummary(
+                    bookingData: _bookingData, 
+                    useGoCoins: _useGoCoins, 
+                    onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),
+                    showAdditionalDetails: false,
+                  ),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -272,7 +211,7 @@ class _HirePersonReviewScreenState extends ConsumerState<HirePersonReviewScreen>
           SafeArea(
             top: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
