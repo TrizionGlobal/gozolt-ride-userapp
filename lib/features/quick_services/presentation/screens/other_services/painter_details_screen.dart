@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/quick_services_booking_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/constants/app_text_styles.dart';
@@ -10,16 +12,17 @@ import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_additional_details.dart';
 
-class PainterDetailsScreen extends StatefulWidget {
+class PainterDetailsScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
 
   const PainterDetailsScreen({super.key, required this.bookingData});
 
   @override
-  State<PainterDetailsScreen> createState() => _PainterDetailsScreenState();
+  ConsumerState<PainterDetailsScreen> createState() => _PainterDetailsScreenState();
 }
 
-class _PainterDetailsScreenState extends State<PainterDetailsScreen> {
+class _PainterDetailsScreenState extends ConsumerState<PainterDetailsScreen> {
+  bool _isUploading = false;
   String _materialPreference = 'Bring materials';
   final TextEditingController _describeIssueController = TextEditingController();
   final TextEditingController _whatYouNeedController = TextEditingController();
@@ -285,6 +288,7 @@ class _PainterDetailsScreenState extends State<PainterDetailsScreen> {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
+                      if (_isUploading) return;
                       if (_propertyType == null) {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a property type')));
                         return;
@@ -308,10 +312,21 @@ class _PainterDetailsScreenState extends State<PainterDetailsScreen> {
                         materialPreference: _materialPreference,
                       );
 
-                      context.pushNamed(
-                        RouteNames.quickServicesOtherServicesReview,
-                        extra: updatedData,
-                      );
+                      if (_selectedImages.isNotEmpty) {
+                        setState(() => _isUploading = true);
+                        ref.read(quickServicesBookingProvider.notifier).uploadImages(
+                          _selectedImages.map((e) => e.path).toList()
+                        ).then((remoteUrls) {
+                          if (mounted) setState(() => _isUploading = false);
+                          var finalDataObj = updatedData.copyWith(uploadedImages: remoteUrls);
+                          if (mounted) context.pushNamed(RouteNames.quickServicesOtherServicesReview, extra: finalDataObj);
+                        }).catchError((e) {
+                          if (mounted) setState(() => _isUploading = false);
+                          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to upload images')));
+                        });
+                      } else {
+                        if (mounted) context.pushNamed(RouteNames.quickServicesOtherServicesReview, extra: updatedData);
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,
@@ -320,7 +335,7 @@ class _PainterDetailsScreenState extends State<PainterDetailsScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       elevation: 0,
                     ),
-                    child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
+                    child: _isUploading ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2)) : Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
                   ),
                   const SizedBox(height: 32),
                 ],

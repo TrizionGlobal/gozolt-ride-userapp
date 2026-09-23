@@ -13,7 +13,7 @@ class BookingPaymentSheet extends ConsumerStatefulWidget {
   final String? currentCardId;
   final bool isQuickService;
   final double? amount;
-  final Function(PaymentMethodType type, {String? cardId}) onConfirm;
+  final Future<bool?> Function(PaymentMethodType type, {String? cardId}) onConfirm;
 
   const BookingPaymentSheet({
     super.key,
@@ -72,8 +72,16 @@ class _BookingPaymentSheetState extends ConsumerState<BookingPaymentSheet> {
     await Future.delayed(const Duration(milliseconds: 600));
     if (!mounted) return;
     
-    widget.onConfirm(_selectedType, cardId: _selectedCardId);
-    Navigator.of(context).pop();
+    final result = await widget.onConfirm(_selectedType, cardId: _selectedCardId);
+    
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+      if (result == true) {
+        Navigator.of(context).pop();
+      }
+    }
   }
 
   void _addCard() {
@@ -90,8 +98,8 @@ class _BookingPaymentSheetState extends ConsumerState<BookingPaymentSheet> {
           if (paymentMethodId != null) {
             if (widget.isQuickService) {
               // Quick Service: Immediately confirm booking with the new payment method
-              widget.onConfirm(PaymentMethodType.card, cardId: paymentMethodId);
-              if (mounted) {
+              final result = await widget.onConfirm(PaymentMethodType.card, cardId: paymentMethodId);
+              if (result == true && mounted) {
                 Navigator.of(context).pop();
               }
             } else {

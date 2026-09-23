@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/quick_services/data/models/quick_service_history_model.dart';
 import '../../features/splash/presentation/splash_screen.dart';
 import '../../features/splash/presentation/force_update_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
@@ -523,7 +524,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/quick-service-history-details',
         name: RouteNames.quickServiceHistoryDetails,
         pageBuilder: (context, state) {
-          final booking = state.extra as Map<String, dynamic>? ?? {};
+          final booking = state.extra as QuickServiceHistoryModel;
           return CustomTransitionPage(
             key: state.pageKey,
             child: QuickServiceHistoryDetailsScreen(booking: booking),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/quick_services_booking_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../../../../core/constants/app_colors.dart';
@@ -13,16 +15,17 @@ import '../../../../../core/config/quick_services_pricing_config.dart';
 import 'dart:io';
 
 
-class CommercialLaundryDetailsScreen extends StatefulWidget {
+class CommercialLaundryDetailsScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
 
   const CommercialLaundryDetailsScreen({super.key, required this.bookingData});
 
   @override
-  State<CommercialLaundryDetailsScreen> createState() => _CommercialLaundryDetailsScreenState();
+  ConsumerState<CommercialLaundryDetailsScreen> createState() => _CommercialLaundryDetailsScreenState();
 }
 
-class _CommercialLaundryDetailsScreenState extends State<CommercialLaundryDetailsScreen> {
+class _CommercialLaundryDetailsScreenState extends ConsumerState<CommercialLaundryDetailsScreen> {
+  bool _isUploading = false;
   final TextEditingController _whatYouNeedController = TextEditingController();
   final TextEditingController _describeIssueController = TextEditingController();
   final TextEditingController _customServiceController = TextEditingController();
@@ -491,7 +494,8 @@ class _CommercialLaundryDetailsScreenState extends State<CommercialLaundryDetail
                   ElevatedButton(
                     onPressed: () {
 
-                      if (_selectedService == null || _selectedService!.isEmpty) {
+                      if (_isUploading) return;
+                      if (_selectedService.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a service.'), backgroundColor: Colors.red));
                         return;
                       }
@@ -545,7 +549,22 @@ class _CommercialLaundryDetailsScreenState extends State<CommercialLaundryDetail
                         describeIssue: _describeIssueController.text.trim().isNotEmpty ? _describeIssueController.text.trim() : null,
                         uploadedImages: _selectedImages.map((e) => e.path).toList(),
                       );
-                      context.pushNamed(RouteNames.quickServicesLaundryReview, extra: updatedData);
+                      
+                      if (_selectedImages.isNotEmpty) {
+                        setState(() => _isUploading = true);
+                        ref.read(quickServicesBookingProvider.notifier).uploadImages(
+                          _selectedImages.map((e) => e.path).toList()
+                        ).then((remoteUrls) {
+                          if (mounted) setState(() => _isUploading = false);
+                          var finalDataObj = updatedData.copyWith(uploadedImages: remoteUrls);
+                          if (mounted) context.pushNamed(RouteNames.quickServicesLaundryReview, extra: finalDataObj);
+                        }).catchError((e) {
+                          if (mounted) setState(() => _isUploading = false);
+                          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to upload images')));
+                        });
+                      } else {
+                        if (mounted) context.pushNamed(RouteNames.quickServicesLaundryReview, extra: updatedData);
+                      }
 
                     },
                     style: ElevatedButton.styleFrom(
@@ -557,7 +576,7 @@ class _CommercialLaundryDetailsScreenState extends State<CommercialLaundryDetail
                       ),
                       elevation: 0,
                     ),
-                    child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
+                    child: _isUploading ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2)) : Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
                   ),
                   const SizedBox(height: 32),
                 ],

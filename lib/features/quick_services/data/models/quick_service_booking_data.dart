@@ -379,6 +379,7 @@ class QuickServiceBookingData {
   final String? supplyUnit;
   final String? requestType;
   final String? requirementDescription;
+  final String? bookingId;
 
   String get servicePricingKey {
     if (category == 'Vehicle Wash') {
@@ -606,6 +607,7 @@ class QuickServiceBookingData {
     this.supplyUnit,
     this.requestType,
     this.requirementDescription,
+    this.bookingId,
   });
 
   QuickServiceBookingData copyWith({
@@ -740,6 +742,7 @@ class QuickServiceBookingData {
     String? supplyUnit,
     String? requestType,
     String? requirementDescription,
+    String? bookingId,
   }) {
     return QuickServiceBookingData(
       category: category ?? this.category,
@@ -887,6 +890,7 @@ class QuickServiceBookingData {
       requestType: requestType ?? this.requestType,
       requirementDescription:
           requirementDescription ?? this.requirementDescription,
+      bookingId: bookingId ?? this.bookingId,
     );
   }
 }

@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/quick_services_booking_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/constants/app_text_styles.dart';
@@ -10,16 +12,17 @@ import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_additional_details.dart';
 import '../../../../../core/config/quick_services_pricing_config.dart';
 
-class LiftElevatorMechanicDetailsScreen extends StatefulWidget {
+class LiftElevatorMechanicDetailsScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
 
   const LiftElevatorMechanicDetailsScreen({super.key, required this.bookingData});
 
   @override
-  State<LiftElevatorMechanicDetailsScreen> createState() => _LiftElevatorMechanicDetailsScreenState();
+  ConsumerState<LiftElevatorMechanicDetailsScreen> createState() => _LiftElevatorMechanicDetailsScreenState();
 }
 
-class _LiftElevatorMechanicDetailsScreenState extends State<LiftElevatorMechanicDetailsScreen> {
+class _LiftElevatorMechanicDetailsScreenState extends ConsumerState<LiftElevatorMechanicDetailsScreen> {
+  bool _isUploading = false;
   String _materialPreference = 'Bring tools';
   final Map<String, int> _counts = {
     'Commercial Lighting': 0,
@@ -135,7 +138,22 @@ class _LiftElevatorMechanicDetailsScreenState extends State<LiftElevatorMechanic
       materialPreference: _materialPreference,
     );
 
-    context.pushNamed(RouteNames.quickServicesLiftElevatorReview, extra: updatedData);
+    if (_isUploading) return;
+    if (_selectedImages.isNotEmpty) {
+      setState(() => _isUploading = true);
+      ref.read(quickServicesBookingProvider.notifier).uploadImages(
+        _selectedImages.map((e) => e.path).toList()
+      ).then((remoteUrls) {
+        if (mounted) setState(() => _isUploading = false);
+        var finalDataObj = updatedData.copyWith(uploadedImages: remoteUrls);
+        if (mounted) context.pushNamed(RouteNames.quickServicesLiftElevatorReview, extra: finalDataObj);
+      }).catchError((e) {
+        if (mounted) setState(() => _isUploading = false);
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to upload images')));
+      });
+    } else {
+      if (mounted) context.pushNamed(RouteNames.quickServicesLiftElevatorReview, extra: updatedData);
+    }
   }
 
   @override
@@ -332,7 +350,7 @@ class _LiftElevatorMechanicDetailsScreenState extends State<LiftElevatorMechanic
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             elevation: 0,
                           ),
-                          child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
+                          child: _isUploading ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2)) : Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
                         ),
                       ),
                     ),

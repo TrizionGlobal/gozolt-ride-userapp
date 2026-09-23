@@ -27,12 +27,13 @@ class QuickServicesPaymentSelector extends ConsumerWidget {
         currentType: bookingData.paymentMethodType,
         currentCardId: bookingData.paymentMethodId,
         isQuickService: true,
-        onConfirm: (type, {cardId}) {
+        onConfirm: (type, {cardId}) async {
           final updatedData = bookingData.copyWith(
             paymentMethodType: type,
             paymentMethodId: cardId,
           );
           onChanged(updatedData);
+          return true;
         },
       ),
     );

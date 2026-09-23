@@ -1,3 +1,4 @@
+import '../../../providers/quick_services_booking_provider.dart';
 import 'package:intl/intl.dart';
 import '../../../../../core/widgets/booking_payment_sheet.dart';
 import 'dart:io';
@@ -27,6 +28,7 @@ class CarMechanicReviewScreen extends ConsumerStatefulWidget {
 
 class _CarMechanicReviewScreenState extends ConsumerState<CarMechanicReviewScreen> {
   bool _useGoCoins = false;
+  bool _isBooking = false;
   late QuickServiceBookingData _bookingData;
   bool _useCoins = false;
 
@@ -308,7 +310,8 @@ class _CarMechanicReviewScreenState extends ConsumerState<CarMechanicReviewScree
 
                   // Confirm Booking Button
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: _isBooking ? null : () async {
+
                       final finalTotal = ((_bookingData.upfrontBookingFee + _bookingData.materialCost) - (_useGoCoins ? (_bookingData.upfrontBookingFee + _bookingData.materialCost).clamp(0.0, 6.0) : 0.0)).clamp(0.0, double.infinity);
                       
                       if (finalTotal <= 0.0) {
@@ -316,35 +319,44 @@ class _CarMechanicReviewScreenState extends ConsumerState<CarMechanicReviewScree
                           paymentMethodType: PaymentMethodType.cash,
                           useGoCoins: _useGoCoins,
                         );
-                        context.pushNamed(
-                          RouteNames.quickServicesCarMechanicConfirmation,
-                          extra: updatedData,
-                        );
+                        
+                      setState(() => _isBooking = true);
+                      final bookingId = await ref.read(quickServicesBookingProvider.notifier).bookQuickService(updatedData);
+                      if (mounted) setState(() => _isBooking = false);
+                      if (bookingId != null && mounted) {
+                        context.pushNamed(RouteNames.quickServicesCarMechanicConfirmation, extra: updatedData);
                       } else {
-                        showModalBottomSheet(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (ctx) => BookingPaymentSheet(
-                            currentType: _bookingData.paymentMethodType,
-                            currentCardId: _bookingData.paymentMethodId,
-                            isQuickService: true,
-                            amount: finalTotal,
-                            onConfirm: (type, {cardId}) {
-                              final updatedData = _bookingData.copyWith(
+                        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to book service')));
+                      }
+                    } else {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (ctx) => BookingPaymentSheet(
+                          currentType: _bookingData.paymentMethodType,
+                          currentCardId: _bookingData.paymentMethodId,
+                          isQuickService: true,
+                          amount: finalTotal,
+                          onConfirm: (type, {cardId}) async {
+                            final updatedData = _bookingData.copyWith(
                                 paymentMethodType: type,
                                 paymentMethodId: cardId,
                                 useGoCoins: _useGoCoins,
                               );
-                              context.pushNamed(
-                                RouteNames.quickServicesCarMechanicConfirmation,
-                                extra: updatedData,
-                              );
-                            },
-                          ),
-                        );
-                      }
-                    },
+                            final bookingId = await ref.read(quickServicesBookingProvider.notifier).bookQuickService(updatedData);
+                            if (bookingId != null && mounted) {
+                              context.pushNamed(RouteNames.quickServicesCarMechanicConfirmation, extra: updatedData);
+                              return true;
+                            } else {
+                              if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to book service')));
+                              return false;
+                            }
+                          },
+                        ),
+                      );
+                    }
+                  },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,
                       foregroundColor: Colors.black,
@@ -354,7 +366,7 @@ class _CarMechanicReviewScreenState extends ConsumerState<CarMechanicReviewScree
                       ),
                       elevation: 0,
                     ),
-                    child: Text('Confirm Booking', style: AppTextStyles.button.copyWith(color: Colors.black)),
+                    child: _isBooking ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2)) : Text('Confirm Booking', style: AppTextStyles.button.copyWith(color: Colors.black)),
                   ),
                   const SizedBox(height: 40),
                 ],

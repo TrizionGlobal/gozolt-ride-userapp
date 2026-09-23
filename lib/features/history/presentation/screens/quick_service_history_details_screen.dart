@@ -2,23 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../quick_services/data/models/quick_service_history_model.dart';
+import 'package:intl/intl.dart';
 
 class QuickServiceHistoryDetailsScreen extends StatelessWidget {
-  final Map<String, dynamic> booking;
+  final QuickServiceHistoryModel booking;
 
   const QuickServiceHistoryDetailsScreen({super.key, required this.booking});
 
   @override
   Widget build(BuildContext context) {
-    final status = booking['status'] as String;
+    final status = booking.status.toUpperCase();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final displayBookingId = booking['id'] as String;
+    final displayBookingId = booking.id.substring(0, 8).toUpperCase();
+    final displayDate = DateFormat('dd MMM yyyy').format(booking.bookingDate);
+    final displayTime = DateFormat('h:mm a').format(booking.bookingDate);
     final qrDataJson = '''
 Service ID: $displayBookingId
-Service: ${booking['title']}
-Date: ${booking['date']}
-Time: ${booking['time']}
+Service: ${booking.serviceTitle}
+Date: $displayDate
+Time: $displayTime
 '''.trim();
 
     return Scaffold(
@@ -75,7 +79,7 @@ Time: ${booking['time']}
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // QR Code Section
-                  if (status != 'Cancelled') ...[
+                  if (status != 'CANCELLED' && status != 'CANCELED') ...[
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
@@ -118,41 +122,79 @@ Time: ${booking['time']}
                   const SizedBox(height: 8),
                   _buildInfoCard(context, [
                     _buildStatusRow(context, status),
-                    _buildInfoRow(context, 'Service', booking['title'] as String),
-                    _buildInfoRow(context, 'Date', booking['date'] as String),
-                    _buildInfoRow(context, 'Time', booking['time'] as String),
-                    _buildInfoRow(context, 'Location', booking['location'] as String),
-                    
-                    if (booking.containsKey('options') && booking['options'] != null) ...[
-                      const Divider(),
-                      ...((booking['options'] as Map<String, dynamic>).entries.map((e) {
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGold.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                                  Icons.home_repair_service,
+                                  color: AppColors.primaryGold,
+                                  size: 28,
+                                ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Service',
+                                style: AppTextStyles.bodySmall.copyWith(color: Colors.grey),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                booking.serviceTitle,
+                                style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    const Divider(),
+                    const SizedBox(height: 8),
+                    _buildInfoRow(context, 'Date', displayDate),
+                    _buildInfoRow(context, 'Time', displayTime),
+                  ]),
+                  
+                  if (booking.options.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    _buildSectionTitle(context, 'Features Selection'),
+                    const SizedBox(height: 8),
+                    _buildInfoCard(context, [
+                      ...(booking.options.entries.map((e) {
                         return _buildInfoRow(context, e.key, e.value.toString());
                       })),
-                    ],
-                  ]),
+                    ]),
+                  ],
                   
                   const SizedBox(height: 24),
                   
-                  if (booking.containsKey('addOns') && booking['addOns'] != null && (booking['addOns'] as List).isNotEmpty) ...[
-                    _buildSectionTitle(context, 'Selected Add-ons'),
+                  if (booking.addOns.isNotEmpty) ...[
+                    _buildSectionTitle(context, 'Add-ons Selection'),
                     const SizedBox(height: 8),
                     _buildInfoCard(context, [
-                      ...((booking['addOns'] as List).map((addon) {
-                        return _buildInfoRow(context, addon['name'] as String, '€${(addon['price'] as double).toStringAsFixed(2)}');
+                      ...(booking.addOns.map((addon) {
+                        return _buildInfoRow(context, addon['name'] as String, '€${(addon['price']).toString()}');
                       })),
                     ]),
                     const SizedBox(height: 24),
                   ],
 
                   // Supplier Details
-                  _buildSectionTitle(context, 'Supplier Details'),
-                  const SizedBox(height: 8),
-                  _buildInfoCard(context, [
-                    _buildInfoRow(context, 'Company', booking['provider'] as String),
-                    _buildInfoRow(context, 'Contact', '+1 555-0198'), // mock contact
-                    if (booking['email'] != null)
-                      _buildInfoRow(context, 'Email', booking['email'] as String),
-                  ]),
+                  if (booking.supplier != null) ...[
+                    _buildSectionTitle(context, 'Supplier Details'),
+                    const SizedBox(height: 8),
+                    _buildInfoCard(context, [
+                      _buildInfoRow(context, 'Company', booking.supplier!['companyName'] ?? 'N/A'),
+                    ]),
+                  ],
                   
                   const SizedBox(height: 24),
                   
@@ -160,24 +202,17 @@ Time: ${booking['time']}
                   _buildSectionTitle(context, 'Payment Details'),
                   const SizedBox(height: 8),
                   _buildInfoCard(context, [
-                    if (booking['paymentMethod'] != null)
-                      _buildInfoRow(context, 'Payment Method', booking['paymentMethod'] as String),
-                    _buildInfoRow(context, 'Base Rate', '€${(booking['baseRate'] as double).toStringAsFixed(2)}'),
+                    _buildInfoRow(context, 'Payment Method', booking.paymentMethod),
+                    _buildInfoRow(context, 'Base Rate', '€${booking.upfrontFee.toStringAsFixed(2)}'),
                     
-                    if (booking['materialsFee'] != null && (booking['materialsFee'] as double) > 0)
-                      _buildInfoRow(context, 'Materials & Add-ons', '€${(booking['materialsFee'] as double).toStringAsFixed(2)}'),
-                    
-                    if (booking['taxes'] != null && (booking['taxes'] as double) > 0)
-                      _buildInfoRow(context, 'Taxes & Fees', '€${(booking['taxes'] as double).toStringAsFixed(2)}'),
-                    
-                    if (booking['walletAmountUsed'] != null && (booking['walletAmountUsed'] as double) > 0)
-                      _buildInfoRow(context, 'GoCoins Discount', '-€${(booking['walletAmountUsed'] as double).toStringAsFixed(2)}', valueColor: AppColors.primaryGold),
+                    if (booking.materialCost > 0)
+                      _buildInfoRow(context, 'Materials & Add-ons', '€${booking.materialCost.toStringAsFixed(2)}'),
                     
                     const Divider(),
-                    _buildInfoRow(context, 'Grand Total', '€${(booking['total'] as double).toStringAsFixed(2)}', isBold: true),
+                    _buildInfoRow(context, 'Grand Total', '€${booking.totalAmount.toStringAsFixed(2)}', isBold: true),
                   ]),
 
-                  if (status == 'Scheduled') ...[
+                  if (status == 'PENDING' || status == 'SCHEDULED') ...[
                     const SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
@@ -199,7 +234,7 @@ Time: ${booking['time']}
                     ),
                   ],
 
-                  if (status == 'Cancelled') ...[
+                  if (status == 'CANCELLED' || status == 'CANCELED') ...[
                     const SizedBox(height: 32),
                     Container(
                       padding: const EdgeInsets.all(16),
@@ -226,7 +261,7 @@ Time: ${booking['time']}
                           ),
                           const SizedBox(height: 12),
                           _buildInfoRow(context, 'Cancelled By', 'You', valueColor: Colors.redAccent),
-                          _buildInfoRow(context, 'Refund Amount', '€${(booking['total'] as double).toStringAsFixed(2)}', valueColor: Colors.green),
+                          _buildInfoRow(context, 'Refund Amount', '€${booking.totalAmount.toStringAsFixed(2)}', valueColor: Colors.green),
                         ],
                       ),
                     ),
@@ -273,17 +308,19 @@ Time: ${booking['time']}
     IconData statusIcon;
 
     switch (status) {
-      case 'Scheduled':
+      case 'PENDING':
+      case 'SCHEDULED':
         statusColor = isDark ? Colors.orange.shade400 : Colors.orange.shade800;
         statusBg = isDark ? Colors.orange.withOpacity(0.15) : Colors.orange.shade50;
         statusIcon = Icons.schedule_rounded;
         break;
-      case 'Completed':
+      case 'COMPLETED':
         statusColor = isDark ? Colors.teal.shade300 : Colors.teal.shade700;
         statusBg = isDark ? Colors.teal.withOpacity(0.15) : Colors.teal.shade50;
         statusIcon = Icons.task_alt_rounded;
         break;
-      case 'Cancelled':
+      case 'CANCELLED':
+      case 'CANCELED':
         statusColor = isDark ? Colors.red.shade400 : AppColors.error;
         statusBg = isDark ? Colors.red.withOpacity(0.15) : Colors.red.shade50;
         statusIcon = Icons.cancel_outlined;
