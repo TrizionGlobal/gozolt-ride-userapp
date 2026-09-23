@@ -1,4 +1,4 @@
-import '../../../providers/quick_services_booking_provider.dart';
+import '../../providers/quick_services_booking_provider.dart';
 import 'package:intl/intl.dart';
 import '../../../../../core/widgets/booking_payment_sheet.dart';
 import 'dart:io';
