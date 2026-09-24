@@ -90,7 +90,7 @@ class _PlumbingReviewScreenState extends ConsumerState<PlumbingReviewScreen> {
                       final bookingId = await ref.read(quickServicesBookingProvider.notifier).bookQuickService(updatedData);
                       if (mounted) setState(() => _isBooking = false);
                       if (bookingId != null && mounted) {
-                        context.pushNamed(RouteNames.quickServicesPlumbingConfirmation, extra: updatedData);
+                        context.pushNamed(RouteNames.quickServicesPlumbingConfirmation, extra: updatedData.copyWith(bookingId: bookingId));
                       } else {
                         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to book service')));
                       }
@@ -112,7 +112,7 @@ class _PlumbingReviewScreenState extends ConsumerState<PlumbingReviewScreen> {
                           );
                             final bookingId = await ref.read(quickServicesBookingProvider.notifier).bookQuickService(updatedData);
                             if (bookingId != null && mounted) {
-                              context.pushNamed(RouteNames.quickServicesPlumbingConfirmation, extra: updatedData);
+                              context.pushNamed(RouteNames.quickServicesPlumbingConfirmation, extra: updatedData.copyWith(bookingId: bookingId));
                               return true;
                             } else {
                               if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to book service')));

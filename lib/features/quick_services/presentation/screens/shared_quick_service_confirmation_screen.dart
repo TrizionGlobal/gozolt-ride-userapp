@@ -39,8 +39,13 @@ class SharedQuickServiceConfirmationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String fullBookingId = bookingData.bookingId ?? 'UNKNOWN';
+    final String displayBookingId = (fullBookingId != 'UNKNOWN' && fullBookingId.length >= 8)
+        ? 'GZ-QS-${fullBookingId.substring(0, 8).toUpperCase()}'
+        : 'GZT-QS-260905-1845'; // Fallback
+
     final String qrData = '''
-Booking Reference: GZT-QS-260905-1845
+Booking Reference: $displayBookingId
 Service: ${bookingData.selectedServiceTitle ?? defaultTitle}
 Date: ${_formatDate(bookingData.scheduleDate)}
 Time: ${bookingData.scheduleTime.format(context)}
@@ -76,7 +81,7 @@ Amount Paid: €${((bookingData.upfrontBookingFee + bookingData.materialCost) - 
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'GZT-QS-260905-1845', // Hardcoded dummy ID for now
+                      displayBookingId,
                       textAlign: TextAlign.center,
                       style: AppTextStyles.titleMedium.copyWith(
                           fontWeight: FontWeight.bold, letterSpacing: 1.2),

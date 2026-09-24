@@ -358,7 +358,7 @@ class _ComputerRepairReviewScreenState extends ConsumerState<ComputerRepairRevie
                       final bookingId = await ref.read(quickServicesBookingProvider.notifier).bookQuickService(updatedData);
                       if (mounted) setState(() => _isBooking = false);
                       if (bookingId != null && mounted) {
-                        context.pushNamed(RouteNames.quickServicesComputerRepairConfirmation, extra: updatedData);
+                        context.pushNamed(RouteNames.quickServicesComputerRepairConfirmation, extra: updatedData.copyWith(bookingId: bookingId));
                       } else if (mounted) {
                         context.pushNamed(
                           RouteNames.quickServicesPaymentFailed,
@@ -388,7 +388,7 @@ class _ComputerRepairReviewScreenState extends ConsumerState<ComputerRepairRevie
                           );
                             final bookingId = await ref.read(quickServicesBookingProvider.notifier).bookQuickService(updatedData);
                             if (bookingId != null && mounted) {
-                              context.pushNamed(RouteNames.quickServicesComputerRepairConfirmation, extra: updatedData);
+                              context.pushNamed(RouteNames.quickServicesComputerRepairConfirmation, extra: updatedData.copyWith(bookingId: bookingId));
                               return true;
                             } else if (mounted) {
                               context.pushNamed(
