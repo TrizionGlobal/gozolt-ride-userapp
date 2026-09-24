@@ -359,8 +359,16 @@ class _ComputerRepairReviewScreenState extends ConsumerState<ComputerRepairRevie
                       if (mounted) setState(() => _isBooking = false);
                       if (bookingId != null && mounted) {
                         context.pushNamed(RouteNames.quickServicesComputerRepairConfirmation, extra: updatedData);
-                      } else {
-                        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to book service')));
+                      } else if (mounted) {
+                        context.pushNamed(
+                          RouteNames.quickServicesPaymentFailed,
+                          extra: {
+                            'bookingData': updatedData,
+                            'serviceIcon': Icons.laptop,
+                            'defaultTitle': 'Computer Repair',
+                            'onRetrySuccessRouteName': RouteNames.quickServicesComputerRepairConfirmation,
+                          },
+                        );
                       }
                     } else {
                       showModalBottomSheet(
@@ -382,10 +390,19 @@ class _ComputerRepairReviewScreenState extends ConsumerState<ComputerRepairRevie
                             if (bookingId != null && mounted) {
                               context.pushNamed(RouteNames.quickServicesComputerRepairConfirmation, extra: updatedData);
                               return true;
-                            } else {
-                              if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to book service')));
-                              return false;
+                            } else if (mounted) {
+                              context.pushNamed(
+                                RouteNames.quickServicesPaymentFailed,
+                                extra: {
+                                  'bookingData': updatedData,
+                                  'serviceIcon': Icons.laptop,
+                                  'defaultTitle': 'Computer Repair',
+                                  'onRetrySuccessRouteName': RouteNames.quickServicesComputerRepairConfirmation,
+                                },
+                              );
+                              return true; // Return true to close the sheet, since we are moving to the failed screen
                             }
+                            return false;
                           },
                         ),
                       );

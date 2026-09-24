@@ -55,6 +55,7 @@ import '../../features/bike_rental/domain/models/bike_model.dart';
 import '../../features/quick_services/presentation/screens/service_location_screen.dart';
 import '../../features/quick_services/presentation/screens/quick_services_list_screen.dart';
 import '../../features/quick_services/presentation/screens/shared_quick_service_confirmation_screen.dart';
+import '../../features/quick_services/presentation/screens/shared_quick_service_failed_screen.dart';
 import '../../features/quick_services/presentation/screens/home_services/home_cleaning_details_screen.dart';
 import '../../features/quick_services/presentation/screens/home_services/home_cleaning_review_screen.dart';
 
@@ -1404,6 +1405,23 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
           return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.laptop, defaultTitle: 'Computer Repair');
+        },
+      ),
+      GoRoute(
+        path: '/payment-failed',
+        name: RouteNames.quickServicesPaymentFailed,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          final bookingData = extra['bookingData'] as QuickServiceBookingData;
+          final serviceIcon = extra['serviceIcon'] as IconData;
+          final defaultTitle = extra['defaultTitle'] as String;
+          final onRetrySuccessRouteName = extra['onRetrySuccessRouteName'] as String;
+          return SharedQuickServiceFailedScreen(
+            bookingData: bookingData,
+            serviceIcon: serviceIcon,
+            defaultTitle: defaultTitle,
+            onRetrySuccessRouteName: onRetrySuccessRouteName,
+          );
         },
       ),
       GoRoute(

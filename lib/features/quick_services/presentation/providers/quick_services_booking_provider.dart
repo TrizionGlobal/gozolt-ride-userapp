@@ -30,12 +30,39 @@ class QuickServicesBookingNotifier extends StateNotifier<AsyncValue<String?>> {
     }
   }
 
+  final Map<String, String> _uploadCache = {};
+
   Future<List<String>> uploadImages(List<String> imagePaths) async {
     try {
-      return await _repository.uploadImages(imagePaths);
+      final List<String> pathsToUpload = [];
+      final List<String> finalUrls = List.filled(imagePaths.length, '');
+
+      for (int i = 0; i < imagePaths.length; i++) {
+        final path = imagePaths[i];
+        if (_uploadCache.containsKey(path)) {
+          finalUrls[i] = _uploadCache[path]!;
+        } else {
+          pathsToUpload.add(path);
+        }
+      }
+
+      if (pathsToUpload.isNotEmpty) {
+        final uploaded = await _repository.uploadImages(pathsToUpload);
+        int uploadedIdx = 0;
+        for (int i = 0; i < imagePaths.length; i++) {
+          final path = imagePaths[i];
+          if (!_uploadCache.containsKey(path)) {
+            finalUrls[i] = uploaded[uploadedIdx];
+            _uploadCache[path] = uploaded[uploadedIdx];
+            uploadedIdx++;
+          }
+        }
+      }
+
+      return finalUrls;
     } catch (e, st) {
       state = AsyncValue.error(e, st);
-      return [];
+      rethrow;
     }
   }
 }

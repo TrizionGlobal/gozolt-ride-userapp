@@ -93,7 +93,7 @@ class _BookingPaymentSheetState extends ConsumerState<BookingPaymentSheet> {
       builder: (_) => StripeAddCardSheet(
         datasource: ds,
         
-        amount: widget.amount,
+        amount: widget.isQuickService ? null : widget.amount,
         onCardAdded: (paymentMethodId) async {
           if (paymentMethodId != null) {
             if (widget.isQuickService) {

@@ -120,12 +120,31 @@ class QuickServicesPriceSummary extends StatelessWidget {
                               padding: const EdgeInsets.only(left: 4.0),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(4),
-                                child: Image.file(
-                                  File(path),
-                                  width: 40,
-                                  height: 40,
-                                  fit: BoxFit.cover,
-                                ),
+                                child: path.startsWith('http')
+                                    ? Image.network(
+                                        path,
+                                        width: 40,
+                                        height: 40,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (ctx, err, stack) => Container(
+                                          width: 40,
+                                          height: 40,
+                                          color: Colors.grey[200],
+                                          child: const Icon(Icons.broken_image, size: 16, color: Colors.grey),
+                                        ),
+                                      )
+                                    : Image.file(
+                                        File(path),
+                                        width: 40,
+                                        height: 40,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (ctx, err, stack) => Container(
+                                          width: 40,
+                                          height: 40,
+                                          color: Colors.grey[200],
+                                          child: const Icon(Icons.broken_image, size: 16, color: Colors.grey),
+                                        ),
+                                      ),
                               ),
                             );
                           },

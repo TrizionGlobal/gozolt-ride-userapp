@@ -5,6 +5,7 @@ import '../models/quick_service_booking_data.dart';
 import '../models/quick_service_booking_data.dart';
 import '../models/quick_service_history_model.dart';
 import 'package:intl/intl.dart';
+import '../../../../features/ride/data/models/saved_payment_method.dart';
 
 class QuickServicesRepository {
   final Dio _dio;
@@ -23,17 +24,21 @@ class QuickServicesRepository {
       final formData = FormData.fromMap({
         'file': await MultipartFile.fromFile(imagePath),
       });
-      final uploadRes = await _dio.post(
-        '/v1/quick-services/upload-image', 
-        data: formData,
-        options: Options(
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        ),
-      );
-      if (uploadRes.data != null && uploadRes.data['url'] != null) {
-        imageUrls.add(uploadRes.data['url']);
+      try {
+        final uploadRes = await _dio.post(
+          '/quick-services/upload-image', 
+          data: formData,
+        );
+        if (uploadRes.data != null && uploadRes.data['url'] != null) {
+          imageUrls.add(uploadRes.data['url']);
+        }
+      } catch (e) {
+        if (e is DioException) {
+          print('DioException during image upload: ${e.response?.statusCode} - ${e.response?.data}');
+        } else {
+          print('Error during image upload: $e');
+        }
+        rethrow;
       }
     }
     return imageUrls;
@@ -128,10 +133,12 @@ class QuickServicesRepository {
         }).toList(),
         'images': imageUrls,
         'requirements': data.describeIssue ?? '',
+        'paymentMethodType': data.paymentMethodType == PaymentMethodType.cash ? 'cash' : 'card',
+        'paymentMethodId': data.paymentMethodId,
       };
 
       final response = await _dio.post(
-        '/v1/quick-services/book',
+        '/quick-services/book',
         data: payload,
       );
 
@@ -146,7 +153,7 @@ class QuickServicesRepository {
 
   Future<List<QuickServiceHistoryModel>> getQuickServiceHistory() async {
     try {
-      final response = await _dio.get('/v1/quick-services/history');
+      final response = await _dio.get('/quick-services/history');
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
         return data.map((json) => QuickServiceHistoryModel.fromJson(json)).toList();
