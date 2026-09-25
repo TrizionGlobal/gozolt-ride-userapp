@@ -33,7 +33,7 @@ class _MobileRepairReviewScreenState extends ConsumerState<MobileRepairReviewScr
     _bookingData = widget.bookingData;
   }
 
-  void _showFullImage(BuildContext context, File file) {
+  void _showFullImage(BuildContext context, String path) {
     showDialog(
       context: context,
       builder: (_) => Dialog(
@@ -43,7 +43,9 @@ class _MobileRepairReviewScreenState extends ConsumerState<MobileRepairReviewScr
           alignment: Alignment.center,
           children: [
             InteractiveViewer(
-              child: Image.file(file, fit: BoxFit.contain),
+              child: path.startsWith('http')
+                ? Image.network(path, fit: BoxFit.contain)
+                : Image.file(File(path), fit: BoxFit.contain),
             ),
             Positioned(
               top: 40,
@@ -281,20 +283,15 @@ class _MobileRepairReviewScreenState extends ConsumerState<MobileRepairReviewScr
                                           final file = File(path);
                                           return GestureDetector(
                                             onTap: () {
-                                              if (file.existsSync()) _showFullImage(context, file);
+                                              if (path.startsWith('http') || file.existsSync()) _showFullImage(context, path);
                                             },
                                             child: Padding(
                                               padding: const EdgeInsets.only(left: 4.0),
                                               child: ClipRRect(
                                                 borderRadius: BorderRadius.circular(4),
-                                                child: file.existsSync()
-                                                    ? Image.file(file, width: 40, height: 40, fit: BoxFit.cover)
-                                                    : Container(
-                                                        width: 40,
-                                                        height: 40,
-                                                        color: Colors.grey.shade300,
-                                                        child: const Icon(Icons.image, color: Colors.grey),
-                                                      ),
+                                                child: path.startsWith('http')
+                                                    ? Image.network(path, width: 40, height: 40, fit: BoxFit.cover,)
+                                                    : Image.file(File(path), width: 40, height: 40, fit: BoxFit.cover),
                                               ),
                                             ),
                                           );

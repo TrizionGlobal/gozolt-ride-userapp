@@ -15,7 +15,7 @@ class QuickServicesPricingConfig {
     // Fallbacks
     'home_cleaning': {'minHourlyRate': 6.00, 'upfrontFee': 5.00, 'materialCost': 10.00},
     'carpenter': {'minHourlyRate': 20.00, 'upfrontFee': 5.00, 'materialCost': 10.00},
-    'handyman': {'minHourlyRate': 6.00},
+
     'pest_control': {'minHourlyRate': 6.00, 'upfrontFee': 5.00, 'materialCost': 5.00},
     'gardening': {'minHourlyRate': 6.00, 'upfrontFee': 5.00, 'materialCost': 5.00},
     'computer_repair': {'minHourlyRate': 10.00, 'upfrontFee': 5.00, 'materialCost': 0.00, 'estimatedSparePrice': '€50 - €110'},

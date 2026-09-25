@@ -257,8 +257,6 @@ class QuickServiceBookingData {
   final String? liftType;
   final String? floorsServed;
 
-  // Handyman specific fields
-  final String? wallType;
 
   // Hire a Person specific fields
   final String? expectedDuration;
@@ -517,7 +515,6 @@ class QuickServiceBookingData {
     this.propertyType,
     this.liftType,
     this.floorsServed,
-    this.wallType,
     this.expectedDuration,
     this.comments,
     this.helperCount,
@@ -649,7 +646,6 @@ class QuickServiceBookingData {
     String? propertyType,
     String? liftType,
     String? floorsServed,
-    String? wallType,
     String? expectedDuration,
     String? comments,
     int? helperCount,
@@ -783,7 +779,6 @@ class QuickServiceBookingData {
       propertyType: propertyType ?? this.propertyType,
       liftType: liftType ?? this.liftType,
       floorsServed: floorsServed ?? this.floorsServed,
-      wallType: wallType ?? this.wallType,
       expectedDuration: expectedDuration ?? this.expectedDuration,
       comments: comments ?? this.comments,
       helperCount: helperCount ?? this.helperCount,

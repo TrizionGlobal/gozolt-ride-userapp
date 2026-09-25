@@ -118,9 +118,6 @@ abstract final class RouteNames {
   static const String quickServicesEventsElectricReview = 'quick-services-events-electric-review';
   static const String quickServicesEventsElectricConfirmation = 'quick-services-events-electric-confirmation';
 
-  static const String quickServicesHandyman = 'quick-services-handyman';
-  static const String quickServicesHandymanReview = 'quick-services-handyman-review';
-  static const String quickServicesHandymanConfirmation = 'quick-services-handyman-confirmation';
 
   static const String quickServicesHirePerson = 'quick-services-hire-person';
   static const String quickServicesHirePersonReview = 'quick-services-hire-person-review';

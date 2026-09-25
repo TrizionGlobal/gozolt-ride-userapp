@@ -116,10 +116,22 @@ class _HomeCleaningReviewScreenState extends ConsumerState<HomeCleaningReviewScr
 
                     // Customer
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Icon(Icons.person, size: 18, color: Colors.grey),
                         const SizedBox(width: 10),
-                        Text('Customer: ${_bookingData.userName}', style: AppTextStyles.bodySmall),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Customer: ${_bookingData.userName}', style: AppTextStyles.bodySmall),
+                              const SizedBox(height: 2),
+                              Text('Email: ${_bookingData.userEmail}', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600], fontSize: 12)),
+                              const SizedBox(height: 2),
+                              Text('Phone: ${_bookingData.userPhone}', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600], fontSize: 12)),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                     if (_bookingData.materialPreference != null && _bookingData.materialPreference!.isNotEmpty) ...[

@@ -138,13 +138,25 @@ class _BikeMechanicReviewScreenState extends ConsumerState<BikeMechanicReviewScr
                         const SizedBox(height: 10),
 
                         // Customer
-                        Row(
-                          children: [
-                            const Icon(Icons.person, size: 18, color: Colors.grey),
-                            const SizedBox(width: 10),
-                            Text('Customer: ${_bookingData.userName}', style: AppTextStyles.bodyMedium),
-                          ],
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.person, size: 18, color: Colors.grey),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Customer: ${_bookingData.userName}', style: AppTextStyles.bodyMedium),
+                              const SizedBox(height: 2),
+                              Text('Email: ${_bookingData.userEmail}', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[600], fontSize: 12)),
+                              const SizedBox(height: 2),
+                              Text('Phone: ${_bookingData.userPhone}', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[600], fontSize: 12)),
+                            ],
+                          ),
                         ),
+                      ],
+                    ),
                         const SizedBox(height: 10),
 
                         // Service Mode
@@ -273,12 +285,13 @@ class _BikeMechanicReviewScreenState extends ConsumerState<BikeMechanicReviewScr
                                         padding: const EdgeInsets.only(left: 4.0),
                                         child: ClipRRect(
                                           borderRadius: BorderRadius.circular(4),
-                                          child: Image.file(
-                                            File(path),
-                                            width: 40,
+                                          child: path.startsWith('http')
+                                                ? Image.network(path, width: 40,
                                             height: 40,
-                                            fit: BoxFit.cover,
-                                          ),
+                                            fit: BoxFit.cover,)
+                                                : Image.file(File(path), width: 40,
+                                            height: 40,
+                                            fit: BoxFit.cover,),
                                         ),
                                       );
                                     },

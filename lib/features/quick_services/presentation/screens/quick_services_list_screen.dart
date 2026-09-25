@@ -30,7 +30,6 @@ const List<_ServiceCategory> _categories = [
     _SubService('Gardening', Icons.yard, iconPath: 'assets/images/updated_userapp_images/quick_services_images/gardening.png'),
     _SubService('Plumbing', Icons.plumbing, iconPath: 'assets/images/updated_userapp_images/quick_services_images/plumber.png'),
     _SubService('Carpenter', Icons.carpenter, iconPath: 'assets/images/updated_userapp_images/quick_services_images/carpentar.png'),
-    // _SubService('Handyman', Icons.handyman),
   ]),
   _ServiceCategory('PC & Mobile Repair', Icons.computer, iconPath: 'assets/images/updated_userapp_images/quick_services_images/pc&mobile_repair.png', [
     _SubService('Mobile', Icons.smartphone, iconPath: 'assets/images/updated_userapp_images/quick_services_images/mobile.png'),
@@ -171,8 +170,6 @@ class _QuickServicesListScreenState extends State<QuickServicesListScreen> {
                             nextRoute = RouteNames.quickServicesEventsElectric;
                           } else if (category.title == 'Electrical Repair' && subService.title == 'Home') {
                             nextRoute = RouteNames.quickServicesElectrical;
-                          } else if (subService.title == 'Handyman' || subService.title == 'Handyman Services') {
-                            nextRoute = RouteNames.quickServicesHandyman;
                           } else if (subService.title == 'Mobile' || subService.title == 'Mobile Repair') {
                             nextRoute = RouteNames.quickServicesMobileRepair;
                           } else if (subService.title == 'Computer' || subService.title == 'Laptop/Computer' || subService.title == 'Computer & Laptop Repair' || subService.title == 'Computer & Laptop') {

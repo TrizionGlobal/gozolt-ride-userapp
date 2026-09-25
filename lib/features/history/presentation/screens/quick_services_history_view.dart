@@ -158,6 +158,45 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
     );
   }
 
+  IconData _getServiceIcon(String category, String title) {
+    final t = title.toLowerCase();
+    switch (t) {
+      case 'home cleaning': return Icons.cleaning_services;
+      case 'pest control': return Icons.pest_control;
+      case 'gardening': return Icons.yard;
+      case 'plumbing': return Icons.plumbing;
+      case 'carpenter': return Icons.carpenter;
+      case 'mobile': return Icons.smartphone;
+      case 'laptop/computer': return Icons.laptop;
+      case 'printer / scanner': return Icons.print;
+      case 'car': return Icons.directions_car;
+      case 'bike': return Icons.two_wheeler;
+      case 'truck': return Icons.local_shipping;
+      case 'refrigerator': return Icons.kitchen;
+      case 'air conditioner': return Icons.ac_unit;
+      case 'washing machine': return Icons.local_laundry_service;
+      case 'television': return Icons.tv;
+      case 'fan': return Icons.air;
+      case 'appliance repair': return Icons.ac_unit;
+      case 'electrical repair': return Icons.electrical_services;
+      case 'vehicle mechanic': return Icons.handyman;
+      case 'vehicle wash': return Icons.local_car_wash;
+      case 'pc & mobile repair': return Icons.computer;
+    }
+    
+    final c = category.toLowerCase();
+    switch (c) {
+      case 'home services': return Icons.home_repair_service;
+      case 'pc & mobile repair': return Icons.computer;
+      case 'vehicle mechanic': return Icons.handyman;
+      case 'vehicle wash': return Icons.local_car_wash;
+      case 'electrical repair': return Icons.electrical_services;
+      case 'appliance repair': return Icons.ac_unit;
+    }
+    
+    return Icons.home_repair_service;
+  }
+
   Widget _buildHistoryCard(QuickServiceHistoryModel booking) {
     final status = booking.status.toUpperCase();
     
@@ -177,6 +216,33 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
         statusBg = AppColors.primaryGold.withValues(alpha: 0.1);
         statusText = AppColors.primaryGold;
         displayStatus = 'Scheduled';
+    }
+
+    String subtitle = booking.serviceCategory;
+    final validAddOns = booking.addOns.where((a) => a is Map).toList();
+    
+    if (validAddOns.isNotEmpty) {
+      final names = validAddOns.map((a) => (a as Map)['name']?.toString() ?? 'Unknown Add-on').toList();
+      if (names.length <= 2) {
+        subtitle = names.join(', ');
+      } else {
+        subtitle = '${names.take(2).join(', ')} +${names.length - 2} more';
+      }
+    } else if (booking.options.isNotEmpty) {
+      final firstVal = booking.options.values.first;
+      if (firstVal is List && firstVal.isNotEmpty) {
+        if (firstVal.first is Map) {
+          final firstItem = firstVal.first as Map;
+          final parts = [if (firstItem['Make'] != null) firstItem['Make'], if (firstItem['Model'] != null) firstItem['Model'], if (firstItem['Type'] != null && firstItem['Make'] == null) firstItem['Type']].where((e) => e != null);
+          subtitle = parts.isNotEmpty ? parts.join(' ') : 'Multiple items';
+          if (firstVal.length > 1) subtitle += ' +${firstVal.length - 1} more';
+        } else {
+          subtitle = firstVal.first.toString();
+          if (firstVal.length > 1) subtitle += ' +${firstVal.length - 1} more';
+        }
+      } else {
+        subtitle = firstVal.toString();
+      }
     }
 
     return GestureDetector(
@@ -208,10 +274,10 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
-                              Icons.home_repair_service,
-                              color: AppColors.primaryGold,
-                              size: 24,
-                            ),
+                        _getServiceIcon(booking.serviceCategory, booking.serviceTitle),
+                        color: AppColors.primaryGold,
+                        size: 24,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Column(
@@ -221,11 +287,15 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
                           booking.serviceTitle,
                           style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Service ID: ${booking.id.substring(0, 8).toUpperCase()}',
-                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
-                        ),
+                        if (booking.addOns.isNotEmpty || booking.options.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            subtitle,
+                            style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ],
                     ),
                   ],

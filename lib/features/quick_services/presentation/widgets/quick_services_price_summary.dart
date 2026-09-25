@@ -69,21 +69,8 @@ class QuickServicesPriceSummary extends StatelessWidget {
                     );
                   }),
                 ],
-                if (bookingData.wallType != null) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text('Wall Type', style: AppTextStyles.bodyMedium),
-                        ),
-                        Text(bookingData.wallType!, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  ),
-                ],
-                if ((bookingData.selectedAddons.isNotEmpty || bookingData.wallType != null) && (showAdditionalDetails && (bookingData.describeIssue?.trim().isNotEmpty == true || bookingData.uploadedImages?.isNotEmpty == true)))
+
+                if (bookingData.selectedAddons.isNotEmpty && (showAdditionalDetails && (bookingData.describeIssue?.trim().isNotEmpty == true || bookingData.uploadedImages?.isNotEmpty == true)))
                   const Divider(height: 24),
                 if (showAdditionalDetails && bookingData.describeIssue?.trim().isNotEmpty == true) ...[
                   Row(
@@ -440,9 +427,6 @@ class QuickServicesPriceSummary extends StatelessWidget {
                           String baseNote = note != null && note!.isNotEmpty
                               ? '$note\n\nNote: Pay the upfront fee${bookingData.materialCost > 0 ? " and materials/tools cost" : ""} now. The remaining balance (hours × rate) is paid directly to the service person after the service.'
                               : 'Note: Pay the upfront fee${bookingData.materialCost > 0 ? " and materials/tools cost" : ""} now. The remaining balance (hours × rate) is paid directly to the service person after the service completed.';
-                          if (QuickServicesPricingConfig.getEstimatedSparePrice(bookingData.servicePricingKey) != null) {
-                            baseNote += '\n\n* Note: Final price and replacement parts will be confirmed after inspection.';
-                          }
                           return baseNote;
                         })(),
                         style: AppTextStyles.bodySmall.copyWith(

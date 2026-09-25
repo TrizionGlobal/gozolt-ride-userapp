@@ -266,10 +266,9 @@ class _OtherServicesReviewScreenState extends ConsumerState<OtherServicesReviewS
                                     height: 70,
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(8),
-                                      child: Image.file(
-                                        File(path),
-                                        fit: BoxFit.cover,
-                                      ),
+                                      child: path.startsWith('http')
+                                                ? Image.network(path, fit: BoxFit.cover,)
+                                                : Image.file(File(path), fit: BoxFit.cover,),
                                     ),
                                   );
                                 },

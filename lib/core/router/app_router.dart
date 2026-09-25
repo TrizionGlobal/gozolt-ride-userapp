@@ -84,8 +84,7 @@ import '../../features/quick_services/presentation/screens/electrical_mechanic/h
 import '../../features/quick_services/presentation/screens/electrical_mechanic/events_electric_details_screen.dart';
 import '../../features/quick_services/presentation/screens/electrical_mechanic/events_electric_review_screen.dart';
 
-import '../../features/quick_services/presentation/screens/home_services/handyman_details_screen.dart';
-import '../../features/quick_services/presentation/screens/home_services/handyman_review_screen.dart';
+
 
 import '../../features/quick_services/presentation/screens/hire_person/hire_person_details_screen.dart';
 import '../../features/quick_services/presentation/screens/hire_person/hire_person_review_screen.dart';
@@ -1287,30 +1286,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.event, defaultTitle: 'Events Electric');
         },
       ),
-      GoRoute(
-        path: '/handyman',
-        name: RouteNames.quickServicesHandyman,
-        builder: (context, state) {
-          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return HandymanDetailsScreen(bookingData: bookingData);
-        },
-      ),
-      GoRoute(
-        path: '/handyman-review',
-        name: RouteNames.quickServicesHandymanReview,
-        builder: (context, state) {
-          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return HandymanReviewScreen(bookingData: bookingData);
-        },
-      ),
-      GoRoute(
-        path: '/handyman-confirmation',
-        name: RouteNames.quickServicesHandymanConfirmation,
-        builder: (context, state) {
-          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.handyman, defaultTitle: 'Handyman');
-        },
-      ),
+
       GoRoute(
         path: '/hire-person',
         name: RouteNames.quickServicesHirePerson,

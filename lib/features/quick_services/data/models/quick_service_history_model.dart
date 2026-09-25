@@ -10,9 +10,17 @@ class QuickServiceHistoryModel {
   final List<dynamic> addOns;
   final double upfrontFee;
   final double materialCost;
+  final double discountAmount;
   final double totalAmount;
+  final String? estimatedPrice;
   final String paymentMethod;
   final Map<String, dynamic>? supplier;
+  final String? requirements;
+  final List<String>? images;
+  final String? location;
+  final String? userName;
+  final String? userPhone;
+  final String? userEmail;
 
   QuickServiceHistoryModel({
     required this.id,
@@ -24,9 +32,17 @@ class QuickServiceHistoryModel {
     required this.addOns,
     required this.upfrontFee,
     required this.materialCost,
+    required this.discountAmount,
     required this.totalAmount,
+    this.estimatedPrice,
     required this.paymentMethod,
     this.supplier,
+    this.requirements,
+    this.images,
+    this.location,
+    this.userName,
+    this.userPhone,
+    this.userEmail,
   });
 
   factory QuickServiceHistoryModel.fromJson(Map<String, dynamic> json) {
@@ -52,6 +68,18 @@ class QuickServiceHistoryModel {
       }
     }
 
+    List<String> parsedImages = [];
+    if (json['images'] != null) {
+      if (json['images'] is String) {
+        try {
+          final decoded = jsonDecode(json['images']);
+          if (decoded is List) parsedImages = List<String>.from(decoded);
+        } catch (_) {}
+      } else if (json['images'] is List) {
+        parsedImages = List<String>.from(json['images']);
+      }
+    }
+
     return QuickServiceHistoryModel(
       id: json['id'] ?? '',
       serviceCategory: json['serviceCategory'] ?? '',
@@ -60,11 +88,19 @@ class QuickServiceHistoryModel {
       status: json['status'] ?? 'PENDING',
       options: parsedOptions,
       addOns: parsedAddOns,
-      upfrontFee: (json['upfrontFee'] ?? 0.0).toDouble(),
-      materialCost: (json['materialCost'] ?? 0.0).toDouble(),
-      totalAmount: (json['totalAmount'] ?? 0.0).toDouble(),
+      upfrontFee: double.tryParse(json['upfrontFee']?.toString() ?? '') ?? 0.0,
+      materialCost: double.tryParse(json['materialCost']?.toString() ?? '') ?? 0.0,
+      discountAmount: double.tryParse(json['discountAmount']?.toString() ?? '') ?? 0.0,
+      totalAmount: double.tryParse(json['totalAmount']?.toString() ?? '') ?? 0.0,
+      estimatedPrice: json['estimatedPrice'],
       paymentMethod: json['paymentMethod'] ?? 'CASH',
       supplier: json['supplier'],
+      requirements: json['requirements'],
+      images: parsedImages,
+      location: json['location'],
+      userName: json['userName'],
+      userPhone: json['userPhone'],
+      userEmail: json['userEmail'],
     );
   }
 }
