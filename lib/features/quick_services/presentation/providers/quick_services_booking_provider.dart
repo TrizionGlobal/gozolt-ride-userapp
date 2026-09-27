@@ -10,18 +10,20 @@ final quickServicesRepositoryProvider = Provider<QuickServicesRepository>((ref) 
 });
 
 final quickServicesBookingProvider = StateNotifierProvider<QuickServicesBookingNotifier, AsyncValue<String?>>((ref) {
-  return QuickServicesBookingNotifier(ref.watch(quickServicesRepositoryProvider));
+  return QuickServicesBookingNotifier(ref.watch(quickServicesRepositoryProvider), ref);
 });
 
 class QuickServicesBookingNotifier extends StateNotifier<AsyncValue<String?>> {
   final QuickServicesRepository _repository;
+  final Ref _ref;
 
-  QuickServicesBookingNotifier(this._repository) : super(const AsyncValue.data(null));
+  QuickServicesBookingNotifier(this._repository, this._ref) : super(const AsyncValue.data(null));
 
   Future<String?> bookQuickService(QuickServiceBookingData data) async {
     state = const AsyncValue.loading();
     try {
       final bookingId = await _repository.bookQuickService(data);
+      _ref.invalidate(quickServicesHistoryProvider);
       state = AsyncValue.data(bookingId);
       return bookingId;
     } catch (e, st) {

@@ -96,7 +96,7 @@ Time: $displayTime
                       child: Column(
                         children: [
                           Text(
-                            'Present this to service provider',
+                            'Present this to service person',
                             style: AppTextStyles.titleMedium.copyWith(color: AppColors.textPrimaryLight),
                           ),
                           const SizedBox(height: 16),
