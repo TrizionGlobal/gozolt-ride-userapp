@@ -19,7 +19,9 @@ class TransportGrid extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent, width: 0.5),
+        border: Border.all(
+            color: Theme.of(context).dividerTheme.color ?? Colors.transparent,
+            width: 0.5),
       ),
       child: Column(
         children: [
@@ -34,7 +36,8 @@ class TransportGrid extends StatelessWidget {
             children: [
               Expanded(
                 child: _TransportTile(
-                  iconPath: 'assets/images/updated_userapp_images/transport.png',
+                  iconPath:
+                      'assets/images/updated_userapp_images/transport.png',
                   label: 'Transport',
                   isActive: true,
                   onTap: () => _showTransportModal(context),
@@ -43,7 +46,8 @@ class TransportGrid extends StatelessWidget {
               const SizedBox(width: 14),
               Expanded(
                 child: _TransportTile(
-                  iconPath: 'assets/images/updated_userapp_images/quick_services.png',
+                  iconPath:
+                      'assets/images/updated_userapp_images/quick_services.png',
                   label: 'Quick Services',
                   isActive: true,
                   onTap: () {
@@ -58,7 +62,8 @@ class TransportGrid extends StatelessWidget {
             children: [
               Expanded(
                 child: _TransportTile(
-                  iconPath: 'assets/images/updated_userapp_images/groceries.png',
+                  iconPath:
+                      'assets/images/updated_userapp_images/groceries.png',
                   label: 'Groceries',
                   isActive: true,
                   onTap: () => _showComingSoon(context),
@@ -89,14 +94,16 @@ class TransportGrid extends StatelessWidget {
             children: [
               Text(
                 'Transport Services',
-                style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold),
+                style: AppTextStyles.titleLarge
+                    .copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
               Row(
                 children: [
                   Expanded(
                     child: _TransportTile(
-                      iconPath: 'assets/images/updated_userapp_images/cab_booking.png',
+                      iconPath:
+                          'assets/images/updated_userapp_images/cab_booking.png',
                       label: 'Ride',
                       isActive: true,
                       onTap: () {
@@ -108,7 +115,8 @@ class TransportGrid extends StatelessWidget {
                   const SizedBox(width: 14),
                   Expanded(
                     child: _TransportTile(
-                      iconPath: 'assets/images/updated_userapp_images/car_rental.png',
+                      iconPath:
+                          'assets/images/updated_userapp_images/car_rental.png',
                       label: 'Car Rental',
                       isActive: true,
                       onTap: () {
@@ -124,7 +132,8 @@ class TransportGrid extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _TransportTile(
-                      iconPath: 'assets/images/updated_userapp_images/bike_rental.png',
+                      iconPath:
+                          'assets/images/updated_userapp_images/bike_rental.png',
                       label: 'Bike Rental',
                       isActive: true,
                       onTap: () {
@@ -136,12 +145,13 @@ class TransportGrid extends StatelessWidget {
                   const SizedBox(width: 14),
                   Expanded(
                     child: _TransportTile(
-                      iconPath: 'assets/images/updated_userapp_images/airport_transport.png',
+                      iconPath:
+                          'assets/images/updated_userapp_images/airport_transport.png',
                       label: 'Airport Transfer',
-                      isActive: false,
+                      isActive: true,
                       onTap: () {
                         Navigator.pop(ctx);
-                        _showComingSoon(context);
+                        context.pushNamed(RouteNames.airportTransferSearch);
                       },
                     ),
                   ),
@@ -178,7 +188,9 @@ class TransportGrid extends StatelessWidget {
               Text(
                 'Coming Soon!',
                 style: AppTextStyles.headlineSmall.copyWith(
-                  color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                  color: isDark
+                      ? AppColors.textPrimary
+                      : AppColors.textPrimaryLight,
                 ),
               ),
               const SizedBox(height: 8),
@@ -186,7 +198,9 @@ class TransportGrid extends StatelessWidget {
                 "We're working on bringing you this feature.",
                 textAlign: TextAlign.center,
                 style: AppTextStyles.bodyMedium.copyWith(
-                  color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                  color: isDark
+                      ? AppColors.textSecondary
+                      : AppColors.textSecondaryLight,
                 ),
               ),
               const SizedBox(height: 24),
