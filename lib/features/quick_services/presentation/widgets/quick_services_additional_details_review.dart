@@ -77,12 +77,31 @@ class QuickServicesAdditionalDetailsReview extends StatelessWidget {
                     padding: const EdgeInsets.only(right: 6.0),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(6),
-                      child: Image.file(
-                        File(path),
-                        width: 48,
-                        height: 48,
-                        fit: BoxFit.cover,
-                      ),
+                      child: path.startsWith('http')
+                          ? Image.network(
+                              path,
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.cover,
+                              errorBuilder: (ctx, err, stack) => Container(
+                                width: 48,
+                                height: 48,
+                                color: Colors.grey[200],
+                                child: const Icon(Icons.broken_image, size: 20, color: Colors.grey),
+                              ),
+                            )
+                          : Image.file(
+                              File(path),
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.cover,
+                              errorBuilder: (ctx, err, stack) => Container(
+                                width: 48,
+                                height: 48,
+                                color: Colors.grey[200],
+                                child: const Icon(Icons.broken_image, size: 20, color: Colors.grey),
+                              ),
+                            ),
                     ),
                   );
                 },

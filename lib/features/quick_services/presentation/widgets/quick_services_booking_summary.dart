@@ -85,10 +85,22 @@ class QuickServicesBookingSummary extends StatelessWidget {
 
           // Customer
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Icon(Icons.person, size: 18, color: Colors.grey),
               const SizedBox(width: 10),
-              Text('Customer: ${bookingData.userName}', style: AppTextStyles.bodySmall),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Customer: ${bookingData.userName}', style: AppTextStyles.bodySmall),
+                    const SizedBox(height: 2),
+                    Text('Email: ${bookingData.userEmail}', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600], fontSize: 12)),
+                    const SizedBox(height: 2),
+                    Text('Phone: ${bookingData.userPhone}', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600], fontSize: 12)),
+                  ],
+                ),
+              ),
             ],
           ),
 

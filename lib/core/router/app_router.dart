@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/quick_services/data/models/quick_service_history_model.dart';
 import '../../features/splash/presentation/splash_screen.dart';
 import '../../features/splash/presentation/force_update_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
@@ -54,6 +55,7 @@ import '../../features/bike_rental/domain/models/bike_model.dart';
 import '../../features/quick_services/presentation/screens/service_location_screen.dart';
 import '../../features/quick_services/presentation/screens/quick_services_list_screen.dart';
 import '../../features/quick_services/presentation/screens/shared_quick_service_confirmation_screen.dart';
+import '../../features/quick_services/presentation/screens/shared_quick_service_failed_screen.dart';
 import '../../features/quick_services/presentation/screens/home_services/home_cleaning_details_screen.dart';
 import '../../features/quick_services/presentation/screens/home_services/home_cleaning_review_screen.dart';
 
@@ -82,8 +84,7 @@ import '../../features/quick_services/presentation/screens/electrical_mechanic/h
 import '../../features/quick_services/presentation/screens/electrical_mechanic/events_electric_details_screen.dart';
 import '../../features/quick_services/presentation/screens/electrical_mechanic/events_electric_review_screen.dart';
 
-import '../../features/quick_services/presentation/screens/home_services/handyman_details_screen.dart';
-import '../../features/quick_services/presentation/screens/home_services/handyman_review_screen.dart';
+
 
 import '../../features/quick_services/presentation/screens/hire_person/hire_person_details_screen.dart';
 import '../../features/quick_services/presentation/screens/hire_person/hire_person_review_screen.dart';
@@ -523,7 +524,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/quick-service-history-details',
         name: RouteNames.quickServiceHistoryDetails,
         pageBuilder: (context, state) {
-          final booking = state.extra as Map<String, dynamic>? ?? {};
+          final booking = state.extra as QuickServiceHistoryModel;
           return CustomTransitionPage(
             key: state.pageKey,
             child: QuickServiceHistoryDetailsScreen(booking: booking),
@@ -1285,30 +1286,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.event, defaultTitle: 'Events Electric');
         },
       ),
-      GoRoute(
-        path: '/handyman',
-        name: RouteNames.quickServicesHandyman,
-        builder: (context, state) {
-          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return HandymanDetailsScreen(bookingData: bookingData);
-        },
-      ),
-      GoRoute(
-        path: '/handyman-review',
-        name: RouteNames.quickServicesHandymanReview,
-        builder: (context, state) {
-          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return HandymanReviewScreen(bookingData: bookingData);
-        },
-      ),
-      GoRoute(
-        path: '/handyman-confirmation',
-        name: RouteNames.quickServicesHandymanConfirmation,
-        builder: (context, state) {
-          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.handyman, defaultTitle: 'Handyman');
-        },
-      ),
+
       GoRoute(
         path: '/hire-person',
         name: RouteNames.quickServicesHirePerson,
@@ -1403,6 +1381,23 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
           return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.laptop, defaultTitle: 'Computer Repair');
+        },
+      ),
+      GoRoute(
+        path: '/payment-failed',
+        name: RouteNames.quickServicesPaymentFailed,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          final bookingData = extra['bookingData'] as QuickServiceBookingData;
+          final serviceIcon = extra['serviceIcon'] as IconData;
+          final defaultTitle = extra['defaultTitle'] as String;
+          final onRetrySuccessRouteName = extra['onRetrySuccessRouteName'] as String;
+          return SharedQuickServiceFailedScreen(
+            bookingData: bookingData,
+            serviceIcon: serviceIcon,
+            defaultTitle: defaultTitle,
+            onRetrySuccessRouteName: onRetrySuccessRouteName,
+          );
         },
       ),
       GoRoute(

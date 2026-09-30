@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/quick_services_booking_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../../../../../core/constants/app_colors.dart';
@@ -10,16 +12,17 @@ import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_additional_details.dart';
 
-class PrinterScannerDetailsScreen extends StatefulWidget {
+class PrinterScannerDetailsScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
 
   const PrinterScannerDetailsScreen({super.key, required this.bookingData});
 
   @override
-  State<PrinterScannerDetailsScreen> createState() => _PrinterScannerDetailsScreenState();
+  ConsumerState<PrinterScannerDetailsScreen> createState() => _PrinterScannerDetailsScreenState();
 }
 
-class _PrinterScannerDetailsScreenState extends State<PrinterScannerDetailsScreen> {
+class _PrinterScannerDetailsScreenState extends ConsumerState<PrinterScannerDetailsScreen> {
+  bool _isUploading = false;
   String _materialPreference = 'Bring tools';
   String? _selectedDeviceType;
   String? _selectedBrand;
@@ -597,6 +600,7 @@ class _PrinterScannerDetailsScreenState extends State<PrinterScannerDetailsScree
                   // CONTINUE
                   ElevatedButton(
                     onPressed: () {
+                      if (_isUploading) return;
                       if (_savedPrinters.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
@@ -618,10 +622,21 @@ class _PrinterScannerDetailsScreenState extends State<PrinterScannerDetailsScree
                         materialPreference: _materialPreference,
                       );
 
-                      context.pushNamed(
-                        RouteNames.quickServicesPrinterScannerReview,
-                        extra: updatedData,
-                      );
+                      if (_selectedImages.isNotEmpty) {
+                        setState(() => _isUploading = true);
+                        ref.read(quickServicesBookingProvider.notifier).uploadImages(
+                          _selectedImages.map((e) => e.path).toList()
+                        ).then((remoteUrls) {
+                          if (mounted) setState(() => _isUploading = false);
+                          var finalDataObj = updatedData.copyWith(uploadedImages: remoteUrls);
+                          if (mounted) context.pushNamed(RouteNames.quickServicesPrinterScannerReview, extra: finalDataObj);
+                        }).catchError((e) {
+                          if (mounted) setState(() => _isUploading = false);
+                          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to upload images')));
+                        });
+                      } else {
+                        if (mounted) context.pushNamed(RouteNames.quickServicesPrinterScannerReview, extra: updatedData);
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,
@@ -630,7 +645,7 @@ class _PrinterScannerDetailsScreenState extends State<PrinterScannerDetailsScree
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       elevation: 0,
                     ),
-                    child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
+                    child: _isUploading ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2)) : Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
                   ),
                   const SizedBox(height: 40),
                 ],

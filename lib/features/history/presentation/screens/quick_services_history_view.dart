@@ -1,132 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
+import '../../../quick_services/data/models/quick_service_history_model.dart';
+import '../../../quick_services/presentation/providers/quick_services_booking_provider.dart';
+import 'package:intl/intl.dart';
 
-class QuickServicesHistoryView extends StatefulWidget {
+class QuickServicesHistoryView extends ConsumerStatefulWidget {
   const QuickServicesHistoryView({super.key});
 
   @override
-  State<QuickServicesHistoryView> createState() => _QuickServicesHistoryViewState();
+  ConsumerState<QuickServicesHistoryView> createState() => _QuickServicesHistoryViewState();
 }
 
-class _QuickServicesHistoryViewState extends State<QuickServicesHistoryView> {
+class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryView> {
   final List<String> _filters = ['All', 'Completed', 'Cancelled', 'Scheduled'];
   String _selectedFilter = 'All';
 
-  // Mock data for Quick Services History
-  final List<Map<String, dynamic>> _mockBookings = [
-    {
-      'id': 'GZT-QS-1029',
-      'title': 'Home Cleaning',
-      'provider': 'CleanPro Services',
-      'email': 'contact@cleanpro.com',
-      'icon': Icons.cleaning_services,
-      'status': 'Completed',
-      'date': '15 Sep 2026',
-      'time': '5:00 PM',
-      'location': '123 Main St, Apartment 4B',
-      'options': {
-        'Cleaning Type': 'Deep Clean',
-        'Bedrooms': '3',
-        'Bathrooms': '2',
-        'Pets': 'Yes',
-      },
-      'addOns': [
-        {'name': 'Window Cleaning', 'price': 15.00},
-        {'name': 'Oven Cleaning', 'price': 20.00},
-      ],
-      'baseRate': 50.00,
-      'materialsFee': 35.00,
-      'taxes': 5.75,
-      'paymentMethod': 'Credit Card (**** 1234)',
-      'walletAmountUsed': 0.00,
-      'total': 90.75,
-    },
-    {
-      'id': 'GZT-QS-1030',
-      'title': 'Plumbing Repair',
-      'provider': 'QuickFix Plumbing',
-      'email': 'support@quickfix.com',
-      'icon': Icons.plumbing,
-      'status': 'Scheduled',
-      'date': '18 Sep 2026',
-      'time': '10:00 AM',
-      'location': '45 Oak Lane, Villa 1',
-      'options': {
-        'Issue Type': 'Water Leakage',
-        'Severity': 'High',
-        'Property Type': 'Villa',
-      },
-      'addOns': [],
-      'baseRate': 40.00,
-      'materialsFee': 0.00,
-      'taxes': 5.00,
-      'paymentMethod': 'Credit Card (**** 1234)',
-      'walletAmountUsed': 0.00,
-      'total': 45.00,
-    },
-    {
-      'id': 'GZT-QS-1031',
-      'title': 'Pest Control',
-      'provider': 'BugBusters Inc.',
-      'email': 'hello@bugbusters.com',
-      'icon': Icons.bug_report,
-      'status': 'Cancelled',
-      'date': '12 Sep 2026',
-      'time': '2:00 PM',
-      'location': '78 Pine Road',
-      'options': {
-        'Pest Type': 'Termites, Ants',
-        'Property Type': 'Independent House',
-        'Affected Areas': 'Kitchen, Garden, Living Room',
-      },
-      'addOns': [
-        {'name': 'Organic Treatment', 'price': 25.00},
-      ],
-      'baseRate': 100.00,
-      'materialsFee': 25.00,
-      'taxes': 15.00,
-      'paymentMethod': 'PayPal',
-      'walletAmountUsed': 10.00,
-      'total': 130.00,
-    },
-    {
-      'id': 'GZT-QS-1032',
-      'title': 'Appliance Repair',
-      'provider': 'Appliance Master',
-      'email': 'service@appliancemaster.com',
-      'icon': Icons.kitchen,
-      'status': 'Completed',
-      'date': '05 Sep 2026',
-      'time': '1:30 PM',
-      'location': '99 Maple Ave',
-      'options': {
-        'Appliance': 'Washing Machine',
-        'Brand': 'Samsung',
-        'Issue': 'Not spinning properly',
-      },
-      'addOns': [],
-      'baseRate': 70.00,
-      'materialsFee': 25.00,
-      'taxes': 10.50,
-      'paymentMethod': 'Cash on Delivery',
-      'walletAmountUsed': 20.00, // Show GoCoins discount usage here
-      'total': 85.50,
-    },
-  ];
-
   @override
   Widget build(BuildContext context) {
-    // Filter the mock bookings
-    final filteredBookings = _mockBookings.where((booking) {
-      if (_selectedFilter == 'All') return true;
-      return booking['status'] == _selectedFilter;
-    }).toList();
+    final historyAsync = ref.watch(quickServicesHistoryProvider);
 
-    return Column(
+    return historyAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
+      error: (err, stack) => Center(child: Text('Error: $err', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error))),
+      data: (bookings) {
+        // Filter the dynamic bookings
+        final filteredBookings = bookings.where((booking) {
+          if (_selectedFilter == 'All') return true;
+          if (_selectedFilter == 'Scheduled' && booking.status == 'PENDING') return true;
+          return booking.status.toUpperCase() == _selectedFilter.toUpperCase();
+        }).toList();
+
+        return Column(
       children: [
         // ── Filter Tabs ────────────────────────────
         Padding(
@@ -192,6 +101,8 @@ class _QuickServicesHistoryViewState extends State<QuickServicesHistoryView> {
         ),
       ],
     );
+    },
+    );
   }
 
   Widget _buildEmptyState() {
@@ -224,7 +135,7 @@ class _QuickServicesHistoryViewState extends State<QuickServicesHistoryView> {
             width: 170,
             child: ElevatedButton(
               onPressed: () {
-                context.goNamed(RouteNames.home);
+                context.pushNamed(RouteNames.quickServicesList);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGold,
@@ -247,26 +158,91 @@ class _QuickServicesHistoryViewState extends State<QuickServicesHistoryView> {
     );
   }
 
-  Widget _buildHistoryCard(Map<String, dynamic> booking) {
-    final status = booking['status'] as String;
+  IconData _getServiceIcon(String category, String title) {
+    final t = title.toLowerCase();
+    switch (t) {
+      case 'home cleaning': return Icons.cleaning_services;
+      case 'pest control': return Icons.pest_control;
+      case 'gardening': return Icons.yard;
+      case 'plumbing': return Icons.plumbing;
+      case 'carpenter': return Icons.carpenter;
+      case 'mobile': return Icons.smartphone;
+      case 'laptop/computer': return Icons.laptop;
+      case 'printer / scanner': return Icons.print;
+      case 'car': return Icons.directions_car;
+      case 'bike': return Icons.two_wheeler;
+      case 'truck': return Icons.local_shipping;
+      case 'refrigerator': return Icons.kitchen;
+      case 'air conditioner': return Icons.ac_unit;
+      case 'washing machine': return Icons.local_laundry_service;
+      case 'television': return Icons.tv;
+      case 'fan': return Icons.air;
+      case 'appliance repair': return Icons.ac_unit;
+      case 'electrical repair': return Icons.electrical_services;
+      case 'vehicle mechanic': return Icons.handyman;
+      case 'vehicle wash': return Icons.local_car_wash;
+      case 'pc & mobile repair': return Icons.computer;
+    }
+    
+    final c = category.toLowerCase();
+    switch (c) {
+      case 'home services': return Icons.home_repair_service;
+      case 'pc & mobile repair': return Icons.computer;
+      case 'vehicle mechanic': return Icons.handyman;
+      case 'vehicle wash': return Icons.local_car_wash;
+      case 'electrical repair': return Icons.electrical_services;
+      case 'appliance repair': return Icons.ac_unit;
+    }
+    
+    return Icons.home_repair_service;
+  }
+
+  Widget _buildHistoryCard(QuickServiceHistoryModel booking) {
+    final status = booking.status.toUpperCase();
     
     Color statusBg;
     Color statusText;
+    String displayStatus;
 
-    switch (status) {
-      case 'Completed':
+    if (status == 'COMPLETED') {
         statusBg = AppColors.success.withValues(alpha: 0.1);
         statusText = AppColors.success;
-        break;
-      case 'Cancelled':
+        displayStatus = 'Completed';
+    } else if (status == 'CANCELLED' || status == 'CANCELED') {
         statusBg = AppColors.error.withValues(alpha: 0.1);
         statusText = AppColors.error;
-        break;
-      case 'Scheduled':
-      default:
+        displayStatus = 'Cancelled';
+    } else {
         statusBg = AppColors.primaryGold.withValues(alpha: 0.1);
         statusText = AppColors.primaryGold;
-        break;
+        displayStatus = 'Scheduled';
+    }
+
+    String subtitle = booking.serviceCategory;
+    final validAddOns = booking.addOns.where((a) => a is Map).toList();
+    
+    if (validAddOns.isNotEmpty) {
+      final names = validAddOns.map((a) => (a as Map)['name']?.toString() ?? 'Unknown Add-on').toList();
+      if (names.length <= 2) {
+        subtitle = names.join(', ');
+      } else {
+        subtitle = '${names.take(2).join(', ')} +${names.length - 2} more';
+      }
+    } else if (booking.options.isNotEmpty) {
+      final firstVal = booking.options.values.first;
+      if (firstVal is List && firstVal.isNotEmpty) {
+        if (firstVal.first is Map) {
+          final firstItem = firstVal.first as Map;
+          final parts = [if (firstItem['Make'] != null) firstItem['Make'], if (firstItem['Model'] != null) firstItem['Model'], if (firstItem['Type'] != null && firstItem['Make'] == null) firstItem['Type']].where((e) => e != null);
+          subtitle = parts.isNotEmpty ? parts.join(' ') : 'Multiple items';
+          if (firstVal.length > 1) subtitle += ' +${firstVal.length - 1} more';
+        } else {
+          subtitle = firstVal.first.toString();
+          if (firstVal.length > 1) subtitle += ' +${firstVal.length - 1} more';
+        }
+      } else {
+        subtitle = firstVal.toString();
+      }
     }
 
     return GestureDetector(
@@ -298,7 +274,7 @@ class _QuickServicesHistoryViewState extends State<QuickServicesHistoryView> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
-                        booking['icon'] as IconData,
+                        _getServiceIcon(booking.serviceCategory, booking.serviceTitle),
                         color: AppColors.primaryGold,
                         size: 24,
                       ),
@@ -308,14 +284,18 @@ class _QuickServicesHistoryViewState extends State<QuickServicesHistoryView> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          booking['title'] as String,
+                          booking.serviceTitle,
                           style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Service ID: ${booking['id']}',
-                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
-                        ),
+                        if (booking.addOns.isNotEmpty || booking.options.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            subtitle,
+                            style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ],
                     ),
                   ],
@@ -327,7 +307,7 @@ class _QuickServicesHistoryViewState extends State<QuickServicesHistoryView> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    status,
+                    displayStatus,
                     style: AppTextStyles.labelSmall.copyWith(color: statusText, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -344,13 +324,13 @@ class _QuickServicesHistoryViewState extends State<QuickServicesHistoryView> {
                     const Icon(Icons.calendar_today, size: 16, color: AppColors.textMuted),
                     const SizedBox(width: 8),
                     Text(
-                      '${booking['date']} at ${booking['time']}',
+                      DateFormat('dd MMM yyyy, h:mm a').format(booking.bookingDate),
                       style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
                     ),
                   ],
                 ),
                 Text(
-                  '€${(booking['total'] as double).toStringAsFixed(2)}',
+                  '€${booking.totalAmount.toStringAsFixed(2)}',
                   style: AppTextStyles.titleMedium.copyWith(
                     color: AppColors.primaryGold,
                     fontWeight: FontWeight.bold,

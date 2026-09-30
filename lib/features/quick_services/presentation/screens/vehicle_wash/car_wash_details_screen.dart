@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/quick_services_booking_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/constants/app_text_styles.dart';
@@ -9,16 +11,17 @@ import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_additional_details.dart';
 import '../../../../../core/config/quick_services_pricing_config.dart';
 
-class CarWashDetailsScreen extends StatefulWidget {
+class CarWashDetailsScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
 
   const CarWashDetailsScreen({super.key, required this.bookingData});
 
   @override
-  State<CarWashDetailsScreen> createState() => _CarWashDetailsScreenState();
+  ConsumerState<CarWashDetailsScreen> createState() => _CarWashDetailsScreenState();
 }
 
-class _CarWashDetailsScreenState extends State<CarWashDetailsScreen> {
+class _CarWashDetailsScreenState extends ConsumerState<CarWashDetailsScreen> {
+  bool _isUploading = false;
   String _materialPreference = 'Bring materials';
   
   // List to hold multiple vehicles
@@ -668,10 +671,32 @@ class _CarWashDetailsScreenState extends State<CarWashDetailsScreen> {
                         uploadedImages: _selectedImages.map((e) => e.path).toList(),
                       );
 
-                      context.pushNamed(
-                        RouteNames.quickServicesCarWashReview,
-                        extra: updatedData,
-                      );
+                      if (_isUploading) return;
+                      if (_selectedImages.isNotEmpty) {
+                        setState(() => _isUploading = true);
+                        ref.read(quickServicesBookingProvider.notifier).uploadImages(
+                          _selectedImages.map((e) => e.path).toList()
+                        ).then((remoteUrls) {
+                          if (mounted) setState(() => _isUploading = false);
+                          var finalDataObj = updatedData.copyWith(uploadedImages: remoteUrls);
+                          if (mounted) {
+                            context.pushNamed(
+                              RouteNames.quickServicesCarWashReview,
+                              extra: finalDataObj,
+                            );
+                          }
+                        }).catchError((e) {
+                          if (mounted) setState(() => _isUploading = false);
+                          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to upload images')));
+                        });
+                      } else {
+                        if (mounted) {
+                          context.pushNamed(
+                            RouteNames.quickServicesCarWashReview,
+                            extra: updatedData,
+                          );
+                        }
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,
@@ -682,7 +707,7 @@ class _CarWashDetailsScreenState extends State<CarWashDetailsScreen> {
                       ),
                       elevation: 0,
                     ),
-                    child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
+                    child: _isUploading ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2)) : Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
                   ),
                   const SizedBox(height: 40),
                 ],

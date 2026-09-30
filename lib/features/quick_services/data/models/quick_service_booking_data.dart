@@ -257,8 +257,6 @@ class QuickServiceBookingData {
   final String? liftType;
   final String? floorsServed;
 
-  // Handyman specific fields
-  final String? wallType;
 
   // Hire a Person specific fields
   final String? expectedDuration;
@@ -379,6 +377,7 @@ class QuickServiceBookingData {
   final String? supplyUnit;
   final String? requestType;
   final String? requirementDescription;
+  final String? bookingId;
 
   String get servicePricingKey {
     if (category == 'Vehicle Wash') {
@@ -516,7 +515,6 @@ class QuickServiceBookingData {
     this.propertyType,
     this.liftType,
     this.floorsServed,
-    this.wallType,
     this.expectedDuration,
     this.comments,
     this.helperCount,
@@ -606,6 +604,7 @@ class QuickServiceBookingData {
     this.supplyUnit,
     this.requestType,
     this.requirementDescription,
+    this.bookingId,
   });
 
   QuickServiceBookingData copyWith({
@@ -647,7 +646,6 @@ class QuickServiceBookingData {
     String? propertyType,
     String? liftType,
     String? floorsServed,
-    String? wallType,
     String? expectedDuration,
     String? comments,
     int? helperCount,
@@ -740,6 +738,7 @@ class QuickServiceBookingData {
     String? supplyUnit,
     String? requestType,
     String? requirementDescription,
+    String? bookingId,
   }) {
     return QuickServiceBookingData(
       category: category ?? this.category,
@@ -780,7 +779,6 @@ class QuickServiceBookingData {
       propertyType: propertyType ?? this.propertyType,
       liftType: liftType ?? this.liftType,
       floorsServed: floorsServed ?? this.floorsServed,
-      wallType: wallType ?? this.wallType,
       expectedDuration: expectedDuration ?? this.expectedDuration,
       comments: comments ?? this.comments,
       helperCount: helperCount ?? this.helperCount,
@@ -887,6 +885,7 @@ class QuickServiceBookingData {
       requestType: requestType ?? this.requestType,
       requirementDescription:
           requirementDescription ?? this.requirementDescription,
+      bookingId: bookingId ?? this.bookingId,
     );
   }
 }

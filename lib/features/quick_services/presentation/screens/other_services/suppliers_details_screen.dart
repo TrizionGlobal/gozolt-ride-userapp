@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/quick_services_booking_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/constants/app_text_styles.dart';
@@ -9,16 +11,17 @@ import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_additional_details.dart';
 
-class SuppliersDetailsScreen extends StatefulWidget {
+class SuppliersDetailsScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
 
   const SuppliersDetailsScreen({super.key, required this.bookingData});
 
   @override
-  State<SuppliersDetailsScreen> createState() => _SuppliersDetailsScreenState();
+  ConsumerState<SuppliersDetailsScreen> createState() => _SuppliersDetailsScreenState();
 }
 
-class _SuppliersDetailsScreenState extends State<SuppliersDetailsScreen> {
+class _SuppliersDetailsScreenState extends ConsumerState<SuppliersDetailsScreen> {
+  bool _isUploading = false;
   String? _supplyCategory;
   final TextEditingController _itemRequiredController = TextEditingController();
   int _quantity = 1;
@@ -294,6 +297,7 @@ class _SuppliersDetailsScreenState extends State<SuppliersDetailsScreen> {
                   // Continue Button
                   ElevatedButton(
                     onPressed: () {
+                      if (_isUploading) return;
                       if (_supplyCategory == null) {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a supply category')));
                         return;
@@ -317,10 +321,21 @@ class _SuppliersDetailsScreenState extends State<SuppliersDetailsScreen> {
                         baseEstimatedHours: 0.0,
                       );
 
-                      context.pushNamed(
-                        RouteNames.quickServicesOtherServicesReview,
-                        extra: updatedData,
-                      );
+                      if (_selectedImages.isNotEmpty) {
+                        setState(() => _isUploading = true);
+                        ref.read(quickServicesBookingProvider.notifier).uploadImages(
+                          _selectedImages.map((e) => e.path).toList()
+                        ).then((remoteUrls) {
+                          if (mounted) setState(() => _isUploading = false);
+                          var finalDataObj = updatedData.copyWith(uploadedImages: remoteUrls);
+                          if (mounted) context.pushNamed(RouteNames.quickServicesOtherServicesReview, extra: finalDataObj);
+                        }).catchError((e) {
+                          if (mounted) setState(() => _isUploading = false);
+                          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to upload images')));
+                        });
+                      } else {
+                        if (mounted) context.pushNamed(RouteNames.quickServicesOtherServicesReview, extra: updatedData);
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,
@@ -329,7 +344,7 @@ class _SuppliersDetailsScreenState extends State<SuppliersDetailsScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       elevation: 0,
                     ),
-                    child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
+                    child: _isUploading ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2)) : Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
                   ),
                   const SizedBox(height: 24),
                 ],

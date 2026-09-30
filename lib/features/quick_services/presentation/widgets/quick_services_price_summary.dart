@@ -69,21 +69,8 @@ class QuickServicesPriceSummary extends StatelessWidget {
                     );
                   }),
                 ],
-                if (bookingData.wallType != null) ...[
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text('Wall Type', style: AppTextStyles.bodyMedium),
-                        ),
-                        Text(bookingData.wallType!, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
-                      ],
-                    ),
-                  ),
-                ],
-                if ((bookingData.selectedAddons.isNotEmpty || bookingData.wallType != null) && (showAdditionalDetails && (bookingData.describeIssue?.trim().isNotEmpty == true || bookingData.uploadedImages?.isNotEmpty == true)))
+
+                if (bookingData.selectedAddons.isNotEmpty && (showAdditionalDetails && (bookingData.describeIssue?.trim().isNotEmpty == true || bookingData.uploadedImages?.isNotEmpty == true)))
                   const Divider(height: 24),
                 if (showAdditionalDetails && bookingData.describeIssue?.trim().isNotEmpty == true) ...[
                   Row(
@@ -120,12 +107,31 @@ class QuickServicesPriceSummary extends StatelessWidget {
                               padding: const EdgeInsets.only(left: 4.0),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(4),
-                                child: Image.file(
-                                  File(path),
-                                  width: 40,
-                                  height: 40,
-                                  fit: BoxFit.cover,
-                                ),
+                                child: path.startsWith('http')
+                                    ? Image.network(
+                                        path,
+                                        width: 40,
+                                        height: 40,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (ctx, err, stack) => Container(
+                                          width: 40,
+                                          height: 40,
+                                          color: Colors.grey[200],
+                                          child: const Icon(Icons.broken_image, size: 16, color: Colors.grey),
+                                        ),
+                                      )
+                                    : Image.file(
+                                        File(path),
+                                        width: 40,
+                                        height: 40,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (ctx, err, stack) => Container(
+                                          width: 40,
+                                          height: 40,
+                                          color: Colors.grey[200],
+                                          child: const Icon(Icons.broken_image, size: 16, color: Colors.grey),
+                                        ),
+                                      ),
                               ),
                             );
                           },
@@ -421,9 +427,6 @@ class QuickServicesPriceSummary extends StatelessWidget {
                           String baseNote = note != null && note!.isNotEmpty
                               ? '$note\n\nNote: Pay the upfront fee${bookingData.materialCost > 0 ? " and materials/tools cost" : ""} now. The remaining balance (hours × rate) is paid directly to the service person after the service.'
                               : 'Note: Pay the upfront fee${bookingData.materialCost > 0 ? " and materials/tools cost" : ""} now. The remaining balance (hours × rate) is paid directly to the service person after the service completed.';
-                          if (QuickServicesPricingConfig.getEstimatedSparePrice(bookingData.servicePricingKey) != null) {
-                            baseNote += '\n\n* Note: Final price and replacement parts will be confirmed after inspection.';
-                          }
                           return baseNote;
                         })(),
                         style: AppTextStyles.bodySmall.copyWith(

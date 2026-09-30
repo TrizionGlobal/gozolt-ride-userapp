@@ -1,3 +1,4 @@
+import '../../providers/quick_services_booking_provider.dart';
 import '../../../../../core/widgets/booking_payment_sheet.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -37,10 +38,11 @@ class _PrinterScannerReviewScreenState extends ConsumerState<PrinterScannerRevie
   }
 
   bool _useGoCoins = false;
+  bool _isBooking = false;
 
   double get _coinDiscount => _useGoCoins ? 2.00 : 0.00;
 
-  void _showFullImage(BuildContext context, File file) {
+  void _showFullImage(BuildContext context, String path) {
     showDialog(
       context: context,
       builder: (_) => Dialog(
@@ -50,7 +52,9 @@ class _PrinterScannerReviewScreenState extends ConsumerState<PrinterScannerRevie
           alignment: Alignment.center,
           children: [
             InteractiveViewer(
-              child: Image.file(file, fit: BoxFit.contain),
+              child: path.startsWith('http')
+                ? Image.network(path, fit: BoxFit.contain)
+                : Image.file(File(path), fit: BoxFit.contain),
             ),
             Positioned(
               top: 40,
@@ -160,13 +164,25 @@ class _PrinterScannerReviewScreenState extends ConsumerState<PrinterScannerRevie
                         const SizedBox(height: 10),
 
                         // Customer
-                        Row(
-                          children: [
-                            const Icon(Icons.person, size: 18, color: Colors.grey),
-                            const SizedBox(width: 10),
-                            Text('Customer: ${_bookingData.userName}', style: AppTextStyles.bodyMedium),
-                          ],
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.person, size: 18, color: Colors.grey),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Customer: ${_bookingData.userName}', style: AppTextStyles.bodyMedium),
+                              const SizedBox(height: 2),
+                              Text('Email: ${_bookingData.userEmail}', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[600], fontSize: 12)),
+                              const SizedBox(height: 2),
+                              Text('Phone: ${_bookingData.userPhone}', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[600], fontSize: 12)),
+                            ],
+                          ),
                         ),
+                      ],
+                    ),
                       ],
                     ),
                   ),
@@ -281,31 +297,25 @@ class _PrinterScannerReviewScreenState extends ConsumerState<PrinterScannerRevie
                                         shrinkWrap: true,
                                         itemCount: uploadedImages.length,
                                         itemBuilder: (context, index) {
-                                          final imgPath = uploadedImages[index];
-                                          final file = File(imgPath);
+                                          final path = uploadedImages[index];
+                                          final file = File(path);
                                           return GestureDetector(
                                             onTap: () {
-                                              if (file.existsSync()) {
-                                                _showFullImage(context, file);
-                                              }
+                                              if (path.startsWith('http') || file.existsSync()) {
+                                                  _showFullImage(context, path);
+                                                }
                                             },
                                             child: Padding(
                                               padding: const EdgeInsets.only(left: 4.0),
                                               child: ClipRRect(
                                                 borderRadius: BorderRadius.circular(4),
-                                                child: file.existsSync()
-                                                    ? Image.file(
-                                                        file,
-                                                        width: 40,
+                                                child: path.startsWith('http')
+                                                    ? Image.network(path, width: 40,
                                                         height: 40,
-                                                        fit: BoxFit.cover,
-                                                      )
-                                                    : Container(
-                                                        width: 40,
+                                                        fit: BoxFit.cover,)
+                                                    : Image.file(File(path), width: 40,
                                                         height: 40,
-                                                        color: Colors.grey.shade300,
-                                                        child: const Icon(Icons.image, color: Colors.grey, size: 20),
-                                                      ),
+                                                        fit: BoxFit.cover),
                                               ),
                                             ),
                                           );
@@ -338,7 +348,8 @@ class _PrinterScannerReviewScreenState extends ConsumerState<PrinterScannerRevie
 
                   // Confirm Booking Button
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: _isBooking ? null : () async {
+
                   final finalTotal = ((_bookingData.upfrontBookingFee + _bookingData.materialCost) - (_useGoCoins ? (_bookingData.upfrontBookingFee + _bookingData.materialCost).clamp(0.0, 6.0) : 0.0)).clamp(0.0, double.infinity);
                       
                   if (finalTotal <= 0.0) {
@@ -346,35 +357,44 @@ class _PrinterScannerReviewScreenState extends ConsumerState<PrinterScannerRevie
                       paymentMethodType: PaymentMethodType.cash,
                       useGoCoins: _useGoCoins,
                     );
-                    context.pushNamed(
-                      RouteNames.quickServicesPrinterScannerConfirmation,
-                      extra: updatedData,
-                    );
-                  } else {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (ctx) => BookingPaymentSheet(
-                        currentType: _bookingData.paymentMethodType,
-                        currentCardId: _bookingData.paymentMethodId,
-                        isQuickService: true,
-                        amount: finalTotal,
-                        onConfirm: (type, {cardId}) {
-                          final updatedData = _bookingData.copyWith(
+                    
+                      setState(() => _isBooking = true);
+                      final bookingId = await ref.read(quickServicesBookingProvider.notifier).bookQuickService(updatedData);
+                      if (mounted) setState(() => _isBooking = false);
+                      if (bookingId != null && mounted) {
+                        context.pushNamed(RouteNames.quickServicesPrinterScannerConfirmation, extra: updatedData.copyWith(bookingId: bookingId));
+                      } else {
+                        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to book service')));
+                      }
+                    } else {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (ctx) => BookingPaymentSheet(
+                          currentType: _bookingData.paymentMethodType,
+                          currentCardId: _bookingData.paymentMethodId,
+                          isQuickService: true,
+                          amount: finalTotal,
+                          onConfirm: (type, {cardId}) async {
+                            final updatedData = _bookingData.copyWith(
                             paymentMethodType: type,
                             paymentMethodId: cardId,
                             useGoCoins: _useGoCoins,
                           );
-                          context.pushNamed(
-                            RouteNames.quickServicesPrinterScannerConfirmation,
-                            extra: updatedData,
-                          );
-                        },
-                      ),
-                    );
-                  }
-                },
+                            final bookingId = await ref.read(quickServicesBookingProvider.notifier).bookQuickService(updatedData);
+                            if (bookingId != null && mounted) {
+                              context.pushNamed(RouteNames.quickServicesPrinterScannerConfirmation, extra: updatedData.copyWith(bookingId: bookingId));
+                              return true;
+                            } else {
+                              if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to book service')));
+                              return false;
+                            }
+                          },
+                        ),
+                      );
+                    }
+                  },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,
                       foregroundColor: Colors.black,
@@ -384,7 +404,7 @@ class _PrinterScannerReviewScreenState extends ConsumerState<PrinterScannerRevie
                       ),
                       elevation: 0,
                     ),
-                    child: Text('Confirm Booking', style: AppTextStyles.button.copyWith(color: Colors.black)),
+                    child: _isBooking ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2)) : Text('Confirm Booking', style: AppTextStyles.button.copyWith(color: Colors.black)),
                   ),
                 ],
               ),

@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../providers/quick_services_booking_provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/constants/app_text_styles.dart';
@@ -11,15 +13,16 @@ import '../../widgets/quick_services_additional_details.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../../../../core/config/quick_services_pricing_config.dart';
 
-class ApplianceRepairDetailsScreen extends StatefulWidget {
+class ApplianceRepairDetailsScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
   const ApplianceRepairDetailsScreen({super.key, required this.bookingData});
 
   @override
-  State<ApplianceRepairDetailsScreen> createState() => _ApplianceRepairDetailsScreenState();
+  ConsumerState<ApplianceRepairDetailsScreen> createState() => _ApplianceRepairDetailsScreenState();
 }
 
-class _ApplianceRepairDetailsScreenState extends State<ApplianceRepairDetailsScreen> {
+class _ApplianceRepairDetailsScreenState extends ConsumerState<ApplianceRepairDetailsScreen> {
+  bool _isUploading = false;
   String _materialPreference = 'Bring tools';
   // Counters for appliances
   final Map<String, int> _applianceCounts = {
@@ -290,6 +293,7 @@ class _ApplianceRepairDetailsScreenState extends State<ApplianceRepairDetailsScr
                     top: false,
                     child: ElevatedButton(
                       onPressed: () {
+                        if (_isUploading) return;
                         int totalCount = _applianceCounts.values.fold(0, (sum, count) => sum + count);
                         if (totalCount == 0) {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -319,10 +323,21 @@ class _ApplianceRepairDetailsScreenState extends State<ApplianceRepairDetailsScr
                           materialPreference: _materialPreference,
                         );
 
-                        context.pushNamed(
-                          RouteNames.quickServicesApplianceRepairReview,
-                          extra: updatedData,
-                        );
+                        if (_selectedImages.isNotEmpty) {
+                          setState(() => _isUploading = true);
+                          ref.read(quickServicesBookingProvider.notifier).uploadImages(
+                            _selectedImages.map((e) => e.path).toList()
+                          ).then((remoteUrls) {
+                            if (mounted) setState(() => _isUploading = false);
+                            var finalDataObj = updatedData.copyWith(uploadedImages: remoteUrls);
+                            if (mounted) context.pushNamed(RouteNames.quickServicesApplianceRepairReview, extra: finalDataObj);
+                          }).catchError((e) {
+                            if (mounted) setState(() => _isUploading = false);
+                            if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to upload images')));
+                          });
+                        } else {
+                          if (mounted) context.pushNamed(RouteNames.quickServicesApplianceRepairReview, extra: updatedData);
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryGold,
@@ -331,7 +346,7 @@ class _ApplianceRepairDetailsScreenState extends State<ApplianceRepairDetailsScr
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 0,
                       ),
-                      child: Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
+                      child: _isUploading ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2)) : Text('Continue', style: AppTextStyles.button.copyWith(color: Colors.black)),
                     ),
                   ),
                 ],
