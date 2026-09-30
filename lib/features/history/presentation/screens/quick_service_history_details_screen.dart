@@ -10,6 +10,52 @@ class QuickServiceHistoryDetailsScreen extends StatelessWidget {
 
   const QuickServiceHistoryDetailsScreen({super.key, required this.booking});
 
+  String _getExpertVisitName(String serviceTitle) {
+    final lowerCat = serviceTitle.toLowerCase();
+    if (lowerCat.contains('security') || lowerCat.contains('bouncer')) {
+      return 'Hiring Person/hr';
+    } else if (lowerCat.contains('mechanic')) {
+      return 'Mechanic Visit/hr';
+    } else if (lowerCat.contains('electric')) {
+      if (lowerCat.contains('commercial') || lowerCat.contains('lift') || lowerCat.contains('events')) {
+        return 'Mechanic Visit/hr';
+      }
+      return 'Expert Visit/hr';
+    } else if (lowerCat.contains('engineer') || 
+               lowerCat.contains('computer') ||
+               lowerCat.contains('printer') ||
+               lowerCat.contains('mobile') ||
+               lowerCat.contains('technician')) {
+      return 'Engineering Visit/hr';
+    } else if (lowerCat.contains('wash')) {
+      return 'Service Agent Visit/hr';
+    }
+    return 'Expert Visit/hr';
+  }
+
+  double _getQuickServiceHourlyRate(String serviceTitle) {
+    final lowerCat = serviceTitle.toLowerCase();
+    
+    if (lowerCat.contains('plumber') || lowerCat.contains('carpenter')) return 20.00;
+    if (lowerCat.contains('computer') || 
+        lowerCat.contains('electric') || 
+        lowerCat.contains('lift') || 
+        lowerCat.contains('appliance') || 
+        lowerCat.contains('printer') || 
+        lowerCat.contains('mobile')) return 10.00;
+    
+    if (lowerCat.contains('mechanic')) {
+      if (lowerCat.contains('car') || lowerCat.contains('truck')) return 9.00;
+      if (lowerCat.contains('bike')) return 8.00;
+      return 6.00;
+    }
+    
+    if (lowerCat.contains('truck wash')) return 8.00;
+    if (lowerCat.contains('security') || lowerCat.contains('hire person')) return 7.00;
+    
+    return 6.00;
+  }
+
   @override
   Widget build(BuildContext context) {
     final status = booking.status.toUpperCase();
@@ -568,6 +614,14 @@ Time: $displayTime
                           children: [
                             Text('Upfront Booking Fee', style: AppTextStyles.bodyMedium),
                             Text('€${booking.upfrontFee.toStringAsFixed(2)}', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(_getExpertVisitName(booking.serviceTitle), style: AppTextStyles.bodyMedium),
+                            Text('€${_getQuickServiceHourlyRate(booking.serviceTitle).toStringAsFixed(2)}', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
                           ],
                         ),
                         if (booking.materialCost > 0) ...[
