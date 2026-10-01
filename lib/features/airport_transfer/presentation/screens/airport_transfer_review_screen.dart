@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/router/route_names.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
@@ -8,8 +10,14 @@ import '../../../../core/widgets/gozolt_button.dart';
 import '../providers/airport_transfer_passenger_provider.dart';
 import '../providers/airport_transfer_provider.dart';
 import '../providers/airport_transfer_vehicle_provider.dart';
+import '../../../ride/presentation/providers/ride_providers.dart';
+import '../../../rewards/presentation/providers/rewards_providers.dart';
 import '../widgets/airport_transfer_header.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../../../../core/widgets/booking_payment_sheet.dart';
+import '../../../ride/data/models/saved_payment_method.dart';
+import '../../../../core/constants/asset_paths.dart';
 
 class AirportTransferReviewScreen extends ConsumerStatefulWidget {
   const AirportTransferReviewScreen({super.key});
@@ -23,7 +31,49 @@ class _AirportTransferReviewScreenState
     extends ConsumerState<AirportTransferReviewScreen> {
   bool _acceptTerms = false;
   bool _acceptPrivacy = false;
+  bool _showAgreementError = false;
   bool _isBooking = false;
+  bool _useGoCoins = false;
+
+  String _formatDateAndTime(
+    BuildContext context,
+    DateTime? date,
+    String? storedTime,
+  ) {
+    if (date == null) return 'Not selected';
+
+    final formattedDate = DateFormat('dd MMM yyyy').format(date);
+
+    if (storedTime == null || storedTime.isEmpty) {
+      return formattedDate;
+    }
+
+    final parts = storedTime.split(':');
+
+    if (parts.length != 2) {
+      return '$formattedDate, $storedTime';
+    }
+
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1]);
+
+    if (hour == null || minute == null) {
+      return '$formattedDate, $storedTime';
+    }
+
+    final formattedTime = MaterialLocalizations.of(context).formatTimeOfDay(
+      TimeOfDay(
+        hour: hour,
+        minute: minute,
+      ),
+      alwaysUse24HourFormat: true,
+    );
+
+    return '$formattedDate, $formattedTime';
+  }
+
+  PaymentMethodType _paymentMethodType = PaymentMethodType.cash;
+  String? _selectedCardId;
 
   static final Uri _termsUrl = Uri.parse(
     'https://gozolt.com.mt/terms-and-conditions',
@@ -52,42 +102,111 @@ class _AirportTransferReviewScreenState
     }
   }
 
-  Future<void> _bookTransfer() async {
-    if (!_acceptTerms || !_acceptPrivacy || _isBooking) {
-      return;
+  Future<void> _proceedToPayment() async {
+    if (_isBooking) return;
+
+    var paymentConfirmed = false;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return BookingPaymentSheet(
+          currentType: _paymentMethodType,
+          currentCardId: _selectedCardId,
+          onConfirm: (
+            PaymentMethodType type, {
+            String? cardId,
+          }) {
+            if (!mounted) return;
+
+            setState(() {
+              _paymentMethodType = type;
+              _selectedCardId = type == PaymentMethodType.card ? cardId : null;
+            });
+
+            paymentConfirmed = true;
+          },
+        );
+      },
+    );
+
+    if (paymentConfirmed && mounted) {
+      await _bookTransfer();
     }
+  }
+
+  Future<void> _bookTransfer() async {
+    if (_isBooking) return;
 
     setState(() {
       _isBooking = true;
     });
 
-    // The API developer will replace this with:
-    // await airportTransferRepository.createBooking(...)
+    try {
+      // TODO(AIRPORT_TRANSFER_API):
+      // Replace this temporary delay and booking ID with the real
+      // Airport Transfer create-booking API response.
+      //
+      // For card bookings, send _selectedCardId to the backend.
+      // For cash bookings, send paymentMethod as CASH.
 
-    await Future<void>.delayed(
-      const Duration(milliseconds: 500),
-    );
+      await Future<void>.delayed(
+        const Duration(milliseconds: 800),
+      );
 
-    if (!mounted) return;
+      final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      final temporaryBookingId =
+          'GZLT-${timestamp.substring(timestamp.length - 8)}';
 
-    setState(() {
-      _isBooking = false;
-    });
+      final paymentMethod =
+          _paymentMethodType == PaymentMethodType.cash ? 'Cash' : 'Card';
 
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(
+      final paymentStatus = _paymentMethodType == PaymentMethodType.cash
+          ? 'Pay after ride completion'
+          : 'Card selected - payment confirmation pending';
+
+      if (!mounted) return;
+
+      context.pushReplacementNamed(
+        RouteNames.airportTransferConfirmation,
+        extra: <String, dynamic>{
+          'bookingId': temporaryBookingId,
+          'paymentMethod': paymentMethod,
+          'paymentStatus': paymentStatus,
+        },
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
           content: Text(
-            'Airport transfer is ready for booking API integration.',
+            'Unable to create the transfer booking. Please try again.',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Colors.white,
+            ),
           ),
+          backgroundColor: AppColors.error,
         ),
       );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isBooking = false;
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final rewardsAsync = ref.watch(userRewardsPointsProvider);
+
+    final rewardSummaryAsync = ref.watch(rewardSummaryProvider);
+    final rewardRulesAsync = ref.watch(rewardRulesProvider);
 
     final draft = ref.watch(airportTransferDraftProvider);
 
@@ -120,6 +239,42 @@ class _AirportTransferReviewScreenState
       );
     }
 
+    // Temporary Airport Transfer fare calculation.
+    // The supplier/API will provide the final quoted fares later.
+    final double oneWayFare = vehicle.fixedPrice;
+    final double returnFare = draft.isRoundTrip ? vehicle.fixedPrice : 0.0;
+
+    final double subtotal = oneWayFare + returnFare;
+
+    // GO Coins calculation.
+    final int availableCoins = rewardsAsync.value ??
+        rewardSummaryAsync.value?.currentPoints.toInt() ??
+        0;
+
+    final double conversionRate =
+        rewardRulesAsync.value?.redemption.pointsToEurRatio.toDouble() ?? 400.0;
+
+    final int minimumPoints =
+        rewardRulesAsync.value?.redemption.minimumPoints ?? 200;
+
+    final bool canUseGoCoins = availableCoins >= minimumPoints && subtotal > 0;
+
+    final double maximumCoinValue = availableCoins / conversionRate;
+
+    final double applicableCoinValue =
+        maximumCoinValue > subtotal ? subtotal : maximumCoinValue;
+
+    final double goCoinsDiscount =
+        _useGoCoins && canUseGoCoins ? applicableCoinValue : 0.0;
+
+    final int coinsUsed = (goCoinsDiscount * conversionRate).round();
+
+    final double finalTotal = subtotal - goCoinsDiscount;
+
+    String formatAmount(double amount) {
+      return '${vehicle.currency}${amount.toStringAsFixed(2)}';
+    }
+
     final pickupDate = draft.pickupDate == null
         ? 'Date not selected'
         : DateFormat('dd MMM yyyy').format(draft.pickupDate!);
@@ -133,12 +288,7 @@ class _AirportTransferReviewScreenState
           ),
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.fromLTRB(
-                16,
-                14,
-                16,
-                26,
-              ),
+              padding: const EdgeInsets.fromLTRB( 16, 14, 16, 26),
               children: [
                 _ReviewCard(
                   isDark: isDark,
@@ -183,16 +333,39 @@ class _AirportTransferReviewScreenState
                       label: 'Journey type',
                       value: draft.isRoundTrip ? 'Return' : 'One Way',
                     ),
-                    _ReviewRow(
-                      isDark: isDark,
-                      label: 'Pickup date',
-                      value: pickupDate,
-                    ),
-                    _ReviewRow(
-                      isDark: isDark,
-                      label: 'Pickup time',
-                      value: draft.pickupTime ?? 'Not selected',
-                    ),
+                    if (draft.isRoundTrip) ...[
+                      _ReviewRow(
+                        isDark: isDark,
+                        label: 'Pickup date & time',
+                        value: _formatDateAndTime(
+                          context,
+                          draft.pickupDate,
+                          draft.pickupTime,
+                        ),
+                        compactValue: true,
+                      ),
+                      _ReviewRow(
+                        isDark: isDark,
+                        label: 'Return date & time',
+                        value: _formatDateAndTime(
+                          context,
+                          draft.returnDate,
+                          draft.returnTime,
+                        ),
+                        compactValue: true,
+                      ),
+                    ] else ...[
+                      _ReviewRow(
+                        isDark: isDark,
+                        label: 'Pickup date',
+                        value: pickupDate,
+                      ),
+                      _ReviewRow(
+                        isDark: isDark,
+                        label: 'Pickup time',
+                        value: draft.pickupTime ?? 'Not selected',
+                      ),
+                    ],
                     _ReviewRow(
                       isDark: isDark,
                       label: 'Passengers',
@@ -255,8 +428,11 @@ class _AirportTransferReviewScreenState
                                 vehicle.name,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: AppTextStyles.titleMedium.copyWith(
-                                  fontWeight: FontWeight.w700,
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: isDark
+                                      ? AppColors.textPrimary
+                                      : AppColors.textPrimaryLight,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -281,13 +457,14 @@ class _AirportTransferReviewScreenState
                               ),
                             ],
                           ),
-                        ),
+                        ),  
                         const SizedBox(width: 8),
                         Text(
                           vehicle.formattedPrice,
                           style: AppTextStyles.titleMedium.copyWith(
                             color: AppColors.primaryGold,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w500,
+                            height: 1.3,
                           ),
                         ),
                       ],
@@ -398,6 +575,103 @@ class _AirportTransferReviewScreenState
                   ],
                 ),
                 const SizedBox(height: 14),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 14),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color:
+                        isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: _useGoCoins
+                          ? AppColors.primaryGold
+                          : (isDark
+                              ? AppColors.borderDark
+                              : AppColors.borderLight),
+                      width: _useGoCoins ? 1.5 : 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        padding: const EdgeInsets.all(7),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGold.withValues(
+                            alpha: 0.12,
+                          ),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Image.asset(
+                          AssetPaths.iconGoCoin,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Use GO Coins',
+                              style: AppTextStyles.titleSmall.copyWith(
+                                color: isDark
+                                    ? AppColors.textPrimary
+                                    : AppColors.textPrimaryLight,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              '$availableCoins coins available',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: isDark
+                                    ? AppColors.textSecondary
+                                    : AppColors.textSecondaryLight,
+                              ),
+                            ),
+                            if (_useGoCoins && canUseGoCoins) ...[
+                              const SizedBox(height: 3),
+                              Text(
+                                'Save ${formatAmount(goCoinsDiscount)} '
+                                'using $coinsUsed coins',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.primaryGold,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                            if (!canUseGoCoins) ...[
+                              const SizedBox(height: 3),
+                              Text(
+                                'Minimum $minimumPoints coins required',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: isDark
+                                      ? AppColors.textSecondary
+                                      : AppColors.textSecondaryLight,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Switch.adaptive(
+                        value: _useGoCoins && canUseGoCoins,
+                        activeTrackColor: AppColors.primaryGold,
+                        onChanged: canUseGoCoins
+                            ? (value) {
+                                setState(() {
+                                  _useGoCoins = value;
+                                });
+                              }
+                            : null,
+                      ),
+                    ],
+                  ),
+                ),
                 _ReviewCard(
                   isDark: isDark,
                   title: 'PAYMENT SUMMARY',
@@ -405,29 +679,53 @@ class _AirportTransferReviewScreenState
                   children: [
                     _ReviewRow(
                       isDark: isDark,
-                      label: 'Transfer',
-                      value: vehicle.formattedPrice,
+                      label: 'One-way fare',
+                      value: formatAmount(oneWayFare),
                     ),
+                    if (draft.isRoundTrip)
+                      _ReviewRow(
+                        isDark: isDark,
+                        label: 'Return fare',
+                        value: formatAmount(returnFare),
+                      ),
                     _ReviewRow(
                       isDark: isDark,
                       label: 'Taxes & VAT',
                       value: 'Included',
                     ),
+                    const SizedBox(height: 3),
+                    _ReviewDivider(isDark: isDark),
+                    const SizedBox(height: 12),
+                    _ReviewRow(
+                      isDark: isDark,
+                      label: 'Subtotal',
+                      value: formatAmount(subtotal),
+                    ),
+                    if (_useGoCoins && goCoinsDiscount > 0)
+                      _ReviewRow(
+                        isDark: isDark,
+                        label: 'GO Coins',
+                        value: '-${formatAmount(goCoinsDiscount)}',
+                      ),
+                    const SizedBox(height: 3),
                     _ReviewDivider(isDark: isDark),
                     const SizedBox(height: 13),
                     Row(
                       children: [
                         Expanded(
                           child: Text(
-                            'Total',
-                            style: AppTextStyles.titleLarge.copyWith(
+                            'Final total',
+                            style: AppTextStyles.titleMedium.copyWith(
+                              color: isDark
+                                  ? AppColors.textPrimary
+                                  : AppColors.textPrimaryLight,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
                         Text(
-                          vehicle.formattedPrice,
-                          style: AppTextStyles.headlineSmall.copyWith(
+                          formatAmount(finalTotal),
+                          style: AppTextStyles.titleLarge.copyWith(
                             color: AppColors.primaryGold,
                             fontWeight: FontWeight.w800,
                           ),
@@ -450,6 +748,10 @@ class _AirportTransferReviewScreenState
                       onChanged: (value) {
                         setState(() {
                           _acceptTerms = value ?? false;
+
+                          if (_acceptTerms && _acceptPrivacy) {
+                            _showAgreementError = false;
+                          }
                         });
                       },
                       onLinkPressed: () {
@@ -465,6 +767,9 @@ class _AirportTransferReviewScreenState
                       onChanged: (value) {
                         setState(() {
                           _acceptPrivacy = value ?? false;
+                          if (_acceptTerms && _acceptPrivacy) {
+                            _showAgreementError = false;
+                          }
                         });
                       },
                       onLinkPressed: () {
@@ -528,23 +833,34 @@ class _AirportTransferReviewScreenState
             mainAxisSize: MainAxisSize.min,
             children: [
               GozoltButton(
-                label: _isBooking ? 'Processing...' : 'Book Transfer',
-                width: double.infinity,
-                onPressed: _acceptTerms && _acceptPrivacy && !_isBooking
-                    ? _bookTransfer
-                    : null,
-              ),
+                  label: _isBooking ? 'Processing...' : 'Book Transfer',
+                  width: double.infinity,
+                  onPressed: _isBooking
+                      ? null
+                      : () {
+                          if (!_acceptTerms || !_acceptPrivacy) {
+                            setState(() {
+                              _showAgreementError = true;
+                            });
+                            return;
+                          }
+                          setState(() {
+                            _showAgreementError = false;
+                          });
+                          _proceedToPayment();
+                        }),
               if (!_acceptTerms || !_acceptPrivacy) ...[
-                const SizedBox(height: 7),
-                Text(
-                  'Accept the Terms & Conditions and Privacy Policy to continue',
-                  textAlign: TextAlign.center,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: isDark
-                        ? AppColors.textSecondary
-                        : AppColors.textSecondaryLight,
+                if (_showAgreementError) const SizedBox(height: 7),
+                if (_showAgreementError)
+                  Text(
+                    'Accept the Terms & Conditions and Privacy Policy to continue',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: isDark
+                          ? AppColors.textSecondary
+                          : AppColors.textSecondaryLight,
+                    ),
                   ),
-                ),
               ],
             ],
           ),
@@ -687,18 +1003,20 @@ class _ReviewRow extends StatelessWidget {
     required this.label,
     required this.value,
     this.showBottomSpacing = true,
+    this.compactValue = false,
   });
 
   final bool isDark;
   final String label;
   final String value;
   final bool showBottomSpacing;
+  final bool compactValue;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
-        bottom: showBottomSpacing ? 10 : 0,
+        bottom: showBottomSpacing ? 9 : 0,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -711,6 +1029,8 @@ class _ReviewRow extends StatelessWidget {
                 color: isDark
                     ? AppColors.textSecondary
                     : AppColors.textSecondaryLight,
+                fontWeight: FontWeight.w400,
+                height: 1.3,
               ),
             ),
           ),
@@ -720,8 +1040,16 @@ class _ReviewRow extends StatelessWidget {
             child: Text(
               value.isEmpty ? 'Not provided' : value,
               textAlign: TextAlign.right,
-              style: AppTextStyles.bodyMedium.copyWith(
-                fontWeight: FontWeight.w600,
+              maxLines: compactValue ? 2 : 2,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: isDark
+                    ? AppColors.textPrimary
+                    : AppColors.textSecondaryLight,
+                fontWeight: compactValue
+                    ? FontWeight.w400
+                    : FontWeight.w500,
+                height: 1.3,
               ),
             ),
           ),
