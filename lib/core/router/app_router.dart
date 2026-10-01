@@ -57,6 +57,7 @@ import '../../features/airport_transfer/presentation/screens/airport_transfer_ch
 import '../../features/airport_transfer/presentation/screens/airport_transfer_details_screen.dart';
 import '../../features/airport_transfer/presentation/screens/airport_transfer_passenger_details_screen.dart';
 import '../../features/airport_transfer/presentation/screens/airport_transfer_review_screen.dart';
+import '../../features/airport_transfer/presentation/screens/airport_transfer_confirmation_screen.dart';
 
 // Quick Services
 import '../../features/quick_services/presentation/screens/service_location_screen.dart';
@@ -1212,6 +1213,40 @@ final routerProvider = Provider<GoRouter>((ref) {
                     curve: Curves.easeInOutCubic,
                   ),
                 ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/airport-transfer-confirmation',
+        name: RouteNames.airportTransferConfirmation,
+        pageBuilder: (context, state) {
+          final extra =
+              state.extra as Map<String, dynamic>? ?? <String, dynamic>{};
+
+          final bookingId = extra['bookingId'] as String? ?? 'AT-TEMP';
+          final paymentMethod = extra['paymentMethod'] as String? ?? 'Cash';
+          final paymentStatus =
+              extra['paymentStatus'] as String? ?? 'Pay after ride completion';
+
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: AirportTransferConfirmationScreen(
+              bookingId: bookingId,
+              paymentMethod: paymentMethod,
+              paymentStatus: paymentStatus,
+            ),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return FadeTransition(
+                opacity: animation,
                 child: child,
               );
             },

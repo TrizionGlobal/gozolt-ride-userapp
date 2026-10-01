@@ -142,10 +142,52 @@ class _AirportTransferSearchScreenState
     });
   }
 
-  Future<void> _selectPickupTime() async {
-    final selectedTime = await showTimePicker(
+  Future<TimeOfDay?> _showCompactTimePicker(
+    TimeOfDay initialTime,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return showTimePicker(
       context: context,
-      initialTime: _pickupTime ?? TimeOfDay.now(),
+      initialTime: initialTime,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            timePickerTheme: TimePickerThemeData(
+              backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+              hourMinuteTextStyle: AppTextStyles.headlineMedium.copyWith(
+                color: isDark ? AppColors.textPrimary : Colors.black87,
+                fontWeight: FontWeight.w600,
+              ),
+              hourMinuteColor: AppColors.primaryGold.withValues(
+                alpha: 0.16,
+              ),
+              dialHandColor: AppColors.primaryGold,
+              dialBackgroundColor:
+                  isDark ? AppColors.cardDark : Colors.grey.shade100,
+              dialTextColor: isDark ? AppColors.textPrimary : Colors.black87,
+              entryModeIconColor: AppColors.primaryGold,
+              helpTextStyle: AppTextStyles.labelSmall.copyWith(
+                color: isDark ? AppColors.textSecondary : Colors.black54,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+                  primary: AppColors.primaryGold,
+                  onPrimary: Colors.white,
+                  surface: isDark ? AppColors.surfaceDark : Colors.white,
+                  onSurface: isDark ? AppColors.textPrimary : Colors.black87,
+                ),
+          ),
+          child: child!,
+        );
+      },
+    );
+  }
+
+  Future<void> _selectPickupTime() async {
+    final selectedTime = await _showCompactTimePicker(
+      _pickupTime ?? TimeOfDay.now(),
     );
 
     if (selectedTime == null) return;
@@ -156,9 +198,8 @@ class _AirportTransferSearchScreenState
   }
 
   Future<void> _selectReturnTime() async {
-    final selectedTime = await showTimePicker(
-      context: context,
-      initialTime: _returnTime ?? TimeOfDay.now(),
+    final selectedTime = await _showCompactTimePicker(
+      _returnTime ?? TimeOfDay.now(),
     );
 
     if (selectedTime == null) return;
@@ -424,11 +465,13 @@ class _AirportTransferSearchScreenState
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: cardColor,
+                        color: isDark
+                            ? AppColors.surfaceDark
+                            : AppColors.surfaceLight,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: AppColors.primaryGold,
-                          width: 1.2,
+                          width: 1,
                         ),
                       ),
                       child: Column(
@@ -455,11 +498,12 @@ class _AirportTransferSearchScreenState
                                 width: 2,
                                 height: 12,
                                 decoration: BoxDecoration(
-                                  color: isDark
-                                      ? AppColors.borderDark
-                                      : AppColors.borderLight,
-                                  borderRadius: BorderRadius.circular(2),
-                                ),
+                                    color: cardColor,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: AppColors.primaryGold,
+                                      width: 1,
+                                    )),
                               ),
                             ),
                           ),
@@ -511,15 +555,14 @@ class _AirportTransferSearchScreenState
                       textCapitalization: TextCapitalization.characters,
                       style: AppTextStyles.bodyMedium.copyWith(
                         fontWeight: FontWeight.w500,
-                        color: isDark
-                            ? AppColors.textPrimary
-                            : AppColors.textPrimaryLight,
+                        height: 1.25,
+                        color: isDark ? AppColors.textPrimary : Colors.black87,
                       ),
                       decoration: InputDecoration(
                         isDense: true,
                         contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
+                          horizontal: 13,
+                          vertical: 11,
                         ),
                         hintText: 'Flight number',
                         hintStyle: AppTextStyles.bodyMedium.copyWith(
@@ -588,11 +631,11 @@ class _AirportTransferSearchScreenState
                         controller: _returnFlightNumberController,
                         textCapitalization: TextCapitalization.characters,
                         decoration: InputDecoration(
-                            isDense: true,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 12,
-                            ),
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 13,
+                            vertical: 11,
+                          ),
                           hintText: 'Return Flight number',
                           hintStyle: TextStyle(
                             fontFamily: 'Poppins',
@@ -782,10 +825,11 @@ class _SelectionTile extends StatelessWidget {
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 10,
+            horizontal: 13,
+            vertical: 11,
           ),
           decoration: BoxDecoration(
+            color: isDark ? AppColors.surfaceDark : Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isDark ? AppColors.borderDark : AppColors.borderLight,
@@ -807,10 +851,10 @@ class _SelectionTile extends StatelessWidget {
                       label,
                       style: AppTextStyles.labelSmall.copyWith(
                           fontWeight: FontWeight.w700,
-                          letterSpacing: 0.7,
+                          letterSpacing: 0.6,
                           color: isDark
                               ? AppColors.textSecondary
-                              : AppColors.textSecondaryLight),
+                              : Colors.black54),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -823,19 +867,18 @@ class _SelectionTile extends StatelessWidget {
                           color: isPlaceholder
                               ? (isDark
                                   ? AppColors.textSecondary
-                                  : AppColors.textMutedLight)
+                                  : Colors.black45)
                               : (isDark
                                   ? AppColors.textPrimary
-                                  : AppColors.textPrimaryLight)),
+                                  : Colors.black87),
+                          height: 1.25),
                     ),
                   ],
                 ),
               ),
               Icon(Icons.chevron_right_rounded,
                   size: 16,
-                  color: isDark
-                      ? AppColors.textSecondary
-                      : AppColors.textSecondaryLight),
+                  color: isDark ? AppColors.textSecondary : Colors.black45),
             ],
           ),
         ),
@@ -873,6 +916,8 @@ class _CounterSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
@@ -883,17 +928,17 @@ class _CounterSheet extends StatelessWidget {
               width: 42,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.textMuted,
+                color: isDark ? AppColors.textSecondary : Colors.black38,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(height: 14),
             Text(
               title,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w700),
+              style: AppTextStyles.titleLarge.copyWith(
+                color: isDark ? AppColors.textPrimary : Colors.black87,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 10),
             for (final row in rows)
@@ -901,11 +946,19 @@ class _CounterSheet extends StatelessWidget {
                 contentPadding: EdgeInsets.zero,
                 title: Text(
                   row.label,
-                  style: const TextStyle(
-                    fontFamily: 'Poppins',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: isDark ? AppColors.textPrimary : Colors.black87,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                subtitle: Text(row.description),
+                subtitle: Text(
+                  row.description,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: isDark ? AppColors.textSecondary : Colors.black54,
+                    fontWeight: FontWeight.w400,
+                    height: 1.3,
+                  ),
+                ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -913,17 +966,20 @@ class _CounterSheet extends StatelessWidget {
                       onPressed: row.value > row.minimum
                           ? () => row.onChanged(row.value - 1)
                           : null,
-                      icon: const Icon(Icons.remove),
+                      icon: const Icon(
+                        Icons.remove,
+                        size: 20,
+                      ),
                     ),
                     SizedBox(
                       width: 38,
                       child: Text(
                         '${row.value}',
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color:
+                              isDark ? AppColors.textPrimary : Colors.black87,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -931,7 +987,14 @@ class _CounterSheet extends StatelessWidget {
                       onPressed: row.value < 12
                           ? () => row.onChanged(row.value + 1)
                           : null,
-                      icon: const Icon(Icons.add),
+                      style: IconButton.styleFrom(
+                        backgroundColor: AppColors.primaryGold,
+                        foregroundColor: Colors.white,
+                      ),
+                      icon: const Icon(
+                        Icons.add,
+                        size: 20,
+                      ),
                     ),
                   ],
                 ),
@@ -944,18 +1007,18 @@ class _CounterSheet extends StatelessWidget {
                 onPressed: onDone,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGold,
-                  foregroundColor: AppColors.textPrimaryLight,
+                  foregroundColor: Colors.white,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                child: const Text(
-                  'DONE',
-                  style: TextStyle(
-                      fontFamily: 'Poppins',
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700),
+                child: Text(
+                  'Done',
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),

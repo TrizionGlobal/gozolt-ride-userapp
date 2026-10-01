@@ -64,7 +64,7 @@ class TransportGrid extends StatelessWidget {
                 child: _TransportTile(
                   iconPath:
                       'assets/images/updated_userapp_images/groceries.png',
-                  label: 'Groceries',
+                  label: 'Food & Groceries',
                   isActive: true,
                   onTap: () => _showComingSoon(context),
                 ),
