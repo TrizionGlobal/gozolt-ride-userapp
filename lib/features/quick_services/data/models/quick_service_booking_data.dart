@@ -225,11 +225,12 @@ class QuickServiceBookingData {
   final String? materialPreference;
   final double subtotal;
   final double baseEstimatedHours;
-  final double minHourlyRate;
-  final double? maxHourlyRate;
   final String? whatYouNeed;
   final String? describeIssue;
   final List<String>? uploadedImages;
+
+  double get minHourlyRate => QuickServicesPricingConfig.getMinRate(servicePricingKey);
+  double? get maxHourlyRate => QuickServicesPricingConfig.getMaxRate(servicePricingKey);
 
   // Vehicle Mechanic specific fields
   final String? bikeType;
@@ -490,8 +491,6 @@ class QuickServiceBookingData {
     this.materialPreference,
     this.subtotal = 0.0,
     this.baseEstimatedHours = QuickServicesPricingConfig.defaultBaseHours,
-    this.minHourlyRate = QuickServicesPricingConfig.defaultHourlyRate,
-    this.maxHourlyRate,
     this.whatYouNeed,
     this.describeIssue,
     this.uploadedImages,
@@ -621,8 +620,6 @@ class QuickServiceBookingData {
     String? materialPreference,
     double? subtotal,
     double? baseEstimatedHours,
-    double? minHourlyRate,
-    double? maxHourlyRate,
     String? whatYouNeed,
     String? describeIssue,
     List<String>? uploadedImages,
@@ -754,8 +751,6 @@ class QuickServiceBookingData {
       materialPreference: materialPreference ?? this.materialPreference,
       subtotal: subtotal ?? this.subtotal,
       baseEstimatedHours: baseEstimatedHours ?? this.baseEstimatedHours,
-      minHourlyRate: minHourlyRate ?? QuickServicesPricingConfig.getMinRate(this.servicePricingKey),
-      maxHourlyRate: maxHourlyRate ?? QuickServicesPricingConfig.getMaxRate(this.servicePricingKey),
       whatYouNeed: whatYouNeed ?? this.whatYouNeed,
       describeIssue: describeIssue ?? this.describeIssue,
       uploadedImages: uploadedImages ?? this.uploadedImages,

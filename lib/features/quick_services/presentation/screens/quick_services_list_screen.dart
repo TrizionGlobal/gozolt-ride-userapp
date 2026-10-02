@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../providers/quick_services_booking_provider.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
@@ -91,15 +93,24 @@ const List<_ServiceCategory> _categories = [
   ]),
 ];
 
-class QuickServicesListScreen extends StatefulWidget {
+class QuickServicesListScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
   const QuickServicesListScreen({super.key, required this.bookingData});
 
   @override
-  State<QuickServicesListScreen> createState() => _QuickServicesListScreenState();
+  ConsumerState<QuickServicesListScreen> createState() => _QuickServicesListScreenState();
 }
 
-class _QuickServicesListScreenState extends State<QuickServicesListScreen> {
+class _QuickServicesListScreenState extends ConsumerState<QuickServicesListScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Fetch dynamic pricing rules on screen load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(quickServicesRepositoryProvider).fetchPricingRules();
+    });
+  }
+
   void _showSubServicesModal(BuildContext context, _ServiceCategory category) {
     showModalBottomSheet(
       context: context,

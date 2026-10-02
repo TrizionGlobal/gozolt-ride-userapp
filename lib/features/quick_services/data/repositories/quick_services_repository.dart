@@ -280,4 +280,15 @@ class QuickServicesRepository {
       return [];
     }
   }
+  Future<void> fetchPricingRules() async {
+    try {
+      final response = await _dio.get('/quick-services/pricing-rules');
+      if (response.statusCode == 200 && response.data != null) {
+        final List<dynamic> data = response.data;
+        QuickServicesPricingConfig.updateRates(data);
+      }
+    } catch (e) {
+      print('Error fetching pricing rules: $e');
+    }
+  }
 }

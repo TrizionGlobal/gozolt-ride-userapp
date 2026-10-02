@@ -72,10 +72,21 @@ class MyRidesScreen extends ConsumerWidget {
                                 value: selectedTab,
                                 isDense: true,
                                 icon: const Icon(Icons.keyboard_arrow_down, color: AppColors.backgroundDark),
-                                dropdownColor: const Color(0xFFF5C518),
-                                style: AppTextStyles.titleSmall.copyWith(color: AppColors.backgroundDark, fontSize: 13),
+                                dropdownColor: Theme.of(context).cardColor,
+                                style: AppTextStyles.titleSmall.copyWith(color: Theme.of(context).textTheme.bodyLarge?.color ?? AppColors.textPrimary, fontSize: 13),
                                 elevation: 4,
                                 borderRadius: BorderRadius.circular(12),
+                                selectedItemBuilder: (BuildContext context) {
+                                  return ['My Rides', 'Car Rentals', 'Bike Rentals', 'Quick Services'].map((String name) {
+                                    return Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        name,
+                                        style: AppTextStyles.titleSmall.copyWith(color: AppColors.backgroundDark, fontSize: 13),
+                                      ),
+                                    );
+                                  }).toList();
+                                },
                                 onChanged: (int? newValue) {
                                   if (newValue != null) {
                                     HapticFeedback.selectionClick();

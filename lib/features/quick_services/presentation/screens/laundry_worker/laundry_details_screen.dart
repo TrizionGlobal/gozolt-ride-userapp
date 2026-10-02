@@ -400,7 +400,7 @@ class _LaundryDetailsScreenState extends ConsumerState<LaundryDetailsScreen> {
 
                       final calculatedSubtotal = _servicePricePerKg * 1;
                       final updatedData = widget.bookingData.copyWith(
-                        selectedServiceTitle: 'Laundry & Ironing',
+                        selectedServiceTitle: 'Home Laundry',
                         laundryServiceMethod: _selectedMethod,
                         requestedReturnDate: _selectedMethod == 'Pickup & Return' ? _requestedDate : null,
                         requestedReturnTime: _selectedMethod == 'Pickup & Return' ? _requestedTime : null,

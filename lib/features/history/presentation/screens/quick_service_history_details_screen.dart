@@ -280,164 +280,85 @@ Time: $displayTime
                         ],
                         
                         if (booking.options.isNotEmpty) ...[
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 16),
+                          const Divider(),
+                          const SizedBox(height: 12),
                           ...booking.options.entries.map((e) {
-                            IconData iconData = Icons.info_outline;
-                            if (e.key.toLowerCase().contains('material')) {
-                              iconData = Icons.inventory_2_outlined;
-                            } else if (e.key.toLowerCase().contains('wall')) {
-                              iconData = Icons.foundation;
-                            } else if (e.key.toLowerCase().contains('floor')) {
-                              iconData = Icons.stairs;
-                            } else if (e.key.toLowerCase().contains('bike')) {
-                              iconData = Icons.two_wheeler;
-                            } else if (e.key.toLowerCase().contains('truck')) {
-                              iconData = Icons.local_shipping;
-                            } else if (e.key.toLowerCase().contains('vehicle type')) {
-                              iconData = e.value.toString().toLowerCase().contains('truck') || e.value.toString().toLowerCase().contains('lorry') ? Icons.local_shipping : e.value.toString().toLowerCase().contains('bike') ? Icons.two_wheeler : Icons.directions_car;
-                            } else if (e.key.toLowerCase().contains('vehicle') || e.key.toLowerCase().contains('car')) {
-                              iconData = Icons.directions_car;
-                            } else if (e.key.toLowerCase().contains('quantity')) {
-                              iconData = Icons.scale;
-                            } else if (e.key.toLowerCase().contains('laundry type')) {
-                              iconData = Icons.local_laundry_service;
-                            } else if (e.key.toLowerCase().contains('gardening')) {
-                              iconData = Icons.yard_outlined;
-                            } else if (e.key.toLowerCase().contains('service area')) {
-                              iconData = Icons.maps_home_work;
-                            } else if (e.key.toLowerCase().contains('pest type')) {
-                              iconData = Icons.bug_report;
-                            } else if (e.key.toLowerCase().contains('location')) {
-                              iconData = Icons.home;
-                            } else if (e.key.toLowerCase().contains('ac type')) {
-                              iconData = Icons.ac_unit;
-                            } else if (e.key.toLowerCase().contains('issue')) {
-                              iconData = Icons.build;
-                            } else if (e.key.toLowerCase().contains('tv type')) {
-                              iconData = Icons.tv;
-                            } else if (e.key.toLowerCase().contains('cable')) {
-                              iconData = Icons.cable;
-                            } else if (e.key.toLowerCase().contains('furniture')) {
-                              iconData = Icons.chair;
-                            } else if (e.key.toLowerCase().contains('bedroom')) {
-                              iconData = Icons.bed;
-                            } else if (e.key.toLowerCase().contains('sofa')) {
-                              iconData = Icons.weekend;
-                            } else if (e.key.toLowerCase().contains('carpet')) {
-                              iconData = Icons.local_laundry_service;
-                            } else if (e.key.toLowerCase().contains('features')) {
-                              iconData = Icons.check_circle_outline;
-                            } else if (e.key.toLowerCase().contains('what you need')) {
-                              iconData = Icons.build_circle;
-                            } else if (e.key.toLowerCase().contains('computer') || e.key.toLowerCase().contains('laptop')) {
-                              iconData = Icons.computer;
-                            } else if (e.key.toLowerCase().contains('phone') || e.key.toLowerCase().contains('mobile')) {
-                              iconData = Icons.phone_iphone;
-                            } else if (e.key.toLowerCase().contains('printer') || e.key.toLowerCase().contains('scanner')) {
-                              iconData = Icons.print;
-                            } else if (e.key.toLowerCase().contains('count') || e.key.toLowerCase().contains('people')) {
-                              iconData = Icons.people;
-                            } else if (e.key.toLowerCase().contains('gender')) {
-                              iconData = Icons.wc;
-                            } else if (e.key.toLowerCase().contains('duration')) {
-                              iconData = Icons.timer;
-                            } else if (e.key.toLowerCase().contains('time')) {
-                              iconData = Icons.access_time;
-                            } else if (e.key.toLowerCase().contains('comment')) {
-                              iconData = Icons.comment;
-                            } else if (e.key.toLowerCase().contains('security')) {
-                              iconData = Icons.security;
-                            } else if (e.key.toLowerCase().contains('venue')) {
-                              iconData = Icons.event_seat;
-                            } else if (e.key.toLowerCase().contains('attendance')) {
-                              iconData = Icons.groups;
-                            } else if (e.key.toLowerCase().contains('dress')) {
-                              iconData = Icons.checkroom;
-                            } else if (e.key.toLowerCase().contains('alcohol')) {
-                              iconData = Icons.local_bar;
-                            } else if (e.key.toLowerCase().contains('date')) {
-                              iconData = Icons.calendar_month;
-                            } else if (e.key.toLowerCase().contains('paint')) {
-                              iconData = Icons.format_paint;
-                            } else if (e.key.toLowerCase().contains('property') || e.key.toLowerCase().contains('facility') || e.key.toLowerCase().contains('business')) {
-                              iconData = Icons.business;
-                            } else if (e.key.toLowerCase().contains('lift') || e.key.toLowerCase().contains('elevator')) {
-                              iconData = Icons.elevator;
-                            } else if (e.key.toLowerCase().contains('water')) {
-                              iconData = Icons.water_drop;
-                            } else if (e.key.toLowerCase().contains('electric') || e.key.toLowerCase().contains('power')) {
-                              iconData = Icons.electrical_services;
-                            } else if (e.key.toLowerCase().contains('contact')) {
-                              iconData = Icons.contact_phone;
-                            } else if (e.key.toLowerCase().contains('treatment')) {
-                              iconData = Icons.spa;
-                            } else if (e.key.toLowerCase().contains('professional')) {
-                              iconData = Icons.work_outline;
-                            } else if (e.key.toLowerCase().contains('event') || e.key.toLowerCase().contains('guest')) {
-                              iconData = Icons.celebration;
-                            } else if (e.key.toLowerCase().contains('supply') || e.key.toLowerCase().contains('item') || e.key.toLowerCase().contains('requirement')) {
-                              iconData = Icons.category;
-                            } else if (e.key.toLowerCase().contains('room')) {
-                              iconData = Icons.meeting_room;
-                            }
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 6.0),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Icon(iconData, size: 18, color: Colors.grey),
-                                  const SizedBox(width: 10),
-                                  if (e.value is List)
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(e.key, style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold)),
-                                          const SizedBox(height: 6),
-                                          ...(e.value as List).map((item) {
-                                            if (item is Map) {
-                                              return Container(
-                                                margin: const EdgeInsets.only(bottom: 8.0, top: 2.0),
-                                                padding: const EdgeInsets.all(10.0),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.grey.withOpacity(0.05),
-                                                  borderRadius: BorderRadius.circular(8),
-                                                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                                                ),
-                                                child: Column(
+                            if (e.value is List) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(e.key, style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade700, fontWeight: FontWeight.w600)),
+                                    const SizedBox(height: 8),
+                                    ...(e.value as List).map((item) {
+                                      if (item is Map) {
+                                        return Container(
+                                          margin: const EdgeInsets.only(bottom: 8.0),
+                                          padding: const EdgeInsets.all(12.0),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey.withOpacity(0.05),
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: item.entries
+                                                .where((entry) => entry.value != null && entry.value.toString().isNotEmpty)
+                                                .map<Widget>((entry) {
+                                              return Padding(
+                                                padding: const EdgeInsets.only(bottom: 6.0),
+                                                child: Row(
                                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: item.entries
-                                                      .where((entry) => entry.value != null && entry.value.toString().isNotEmpty)
-                                                      .map<Widget>((entry) {
-                                                    return Padding(
-                                                      padding: const EdgeInsets.only(bottom: 4.0),
-                                                      child: Row(
-                                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                                        children: [
-                                                          Text('${entry.key}: ', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600, fontSize: 12)),
-                                                          Expanded(child: Text('${entry.value}', style: AppTextStyles.bodySmall.copyWith(fontSize: 12))),
-                                                        ],
-                                                      ),
-                                                    );
-                                                  }).toList(),
+                                                  children: [
+                                                    Text('${entry.key}: ', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey.shade700)),
+                                                    Expanded(child: Text('${entry.value}', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold))),
+                                                  ],
                                                 ),
                                               );
-                                            }
-                                            return Padding(
-                                              padding: const EdgeInsets.only(bottom: 4.0),
-                                              child: Text('• ${item}', style: AppTextStyles.bodySmall),
-                                            );
-                                          }).toList(),
-                                        ],
-                                      ),
-                                    )
-                                  else
+                                            }).toList(),
+                                          ),
+                                        );
+                                      }
+                                      return Padding(
+                                        padding: const EdgeInsets.only(bottom: 6.0),
+                                        child: Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text('• ', style: AppTextStyles.bodyMedium),
+                                            Expanded(child: Text('$item', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold))),
+                                          ],
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ],
+                                ),
+                              );
+                            } else {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
                                     Expanded(
-                                      child: Text('${e.key}: ${e.value}', style: AppTextStyles.bodySmall),
+                                      flex: 2,
+                                      child: Text(e.key, style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade700)),
                                     ),
-                                ],
-                              ),
-                            );
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      flex: 3,
+                                      child: Text(
+                                        '${e.value}',
+                                        textAlign: TextAlign.end,
+                                        style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
                           }).toList(),
                         ],
                       ],

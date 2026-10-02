@@ -6,44 +6,22 @@ class QuickServicesPricingConfig {
   static const double defaultUpfrontBookingFee = 5.00;
   
   // Specific hourly rates per service category (Use these keys in details screens)
-  static const Map<String, dynamic> serviceRates = {
-    // Technical Services
-    'electrical_technician': {'minHourlyRate': 6.00},
-    'ac_installer': {'minHourlyRate': 6.00},
-    'plumber': {'minHourlyRate': 20.00, 'upfrontFee': 5.00, 'materialCost': 10.00},
-    
-    // Fallbacks
-    'home_cleaning': {'minHourlyRate': 6.00, 'upfrontFee': 5.00, 'materialCost': 10.00},
-    'carpenter': {'minHourlyRate': 20.00, 'upfrontFee': 5.00, 'materialCost': 10.00},
+  static Map<String, dynamic> serviceRates = {};
 
-    'pest_control': {'minHourlyRate': 6.00, 'upfrontFee': 5.00, 'materialCost': 5.00},
-    'gardening': {'minHourlyRate': 6.00, 'upfrontFee': 5.00, 'materialCost': 5.00},
-    'computer_repair': {'minHourlyRate': 10.00, 'upfrontFee': 5.00, 'materialCost': 0.00, 'estimatedSparePrice': '€50 - €110'},
-    'vehicle_mechanic': {'minHourlyRate': 6.00},
-    'truck_wash': {'minHourlyRate': 8.00, 'upfrontFee': 5.00, 'materialCost': 15.00, 'pickupFee': 8.00},
-    'car_wash': {'minHourlyRate': 6.00, 'upfrontFee': 5.00, 'materialCost': 8.00, 'pickupFee': 6.00},
-    'bike_wash': {'minHourlyRate': 6.00, 'upfrontFee': 5.00, 'materialCost': 5.00, 'pickupFee': 6.00},
-    'commercial_electric': {'minHourlyRate': 10.00, 'upfrontFee': 5.00, 'estimatedSparePrice': '€5 - €25'},
-    'home_electric': {'minHourlyRate': 10.00, 'upfrontFee': 5.00, 'estimatedSparePrice': '€5 - €25'},
-    'events_electric': {'minHourlyRate': 10.00, 'upfrontFee': 5.00, 'estimatedSparePrice': '€5 - €25'},
-    'lift_elevator_mechanic': {'minHourlyRate': 10.00, 'upfrontFee': 5.00, 'estimatedSparePrice': '€5 - €25'},
-    'security_personnel': {'minHourlyRate': 7.00, 'upfrontFee': 5.00, 'materialCost': 0.00},
-    'hotel_laundry': {'minHourlyRate': 6.00, 'upfrontFee': 5.00, 'materialCost': 15.00, 'pickupFee': 10.00},
-    'commercial_laundry': {'minHourlyRate': 6.00, 'upfrontFee': 5.00, 'materialCost': 10.00, 'pickupFee': 10.00},
-    'hospital_laundry': {'minHourlyRate': 6.00, 'upfrontFee': 5.00, 'materialCost': 15.00, 'pickupFee': 10.00},
-    'laundry': {'minHourlyRate': 6.00, 'upfrontFee': 5.00, 'materialCost': 5.00, 'pickupFee': 10.00},
-    'appliance_repair': {'minHourlyRate': 10.00, 'upfrontFee': 5.00, 'estimatedSparePrice': '€20 - €40'},
-    'painter': {'minHourlyRate': 6.00},
-    'suppliers': {'minHourlyRate': 6.00},
-    'event_organisers': {'minHourlyRate': 6.00},
-    'printer_scanner': {'minHourlyRate': 10.00, 'upfrontFee': 5.00, 'materialCost': 0.00, 'estimatedSparePrice': '€25 - €50'},
-    'mobile_repair': {'minHourlyRate': 10.00, 'upfrontFee': 5.00, 'materialCost': 0.00, 'estimatedSparePrice': '€40 - €80'},
-    'bike_mechanic': {'minHourlyRate': 8.00, 'upfrontFee': 5.00, 'materialCost': 10.00, 'estimatedSparePrice': '€25 - €50'},
-    'car_mechanic': {'minHourlyRate': 9.00, 'upfrontFee': 5.00, 'materialCost': 10.00, 'estimatedSparePrice': '€50 - €110'},
-    'truck_mechanic': {'minHourlyRate': 9.00, 'upfrontFee': 5.00, 'materialCost': 10.00, 'estimatedSparePrice': '€50 - €110'},
-    'hire_person': {'minHourlyRate': 7.00, 'upfrontFee': 5.00, 'materialCost': 0.00},
-    'other_services': {'minHourlyRate': 6.00},
-  };
+  static void updateRates(List<dynamic> rules) {
+    for (var rule in rules) {
+      final key = rule['serviceKey'];
+      if (key != null) {
+        serviceRates[key] = {
+          'minHourlyRate': (rule['minHourlyRate'] != null) ? double.parse(rule['minHourlyRate'].toString()) : null,
+          'upfrontFee': (rule['upfrontFee'] != null) ? double.parse(rule['upfrontFee'].toString()) : null,
+          'materialCost': (rule['materialCost'] != null) ? double.parse(rule['materialCost'].toString()) : null,
+          'pickupFee': (rule['pickupFee'] != null) ? double.parse(rule['pickupFee'].toString()) : null,
+          'estimatedSparePrice': rule['estimatedSparePrice'],
+        };
+      }
+    }
+  }
 
   static double getMinRate(String serviceKey) {
     return serviceRates[serviceKey]?['minHourlyRate'] ?? defaultHourlyRate;

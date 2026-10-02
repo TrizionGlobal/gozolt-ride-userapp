@@ -265,40 +265,44 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.backgroundLight,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        _getServiceIcon(booking.serviceCategory, booking.serviceTitle),
-                        color: AppColors.primaryGold,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          booking.serviceTitle,
-                          style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.backgroundLight,
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        if (booking.addOns.isNotEmpty || booking.options.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            subtitle,
-                            style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
+                        child: Icon(
+                          _getServiceIcon(booking.serviceCategory, booking.serviceTitle),
+                          color: AppColors.primaryGold,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              booking.serviceTitle,
+                              style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            if (booking.addOns.isNotEmpty || booking.options.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                subtitle,
+                                style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

@@ -53,10 +53,16 @@ Location: ${bookingData.location.address}
 Amount Paid: €${((bookingData.upfrontBookingFee + bookingData.materialCost) - (bookingData.useGoCoins ? (bookingData.upfrontBookingFee + bookingData.materialCost).clamp(0.0, 6.0) : 0.0)).toStringAsFixed(2)}
 '''.trim();
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      body: SafeArea(
-        child: Column(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        context.goNamed(RouteNames.home);
+      },
+      child: Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: SafeArea(
+          child: Column(
           children: [
             Expanded(
               child: SingleChildScrollView(
@@ -184,7 +190,7 @@ Amount Paid: €${((bookingData.upfrontBookingFee + bookingData.materialCost) - 
           ],
         ),
       ),
-    );
+    ));
   }
 
   Widget _buildDetailRow(String label, String value, {bool isTotal = false}) {
