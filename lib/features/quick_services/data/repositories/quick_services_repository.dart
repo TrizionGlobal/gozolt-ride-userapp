@@ -291,4 +291,15 @@ class QuickServicesRepository {
       print('Error fetching pricing rules: $e');
     }
   }
+
+  Future<void> cancelQuickServiceBooking(String bookingId) async {
+    try {
+      await _dio.post('/quick-services/user/booking/$bookingId/cancel');
+    } catch (e) {
+      if (e is DioException) {
+        throw Exception(e.response?.data?['message'] ?? e.message ?? 'Failed to cancel quick service');
+      }
+      throw Exception(e.toString());
+    }
+  }
 }

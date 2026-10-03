@@ -14,6 +14,7 @@ class QuickServiceHistoryModel {
   final double totalAmount;
   final String? estimatedPrice;
   final String paymentMethod;
+  final String? paymentMethodType;
   final Map<String, dynamic>? supplier;
   final String? requirements;
   final List<String>? images;
@@ -36,6 +37,7 @@ class QuickServiceHistoryModel {
     required this.totalAmount,
     this.estimatedPrice,
     required this.paymentMethod,
+    this.paymentMethodType,
     this.supplier,
     this.requirements,
     this.images,
@@ -94,6 +96,7 @@ class QuickServiceHistoryModel {
       totalAmount: double.tryParse(json['totalAmount']?.toString() ?? '') ?? 0.0,
       estimatedPrice: json['estimatedPrice'],
       paymentMethod: json['paymentMethod'] ?? 'CASH',
+      paymentMethodType: json['paymentMethodType'],
       supplier: json['supplier'],
       requirements: json['requirements'],
       images: parsedImages,

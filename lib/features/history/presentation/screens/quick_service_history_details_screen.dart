@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../quick_services/data/models/quick_service_history_model.dart';
+import '../../../quick_services/presentation/providers/quick_services_booking_provider.dart';
 import 'package:intl/intl.dart';
 
-class QuickServiceHistoryDetailsScreen extends StatelessWidget {
+class QuickServiceHistoryDetailsScreen extends ConsumerStatefulWidget {
   final QuickServiceHistoryModel booking;
 
   const QuickServiceHistoryDetailsScreen({super.key, required this.booking});
+
+  @override
+  ConsumerState<QuickServiceHistoryDetailsScreen> createState() => _QuickServiceHistoryDetailsScreenState();
+}
+
+class _QuickServiceHistoryDetailsScreenState extends ConsumerState<QuickServiceHistoryDetailsScreen> {
+  bool _isCancelling = false;
 
   String _getExpertVisitName(String serviceTitle) {
     final lowerCat = serviceTitle.toLowerCase();
@@ -58,8 +67,9 @@ class QuickServiceHistoryDetailsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final booking = widget.booking;
     final status = booking.status.toUpperCase();
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final double remainingBalance = booking.totalAmount - (booking.upfrontFee + booking.materialCost);
 
     final displayBookingId = 'GZ-QS-${booking.id.substring(0, 8).toUpperCase()}';
     final displayDate = DateFormat('dd MMM yyyy').format(booking.bookingDate);
@@ -124,8 +134,53 @@ Time: $displayTime
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // Pay Now Section
+                  if (status == 'AWAITING_PAYMENT') ...[
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.primaryGold, width: 2),
+                      ),
+                      child: Column(
+                        children: [
+                          const Icon(Icons.payment, size: 48, color: AppColors.primaryGold),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Service Completed',
+                            style: AppTextStyles.titleMedium.copyWith(color: AppColors.backgroundDark, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Your quick service is completed. Please complete the final payment of €${remainingBalance > 0 ? remainingBalance.toStringAsFixed(2) : '0.00'} to finalize the booking.\n(Already Paid: €${(booking.upfrontFee + booking.materialCost).toStringAsFixed(2)})',
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[700]),
+                          ),
+                          const SizedBox(height: 24),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 50,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                // TODO: Show Payment Method Modal
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryGold,
+                                foregroundColor: AppColors.backgroundDark,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: const Text('Pay Now', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
                   // QR Code Section
-                  if (status != 'CANCELLED' && status != 'CANCELED') ...[
+                  if (status != 'CANCELLED' && status != 'CANCELED' && status != 'AWAITING_PAYMENT' && status != 'COMPLETED') ...[
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
@@ -152,21 +207,60 @@ Time: $displayTime
                             size: 150.0,
                             backgroundColor: Colors.white,
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 12),
                           Text(
                             'Service ID',
                             textAlign: TextAlign.center,
-                            style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey),
+                            style: AppTextStyles.labelSmall.copyWith(color: Colors.grey, fontSize: 10),
                           ),
-                          const SizedBox(height: 2),
                           Text(
                             displayBookingId,
                             textAlign: TextAlign.center,
-                            style: AppTextStyles.titleMedium.copyWith(
+                            style: AppTextStyles.bodyMedium.copyWith(
                                 color: AppColors.textPrimaryLight,
                                 fontWeight: FontWeight.bold, 
-                                letterSpacing: 1.2),
+                                letterSpacing: 1.0),
                           ),
+                          if (status == 'PENDING' || status == 'ACCEPTED' || status == 'IN_PROGRESS') ...[
+                            const SizedBox(height: 16),
+                            Container(
+                              width: 150.0,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGold.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: AppColors.primaryGold.withOpacity(0.5)),
+                              ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    'VALIDATION PIN',
+                                    style: AppTextStyles.labelSmall.copyWith(
+                                      color: AppColors.primaryGold,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 10,
+                                      letterSpacing: 1.0,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    booking.options['validationPin'] ?? 'N/A',
+                                    style: AppTextStyles.titleMedium.copyWith(
+                                      color: AppColors.backgroundDark,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 2.0,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Share this PIN with the worker to start the service',
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.labelSmall.copyWith(color: Colors.grey[600], fontSize: 11),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -541,8 +635,11 @@ Time: $displayTime
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(_getExpertVisitName(booking.serviceTitle), style: AppTextStyles.bodyMedium),
-                            Text('€${_getQuickServiceHourlyRate(booking.serviceTitle).toStringAsFixed(2)}', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
+                            Text('Final Service Charge', style: AppTextStyles.bodyMedium),
+                            Text(
+                              '€${(booking.totalAmount - booking.upfrontFee - booking.materialCost).clamp(0.0, double.infinity).toStringAsFixed(2)}', 
+                              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)
+                            ),
                           ],
                         ),
                         if (booking.materialCost > 0) ...[
@@ -582,7 +679,7 @@ Time: $displayTime
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Total Amount Paid',
+                              status == 'AWAITING_PAYMENT' ? 'Total Amount (Gross)' : 'Total Amount Paid',
                               style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
                             ),
                             Text(
@@ -594,9 +691,113 @@ Time: $displayTime
                             ),
                           ],
                         ),
+                        if (status == 'AWAITING_PAYMENT') ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Remaining Balance to Pay',
+                                style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold, color: AppColors.error),
+                              ),
+                              Text(
+                                '€${remainingBalance > 0 ? remainingBalance.toStringAsFixed(2) : '0.00'}',
+                                style: AppTextStyles.titleMedium.copyWith(
+                                  color: AppColors.error,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                        if (status == 'COMPLETED' && booking.paymentMethodType != null) ...[
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Payment Method', style: AppTextStyles.bodyMedium),
+                              Text(
+                                booking.paymentMethodType!.toUpperCase(),
+                                style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  if (status == 'PENDING') ...[
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: OutlinedButton(
+                        onPressed: _isCancelling ? null : () async {
+                          final shouldCancel = await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              title: const Text('Cancel Booking?'),
+                              content: Text(
+                                'Are you sure you want to cancel this booking? If you paid an upfront fee via card, it is non-refundable.'
+                                '${booking.materialCost > 0 ? ' Your material cost of €${booking.materialCost.toStringAsFixed(2)} will be refunded.' : ''}'
+                              ),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('No')),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, true), 
+                                  child: const Text('Yes, Cancel', style: TextStyle(color: Colors.red)),
+                                ),
+                              ],
+                            ),
+                          );
+                          if (shouldCancel == true) {
+                            setState(() => _isCancelling = true);
+                            try {
+                              await ref.read(quickServicesRepositoryProvider).cancelQuickServiceBooking(booking.id);
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Booking cancelled successfully')));
+                                Navigator.pop(context, true); // Pop to refresh history
+                              }
+                            } catch (e) {
+                              if (mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                                setState(() => _isCancelling = false);
+                              }
+                            }
+                          }
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.error,
+                          side: const BorderSide(color: AppColors.error, width: 2),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: _isCancelling 
+                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.error))
+                            : const Text('Cancel Booking', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      ),
+                    ),
+                  ] else if (status == 'ACCEPTED' || status == 'IN_PROGRESS') ...[
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGold.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.primaryGold.withOpacity(0.5)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline, color: AppColors.primaryGold),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'The assigned ${_getExpertVisitName(booking.serviceTitle).split('/').first} will come to complete the service.',
+                              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.backgroundDark, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 32),
                 ],
               ),
