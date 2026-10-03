@@ -40,11 +40,17 @@ class UserSocketService {
       StreamController<Map<String, dynamic>>.broadcast();
   final _carRentalStatusController =
       StreamController<Map<String, dynamic>>.broadcast();
+  final _quickServiceEventController =
+      StreamController<Map<String, dynamic>>.broadcast();
+
 
   Stream<Map<String, dynamic>> get onBikeRentalStatusChanged =>
       _bikeRentalStatusController.stream;
   Stream<Map<String, dynamic>> get onCarRentalStatusChanged =>
       _carRentalStatusController.stream;
+  Stream<Map<String, dynamic>> get onQuickServiceEvent =>
+      _quickServiceEventController.stream;
+
 
   Stream<Map<String, dynamic>> get onRideAccepted =>
       _rideAcceptedController.stream;
@@ -174,6 +180,25 @@ class UserSocketService {
       }
     });
 
+
+    final quickServiceEvents = [
+      'quick-service:booked',
+      'quick-service:cancelled',
+      'quick-service:payment-required',
+      'quick-service:payment-success',
+      'quick-service:completed'
+    ];
+    for (var event in quickServiceEvents) {
+      _socket!.on(event, (data) {
+        _log('[Socket] Quick service event $event: $data');
+        final map = _toMap(data);
+        if (map != null) {
+          map['eventType'] = event;
+          _quickServiceEventController.add(map);
+        }
+      });
+    }
+
     // Driver location updates
     _socket!.on('ride:driver:location', (data) {
       _log('[Socket] Driver location received: $data');
@@ -271,5 +296,6 @@ class UserSocketService {
     _chatMessageController.close();
     _destinationChangeResponseController.close();
     _rideMatchingProgressController.close();
+    _quickServiceEventController.close();
   }
 }

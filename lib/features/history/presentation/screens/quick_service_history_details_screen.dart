@@ -5,7 +5,10 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../quick_services/data/models/quick_service_history_model.dart';
 import '../../../quick_services/presentation/providers/quick_services_booking_provider.dart';
+import 'dart:async';
 import 'package:intl/intl.dart';
+import '../../../../core/network/socket_service.dart';
+import 'quick_services_history_view.dart';
 
 class QuickServiceHistoryDetailsScreen extends ConsumerStatefulWidget {
   final QuickServiceHistoryModel booking;
@@ -18,6 +21,36 @@ class QuickServiceHistoryDetailsScreen extends ConsumerStatefulWidget {
 
 class _QuickServiceHistoryDetailsScreenState extends ConsumerState<QuickServiceHistoryDetailsScreen> {
   bool _isCancelling = false;
+  late QuickServiceHistoryModel _booking;
+  StreamSubscription? _socketSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _booking = widget.booking;
+    
+    // Listen to real-time WebSockets
+    final socketService = ref.read(socketServiceProvider);
+    _socketSub = socketService.onQuickServiceEvent.listen((event) {
+      if (event['bookingId'] == _booking.id) {
+        if (event['status'] != null) {
+          if (mounted) {
+            setState(() {
+              _booking = _booking.copyWith(status: event['status']);
+            });
+          }
+          // Refresh parent history list so it stays in sync
+          ref.invalidate(quickServicesHistoryProvider);
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _socketSub?.cancel();
+    super.dispose();
+  }
 
   String _getExpertVisitName(String serviceTitle) {
     final lowerCat = serviceTitle.toLowerCase();
@@ -67,7 +100,7 @@ class _QuickServiceHistoryDetailsScreenState extends ConsumerState<QuickServiceH
 
   @override
   Widget build(BuildContext context) {
-    final booking = widget.booking;
+    final booking = _booking;
     final status = booking.status.toUpperCase();
     final double remainingBalance = booking.totalAmount - (booking.upfrontFee + booking.materialCost);
 
@@ -731,7 +764,7 @@ Time: $displayTime
                     SizedBox(
                       width: double.infinity,
                       height: 50,
-                      child: OutlinedButton(
+                      child: ElevatedButton(
                         onPressed: _isCancelling ? null : () async {
                           final shouldCancel = await showDialog<bool>(
                             context: context,
@@ -755,24 +788,42 @@ Time: $displayTime
                             try {
                               await ref.read(quickServicesRepositoryProvider).cancelQuickServiceBooking(booking.id);
                               if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Booking cancelled successfully')));
-                                Navigator.pop(context, true); // Pop to refresh history
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Booking cancelled successfully', style: TextStyle(color: Colors.white)),
+                                    backgroundColor: AppColors.success,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                                setState(() {
+                                  _isCancelling = false;
+                                  // Local optimistic update; socket will also confirm
+                                  _booking = _booking.copyWith(status: 'CANCELLED');
+                                });
+                                ref.invalidate(quickServicesHistoryProvider);
                               }
                             } catch (e) {
                               if (mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(e.toString().replaceAll('Exception: ', ''), style: const TextStyle(color: Colors.white)),
+                                    backgroundColor: AppColors.error,
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
                                 setState(() => _isCancelling = false);
                               }
                             }
                           }
                         },
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.error,
-                          side: const BorderSide(color: AppColors.error, width: 2),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.error,
+                          foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
                         ),
                         child: _isCancelling 
-                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.error))
+                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                             : const Text('Cancel Booking', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       ),
                     ),

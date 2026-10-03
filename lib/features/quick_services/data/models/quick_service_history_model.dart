@@ -106,4 +106,36 @@ class QuickServiceHistoryModel {
       userEmail: json['userEmail'],
     );
   }
+
+  QuickServiceHistoryModel copyWith({
+    String? status,
+    String? paymentMethod,
+    String? paymentMethodType,
+    double? totalAmount,
+    double? materialCost,
+  }) {
+    return QuickServiceHistoryModel(
+      id: id,
+      serviceCategory: serviceCategory,
+      serviceTitle: serviceTitle,
+      bookingDate: bookingDate,
+      status: status ?? this.status,
+      options: options,
+      addOns: addOns,
+      upfrontFee: upfrontFee,
+      materialCost: materialCost ?? this.materialCost,
+      discountAmount: discountAmount,
+      totalAmount: totalAmount ?? this.totalAmount,
+      estimatedPrice: estimatedPrice,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      paymentMethodType: paymentMethodType ?? this.paymentMethodType,
+      supplier: supplier,
+      requirements: requirements,
+      images: images,
+      location: location,
+      userName: userName,
+      userPhone: userPhone,
+      userEmail: userEmail,
+    );
+  }
 }
