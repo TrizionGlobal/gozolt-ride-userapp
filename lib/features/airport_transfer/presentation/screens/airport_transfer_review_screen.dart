@@ -1042,10 +1042,10 @@ class _ReviewRow extends StatelessWidget {
               textAlign: TextAlign.right,
               maxLines: compactValue ? 2 : 2,
               overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.bodySmall.copyWith(
+              style: AppTextStyles.bodyMedium.copyWith(
                 color: isDark
                     ? AppColors.textPrimary
-                    : AppColors.textSecondaryLight,
+                    : AppColors.textPrimaryLight,
                 fontWeight: compactValue
                     ? FontWeight.w400
                     : FontWeight.w500,
