@@ -165,7 +165,7 @@ class _AirportTransferReviewScreenState
 
       final paymentStatus = _paymentMethodType == PaymentMethodType.cash
           ? 'Pay after ride completion'
-          : 'Card selected - payment confirmation pending';
+          : 'Card payment is successfull';
 
       if (!mounted) return;
 
