@@ -630,6 +630,12 @@ class _AirportTransferSearchScreenState
                       TextFormField(
                         controller: _returnFlightNumberController,
                         textCapitalization: TextCapitalization.characters,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isDark
+                              ? AppColors.textPrimaryLight
+                              : Colors.black87,
+                          fontWeight: FontWeight.w500,
+                        ),
                         decoration: InputDecoration(
                           isDense: true,
                           contentPadding: const EdgeInsets.symmetric(
@@ -637,16 +643,15 @@ class _AirportTransferSearchScreenState
                             vertical: 11,
                           ),
                           hintText: 'Return Flight number',
-                          hintStyle: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 15,
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                    ? AppColors.textSecondary
-                                    : AppColors.textMutedLight,
+                          hintStyle: AppTextStyles.bodyMedium.copyWith(
+                            fontWeight: FontWeight.w500,
+                            height: 1.25,
+                            color: isDark
+                                ? AppColors.textPrimary
+                                : AppColors.textMutedLight,
                           ),
                           prefixIcon: const Icon(Icons.flight_rounded,
-                              color: AppColors.textSecondaryLight),
+                              color: AppColors.textPrimaryLight),
                         ),
                         validator: (value) {
                           if (!_isRoundTrip) return null;
@@ -850,11 +855,11 @@ class _SelectionTile extends StatelessWidget {
                     Text(
                       label,
                       style: AppTextStyles.labelSmall.copyWith(
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.6,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.5,
                           color: isDark
                               ? AppColors.textSecondary
-                              : Colors.black54),
+                              : AppColors.textSecondaryLight),
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -862,15 +867,15 @@ class _SelectionTile extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.bodyMedium.copyWith(
-                          fontWeight:
-                              isPlaceholder ? FontWeight.w400 : FontWeight.w600,
                           color: isPlaceholder
                               ? (isDark
                                   ? AppColors.textSecondary
-                                  : Colors.black45)
+                                  : AppColors.textSecondaryLight)
                               : (isDark
                                   ? AppColors.textPrimary
                                   : Colors.black87),
+                          fontWeight:
+                              isPlaceholder ? FontWeight.w400 : FontWeight.w500,
                           height: 1.25),
                     ),
                   ],
