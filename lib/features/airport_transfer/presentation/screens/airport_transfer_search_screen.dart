@@ -630,11 +630,11 @@ class _AirportTransferSearchScreenState
                       TextFormField(
                         controller: _returnFlightNumberController,
                         textCapitalization: TextCapitalization.characters,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: isDark
-                              ? AppColors.textPrimaryLight
-                              : Colors.black87,
+                        style: AppTextStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.w500,
+                          height: 1.25,
+                          color:
+                              isDark ? AppColors.textPrimary : Colors.black87,
                         ),
                         decoration: InputDecoration(
                           isDense: true,
