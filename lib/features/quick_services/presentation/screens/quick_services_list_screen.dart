@@ -32,6 +32,7 @@ const List<_ServiceCategory> _categories = [
     _SubService('Gardening', Icons.yard, iconPath: 'assets/images/updated_userapp_images/quick_services_images/gardening.png'),
     _SubService('Plumbing', Icons.plumbing, iconPath: 'assets/images/updated_userapp_images/quick_services_images/plumber.png'),
     _SubService('Carpenter', Icons.carpenter, iconPath: 'assets/images/updated_userapp_images/quick_services_images/carpentar.png'),
+    _SubService('Painter', Icons.format_paint, iconPath: 'assets/images/updated_userapp_images/quick_services_images/painter.png'),
   ]),
   _ServiceCategory('PC & Mobile Repair', Icons.computer, iconPath: 'assets/images/updated_userapp_images/quick_services_images/pc&mobile_repair.png', [
     _SubService('Mobile', Icons.smartphone, iconPath: 'assets/images/updated_userapp_images/quick_services_images/mobile.png'),
@@ -87,7 +88,6 @@ const List<_ServiceCategory> _categories = [
     _SubService('Others', Icons.group),
   ]),
   _ServiceCategory('Other Services', Icons.miscellaneous_services, iconPath: 'assets/images/updated_userapp_images/quick_services_images/other_services.png', [
-    _SubService('Painter', Icons.format_paint, iconPath: 'assets/images/updated_userapp_images/quick_services_images/painter.png'),
     _SubService('Event Organisers', Icons.event, iconPath: 'assets/images/updated_userapp_images/quick_services_images/event_organisers.png'),
     _SubService('Suppliers', Icons.inventory, iconPath: 'assets/images/updated_userapp_images/quick_services_images/suppliers.png'),
   ]),
@@ -112,6 +112,7 @@ class _QuickServicesListScreenState extends ConsumerState<QuickServicesListScree
   }
 
   void _showSubServicesModal(BuildContext context, _ServiceCategory category) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -135,16 +136,19 @@ class _QuickServicesListScreenState extends ConsumerState<QuickServicesListScree
                       if (category.iconPath != null)
                         Image.asset(category.iconPath!, width: 32, height: 32, fit: BoxFit.contain)
                       else
-                        Icon(category.icon, size: 28),
+                        Icon(category.icon, size: 28, color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           category.title,
-                          style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                          style: AppTextStyles.titleMedium.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                          ),
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close),
+                        icon: Icon(Icons.close, color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],
@@ -207,7 +211,7 @@ class _QuickServicesListScreenState extends ConsumerState<QuickServicesListScree
                             nextRoute = RouteNames.quickServicesGardening;
                           } else if (subService.title == 'Pest Control') {
                             nextRoute = RouteNames.quickServicesPestControl;
-                          } else if (category.title == 'Other Services' && subService.title == 'Painter') {
+                          } else if (category.title == 'Home Services' && subService.title == 'Painter') {
                             nextRoute = RouteNames.quickServicesPainter;
                           } else if (category.title == 'Other Services' && subService.title == 'Event Organisers') {
                             nextRoute = RouteNames.quickServicesEventOrganisers;
@@ -251,16 +255,18 @@ class _QuickServicesListScreenState extends ConsumerState<QuickServicesListScree
                                   fit: BoxFit.contain,
                                 )
                               else
-                                Icon(subService.icon, color: const Color(0xFF324461), size: 36),
+                                Icon(subService.icon, color: AppColors.primaryGold, size: 36),
                               const SizedBox(height: 8),
                               Text(
                                 subService.title,
                                 textAlign: TextAlign.center,
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
-                                style: AppTextStyles.bodyMedium.copyWith(
+                                style: AppTextStyles.bodySmall.copyWith(
                                   fontWeight: FontWeight.w500,
+                                  fontSize: 12,
                                   height: 1.2,
+                                  color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
                                 ),
                               ),
                             ],
@@ -329,8 +335,6 @@ class _QuickServicesListScreenState extends ConsumerState<QuickServicesListScree
                                 context.pushNamed(RouteNames.quickServicesMobileRepair, extra: widget.bookingData.copyWith(category: category.title, selectedServiceTitle: 'Mobile Repair'));
                               } else if (category.title == 'Computer & Laptop Repair' || category.title == 'Computer & Laptop') {
                                 context.pushNamed(RouteNames.quickServicesComputerRepair, extra: widget.bookingData.copyWith(category: category.title, selectedServiceTitle: 'Computer & Laptop Repair'));
-                              } else if (category.title == 'Beautician /Wellness') {
-                                context.pushNamed(RouteNames.quickServicesBeautyWellness, extra: widget.bookingData.copyWith(category: category.title, selectedServiceTitle: 'Beauty & Wellness'));
                               } else {
                                 _showSubServicesModal(context, category);
                               }
@@ -369,6 +373,8 @@ class _ServiceCategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
       decoration: BoxDecoration(
         color: isSelected ? AppColors.primaryGold.withOpacity(0.1) : Theme.of(context).cardTheme.color,
@@ -386,7 +392,7 @@ class _ServiceCategoryCard extends StatelessWidget {
               fit: BoxFit.contain
             )
           else
-            Icon(category.icon, color: isSelected ? AppColors.primaryGold : const Color(0xFF324461), size: 40),
+            Icon(category.icon, color: isSelected ? AppColors.primaryGold : Theme.of(context).iconTheme.color ?? const Color(0xFF324461), size: 40),
           const SizedBox(height: 10),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4.0),
@@ -396,7 +402,7 @@ class _ServiceCategoryCard extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: isSelected ? AppColors.primaryGold : null,
+                color: isSelected ? AppColors.primaryGold : (isDark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                 height: 1.2,
               ),

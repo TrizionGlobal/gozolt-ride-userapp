@@ -27,7 +27,7 @@ class QuickServicesPriceSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        if (bookingData.selectedAddons.isNotEmpty || (showAdditionalDetails && (bookingData.describeIssue?.trim().isNotEmpty == true || bookingData.uploadedImages?.isNotEmpty == true))) ...[
+        if (bookingData.selectedAddons.isNotEmpty || (showAdditionalDetails && (bookingData.describeIssue?.trim().isNotEmpty == true || bookingData.uploadedImages?.isNotEmpty == true || bookingData.whatYouNeed?.trim().isNotEmpty == true || bookingData.requirementDescription?.trim().isNotEmpty == true))) ...[
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -39,7 +39,7 @@ class QuickServicesPriceSummary extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  (bookingData.selectedAddons.isNotEmpty && (showAdditionalDetails && (bookingData.describeIssue?.trim().isNotEmpty == true || bookingData.uploadedImages?.isNotEmpty == true)))
+                  (bookingData.selectedAddons.isNotEmpty && (showAdditionalDetails && (bookingData.describeIssue?.trim().isNotEmpty == true || bookingData.uploadedImages?.isNotEmpty == true || bookingData.whatYouNeed?.trim().isNotEmpty == true || bookingData.requirementDescription?.trim().isNotEmpty == true)))
                       ? 'Selected Add-ons & Details'
                       : (bookingData.selectedAddons.isNotEmpty)
                           ? 'Selected Add-ons'
@@ -70,8 +70,44 @@ class QuickServicesPriceSummary extends StatelessWidget {
                   }),
                 ],
 
-                if (bookingData.selectedAddons.isNotEmpty && (showAdditionalDetails && (bookingData.describeIssue?.trim().isNotEmpty == true || bookingData.uploadedImages?.isNotEmpty == true)))
+                if (bookingData.selectedAddons.isNotEmpty && (showAdditionalDetails && (bookingData.describeIssue?.trim().isNotEmpty == true || bookingData.uploadedImages?.isNotEmpty == true || bookingData.whatYouNeed?.trim().isNotEmpty == true || bookingData.requirementDescription?.trim().isNotEmpty == true)))
                   const Divider(height: 24),
+                if (showAdditionalDetails && bookingData.whatYouNeed?.trim().isNotEmpty == true) ...[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.help_outline, size: 18, color: Colors.grey),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'What you need: ${bookingData.whatYouNeed!}',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[700],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                ],
+                if (showAdditionalDetails && bookingData.requirementDescription?.trim().isNotEmpty == true) ...[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.description_outlined, size: 18, color: Colors.grey),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Requirement: ${bookingData.requirementDescription!}',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[700],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                ],
                 if (showAdditionalDetails && bookingData.describeIssue?.trim().isNotEmpty == true) ...[
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,7 +117,9 @@ class QuickServicesPriceSummary extends StatelessWidget {
                       Expanded(
                         child: Text(
                           'Issue description: ${bookingData.describeIssue!}',
-                          style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700]),
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[700],
+                          ),
                         ),
                       ),
                     ],
@@ -186,6 +224,19 @@ class QuickServicesPriceSummary extends StatelessWidget {
                   ),
                 ],
               ),
+              if (bookingData.category.toLowerCase().contains('beauty') || bookingData.category.toLowerCase().contains('wellness')) ...[
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Selected Treatments', style: AppTextStyles.bodyMedium),
+                    Text(
+                      '€${(bookingData.beautyTreatmentsSubtotal ?? 0.0).toStringAsFixed(2)}',
+                      style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ],
               if (bookingData.materialCost > 0) ...[
                 const SizedBox(height: 8),
                 Row(
@@ -197,7 +248,9 @@ class QuickServicesPriceSummary extends StatelessWidget {
                             ? 'Cleaning Materials Included'
                             : (bookingData.materialPreference?.toLowerCase().contains('tool') == true
                                 ? 'Tools Included'
-                                : 'Materials Included'),
+                                : (bookingData.materialPreference?.toLowerCase().contains('product') == true
+                                    ? 'Products Included'
+                                    : 'Materials Included')),
                         style: AppTextStyles.bodyMedium,
                       ),
                     ),
@@ -424,9 +477,11 @@ class QuickServicesPriceSummary extends StatelessWidget {
                     Expanded(
                       child: Text(
                         (() {
+                          final isBeauty = bookingData.category.toLowerCase().contains('beauty') || bookingData.category.toLowerCase().contains('wellness');
+                          final balanceText = isBeauty ? 'selected treatments total' : 'hours × rate';
                           String baseNote = note != null && note!.isNotEmpty
-                              ? '$note\n\nNote: Pay the upfront fee${bookingData.materialCost > 0 ? " and materials/tools cost" : ""} now. The remaining balance (hours × rate) is paid directly to the service person after the service.'
-                              : 'Note: Pay the upfront fee${bookingData.materialCost > 0 ? " and materials/tools cost" : ""} now. The remaining balance (hours × rate) is paid directly to the service person after the service completed.';
+                              ? '$note\n\nNote: Pay the upfront fee${bookingData.materialCost > 0 ? " and materials/tools cost" : ""} now. The remaining balance ($balanceText) is paid directly to the service person after the service.'
+                              : 'Note: Pay the upfront fee${bookingData.materialCost > 0 ? " and materials/tools cost" : ""} now. The remaining balance ($balanceText) is paid directly to the service person after the service completed.';
                           return baseNote;
                         })(),
                         style: AppTextStyles.bodySmall.copyWith(

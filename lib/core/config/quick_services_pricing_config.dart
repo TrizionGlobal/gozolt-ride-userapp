@@ -33,6 +33,16 @@ class QuickServicesPricingConfig {
 
   static String expertVisitName(String category, {String? selectedServiceTitle}) {
     final lowerCat = category.toLowerCase();
+    final lowerTitle = selectedServiceTitle?.toLowerCase() ?? '';
+    
+    if (lowerTitle == 'painter' || lowerTitle == 'event organisers' || lowerTitle == 'suppliers' || lowerCat == 'other services') {
+      return 'Service Agent/hr';
+    }
+    
+    if (lowerCat.contains('beauty') || lowerCat.contains('wellness')) {
+      return 'Specialist Visit/hr';
+    }
+    
     if (lowerCat.contains('security') || lowerCat.contains('bouncer') || lowerCat.contains('hire') || lowerCat.contains('person')) {
       return 'Hiring Person/hr';
     } else if (lowerCat.contains('mechanic')) {

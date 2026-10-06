@@ -411,30 +411,11 @@ class QuickServiceBookingData {
   }
 
   String get expertVisitName {
-    final lowerCat = category.toLowerCase();
-    if (lowerCat.contains('security') || lowerCat.contains('bouncer')) {
-      return 'Hiring Person/hr';
-    } else if (lowerCat.contains('mechanic')) {
-      return 'Mechanic Visit/hr';
-    } else if (lowerCat.contains('electric')) {
-      if (selectedServiceTitle?.contains('Commercial') == true || selectedServiceTitle?.contains('Lift') == true || selectedServiceTitle?.contains('Events') == true) {
-        return 'Mechanic Visit/hr';
-      }
-      return 'Expert Visit/hr';
-    } else if (lowerCat.contains('engineer') || 
-               lowerCat.contains('computer') ||
-               lowerCat.contains('printer') ||
-               lowerCat.contains('mobile') ||
-               lowerCat.contains('technician')) {
-      return 'Engineering Visit/hr';
-    } else if (lowerCat.contains('wash')) {
-      return 'Service Agent Visit/hr';
-    }
-    return 'Expert Visit/hr';
+    return QuickServicesPricingConfig.expertVisitName(category, selectedServiceTitle: selectedServiceTitle);
   }
 
   double get materialCost =>
-      (materialPreference == 'Bring materials' || materialPreference == 'Bring tools') ? QuickServicesPricingConfig.getMaterialCost(servicePricingKey) : 0.0;
+      (materialPreference == 'Bring materials' || materialPreference == 'Bring tools' || materialPreference == 'Bring products') ? QuickServicesPricingConfig.getMaterialCost(servicePricingKey) : 0.0;
 
   double get totalEstimatedHours {
     double addonHours = 0.0;

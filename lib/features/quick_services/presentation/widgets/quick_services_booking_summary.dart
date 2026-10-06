@@ -95,9 +95,9 @@ class QuickServicesBookingSummary extends StatelessWidget {
                   children: [
                     Text('Customer: ${bookingData.userName}', style: AppTextStyles.bodySmall),
                     const SizedBox(height: 2),
-                    Text('Email: ${bookingData.userEmail}', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600], fontSize: 12)),
+                    Text('Email: ${bookingData.userEmail}', style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[600], fontSize: 12)),
                     const SizedBox(height: 2),
-                    Text('Phone: ${bookingData.userPhone}', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600], fontSize: 12)),
+                    Text('Phone: ${bookingData.userPhone}', style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[600], fontSize: 12)),
                   ],
                 ),
               ),
@@ -113,7 +113,9 @@ class QuickServicesBookingSummary extends StatelessWidget {
                 Icon(
                   bookingData.materialPreference!.toLowerCase().contains('tool') 
                       ? Icons.handyman_outlined 
-                      : Icons.inventory_2_outlined, 
+                      : (bookingData.materialPreference!.toLowerCase().contains('product')
+                          ? Icons.clean_hands
+                          : Icons.inventory_2_outlined), 
                   size: 18, color: Colors.grey
                 ),
                 const SizedBox(width: 10),
@@ -121,7 +123,9 @@ class QuickServicesBookingSummary extends StatelessWidget {
                   child: Text(
                     bookingData.materialPreference!.toLowerCase().contains('tool')
                         ? 'Tools: ${bookingData.materialPreference}'
-                        : 'Materials: ${bookingData.materialPreference}',
+                        : (bookingData.materialPreference!.toLowerCase().contains('product')
+                            ? 'Products: ${bookingData.materialPreference}'
+                            : 'Materials: ${bookingData.materialPreference}'),
                     style: AppTextStyles.bodySmall,
                   ),
                 ),
@@ -139,6 +143,47 @@ class QuickServicesBookingSummary extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text('Vehicle Type: ${bookingData.carType}', style: AppTextStyles.bodySmall),
+                ),
+              ],
+            ),
+          ],
+          
+          // Beauty & Wellness specific (if present)
+          if (bookingData.beautySelectedTreatments != null && bookingData.beautySelectedTreatments!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.spa, size: 18, color: Colors.grey),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text('Treatments: ${bookingData.beautySelectedTreatments!.join(', ')}', style: AppTextStyles.bodySmall),
+                ),
+              ],
+            ),
+          ],
+          if (bookingData.peopleCount != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.group, size: 18, color: Colors.grey),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text('People: ${bookingData.peopleCount}', style: AppTextStyles.bodySmall),
+                ),
+              ],
+            ),
+          ],
+          if (bookingData.professionalPreference != null && bookingData.professionalPreference!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.person_search, size: 18, color: Colors.grey),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text('Professional Preference: ${bookingData.professionalPreference}', style: AppTextStyles.bodySmall),
                 ),
               ],
             ),
@@ -291,6 +336,123 @@ class QuickServicesBookingSummary extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text('Observed Level: ${bookingData.pestObservedLevel}', style: AppTextStyles.bodySmall),
+                ),
+              ],
+            ),
+          ],
+          if (bookingData.paintingAreas != null && bookingData.paintingAreas!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.format_paint, size: 18, color: Colors.grey),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text('Painting Areas: ${bookingData.paintingAreas!.join(', ')}', style: AppTextStyles.bodySmall),
+                ),
+              ],
+            ),
+          ],
+          if (bookingData.roomCount != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.meeting_room, size: 18, color: Colors.grey),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text('Number of Rooms/Areas: ${bookingData.roomCount}', style: AppTextStyles.bodySmall),
+                ),
+              ],
+            ),
+          ],
+          if (bookingData.eventType != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.event, size: 18, color: Colors.grey),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text('Event Type: ${bookingData.eventType}', style: AppTextStyles.bodySmall),
+                ),
+              ],
+            ),
+          ],
+          if (bookingData.guestCount != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.people, size: 18, color: Colors.grey),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text('Estimated Guests: ${bookingData.guestCount}', style: AppTextStyles.bodySmall),
+                ),
+              ],
+            ),
+          ],
+          if (bookingData.eventDuration != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.timer, size: 18, color: Colors.grey),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text('Duration: ${bookingData.eventDuration}', style: AppTextStyles.bodySmall),
+                ),
+              ],
+            ),
+          ],
+          if (bookingData.supplyCategory != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.category, size: 18, color: Colors.grey),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text('Category: ${bookingData.supplyCategory}', style: AppTextStyles.bodySmall),
+                ),
+              ],
+            ),
+          ],
+          if (bookingData.itemRequired != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.inventory_2, size: 18, color: Colors.grey),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text('Item: ${bookingData.itemRequired}', style: AppTextStyles.bodySmall),
+                ),
+              ],
+            ),
+          ],
+          if (bookingData.supplyQuantity != null && bookingData.supplyUnit != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.shopping_cart, size: 18, color: Colors.grey),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text('Quantity: ${bookingData.supplyQuantity} ${bookingData.supplyUnit}', style: AppTextStyles.bodySmall),
+                ),
+              ],
+            ),
+          ],
+          if (bookingData.requestType != null) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.assignment, size: 18, color: Colors.grey),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text('Type: ${bookingData.requestType}', style: AppTextStyles.bodySmall),
                 ),
               ],
             ),

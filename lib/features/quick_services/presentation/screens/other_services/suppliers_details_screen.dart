@@ -10,6 +10,7 @@ import '../../../../../core/router/route_names.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_additional_details.dart';
+import '../../../../../core/config/quick_services_pricing_config.dart';
 
 class SuppliersDetailsScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
@@ -88,10 +89,10 @@ class _SuppliersDetailsScreenState extends ConsumerState<SuppliersDetailsScreen>
       backgroundColor: isDark ? const Color(0xFF121212) : const Color(0xFFF5F6F8),
       body: Column(
         children: [
-          const QuickServicesHeader(
+          QuickServicesHeader(
             currentStep: 1,
             title: 'Service Requirements',
-            subtitle: 'Suppliers',
+            subtitle: widget.bookingData.selectedServiceTitle ?? 'Suppliers',
           ),
           Expanded(
             child: SingleChildScrollView(

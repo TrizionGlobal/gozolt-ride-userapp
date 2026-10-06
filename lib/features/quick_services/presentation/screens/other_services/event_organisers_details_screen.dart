@@ -9,6 +9,7 @@ import '../../../../../core/router/route_names.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_additional_details.dart';
+import '../../../../../core/config/quick_services_pricing_config.dart';
 
 class EventOrganisersDetailsScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
@@ -83,11 +84,11 @@ class _EventOrganisersDetailsScreenState extends ConsumerState<EventOrganisersDe
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(
+          QuickServicesHeader(
             currentStep: 1,
-              title: 'Service Requirements',
-            subtitle: 'Event Organisers',
-            ),
+            title: 'Service Requirements',
+            subtitle: widget.bookingData.selectedServiceTitle ?? 'Event Organisers',
+          ),
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
@@ -159,8 +160,8 @@ class _EventOrganisersDetailsScreenState extends ConsumerState<EventOrganisersDe
                           describeIssue: _describeIssueController.text.trim().isNotEmpty ? _describeIssueController.text.trim() : null,
                           uploadedImages: _selectedImages.map((e) => e.path).toList(),
                           subtotal: 0.0,
-                        baseEstimatedHours: 0.0,
-                        materialPreference: _materialPreference,
+                          baseEstimatedHours: 0.0,
+                          materialPreference: _materialPreference,
                         );
 
                         if (_selectedImages.isNotEmpty) {

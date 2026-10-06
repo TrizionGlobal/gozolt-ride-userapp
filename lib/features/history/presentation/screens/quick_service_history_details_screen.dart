@@ -98,11 +98,27 @@ class _QuickServiceHistoryDetailsScreenState extends ConsumerState<QuickServiceH
     return 6.00;
   }
 
+  double _getBeautyTotal(QuickServiceHistoryModel booking) {
+    if (booking.serviceCategory.toLowerCase().contains('beauty') || booking.serviceCategory.toLowerCase().contains('wellness')) {
+      double addonsTotal = 0.0;
+      for (var addon in booking.addOns) {
+        if (addon is Map) {
+          int count = int.tryParse(addon['count']?.toString() ?? '1') ?? 1;
+          double price = double.tryParse((addon['price'] ?? addon['pricePerUnit'])?.toString() ?? '0.0') ?? 0.0;
+          addonsTotal += (price * count);
+        }
+      }
+      return addonsTotal + booking.upfrontFee + booking.materialCost;
+    }
+    return booking.totalAmount;
+  }
+
   @override
   Widget build(BuildContext context) {
     final booking = _booking;
     final status = booking.status.toUpperCase();
-    final double remainingBalance = booking.totalAmount - (booking.upfrontFee + booking.materialCost);
+    final double computedTotal = _getBeautyTotal(booking);
+    final double remainingBalance = computedTotal - (booking.upfrontFee + booking.materialCost);
 
     final displayBookingId = 'GZ-QS-${booking.id.substring(0, 8).toUpperCase()}';
     final displayDate = DateFormat('dd MMM yyyy').format(booking.bookingDate);
@@ -188,7 +204,7 @@ Time: $displayTime
                           Text(
                             'Your quick service is completed. Please complete the final payment of €${remainingBalance > 0 ? remainingBalance.toStringAsFixed(2) : '0.00'} to finalize the booking.\n(Already Paid: €${(booking.upfrontFee + booking.materialCost).toStringAsFixed(2)})',
                             textAlign: TextAlign.center,
-                            style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[700]),
+                            style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[700]),
                           ),
                           const SizedBox(height: 24),
                           SizedBox(
@@ -291,7 +307,7 @@ Time: $displayTime
                             Text(
                               'Share this PIN with the worker to start the service',
                               textAlign: TextAlign.center,
-                              style: AppTextStyles.labelSmall.copyWith(color: Colors.grey[600], fontSize: 11),
+                              style: AppTextStyles.labelSmall.copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[600], fontSize: 11),
                             ),
                           ],
                         ],
@@ -344,7 +360,11 @@ Time: $displayTime
                         // Service Title
                         Row(
                           children: [
-                            const Icon(Icons.home_repair_service, size: 18, color: Colors.grey),
+                            Icon(
+                              booking.serviceTitle.toLowerCase() == 'beauty & wellness' ? Icons.spa : Icons.home_repair_service, 
+                              size: 18, 
+                              color: Colors.grey
+                            ),
                             const SizedBox(width: 10),
                             Text(booking.serviceTitle, style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)),
                           ],
@@ -393,11 +413,11 @@ Time: $displayTime
                                     Text('Customer: ${booking.userName}', style: AppTextStyles.bodySmall),
                                     if (booking.userEmail != null) ...[
                                       const SizedBox(height: 2),
-                                      Text('Email: ${booking.userEmail}', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600], fontSize: 12)),
+                                      Text('Email: ${booking.userEmail}', style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[600], fontSize: 12)),
                                     ],
                                     if (booking.userPhone != null) ...[
                                       const SizedBox(height: 2),
-                                      Text('Phone: ${booking.userPhone}', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600], fontSize: 12)),
+                                      Text('Phone: ${booking.userPhone}', style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[600], fontSize: 12)),
                                     ],
                                   ],
                                 ),
@@ -410,14 +430,17 @@ Time: $displayTime
                           const SizedBox(height: 16),
                           const Divider(),
                           const SizedBox(height: 12),
-                          ...booking.options.entries.map((e) {
+                          ...booking.options.entries
+                              .where((e) => e.key != 'isValidated' && e.key != 'validationPin' && e.key != 'beautyTreatmentsSubtotal')
+                              .where((e) => e.value != null && e.value.toString().trim().isNotEmpty)
+                              .map((e) {
                             if (e.value is List) {
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 12.0),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(e.key, style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade700, fontWeight: FontWeight.w600)),
+                                    Text(e.key, style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey.shade700, fontWeight: FontWeight.w600)),
                                     const SizedBox(height: 8),
                                     ...(e.value as List).map((item) {
                                       if (item is Map) {
@@ -439,7 +462,7 @@ Time: $displayTime
                                                 child: Row(
                                                   crossAxisAlignment: CrossAxisAlignment.start,
                                                   children: [
-                                                    Text('${entry.key}: ', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey.shade700)),
+                                                    Text('${entry.key}: ', style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey.shade700)),
                                                     Expanded(child: Text('${entry.value}', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold))),
                                                   ],
                                                 ),
@@ -469,13 +492,9 @@ Time: $displayTime
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
+                                    Text(e.key, style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey.shade700)),
+                                    const SizedBox(width: 16),
                                     Expanded(
-                                      flex: 2,
-                                      child: Text(e.key, style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade700)),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      flex: 3,
                                       child: Text(
                                         '${e.value}',
                                         textAlign: TextAlign.end,
@@ -556,7 +575,7 @@ Time: $displayTime
                                 Expanded(
                                   child: Text(
                                     'Issue description: ${booking.requirements!}',
-                                    style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700]),
+                                    style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[700]),
                                   ),
                                 ),
                               ],
@@ -664,23 +683,39 @@ Time: $displayTime
                             Text('€${booking.upfrontFee.toStringAsFixed(2)}', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('Final Service Charge', style: AppTextStyles.bodyMedium),
-                            Text(
-                              '€${(booking.totalAmount - booking.upfrontFee - booking.materialCost).clamp(0.0, double.infinity).toStringAsFixed(2)}', 
-                              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)
-                            ),
-                          ],
-                        ),
+                        if (booking.serviceCategory.toLowerCase().contains('beauty') || booking.serviceCategory.toLowerCase().contains('wellness') || status == 'COMPLETED' || status == 'AWAITING_PAYMENT') ...[
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                (booking.serviceCategory.toLowerCase().contains('beauty') || booking.serviceCategory.toLowerCase().contains('wellness'))
+                                    ? 'Selected Treatments'
+                                    : 'Final Service Charge', 
+                                style: AppTextStyles.bodyMedium
+                              ),
+                              Text(
+                                '€${(computedTotal - booking.upfrontFee - booking.materialCost).clamp(0.0, double.infinity).toStringAsFixed(2)}', 
+                                style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)
+                              ),
+                            ],
+                          ),
+                        ],
                         if (booking.materialCost > 0) ...[
                           const SizedBox(height: 8),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text('Materials Included', style: AppTextStyles.bodyMedium),
+                              Text(
+                                booking.serviceCategory.toLowerCase().contains('wash')
+                                    ? 'Cleaning Materials Included'
+                                    : (booking.options['Material Preference']?.toString().toLowerCase().contains('tool') == true
+                                        ? 'Tools Included'
+                                        : (booking.options['Material Preference']?.toString().toLowerCase().contains('product') == true
+                                            ? 'Products Included'
+                                            : 'Materials Included')),
+                                style: AppTextStyles.bodyMedium,
+                              ),
                               Text('€${booking.materialCost.toStringAsFixed(2)}', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
                             ],
                           ),
@@ -716,7 +751,7 @@ Time: $displayTime
                               style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
                             ),
                             Text(
-                              '€${booking.totalAmount.toStringAsFixed(2)}',
+                              '€${computedTotal.toStringAsFixed(2)}',
                               style: AppTextStyles.titleMedium.copyWith(
                                 color: Theme.of(context).primaryColor,
                                 fontWeight: FontWeight.bold,

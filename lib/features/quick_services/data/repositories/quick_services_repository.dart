@@ -193,6 +193,7 @@ class QuickServicesRepository {
       if (data.dressPreference != null) options['Dress Preference'] = data.dressPreference;
       if (data.alcoholServed != null) options['Alcohol Served'] = data.alcoholServed;
       if (data.beautySelectedTreatments != null && data.beautySelectedTreatments!.isNotEmpty) options['Selected Treatments'] = data.beautySelectedTreatments;
+      if (data.beautyTreatmentsSubtotal != null && data.beautyTreatmentsSubtotal! > 0) options['beautyTreatmentsSubtotal'] = data.beautyTreatmentsSubtotal;
       if (data.peopleCount != null) options['People Count'] = data.peopleCount;
       if (data.guestCount != null) options['Guest Count'] = data.guestCount;
       

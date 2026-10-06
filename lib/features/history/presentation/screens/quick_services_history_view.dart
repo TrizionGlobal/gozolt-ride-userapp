@@ -114,7 +114,7 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
             _selectedFilter == 'Scheduled'
                 ? Icons.calendar_month
                 : Icons.home_repair_service_outlined,
-            color: AppColors.textMuted,
+            color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight,
             size: 56,
           ),
           const SizedBox(height: 16),
@@ -122,7 +122,7 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
             _selectedFilter == 'All'
                 ? 'No services booked yet'
                 : 'No ${_selectedFilter.toLowerCase()} services',
-            style: AppTextStyles.titleMedium.copyWith(color: AppColors.textSecondary),
+            style: AppTextStyles.titleMedium.copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
           ),
           const SizedBox(height: 6),
           Text(
@@ -166,6 +166,7 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
       case 'gardening': return Icons.yard;
       case 'plumbing': return Icons.plumbing;
       case 'carpenter': return Icons.carpenter;
+      case 'painter': return Icons.format_paint;
       case 'mobile': return Icons.smartphone;
       case 'laptop/computer': return Icons.laptop;
       case 'printer / scanner': return Icons.print;
@@ -182,6 +183,7 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
       case 'vehicle mechanic': return Icons.handyman;
       case 'vehicle wash': return Icons.local_car_wash;
       case 'pc & mobile repair': return Icons.computer;
+      case 'beauty & wellness': return Icons.spa;
     }
     
     final c = category.toLowerCase();
@@ -195,6 +197,21 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
     }
     
     return Icons.home_repair_service;
+  }
+
+  double _getBeautyTotal(QuickServiceHistoryModel booking) {
+    if (booking.serviceCategory.toLowerCase().contains('beauty') || booking.serviceCategory.toLowerCase().contains('wellness')) {
+      double addonsTotal = 0.0;
+      for (var addon in booking.addOns) {
+        if (addon is Map) {
+          int count = int.tryParse(addon['count']?.toString() ?? '1') ?? 1;
+          double price = double.tryParse((addon['price'] ?? addon['pricePerUnit'])?.toString() ?? '0.0') ?? 0.0;
+          addonsTotal += (price * count);
+        }
+      }
+      return addonsTotal + booking.upfrontFee + booking.materialCost;
+    }
+    return booking.totalAmount;
   }
 
   Widget _buildHistoryCard(QuickServiceHistoryModel booking) {
@@ -218,6 +235,11 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
         displayStatus = 'Scheduled';
     }
 
+    String title = booking.serviceTitle;
+    if (booking.serviceCategory.toLowerCase().contains('beauty') || booking.serviceCategory.toLowerCase().contains('wellness')) {
+      title = 'Beauty & Wellness';
+    }
+
     String subtitle = booking.serviceCategory;
     final validAddOns = booking.addOns.where((a) => a is Map).toList();
     
@@ -229,19 +251,36 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
         subtitle = '${names.take(2).join(', ')} +${names.length - 2} more';
       }
     } else if (booking.options.isNotEmpty) {
-      final firstVal = booking.options.values.first;
-      if (firstVal is List && firstVal.isNotEmpty) {
-        if (firstVal.first is Map) {
-          final firstItem = firstVal.first as Map;
-          final parts = [if (firstItem['Make'] != null) firstItem['Make'], if (firstItem['Model'] != null) firstItem['Model'], if (firstItem['Type'] != null && firstItem['Make'] == null) firstItem['Type']].where((e) => e != null);
-          subtitle = parts.isNotEmpty ? parts.join(' ') : 'Multiple items';
-          if (firstVal.length > 1) subtitle += ' +${firstVal.length - 1} more';
+      final visibleOptions = booking.options.entries
+          .where((e) => e.key != 'isValidated' && e.key != 'validationPin' && e.key != 'beautyTreatmentsSubtotal')
+          .toList();
+      
+      if (visibleOptions.isNotEmpty) {
+        final treatmentsOpt = visibleOptions.where((e) => e.key == 'Selected Treatments').firstOrNull;
+        if (treatmentsOpt != null) {
+          final firstVal = treatmentsOpt.value;
+          if (firstVal is List && firstVal.isNotEmpty) {
+            subtitle = firstVal.first.toString();
+            if (firstVal.length > 1) subtitle += ' +${firstVal.length - 1} more';
+          } else {
+            subtitle = firstVal.toString();
+          }
         } else {
-          subtitle = firstVal.first.toString();
-          if (firstVal.length > 1) subtitle += ' +${firstVal.length - 1} more';
+          final firstVal = visibleOptions.first.value;
+          if (firstVal is List && firstVal.isNotEmpty) {
+            if (firstVal.first is Map) {
+              final firstItem = firstVal.first as Map;
+              final parts = [if (firstItem['Make'] != null) firstItem['Make'], if (firstItem['Model'] != null) firstItem['Model'], if (firstItem['Type'] != null && firstItem['Make'] == null) firstItem['Type']].where((e) => e != null);
+              subtitle = parts.isNotEmpty ? parts.join(' ') : 'Multiple items';
+              if (firstVal.length > 1) subtitle += ' +${firstVal.length - 1} more';
+            } else {
+              subtitle = firstVal.first.toString();
+              if (firstVal.length > 1) subtitle += ' +${firstVal.length - 1} more';
+            }
+          } else {
+            subtitle = firstVal.toString();
+          }
         }
-      } else {
-        subtitle = firstVal.toString();
       }
     }
 
@@ -271,7 +310,7 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppColors.backgroundLight,
+                          color: AppColors.primaryGold.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
@@ -286,14 +325,14 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              booking.serviceTitle,
+                              title,
                               style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
                             ),
                             if (booking.addOns.isNotEmpty || booking.options.isNotEmpty) ...[
                               const SizedBox(height: 4),
                               Text(
                                 subtitle,
-                                style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                                style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -325,16 +364,16 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.calendar_today, size: 16, color: AppColors.textMuted),
+                    Icon(Icons.calendar_today, size: 16, color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight),
                     const SizedBox(width: 8),
                     Text(
                       DateFormat('dd MMM yyyy, h:mm a').format(booking.bookingDate),
-                      style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                      style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                     ),
                   ],
                 ),
                 Text(
-                  '€${booking.totalAmount.toStringAsFixed(2)}',
+                  '€${_getBeautyTotal(booking).toStringAsFixed(2)}',
                   style: AppTextStyles.titleMedium.copyWith(
                     color: AppColors.primaryGold,
                     fontWeight: FontWeight.bold,

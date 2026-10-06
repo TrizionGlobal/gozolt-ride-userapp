@@ -11,6 +11,7 @@ import '../../../../../core/router/route_names.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_additional_details.dart';
+import '../../../../../core/config/quick_services_pricing_config.dart';
 
 class PainterDetailsScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
@@ -36,7 +37,6 @@ class _PainterDetailsScreenState extends ConsumerState<PainterDetailsScreen> {
   final List<String> _selectedPaintingAreas = [];
 
   int _roomCount = 1;
-  String? _paintArrangement;
 
   @override
   void initState() {
@@ -57,7 +57,7 @@ class _PainterDetailsScreenState extends ConsumerState<PainterDetailsScreen> {
       _roomCount = widget.bookingData.roomCount!;
     }
     if (widget.bookingData.paintProvided != null) {
-      _paintArrangement = widget.bookingData.paintProvided! ? 'Painter Brings Paint' : 'Customer Provides Paint';
+      _materialPreference = widget.bookingData.paintProvided! ? 'Bring materials' : 'Use my materials';
     }
     if (widget.bookingData.uploadedImages != null) {
       _selectedImages.addAll(widget.bookingData.uploadedImages!.map((path) => XFile(path)));
@@ -113,10 +113,10 @@ class _PainterDetailsScreenState extends ConsumerState<PainterDetailsScreen> {
       backgroundColor: const Color(0xFFF5F6F8), // Matches screenshot background
       body: Column(
         children: [
-          const QuickServicesHeader(
+          QuickServicesHeader(
             currentStep: 1,
             title: 'Service Requirements',
-            subtitle: 'Painter',
+            subtitle: widget.bookingData.selectedServiceTitle ?? 'Painter',
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -243,35 +243,68 @@ class _PainterDetailsScreenState extends ConsumerState<PainterDetailsScreen> {
                     ),
                   ),
 
-                  _buildCard(
-                    title: 'Paint Arrangement',
-                    child: Column(
-                      children: ['Customer Provides Paint', 'Painter Brings Paint'].map((text) {
-                        return InkWell(
-                          onTap: () => setState(() => _paintArrangement = text),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: Row(
-                              children: [
-                                SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: Radio<String>(
-                                    value: text,
-                                    groupValue: _paintArrangement,
-                                    onChanged: (val) => setState(() => _paintArrangement = val),
-                                    activeColor: AppColors.primaryGold,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Text(text, style: AppTextStyles.bodyMedium),
-                              ],
-                            ),
+                  Text(
+                    'Required Materials',
+                    style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardTheme.color,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
+                        width: _materialPreference == 'Bring materials' ? 1.5 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGold.withOpacity(0.1),
+                            shape: BoxShape.circle,
                           ),
-                        );
-                      }).toList(),
+                          child: const Icon(Icons.format_paint, size: 24, color: AppColors.primaryGold),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Bring materials', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 2),
+                              Text(
+                                _materialPreference == 'Bring materials' ? '+€${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.category).toStringAsFixed(2)} extra charge' : 'Use my materials (No extra charge)',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey[600],
+                                  fontWeight: _materialPreference == 'Bring materials' ? FontWeight.bold : FontWeight.normal,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Transform.scale(
+                          scale: 0.8,
+                          child: Switch.adaptive(
+                            value: _materialPreference == 'Bring materials',
+                            activeColor: Theme.of(context).brightness == Brightness.dark ? AppColors.backgroundDark : Colors.white,
+                            activeTrackColor: AppColors.primaryGold,
+                            inactiveTrackColor: Colors.grey[300],
+                            onChanged: (val) {
+                              setState(() {
+                                _materialPreference = val ? 'Bring materials' : 'Use my materials';
+                              });
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+                  const SizedBox(height: 16),
 
                   QuickServicesAdditionalDetails(
                     whatYouNeedController: _whatYouNeedController,
@@ -303,7 +336,7 @@ class _PainterDetailsScreenState extends ConsumerState<PainterDetailsScreen> {
                         propertyType: _propertyType,
                         paintingAreas: _selectedPaintingAreas,
                         roomCount: _roomCount,
-                        paintProvided: _paintArrangement == 'Painter Brings Paint',
+                        paintProvided: _materialPreference == 'Bring materials',
                         whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty ? _whatYouNeedController.text.trim() : null,
                         describeIssue: _describeIssueController.text.trim().isNotEmpty ? _describeIssueController.text.trim() : null,
                         uploadedImages: _selectedImages.map((e) => e.path).toList(),

@@ -14,6 +14,7 @@ import '../../../../../core/router/route_names.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_price_summary.dart';
 import '../../widgets/quick_services_header.dart';
+import '../../widgets/quick_services_booking_summary.dart';
 import '../../../../ride/data/models/saved_payment_method.dart';
 
 
@@ -53,8 +54,11 @@ class _OtherServicesReviewScreenState extends ConsumerState<OtherServicesReviewS
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(
-            currentStep: 2,title: 'Review & Book', subtitle: 'Other Services'),
+          QuickServicesHeader(
+            currentStep: 2,
+            title: 'Review & Book',
+            subtitle: _bookingData.selectedServiceTitle ?? 'Other Services',
+          ),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(20.0),
@@ -62,224 +66,15 @@ class _OtherServicesReviewScreenState extends ConsumerState<OtherServicesReviewS
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Service Summary Card
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardTheme.color,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Service Summary',
-                              style: AppTextStyles.titleMedium.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: const Color(0xFF324461),
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFFFF8E1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.settings,
-                                color: Color(0xFFF57F17),
-                                size: 20,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          bookingData.selectedServiceTitle ?? 'Other Services',
-                          style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 6),
-                        
-                        // Dynamic details based on service type
-                        if (bookingData.propertyType != null)
-                          Text('• Property Type: ${bookingData.propertyType}', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade800)),
-                        if (bookingData.paintingAreas != null && bookingData.paintingAreas!.isNotEmpty)
-                          Text('• Areas: ${bookingData.paintingAreas!.join(", ")}', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade800)),
-                        if (bookingData.roomCount != null)
-                          Text('• Number of Rooms/Areas: ${bookingData.roomCount}', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade800)),
-                        if (bookingData.paintProvided != null)
-                          Text('• Paint Provided By: ${bookingData.paintProvided! ? 'Painter Brings Paint' : 'Customer Provides Paint'}', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade800)),
-                        
-                        if (bookingData.eventType != null)
-                          Text('• Event Type: ${bookingData.eventType}', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade800)),
-                        if (bookingData.guestCount != null)
-                          Text('• Estimated Guests: ${bookingData.guestCount}', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade800)),
-                        if (bookingData.eventDuration != null)
-                          Text('• Duration: ${bookingData.eventDuration}', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade800)),
-
-                        if (bookingData.supplyCategory != null)
-                          Text('• Category: ${bookingData.supplyCategory}', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade800)),
-                        if (bookingData.itemRequired != null)
-                          Text('• Item: ${bookingData.itemRequired}', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade800)),
-                        if (bookingData.supplyQuantity != null && bookingData.supplyUnit != null)
-                          Text('• Quantity: ${bookingData.supplyQuantity} ${bookingData.supplyUnit}', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade800)),
-                        if (bookingData.requestType != null)
-                          Text('• Type: ${bookingData.requestType}', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade800)),
-
-                        const Divider(height: 24),
-                        Row(
-                          children: [
-                            const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
-                            const SizedBox(width: 8),
-                            Text(
-                              '${_formatDate(bookingData.scheduleDate)} • ${bookingData.scheduleTime.format(context)}',
-                              style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade800),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.location_on_outlined, size: 16, color: Colors.grey),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                bookingData.location.address,
-                                style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade800),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.person_outline, size: 16, color: Colors.grey),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                '${bookingData.userName} • ${bookingData.userPhone}',
-                                style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade800),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                  QuickServicesBookingSummary(
+                    bookingData: _bookingData,
+                    icon: _bookingData.category.toLowerCase() == 'home services' 
+                        ? Icons.home_repair_service 
+                        : _bookingData.category.toLowerCase() == 'events' 
+                            ? Icons.event 
+                            : Icons.build,
                   ),
-                  const SizedBox(height: 20),
-
-                  // Additional Details Section
-                  if ((bookingData.whatYouNeed != null && bookingData.whatYouNeed!.isNotEmpty) ||
-                      (bookingData.describeIssue != null && bookingData.describeIssue!.isNotEmpty) ||
-                      (bookingData.requirementDescription != null && bookingData.requirementDescription!.isNotEmpty) ||
-                      (bookingData.uploadedImages != null && bookingData.uploadedImages!.isNotEmpty)) ...[
-                    Text(
-                      'Additional Details',
-                      style: AppTextStyles.titleSmall.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF324461),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardTheme.color,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (bookingData.whatYouNeed != null && bookingData.whatYouNeed!.isNotEmpty) ...[
-                            Text(
-                              'What You Need',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: Colors.grey,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              bookingData.whatYouNeed!,
-                              style: AppTextStyles.bodyMedium,
-                            ),
-                            const SizedBox(height: 12),
-                          ],
-                          if (bookingData.describeIssue != null && bookingData.describeIssue!.isNotEmpty) ...[
-                            Text(
-                              'Issue Description',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: Colors.grey,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              bookingData.describeIssue!,
-                              style: AppTextStyles.bodyMedium,
-                            ),
-                            const SizedBox(height: 12),
-                          ],
-                          if (bookingData.requirementDescription != null && bookingData.requirementDescription!.isNotEmpty) ...[
-                            Text(
-                              'Requirement Description',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: Colors.grey,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              bookingData.requirementDescription!,
-                              style: AppTextStyles.bodyMedium,
-                            ),
-                            const SizedBox(height: 12),
-                          ],
-                          if (bookingData.uploadedImages != null && bookingData.uploadedImages!.isNotEmpty) ...[
-                            Text(
-                              'Uploaded Photos',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: Colors.grey,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            SizedBox(
-                              height: 70,
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: bookingData.uploadedImages!.length,
-                                itemBuilder: (context, index) {
-                                  final path = bookingData.uploadedImages![index];
-                                  return Container(
-                                    margin: const EdgeInsets.only(right: 8),
-                                    width: 70,
-                                    height: 70,
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: path.startsWith('http')
-                                                ? Image.network(path, fit: BoxFit.cover,)
-                                                : Image.file(File(path), fit: BoxFit.cover,),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
+                  const SizedBox(height: 16),
 
                   // Pricing Details Card
                   QuickServicesPriceSummary(bookingData: _bookingData, useGoCoins: _useGoCoins, onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),),
