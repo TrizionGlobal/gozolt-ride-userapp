@@ -459,7 +459,7 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
                 onPressed: () {
                   context.pushNamed(
                     RouteNames.airportTransferPassengerDetails,
-                    );
+                  );
                 },
               ),
               const SizedBox(height: 8),
@@ -711,8 +711,9 @@ class _TransferBenefitRow extends StatelessWidget {
             height: 38,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: AppColors.primaryGold.withValues(alpha: 0.16,
-            ),
+              color: AppColors.primaryGold.withValues(
+                alpha: 0.16,
+              ),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -726,9 +727,10 @@ class _TransferBenefitRow extends StatelessWidget {
             child: Text(
               title,
               style: AppTextStyles.bodyMedium.copyWith(
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight
-              ),
+                  fontWeight: FontWeight.w600,
+                  color: isDark
+                      ? AppColors.textPrimary
+                      : AppColors.textPrimaryLight),
             ),
           ),
           const SizedBox(width: 12),
