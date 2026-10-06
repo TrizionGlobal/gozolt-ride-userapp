@@ -118,8 +118,8 @@ class _AirportTransferReviewScreenState
           onConfirm: (
             PaymentMethodType type, {
             String? cardId,
-          }) {
-            if (!mounted) return;
+          }) async {
+            if (!mounted) return false;
 
             setState(() {
               _paymentMethodType = type;
@@ -127,6 +127,7 @@ class _AirportTransferReviewScreenState
             });
 
             paymentConfirmed = true;
+            return true;
           },
         );
       },
