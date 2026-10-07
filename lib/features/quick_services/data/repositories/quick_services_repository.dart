@@ -209,9 +209,10 @@ class QuickServicesRepository {
       if (data.bikeType != null) options['Bike Type'] = data.bikeType;
       if (data.truckType != null) options['Truck Type'] = data.truckType;
       
-      final double rawTotal = data.upfrontBookingFee + data.materialCost;
-      final double discountAmount = data.useGoCoins ? rawTotal.clamp(0.0, 6.0) : 0.0;
-      final double finalTotal = rawTotal - discountAmount;
+      final double treatmentsSubtotal = data.beautyTreatmentsSubtotal ?? 0.0;
+      final double upfrontRaw = data.upfrontBookingFee + data.materialCost;
+      final double discountAmount = data.useGoCoins ? upfrontRaw.clamp(0.0, 6.0) : 0.0;
+      final double finalTotal = upfrontRaw + treatmentsSubtotal - discountAmount;
       final String? estimatedPrice = QuickServicesPricingConfig.getEstimatedSparePrice(data.servicePricingKey);
 
       final payload = {

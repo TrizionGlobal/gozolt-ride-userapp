@@ -99,17 +99,6 @@ class _QuickServiceHistoryDetailsScreenState extends ConsumerState<QuickServiceH
   }
 
   double _getBeautyTotal(QuickServiceHistoryModel booking) {
-    if (booking.serviceCategory.toLowerCase().contains('beauty') || booking.serviceCategory.toLowerCase().contains('wellness')) {
-      double addonsTotal = 0.0;
-      for (var addon in booking.addOns) {
-        if (addon is Map) {
-          int count = int.tryParse(addon['count']?.toString() ?? '1') ?? 1;
-          double price = double.tryParse((addon['price'] ?? addon['pricePerUnit'])?.toString() ?? '0.0') ?? 0.0;
-          addonsTotal += (price * count);
-        }
-      }
-      return addonsTotal + booking.upfrontFee + booking.materialCost;
-    }
     return booking.totalAmount;
   }
 
@@ -118,7 +107,7 @@ class _QuickServiceHistoryDetailsScreenState extends ConsumerState<QuickServiceH
     final booking = _booking;
     final status = booking.status.toUpperCase();
     final double computedTotal = _getBeautyTotal(booking);
-    final double remainingBalance = computedTotal - (booking.upfrontFee + booking.materialCost);
+    final double remainingBalance = computedTotal - (booking.upfrontFee + booking.materialCost - booking.discountAmount);
 
     final displayBookingId = 'GZ-QS-${booking.id.substring(0, 8).toUpperCase()}';
     final displayDate = DateFormat('dd MMM yyyy').format(booking.bookingDate);
@@ -233,7 +222,7 @@ Time: $displayTime
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: Colors.white, // QR code needs white background for contrast
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
@@ -247,14 +236,22 @@ Time: $displayTime
                         children: [
                           Text(
                             'Present this to service person',
-                            style: AppTextStyles.titleMedium.copyWith(color: AppColors.textPrimaryLight),
+                            style: AppTextStyles.titleMedium,
                           ),
                           const SizedBox(height: 16),
                           QrImageView(
                             data: qrDataJson,
                             version: QrVersions.auto,
                             size: 150.0,
-                            backgroundColor: Colors.white,
+                            backgroundColor: Colors.transparent,
+                            eyeStyle: QrEyeStyle(
+                              eyeShape: QrEyeShape.square,
+                              color: Theme.of(context).brightness == Brightness.dark ? AppColors.primaryGold : Colors.black,
+                            ),
+                            dataModuleStyle: QrDataModuleStyle(
+                              dataModuleShape: QrDataModuleShape.square,
+                              color: Theme.of(context).brightness == Brightness.dark ? AppColors.primaryGold : Colors.black,
+                            ),
                           ),
                           const SizedBox(height: 12),
                           Text(
@@ -266,7 +263,6 @@ Time: $displayTime
                             displayBookingId,
                             textAlign: TextAlign.center,
                             style: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.textPrimaryLight,
                                 fontWeight: FontWeight.bold, 
                                 letterSpacing: 1.0),
                           ),
@@ -292,14 +288,14 @@ Time: $displayTime
                                     ),
                                   ),
                                   const SizedBox(height: 2),
-                                  Text(
-                                    booking.options['validationPin'] ?? 'N/A',
-                                    style: AppTextStyles.titleMedium.copyWith(
-                                      color: AppColors.backgroundDark,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: 2.0,
+                                    Text(
+                                      booking.options['validationPin'] ?? 'N/A',
+                                      style: AppTextStyles.titleMedium.copyWith(
+                                        color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.backgroundDark,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 2.0,
+                                      ),
                                     ),
-                                  ),
                                 ],
                               ),
                             ),
@@ -747,13 +743,13 @@ Time: $displayTime
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              status == 'AWAITING_PAYMENT' ? 'Total Amount (Gross)' : 'Total Amount Paid',
+                              'Total Amount Paid',
                               style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
                             ),
                             Text(
                               '€${computedTotal.toStringAsFixed(2)}',
                               style: AppTextStyles.titleMedium.copyWith(
-                                color: Theme.of(context).primaryColor,
+                                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Theme.of(context).primaryColor,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
