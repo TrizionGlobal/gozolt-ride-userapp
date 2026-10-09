@@ -79,9 +79,7 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
   Future<void> load() async {
     state = state.copyWith(isLoading: true, error: null);
 
-    // Car Rentals is a local client-side filter on data.type;
-    // pass null to API (fetches all SYSTEM type) and filter locally
-    final apiFilter = _filter == 'CAR_RENTAL' ? null : _filter;
+    final apiFilter = (_filter == 'CAR_RENTAL' || _filter == 'BIKE_RENTAL' || _filter == 'QUICK_SERVICE') ? null : _filter;
 
     try {
       var items = await _ds.getNotifications(type: apiFilter, page: 1);
@@ -90,14 +88,37 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
         items = _defaultNotifications();
       }
 
-      // Apply client-side filter for CAR_RENTAL
+      // Apply client-side filter
       if (_filter == 'CAR_RENTAL') {
         items = items.where((n) {
           final dataType = n.data?['type'] as String?;
-          return dataType == 'EXTENSION_APPROVED' ||
-              dataType == 'EXTENSION_REJECTED' ||
-              dataType == 'BOOKING_CANCELLED' ||
-              dataType == 'CAR_RENTAL';
+          final moduleName = n.data?['module'] as String?;
+          return moduleName == 'car-rentals' || dataType == 'CAR_RENTAL';
+        }).toList();
+      } else if (_filter == 'BIKE_RENTAL') {
+        items = items.where((n) {
+          final dataType = n.data?['type'] as String?;
+          final moduleName = n.data?['module'] as String?;
+          return moduleName == 'bike-rentals' || dataType == 'BIKE_RENTAL';
+        }).toList();
+      } else if (_filter == 'QUICK_SERVICE') {
+        items = items.where((n) {
+          final dataType = n.data?['type'] as String?;
+          final moduleName = n.data?['module'] as String?;
+          return moduleName == 'quick-services' || dataType == 'QUICK_SERVICE';
+        }).toList();
+      } else if (_filter == 'RIDE_UPDATE') {
+        items = items.where((n) {
+          final moduleName = n.data?['module'] as String?;
+          if (moduleName == 'car-rentals' || moduleName == 'bike-rentals' || moduleName == 'quick-services') return false;
+          
+          final titleLower = n.title.toLowerCase();
+          if (titleLower.contains('handover') || titleLower.contains('return') || 
+              titleLower.contains('car rental') || titleLower.contains('bike rental') ||
+              titleLower.contains('vehicle')) {
+            return false;
+          }
+          return true;
         }).toList();
       } else if (_filter != null && apiFilter == null) {
         items = items.where((n) => n.type == _filter).toList();
@@ -115,12 +136,35 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
       if (_filter == 'CAR_RENTAL') {
         defaults = defaults.where((n) {
           final dataType = n.data?['type'] as String?;
-          return dataType == 'EXTENSION_APPROVED' ||
-              dataType == 'EXTENSION_REJECTED' ||
-              dataType == 'BOOKING_CANCELLED' ||
-              dataType == 'CAR_RENTAL';
+          final moduleName = n.data?['module'] as String?;
+          return moduleName == 'car-rentals' || dataType == 'CAR_RENTAL';
         }).toList();
-      } else if (_filter != null) {
+      } else if (_filter == 'BIKE_RENTAL') {
+        defaults = defaults.where((n) {
+          final dataType = n.data?['type'] as String?;
+          final moduleName = n.data?['module'] as String?;
+          return moduleName == 'bike-rentals' || dataType == 'BIKE_RENTAL';
+        }).toList();
+      } else if (_filter == 'QUICK_SERVICE') {
+        defaults = defaults.where((n) {
+          final dataType = n.data?['type'] as String?;
+          final moduleName = n.data?['module'] as String?;
+          return moduleName == 'quick-services' || dataType == 'QUICK_SERVICE';
+        }).toList();
+      } else if (_filter == 'RIDE_UPDATE') {
+        defaults = defaults.where((n) {
+          final moduleName = n.data?['module'] as String?;
+          if (moduleName == 'car-rentals' || moduleName == 'bike-rentals' || moduleName == 'quick-services') return false;
+          
+          final titleLower = n.title.toLowerCase();
+          if (titleLower.contains('handover') || titleLower.contains('return') || 
+              titleLower.contains('car rental') || titleLower.contains('bike rental') ||
+              titleLower.contains('vehicle')) {
+            return false;
+          }
+          return true;
+        }).toList();
+      } else if (_filter != null && apiFilter == null) {
         defaults = defaults.where((n) => n.type == _filter).toList();
       }
       state = NotificationsState(

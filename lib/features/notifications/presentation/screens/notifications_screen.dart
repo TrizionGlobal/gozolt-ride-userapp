@@ -21,8 +21,10 @@ class NotificationsScreen extends ConsumerStatefulWidget {
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   static const _filters = [
     _FilterTab(label: 'All', value: null),
-    _FilterTab(label: 'Rides', value: 'RIDE_UPDATE'),
-    _FilterTab(label: 'Car Rentals', value: 'CAR_RENTAL'),
+    _FilterTab(label: 'Cab booking', value: 'RIDE_UPDATE'),
+    _FilterTab(label: 'Car rentals', value: 'CAR_RENTAL'),
+    _FilterTab(label: 'Bike rentals', value: 'BIKE_RENTAL'),
+    _FilterTab(label: 'Quick services', value: 'QUICK_SERVICE'),
     _FilterTab(label: 'Promotions', value: 'PROMOTION'),
   ];
 

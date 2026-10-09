@@ -104,7 +104,7 @@ Time: ${DateFormat('h:mm a').format(pickupDate)}
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Your vehicle is successfully reserved! The supplier has been notified.',
+                        'Your Car Rental is successfully reserved! The supplier has been notified.',
                         style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted),
                         textAlign: TextAlign.center,
                       ),
@@ -139,11 +139,11 @@ Time: ${DateFormat('h:mm a').format(pickupDate)}
                                 backgroundColor: Colors.white,
                                 eyeStyle: const QrEyeStyle(
                                   eyeShape: QrEyeShape.square,
-                                  color: AppColors.primaryGold,
+                                  color: Colors.black,
                                 ),
                                 dataModuleStyle: const QrDataModuleStyle(
                                   dataModuleShape: QrDataModuleShape.square,
-                                  color: AppColors.primaryGold,
+                                  color: Colors.black,
                                 ),
                               ),
                             ),

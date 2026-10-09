@@ -44,6 +44,7 @@ class _BikeRentalsHistoryViewState extends ConsumerState<BikeRentalsHistoryView>
     final historyAsync = ref.watch(bikeRentalHistoryProvider);
 
     return historyAsync.when(
+      skipLoadingOnReload: true,
       data: (bookings) {
         if (bookings.isEmpty) {
           return Center(

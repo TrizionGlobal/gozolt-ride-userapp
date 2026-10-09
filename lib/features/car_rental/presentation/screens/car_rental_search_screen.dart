@@ -417,9 +417,9 @@ class _CarRentalSearchScreenState extends ConsumerState<CarRentalSearchScreen> {
                         dropoffLng: _returnToSameLocation 
                             ? (_deliveryType == 'SELF_PICKUP' ? null : _pickupLocation?.longitude) 
                             : _dropoffLocation?.longitude,
-                        pickupDate: _pickupDate,
+                        pickupDate: _pickupDate != null && _pickupTime != null ? DateTime(_pickupDate!.year, _pickupDate!.month, _pickupDate!.day, _pickupTime!.hour, _pickupTime!.minute) : _pickupDate,
                         pickupTime: _pickupTime?.format(context),
-                        dropoffDate: _dropoffDate,
+                        dropoffDate: _dropoffDate != null && _dropoffTime != null ? DateTime(_dropoffDate!.year, _dropoffDate!.month, _dropoffDate!.day, _dropoffTime!.hour, _dropoffTime!.minute) : _dropoffDate,
                         dropoffTime: _dropoffTime?.format(context),
                       );
                       
@@ -505,9 +505,13 @@ class _CarRentalSearchScreenState extends ConsumerState<CarRentalSearchScreen> {
           contentPadding: EdgeInsets.zero,
           visualDensity: VisualDensity.compact,
           title: const Text('Doorstep Delivery'),
-          onChanged: (val) {
+          onChanged: (val) async {
+            final previousType = _deliveryType;
             setState(() => _deliveryType = val.toString());
-            _showDeliveryDetailsModal(context);
+            await _showDeliveryDetailsModal(context);
+            if (mounted) {
+              setState(() => _deliveryType = previousType);
+            }
           },
         ),
       ],
@@ -584,12 +588,7 @@ class _CarRentalSearchScreenState extends ConsumerState<CarRentalSearchScreen> {
       ),
     );
 
-    // This runs after the modal is closed, regardless of whether they tapped OK, swiped down, or tapped outside.
-    if (mounted) {
-      setState(() {
-        _deliveryType = 'SELF_PICKUP';
-      });
-    }
+    // Remove the incorrect reset to SELF_PICKUP
   }
 
   Widget _buildContactDetailRow(bool isDark, IconData icon, String label, String value, VoidCallback onTap) {

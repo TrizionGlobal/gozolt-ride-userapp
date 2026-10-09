@@ -41,7 +41,7 @@ class RentalExtensionSuccessScreen extends StatelessWidget {
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
-                  child: const Text('BACK TO BOOKING', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  child: const Text('Back To Booking', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
               ),
             ],

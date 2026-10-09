@@ -299,9 +299,9 @@ class _BikeRentalReviewScreenState extends ConsumerState<BikeRentalReviewScreen>
                         ],
                       ),
                       const Divider(height: 32),
-                      _buildRow('Pickup', 'Aug 04, 2026 • 5:07 PM'),
-                      _buildRow('Drop-off', 'Aug 06, 2026 • 6:07 PM'),
-                      _buildRow('Location', 'Malta International Airport'),
+                      _buildRow('Pickup', searchState.pickupDate != null ? DateFormat('MMM dd, yyyy • h:mm a').format(searchState.pickupDate!) : 'N/A'),
+                      _buildRow('Drop-off', searchState.dropoffDate != null ? DateFormat('MMM dd, yyyy • h:mm a').format(searchState.dropoffDate!) : 'N/A'),
+                      _buildRow('Location', searchState.pickupLocation?.isNotEmpty == true ? searchState.pickupLocation! : (searchState.deliveryType == 'DOORSTEP_DELIVERY' ? (searchState.deliveryAddress ?? 'Doorstep Delivery') : 'Supplier Hub')),
                     ],
                   ),
                   
@@ -599,10 +599,30 @@ class _BikeRentalReviewScreenState extends ConsumerState<BikeRentalReviewScreen>
                 return;
               }
 
-              if (!isFormValid) {
+              if (!_documentsUploaded) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Please upload required documents and accept the booking terms.'),
+                    content: Text('Please upload the required documents.'),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+                return;
+              }
+
+              if (!_agreeRentalAgreement) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please agree to the Rental Agreement.'),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+                return;
+              }
+
+              if (!_agreeTerms) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please accept the Terms & Conditions.'),
                     backgroundColor: Colors.redAccent,
                   ),
                 );
@@ -734,14 +754,14 @@ class _BikeRentalReviewScreenState extends ConsumerState<BikeRentalReviewScreen>
               const SizedBox(height: 16),
               
               Text(
-                'Active Booking Detected',
+                'Booking Detected',
                 style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 12),
               
               Text(
-                'You already have an active bike rental. Please return your current bike before booking another one.',
+                'Please return your current bike rental before booking another one.',
                 style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),

@@ -44,6 +44,7 @@ class _CarRentalsHistoryViewState extends ConsumerState<CarRentalsHistoryView> {
     final historyAsync = ref.watch(carRentalHistoryProvider);
 
     return historyAsync.when(
+      skipLoadingOnReload: true,
       data: (bookings) {
         if (bookings.isEmpty) {
           return Center(

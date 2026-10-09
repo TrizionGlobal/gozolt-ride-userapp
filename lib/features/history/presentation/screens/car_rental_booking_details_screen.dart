@@ -12,10 +12,23 @@ import '../../../ride/presentation/widgets/stripe_add_card_sheet.dart';
 import 'car_rentals_history_view.dart';
 import 'car_rental_cancellation_success_screen.dart';
 import 'rental_extension_success_screen.dart';
+import '../../../../core/network/socket_service.dart';
 
 final carRentalBookingDetailsProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, bookingId) async {
   final dio = ref.read(dioProvider);
   final datasource = CarRentalRemoteDatasource(dio);
+  
+  final socketService = ref.read(socketServiceProvider);
+  final sub = socketService.onCarRentalStatusChanged.listen((event) {
+    if (event['bookingId'] == bookingId) {
+      ref.invalidateSelf();
+    }
+  });
+  
+  ref.onDispose(() {
+    sub.cancel();
+  });
+  
   return datasource.getBookingDetails(bookingId);
 });
 
@@ -77,12 +90,13 @@ class CarRentalBookingDetailsScreen extends ConsumerWidget {
           
           Expanded(
             child: asyncDetails.when(
+              skipLoadingOnReload: true,
               data: (booking) {
                 final vehicle = booking['vehicle'];
           final supplier = vehicle['supplier'];
           final status = booking['status'] as String;
-          final startDate = DateTime.parse(booking['startDate']);
-          final endDate = DateTime.parse(booking['endDate']);
+          final startDate = DateTime.parse(booking['startDate']).toLocal();
+          final endDate = DateTime.parse(booking['endDate']).toLocal();
           
           final fullBookingId = booking['id'] as String;
           final displayBookingId = fullBookingId.length >= 8 
@@ -110,35 +124,37 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                 crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // QR Code Section
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white, // QR code needs white background for contrast
-                    borderRadius: BorderRadius.circular(16),
+                if (status != 'COMPLETED' && status != 'CANCELLED') ...[
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Colors.white, // QR code needs white background for contrast
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      children: [
+                        Text(
+                          'Present this to supplier',
+                          style: AppTextStyles.titleMedium.copyWith(color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight),
+                        ),
+                        const SizedBox(height: 16),
+                        QrImageView(
+                          data: qrDataJson,
+                          version: QrVersions.auto,
+                          size: 200.0,
+                          backgroundColor: Colors.white,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Booking ID: $displayBookingId',
+                          style: AppTextStyles.labelLarge.copyWith(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Present this to supplier',
-                        style: AppTextStyles.titleMedium.copyWith(color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight),
-                      ),
-                      const SizedBox(height: 16),
-                      QrImageView(
-                        data: qrDataJson,
-                        version: QrVersions.auto,
-                        size: 200.0,
-                        backgroundColor: Colors.white,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Booking ID: $displayBookingId',
-                        style: AppTextStyles.labelLarge.copyWith(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                const SizedBox(height: 24),
+                  
+                  const SizedBox(height: 24),
+                ],
                 
                 // Status & Dates
                 _buildSectionTitle(context, 'Trip Information'),
@@ -167,13 +183,18 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                 _buildSectionTitle(context, 'Vehicle Details'),
                 const SizedBox(height: 8),
                 _buildInfoCard(context, [
-                  _buildInfoRow(context, 'Vehicle', vehicle['name'] ?? 'N/A'),
-                  _buildInfoRow(context, 'Category', _formatEnumString(vehicle['category'])),
-                  _buildInfoRow(context, 'Transmission', _formatEnumString(vehicle['transmission'])),
-                  _buildInfoRow(context, 'Fuel', _formatEnumString(vehicle['fuelType'])),
-                  _buildInfoRow(context, 'Seats', vehicle['seats']?.toString() ?? 'N/A'),
-                  _buildInfoRow(context, 'Luggage', vehicle['luggageCapacity']?.toString() ?? 'N/A'),
+                  if (vehicle['brand'] != null) _buildInfoRow(context, 'Brand', vehicle['brand']),
+                  _buildInfoRow(context, 'Model', vehicle['name'] ?? 'N/A'),
+                  if (vehicle['year'] != null) _buildInfoRow(context, 'Year', vehicle['year'].toString()),
+                  if (vehicle['category'] != null) _buildInfoRow(context, 'Category', _formatEnumString(vehicle['category'])),
+                  if (vehicle['registrationNo'] != null) _buildInfoRow(context, 'Registration', vehicle['registrationNo']),
+                  if (vehicle['fuelType'] != null) _buildInfoRow(context, 'Fuel Type', _formatEnumString(vehicle['fuelType'])),
+                  if (vehicle['transmission'] != null) _buildInfoRow(context, 'Transmission', _formatEnumString(vehicle['transmission'])),
+                  if (vehicle['seats'] != null) _buildInfoRow(context, 'Seats', vehicle['seats'].toString()),
+                  if (vehicle['luggageCapacity'] != null) _buildInfoRow(context, 'Luggage', vehicle['luggageCapacity'].toString()),
                   _buildInfoRow(context, 'A/C', (vehicle['hasAirConditioning'] == true) ? 'Yes' : 'No'),
+                  if (vehicle['mileage'] != null) _buildInfoRow(context, 'Mileage', '${vehicle['mileage']} km/l'),
+                  if (vehicle['color'] != null) _buildInfoRow(context, 'Color', vehicle['color']),
                 ]),
                 
                 const SizedBox(height: 24),
@@ -289,7 +310,7 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                   _buildSectionTitle(context, 'Handover Details'),
                   const SizedBox(height: 8),
                   _buildInfoCard(context, [
-                    _buildInfoRow(context, 'Date', DateFormat('MMM dd, yyyy h:mm a').format(DateTime.parse(booking['handover']['createdAt']))),
+                    _buildInfoRow(context, 'Date', DateFormat('MMM dd, yyyy h:mm a').format(DateTime.parse(booking['handover']['createdAt']).toLocal())),
                     _buildInfoRow(context, 'Fuel Level', booking['handover']['fuelLevel']),
                     _buildInfoRow(context, 'Odometer', '${booking['handover']['odometerReading']} km'),
                     _buildInfoRow(context, 'Condition', booking['handover']['vehicleCondition']),
@@ -301,7 +322,7 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                   _buildSectionTitle(context, 'Return Details'),
                   const SizedBox(height: 8),
                   _buildInfoCard(context, [
-                    _buildInfoRow(context, 'Date', DateFormat('MMM dd, yyyy h:mm a').format(DateTime.parse(booking['return']['createdAt']))),
+                    _buildInfoRow(context, 'Date', DateFormat('MMM dd, yyyy h:mm a').format(DateTime.parse(booking['return']['createdAt']).toLocal())),
                     _buildInfoRow(context, 'Fuel Level', booking['return']['fuelLevel']),
                     _buildInfoRow(context, 'Odometer', '${booking['return']['odometerReading']} km'),
                     _buildInfoRow(context, 'Condition', booking['return']['vehicleCondition']),
@@ -517,7 +538,7 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                       padding: const EdgeInsets.only(bottom: 8.0),
                       child: _buildInfoCard(context, [
                         _buildStatusRow(context, ext['status']),
-                        _buildInfoRow(context, 'Requested End Date', DateFormat('MMM dd, yyyy h:mm a').format(DateTime.parse(ext['newEndDate']))),
+                        _buildInfoRow(context, 'Requested End Date', DateFormat('MMM dd, yyyy h:mm a').format(DateTime.parse(ext['newEndDate']).toLocal())),
                         _buildInfoRow(context, 'Additional Cost', '€${double.parse(ext['additionalCost'].toString()).toStringAsFixed(2)}', isBold: true),
                         if (ext['reason'] != null)
                           _buildInfoRow(context, 'Reason', ext['reason']),
@@ -801,91 +822,98 @@ Time: ${DateFormat('h:mm a').format(startDate)}
   }
 
   void _handleExtend(BuildContext context, WidgetRef ref, Map<String, dynamic> booking) async {
-    final DateTime currentEndDate = DateTime.parse(booking['endDate']);
-    
-    // Pick new date
-    final DateTime? newDate = await showDatePicker(
-      context: context,
-      initialDate: currentEndDate.add(const Duration(days: 1)),
-      firstDate: currentEndDate.add(const Duration(days: 1)),
-      lastDate: currentEndDate.add(const Duration(days: 365)),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primaryGold,
-              onPrimary: AppColors.backgroundDark,
-              surface: AppColors.backgroundLight,
-              onSurface: AppColors.textPrimaryLight,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (newDate == null) return;
-    if (!context.mounted) return;
-    
-    final DateTime newDateWithTime = DateTime(
-      newDate.year,
-      newDate.month,
-      newDate.day,
-      currentEndDate.hour,
-      currentEndDate.minute,
-    );
-
-    // Show loading
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
-    );
-
     try {
-      final dio = ref.read(dioProvider);
-      final datasource = CarRentalRemoteDatasource(dio);
+      final DateTime currentEndDate = DateTime.parse(booking['endDate']).toLocal();
       
-      // Calculate
-      final newEndDateStr = newDateWithTime.toIso8601String();
-      final calcResult = await datasource.calculateExtensionCost(booking['id'], newEndDateStr);
-      
-      if (!context.mounted) return;
-      Navigator.of(context).pop(); // dismiss loading
-      
-      // Show Confirmation
-      await showModalBottomSheet(
+      // Pick new date
+      final DateTime? newDate = await showDatePicker(
         context: context,
-        backgroundColor: Colors.transparent,
-        isScrollControlled: true,
-        isDismissible: false,
-        enableDrag: false,
-        builder: (ctx) => _buildExtendConfirmationModal(ctx, calcResult, datasource, newEndDateStr, ref),
+        initialDate: currentEndDate.add(const Duration(days: 1)),
+        firstDate: currentEndDate.add(const Duration(days: 1)),
+        lastDate: currentEndDate.add(const Duration(days: 365)),
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: const ColorScheme.light(
+                primary: AppColors.primaryGold,
+                onPrimary: AppColors.backgroundDark,
+                surface: AppColors.backgroundLight,
+                onSurface: AppColors.textPrimaryLight,
+              ),
+            ),
+            child: child!,
+          );
+        },
       );
-    } catch (e) {
+
+      if (newDate == null) return;
       if (!context.mounted) return;
-      Navigator.of(context).pop(); // dismiss loading
+      
+      final DateTime newDateWithTime = DateTime(
+        newDate.year,
+        newDate.month,
+        newDate.day,
+        currentEndDate.hour,
+        currentEndDate.minute,
+      );
+
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
+      );
+
+      try {
+        final dio = ref.read(dioProvider);
+        final datasource = CarRentalRemoteDatasource(dio);
+        
+        // Calculate
+        final newEndDateStr = newDateWithTime.toUtc().toIso8601String();
+        final calcResult = await datasource.calculateExtensionCost(booking['id'], newEndDateStr);
+        
+        if (!context.mounted) return;
+        Navigator.of(context).pop(); // dismiss loading
+        
+        // Show Confirmation
+        await showModalBottomSheet(
+          context: context,
+          backgroundColor: Colors.transparent,
+          isScrollControlled: true,
+          isDismissible: false,
+          enableDrag: false,
+          builder: (ctx) => _buildExtendConfirmationModal(context, calcResult, datasource, newEndDateStr, ref),
+        );
+      } catch (e) {
+        if (!context.mounted) return;
+        Navigator.of(context).pop(); // dismiss loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.redAccent),
+        );
+      }
+    } catch (e, stack) {
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.redAccent),
+        SnackBar(content: Text('Unexpected error: $e'), backgroundColor: Colors.redAccent),
       );
     }
   }
 
   Widget _buildExtendConfirmationModal(
-    BuildContext context, 
+    BuildContext parentContext, 
     Map<String, dynamic> calcResult,
     CarRentalRemoteDatasource datasource,
     String newEndDateStr,
     WidgetRef ref,
   ) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(parentContext).brightness == Brightness.dark;
     bool isSubmitting = false;
 
     return StatefulBuilder(
-      builder: (BuildContext context, StateSetter setState) {
+      builder: (BuildContext innerContext, StateSetter setState) {
         return Container(
           decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
+            color: Theme.of(innerContext).scaffoldBackgroundColor,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
@@ -901,19 +929,19 @@ Time: ${DateFormat('h:mm a').format(startDate)}
             Text('Confirm Extension', style: AppTextStyles.headlineSmall, textAlign: TextAlign.center),
             const SizedBox(height: 24),
             
-            _buildInfoCard(context, [
-              _buildInfoRow(context, 'Original Return', DateFormat('MMM d, yyyy - h:mm a').format(DateTime.parse(calcResult['originalEndDate']))),
-              _buildInfoRow(context, 'New Return', DateFormat('MMM d, yyyy - h:mm a').format(DateTime.parse(calcResult['newEndDate'])), isBold: true),
+            _buildInfoCard(innerContext, [
+              _buildInfoRow(innerContext, 'Original Return', DateFormat('MMM d, yyyy - h:mm a').format(DateTime.parse(calcResult['originalEndDate']).toLocal())),
+              _buildInfoRow(innerContext, 'New Return', DateFormat('MMM d, yyyy - h:mm a').format(DateTime.parse(calcResult['newEndDate']).toLocal()), isBold: true),
               const Divider(),
-              _buildInfoRow(context, 'Existing Rent Amount', '€${double.parse(calcResult['existingTotal'].toString()).toStringAsFixed(2)}'),
+              _buildInfoRow(innerContext, 'Existing Rent Amount', '€${double.parse(calcResult['existingTotal'].toString()).toStringAsFixed(2)}'),
               const Divider(),
-              _buildInfoRow(context, 'Extra Days', '${calcResult['extraDays']} days'),
+              _buildInfoRow(innerContext, 'Extra Days', '${calcResult['extraDays']} days'),
               if (calcResult['breakdown'] != null)
-                ...(calcResult['breakdown'] as List).map((b) => _buildInfoRow(context, b['label'], '€${double.parse(b['cost'].toString()).toStringAsFixed(2)}')),
+                ...(calcResult['breakdown'] as List).map((b) => _buildInfoRow(innerContext, b['label'], '€${double.parse(b['cost'].toString()).toStringAsFixed(2)}')),
               const Divider(),
-              _buildInfoRow(context, 'Extended Amount', '€${double.parse(calcResult['additionalCost'].toString()).toStringAsFixed(2)}'),
+              _buildInfoRow(innerContext, 'Extended Amount', '€${double.parse(calcResult['additionalCost'].toString()).toStringAsFixed(2)}'),
               const Divider(),
-              _buildInfoRow(context, 'New Grand Total', '€${double.parse(calcResult['finalTotal'].toString()).toStringAsFixed(2)}', isBold: true),
+              _buildInfoRow(innerContext, 'New Grand Total', '€${double.parse(calcResult['finalTotal'].toString()).toStringAsFixed(2)}', isBold: true),
             ]),
             
             const SizedBox(height: 32),
@@ -936,12 +964,15 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                         // First get the payment intent
                         await datasource.createExtensionPaymentIntent(bookingId, newEndDateStr);
                         
-                        if (!context.mounted) return;
-                        Navigator.of(context).pop(); // dismiss modal
+                        if (!innerContext.mounted) return;
+                        Navigator.of(innerContext).pop(); // dismiss modal
+                        
+                        if (!parentContext.mounted) return;
+                        bool paymentSuccess = false;
                         
                         // Show Stripe Bottom Sheet
-                        showModalBottomSheet(
-                          context: context,
+                        await showModalBottomSheet(
+                          context: parentContext,
                           isScrollControlled: true,
                           backgroundColor: Colors.transparent,
                           builder: (_) => StripeAddCardSheet(
@@ -951,12 +982,6 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                             onCardAdded: (paymentMethodId) async {
                               // Card was charged/added, now we submit the actual extension request
                               try {
-                                showDialog(
-                                  context: context,
-                                  barrierDismissible: false,
-                                  builder: (ctx) => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
-                                );
-                                
                                 await datasource.createExtensionRequest(
                                   bookingId, 
                                   newEndDateStr, 
@@ -964,40 +989,37 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                                 );
                                 
                                 ref.invalidate(carRentalBookingDetailsProvider(bookingId));
-                                
-                                if (context.mounted) {
-                                  Navigator.of(context).pop(); // dismiss loading
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(builder: (_) => const RentalExtensionSuccessScreen()),
-                                  );
-                                }
+                                paymentSuccess = true;
                               } catch (e) {
-                                if (context.mounted) {
-                                  Navigator.of(context).pop(); // dismiss loading
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.redAccent),
-                                  );
-                                }
+                                throw Exception(e.toString().replaceAll('Exception: ', ''));
                               }
                             },
                           ),
                         );
+                        
+                        if (paymentSuccess && parentContext.mounted) {
+                          Navigator.of(parentContext).push(
+                            MaterialPageRoute(builder: (_) => const RentalExtensionSuccessScreen()),
+                          );
+                        }
                       } else {
                         // If 0 cost, just submit
                         await datasource.createExtensionRequest(bookingId, newEndDateStr);
-                        if (!context.mounted) return;
-                        Navigator.of(context).pop(); // dismiss modal
+                        if (!innerContext.mounted) return;
+                        Navigator.of(innerContext).pop(); // dismiss modal
                         
                         ref.invalidate(carRentalBookingDetailsProvider(bookingId));
                         
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const RentalExtensionSuccessScreen()),
-                        );
+                        if (parentContext.mounted) {
+                          Navigator.of(parentContext).push(
+                            MaterialPageRoute(builder: (_) => const RentalExtensionSuccessScreen()),
+                          );
+                        }
                       }
                     } catch (e) {
                       setState(() => isSubmitting = false);
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      if (!innerContext.mounted) return;
+                      ScaffoldMessenger.of(innerContext).showSnackBar(
                         SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.redAccent),
                       );
                     }
@@ -1010,7 +1032,7 @@ Time: ${DateFormat('h:mm a').format(startDate)}
             ),
             const SizedBox(height: 12),
             TextButton(
-              onPressed: isSubmitting ? null : () => Navigator.of(context).pop(),
+              onPressed: isSubmitting ? null : () => Navigator.of(innerContext).pop(),
               child: Text('Cancel', style: TextStyle(color: isSubmitting ? Colors.grey.withOpacity(0.5) : Colors.grey)),
             ),
           ],

@@ -128,7 +128,7 @@ class _CarRentalPackagesScreenState extends ConsumerState<CarRentalPackagesScree
                               ? Color(int.parse(package.deductibleColorHex!.replaceAll('#', '0xFF')))
                               : (isDark ? AppColors.textPrimary : AppColors.textPrimaryLight),
                           priceText: package.pricePerDay == 0 ? 'Included' : '€${package.pricePerDay.toStringAsFixed(2)} / day',
-                          originalPriceText: package.originalPricePerDay != null ? '€${package.originalPricePerDay!.toStringAsFixed(2)} / day' : null,
+                          originalPriceText: (package.originalPricePerDay != null && package.originalPricePerDay! > package.pricePerDay) ? '€${package.originalPricePerDay!.toStringAsFixed(2)} / day' : null,
                           discountText: package.discountText,
                           features: package.features.map((key, value) => MapEntry(key, value == true)),
                           value: package.valueIdentifier,
