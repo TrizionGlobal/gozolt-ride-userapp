@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
+import '../../../../core/network/socket_service.dart';
 import '../../../quick_services/data/models/quick_service_history_model.dart';
 import '../../../quick_services/presentation/providers/quick_services_booking_provider.dart';
 import 'package:intl/intl.dart';
@@ -19,6 +21,22 @@ class QuickServicesHistoryView extends ConsumerStatefulWidget {
 class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryView> {
   final List<String> _filters = ['All', 'Completed', 'Cancelled', 'Scheduled'];
   String _selectedFilter = 'All';
+  StreamSubscription? _socketSub;
+
+  @override
+  void initState() {
+    super.initState();
+    final socketService = ref.read(socketServiceProvider);
+    _socketSub = socketService.onQuickServiceEvent.listen((_) {
+      ref.invalidate(quickServicesHistoryProvider);
+    });
+  }
+
+  @override
+  void dispose() {
+    _socketSub?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +49,7 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
         // Filter the dynamic bookings
         final filteredBookings = bookings.where((booking) {
           if (_selectedFilter == 'All') return true;
-          if (_selectedFilter == 'Scheduled' && booking.status == 'PENDING') return true;
+          if (_selectedFilter == 'Scheduled' && (booking.status == 'PENDING' || booking.status == 'ASSIGNED' || booking.status == 'ACCEPTED' || booking.status == 'IN_PROGRESS' || booking.status == 'AWAITING_PAYMENT')) return true;
           return booking.status.toUpperCase() == _selectedFilter.toUpperCase();
         }).toList();
 
@@ -199,23 +217,10 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
     return Icons.home_repair_service;
   }
 
-  double _getBeautyTotal(QuickServiceHistoryModel booking) {
-    if (booking.serviceCategory.toLowerCase().contains('beauty') || booking.serviceCategory.toLowerCase().contains('wellness')) {
-      double addonsTotal = 0.0;
-      for (var addon in booking.addOns) {
-        if (addon is Map) {
-          int count = int.tryParse(addon['count']?.toString() ?? '1') ?? 1;
-          double price = double.tryParse((addon['price'] ?? addon['pricePerUnit'])?.toString() ?? '0.0') ?? 0.0;
-          addonsTotal += (price * count);
-        }
-      }
-      return addonsTotal + booking.upfrontFee + booking.materialCost;
-    }
-    return booking.totalAmount;
-  }
 
   Widget _buildHistoryCard(QuickServiceHistoryModel booking) {
     final status = booking.status.toUpperCase();
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     
     Color statusBg;
     Color statusText;
@@ -234,6 +239,26 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
         statusText = AppColors.primaryGold;
         displayStatus = 'Scheduled';
     }
+
+    final bool isWorkEnded = (status == 'AWAITING_PAYMENT' || status == 'COMPLETED' || booking.options['endedAt'] != null || booking.options['finalHourlyCost'] != null);
+    
+    double initialPaid = (booking.upfrontFee + booking.materialCost - booking.discountAmount).clamp(0.0, double.infinity);
+    if (booking.serviceCategory.toLowerCase().contains('beauty') || booking.serviceCategory.toLowerCase().contains('wellness')) {
+      double addonsTotal = 0.0;
+      for (var addon in booking.addOns) {
+        if (addon is Map) {
+          int count = int.tryParse(addon['count']?.toString() ?? '1') ?? 1;
+          double price = double.tryParse((addon['price'] ?? addon['pricePerUnit'])?.toString() ?? '0.0') ?? 0.0;
+          addonsTotal += (price * count);
+        }
+      }
+      initialPaid = addonsTotal + booking.upfrontFee + booking.materialCost;
+    }
+
+    final rawService = double.tryParse(booking.options['serviceAmount']?.toString() ?? '') ??
+        double.tryParse(booking.options['finalHourlyCost']?.toString() ?? '');
+    final double serviceAmount = (rawService != null && isWorkEnded) ? double.parse(rawService.toStringAsFixed(2)) : 0.0;
+    final double totalAmount = initialPaid + serviceAmount;
 
     String title = booking.serviceTitle;
     if (booking.serviceCategory.toLowerCase().contains('beauty') || booking.serviceCategory.toLowerCase().contains('wellness')) {
@@ -310,7 +335,7 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryGold.withOpacity(0.1),
+                          color: AppColors.primaryGold.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
@@ -332,7 +357,7 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
                               const SizedBox(height: 4),
                               Text(
                                 subtitle,
-                                style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
+                                style: AppTextStyles.bodySmall.copyWith(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -364,16 +389,22 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
               children: [
                 Row(
                   children: [
-                    Icon(Icons.calendar_today, size: 16, color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight),
+                    Icon(
+                      Icons.calendar_today,
+                      size: 16,
+                      color: isDark ? AppColors.textMuted : AppColors.textMutedLight,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       DateFormat('dd MMM yyyy, h:mm a').format(booking.bookingDate),
-                      style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                      ),
                     ),
                   ],
                 ),
                 Text(
-                  '€${_getBeautyTotal(booking).toStringAsFixed(2)}',
+                  '€${totalAmount.toStringAsFixed(2)}',
                   style: AppTextStyles.titleMedium.copyWith(
                     color: AppColors.primaryGold,
                     fontWeight: FontWeight.bold,
@@ -381,9 +412,89 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
                 ),
               ],
             ),
+            if (isWorkEnded && serviceAmount > 0) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withValues(alpha: 0.04) : Colors.grey.withValues(alpha: 0.07),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.18),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Online Paid: ',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            fontSize: 12,
+                          ),
+                        ),
+                        Text(
+                          '€${initialPaid.toStringAsFixed(2)}',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Container(
+                      width: 1,
+                      height: 14,
+                      color: isDark ? Colors.grey[700] : Colors.grey[300],
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Service: ',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            fontSize: 12,
+                          ),
+                        ),
+                        Text(
+                          '€${serviceAmount.toStringAsFixed(2)}',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: status == 'AWAITING_PAYMENT' ? AppColors.error : Colors.green,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: (status == 'AWAITING_PAYMENT' ? AppColors.error : Colors.green).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            status == 'AWAITING_PAYMENT' ? 'Due' : 'Paid',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: status == 'AWAITING_PAYMENT' ? AppColors.error : Colors.green,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),
     ));
   }
 }
+

@@ -1643,7 +1643,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesComputerRepairConfirmation,
         builder: (context, state) {
           final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.laptop, defaultTitle: 'Computer Repair');
+          return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.laptop, defaultTitle: 'Computer & Laptop Repair');
         },
       ),
       GoRoute(

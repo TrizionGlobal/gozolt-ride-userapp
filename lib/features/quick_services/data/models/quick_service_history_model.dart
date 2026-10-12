@@ -113,6 +113,8 @@ class QuickServiceHistoryModel {
     String? paymentMethodType,
     double? totalAmount,
     double? materialCost,
+    Map<String, dynamic>? supplier,
+    Map<String, dynamic>? options,
   }) {
     return QuickServiceHistoryModel(
       id: id,
@@ -120,7 +122,7 @@ class QuickServiceHistoryModel {
       serviceTitle: serviceTitle,
       bookingDate: bookingDate,
       status: status ?? this.status,
-      options: options,
+      options: options ?? this.options,
       addOns: addOns,
       upfrontFee: upfrontFee,
       materialCost: materialCost ?? this.materialCost,
@@ -129,7 +131,7 @@ class QuickServiceHistoryModel {
       estimatedPrice: estimatedPrice,
       paymentMethod: paymentMethod ?? this.paymentMethod,
       paymentMethodType: paymentMethodType ?? this.paymentMethodType,
-      supplier: supplier,
+      supplier: supplier ?? this.supplier,
       requirements: requirements,
       images: images,
       location: location,

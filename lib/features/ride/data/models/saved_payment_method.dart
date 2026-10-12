@@ -23,7 +23,9 @@ enum PaymentMethodType {
   cash,
   card,
   upi,
-  wallet;
+  wallet,
+  iban,
+  qrcode;
 }
 
 class SavedPaymentMethod {
