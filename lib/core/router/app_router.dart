@@ -23,6 +23,8 @@ import '../../features/ride/presentation/screens/chat_screen.dart';
 import '../../features/rewards/presentation/screens/rewards_info_screen.dart';
 import '../../features/history/presentation/screens/trip_summary_screen.dart';
 import '../../features/history/presentation/screens/quick_service_history_details_screen.dart';
+import '../../features/history/presentation/screens/quick_service_payment_confirmation_screen.dart';
+import '../../features/history/presentation/screens/quick_service_payment_failure_screen.dart';
 import '../../features/history/presentation/screens/receipt_screen.dart';
 import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/notifications/presentation/screens/notification_preferences_screen.dart';
@@ -177,6 +179,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       if (!isInitialized) return null;
+
+      // Deep links with custom scheme com.gozolt://<host>
+      if (state.uri.host == 'quick-service-payment-confirmation') {
+        return '/quick-service-payment-confirmation?${state.uri.query}';
+      }
+      if (state.uri.host == 'quick-service-payment-failure') {
+        return '/quick-service-payment-failure?${state.uri.query}';
+      }
 
       if (state.matchedLocation == '/force-update') {
         return null;
@@ -552,6 +562,84 @@ final routerProvider = Provider<GoRouter>((ref) {
               )),
               child: child,
             ),
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/quick-service-payment-confirmation',
+        name: RouteNames.quickServicePaymentConfirmation,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final q = state.uri.queryParameters;
+          final amountVal = extra['amount'] ?? q['amount'];
+          return QuickServicePaymentConfirmationScreen(
+            bookingId: extra['bookingId']?.toString() ?? q['bookingId'] ?? '',
+            serviceTitle: extra['serviceTitle']?.toString() ?? q['serviceTitle'] ?? 'Quick Service',
+            amount: (amountVal is num)
+                ? (amountVal as num).toDouble()
+                : (double.tryParse(amountVal?.toString() ?? '0') ?? 0.0),
+            paymentMethod: extra['paymentMethod']?.toString() ?? q['paymentMethod'] ?? 'Online Payment (Stripe)',
+            stripePaymentIntentId: extra['stripePaymentIntentId']?.toString() ?? q['paymentIntentId'],
+            onDone: extra['onDone'] as VoidCallback?,
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/quick-service/payment-success',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final q = state.uri.queryParameters;
+          final amountVal = extra['amount'] ?? q['amount'];
+          return QuickServicePaymentConfirmationScreen(
+            bookingId: extra['bookingId']?.toString() ?? q['bookingId'] ?? '',
+            serviceTitle: extra['serviceTitle']?.toString() ?? q['serviceTitle'] ?? 'Quick Service',
+            amount: (amountVal is num)
+                ? (amountVal as num).toDouble()
+                : (double.tryParse(amountVal?.toString() ?? '0') ?? 0.0),
+            paymentMethod: extra['paymentMethod']?.toString() ?? q['paymentMethod'] ?? 'Online Payment (Stripe)',
+            stripePaymentIntentId: extra['stripePaymentIntentId']?.toString() ?? q['paymentIntentId'],
+            onDone: extra['onDone'] as VoidCallback?,
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/quick-service-payment-failure',
+        name: RouteNames.quickServicePaymentFailure,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final q = state.uri.queryParameters;
+          final amountVal = extra['amount'] ?? q['amount'];
+          return QuickServicePaymentFailureScreen(
+            bookingId: extra['bookingId']?.toString() ?? q['bookingId'] ?? '',
+            serviceTitle: extra['serviceTitle']?.toString() ?? q['serviceTitle'] ?? 'Quick Service',
+            amount: (amountVal is num)
+                ? (amountVal as num).toDouble()
+                : (double.tryParse(amountVal?.toString() ?? '0') ?? 0.0),
+            errorMessage: extra['errorMessage']?.toString() ?? q['errorMessage'],
+            onRetry: extra['onRetry'] as VoidCallback?,
+            onCancel: extra['onCancel'] as VoidCallback?,
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/quick-service/payment-failed',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final q = state.uri.queryParameters;
+          final amountVal = extra['amount'] ?? q['amount'];
+          return QuickServicePaymentFailureScreen(
+            bookingId: extra['bookingId']?.toString() ?? q['bookingId'] ?? '',
+            serviceTitle: extra['serviceTitle']?.toString() ?? q['serviceTitle'] ?? 'Quick Service',
+            amount: (amountVal is num)
+                ? (amountVal as num).toDouble()
+                : (double.tryParse(amountVal?.toString() ?? '0') ?? 0.0),
+            errorMessage: extra['errorMessage']?.toString() ?? q['errorMessage'],
+            onRetry: extra['onRetry'] as VoidCallback?,
+            onCancel: extra['onCancel'] as VoidCallback?,
           );
         },
       ),

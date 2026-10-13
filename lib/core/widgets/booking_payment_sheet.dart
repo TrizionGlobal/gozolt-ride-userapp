@@ -312,9 +312,9 @@ class _BookingPaymentSheetState extends ConsumerState<BookingPaymentSheet> {
           
           if (widget.isQuickServicePostPayment) ...[
             _buildOptionTile(
-              icon: Icons.account_balance_outlined,
-              title: 'Bank Transfer (IBAN)',
-              subtitle: 'Pay via direct bank transfer',
+              icon: Icons.payment_outlined,
+              title: 'Online Payment',
+              subtitle: 'Pay securely via Stripe Checkout',
               isSelected: _selectedType == PaymentMethodType.iban,
               cardColor: cardColor,
               borderColor: borderColor,
@@ -330,7 +330,7 @@ class _BookingPaymentSheetState extends ConsumerState<BookingPaymentSheet> {
             _buildOptionTile(
               icon: Icons.qr_code_2,
               title: 'QR Code',
-              subtitle: 'Pay via Stripe QR Code',
+              subtitle: 'Scan QR code on worker\'s device',
               isSelected: _selectedType == PaymentMethodType.qrcode,
               cardColor: cardColor,
               borderColor: borderColor,

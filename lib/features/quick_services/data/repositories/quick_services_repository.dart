@@ -320,4 +320,16 @@ class QuickServicesRepository {
       throw Exception(e.toString());
     }
   }
+
+  Future<Map<String, dynamic>> verifyPayment(String bookingId) async {
+    try {
+      final response = await _dio.get('/quick-services/user/booking/$bookingId/verify-payment');
+      return response.data;
+    } catch (e) {
+      if (e is DioException) {
+        throw Exception(e.response?.data?['message'] ?? e.message ?? 'Failed to verify payment');
+      }
+      throw Exception(e.toString());
+    }
+  }
 }

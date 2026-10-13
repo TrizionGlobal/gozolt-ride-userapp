@@ -12,6 +12,8 @@ import '../../../../core/network/socket_service.dart';
 import '../../../../core/widgets/booking_payment_sheet.dart';
 import '../../../quick_services/data/models/quick_service_booking_data.dart';
 import '../../../ride/data/models/saved_payment_method.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/route_names.dart';
 import 'quick_services_history_view.dart';
 import 'quick_service_cancellation_success_screen.dart';
 
@@ -24,15 +26,201 @@ class QuickServiceHistoryDetailsScreen extends ConsumerStatefulWidget {
   ConsumerState<QuickServiceHistoryDetailsScreen> createState() => _QuickServiceHistoryDetailsScreenState();
 }
 
-class _QuickServiceHistoryDetailsScreenState extends ConsumerState<QuickServiceHistoryDetailsScreen> {
+class _QuickServiceHistoryDetailsScreenState extends ConsumerState<QuickServiceHistoryDetailsScreen> with WidgetsBindingObserver {
   bool _isCancelling = false;
   late QuickServiceHistoryModel _booking;
   StreamSubscription? _socketSub;
+  bool _isShowingPaymentResult = false;
+  Timer? _pollingTimer;
+
+  void _navigateToPaymentConfirmation({
+    required double amount,
+    required String paymentMethod,
+    String? stripePaymentIntentId,
+  }) {
+    if (_isShowingPaymentResult || !mounted) return;
+    _isShowingPaymentResult = true;
+
+    context.pushNamed(
+      RouteNames.quickServicePaymentConfirmation,
+      extra: {
+        'bookingId': _booking.id,
+        'serviceTitle': _booking.serviceTitle,
+        'amount': amount,
+        'paymentMethod': paymentMethod,
+        'stripePaymentIntentId': stripePaymentIntentId,
+        'onDone': () {
+          _isShowingPaymentResult = false;
+          Navigator.of(context).pop();
+        },
+      },
+    ).then((_) {
+      _isShowingPaymentResult = false;
+    });
+  }
+
+  void _navigateToPaymentFailure({
+    String? errorMessage,
+    required double amount,
+  }) {
+    if (_isShowingPaymentResult || !mounted) return;
+    _isShowingPaymentResult = true;
+
+    context.pushNamed(
+      RouteNames.quickServicePaymentFailure,
+      extra: {
+        'bookingId': _booking.id,
+        'serviceTitle': _booking.serviceTitle,
+        'amount': amount,
+        'errorMessage': errorMessage,
+        'onRetry': () {
+          _isShowingPaymentResult = false;
+          _openPaymentSheet();
+        },
+        'onCancel': () {
+          _isShowingPaymentResult = false;
+        },
+      },
+    ).then((_) {
+      _isShowingPaymentResult = false;
+    });
+  }
+
+  Future<void> _verifyPaymentStatus() async {
+    if (_booking.status == 'COMPLETED' || !mounted) return;
+    try {
+      final res = await ref.read(quickServicesRepositoryProvider).verifyPayment(_booking.id);
+      if (res['isPaid'] == true && mounted) {
+        _pollingTimer?.cancel();
+        setState(() {
+          _booking = _booking.copyWith(
+            status: 'COMPLETED',
+          );
+        });
+        ref.invalidate(quickServicesHistoryProvider);
+        final paidAmount = (res['amount'] is num)
+            ? (res['amount'] as num).toDouble()
+            : (double.tryParse(res['amount']?.toString() ?? '0') ??
+                (double.tryParse(_booking.totalAmount.toString()) ?? 0.0));
+        _navigateToPaymentConfirmation(
+          amount: paidAmount,
+          paymentMethod: 'Online Payment (Stripe)',
+          stripePaymentIntentId: res['stripePaymentIntentId']?.toString(),
+        );
+      }
+    } catch (_) {}
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _verifyPaymentStatus();
+    }
+  }
+
+  void _openPaymentSheet() {
+    final booking = _booking;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => BookingPaymentSheet(
+        currentType: booking.paymentMethodType != null 
+            ? PaymentMethodType.values.firstWhere(
+                (e) => e.name == booking.paymentMethodType?.toLowerCase(), 
+                orElse: () => PaymentMethodType.cash,
+              )
+            : PaymentMethodType.cash,
+        currentCardId: booking.paymentMethod,
+        isQuickService: true,
+        isQuickServicePostPayment: true,
+        onConfirm: (type, {cardId}) async {
+          try {
+            final response = await ref.read(quickServicesRepositoryProvider).processPayment(booking.id, type.name, cardId);
+            if (mounted) {
+              setState(() {
+                _booking = _booking.copyWith(
+                  paymentMethodType: type.name,
+                );
+              });
+              if (response['checkoutUrl'] != null && type.name == 'iban') {
+                final url = Uri.parse(response['checkoutUrl']);
+                if (await canLaunchUrl(url)) {
+                  await launchUrl(url, mode: LaunchMode.externalApplication);
+                }
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opening secure payment gateway...'), backgroundColor: AppColors.success));
+                
+                // Start polling periodically while user completes payment
+                _pollingTimer?.cancel();
+                _pollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+                  if (timer.tick > 40) {
+                    timer.cancel();
+                  } else {
+                    _verifyPaymentStatus();
+                  }
+                });
+              } else if (type.name == 'qrcode') {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please scan the QR code displayed on the worker\'s device to pay.'), 
+                    backgroundColor: AppColors.primaryGold,
+                  ),
+                );
+                // Start polling periodically for payment confirmation after customer scans QR
+                _pollingTimer?.cancel();
+                _pollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+                  if (timer.tick > 60) {
+                    timer.cancel();
+                  } else {
+                    _verifyPaymentStatus();
+                  }
+                });
+              } else if (type.name == 'cash') {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please hand cash to the worker. Awaiting worker confirmation.'), 
+                    backgroundColor: AppColors.primaryGold,
+                  ),
+                );
+                _pollingTimer?.cancel();
+                _pollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+                  if (timer.tick > 60) {
+                    timer.cancel();
+                  } else {
+                    _verifyPaymentStatus();
+                  }
+                });
+              } else {
+                final paidAmount = (response['amount'] is num)
+                    ? (response['amount'] as num).toDouble()
+                    : (double.tryParse(booking.totalAmount.toString()) ?? 0.0);
+                _navigateToPaymentConfirmation(
+                  amount: paidAmount,
+                  paymentMethod: type.name == 'card' ? 'Saved Card' : 'Online Payment',
+                  stripePaymentIntentId: response['stripePaymentIntentId']?.toString(),
+                );
+              }
+            }
+          } catch (e) {
+            if (mounted) {
+              _navigateToPaymentFailure(
+                errorMessage: e.toString(),
+                amount: double.tryParse(booking.totalAmount.toString()) ?? 0.0,
+              );
+            }
+          }
+          return true;
+        },
+      ),
+    );
+  }
 
   @override
   void initState() {
     super.initState();
     _booking = widget.booking;
+    WidgetsBinding.instance.addObserver(this);
+    _verifyPaymentStatus();
     
     // Listen to real-time WebSockets
     final socketService = ref.read(socketServiceProvider);
@@ -46,8 +234,28 @@ class _QuickServiceHistoryDetailsScreenState extends ConsumerState<QuickServiceH
                 options: event['options'] is Map ? Map<String, dynamic>.from(event['options']) : _booking.options,
               );
             });
+            if (event['eventType'] == 'quick-service:payment-success') {
+              final paidAmount = (event['amount'] is num)
+                  ? (event['amount'] as num).toDouble()
+                  : (double.tryParse(event['amount']?.toString() ?? '0') ?? (double.tryParse(_booking.totalAmount.toString()) ?? 0.0));
+              _navigateToPaymentConfirmation(
+                amount: paidAmount,
+                paymentMethod: event['paymentMethod']?.toString() ?? 'Online Payment (Stripe)',
+                stripePaymentIntentId: event['stripePaymentIntentId']?.toString(),
+              );
+            }
           }
           ref.invalidate(quickServicesHistoryProvider);
+        } else if (event['eventType'] == 'quick-service:payment-failed') {
+          if (mounted) {
+            final failedAmount = (event['amount'] is num)
+                ? (event['amount'] as num).toDouble()
+                : (double.tryParse(event['amount']?.toString() ?? '0') ?? (double.tryParse(_booking.totalAmount.toString()) ?? 0.0));
+            _navigateToPaymentFailure(
+              errorMessage: event['reason']?.toString() ?? 'Payment was not completed. Please retry.',
+              amount: failedAmount,
+            );
+          }
         } else if (event['eventType'] == 'quick-service:payment-method-selected') {
           if (mounted) {
             setState(() {
@@ -114,6 +322,8 @@ class _QuickServiceHistoryDetailsScreenState extends ConsumerState<QuickServiceH
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _pollingTimer?.cancel();
     _socketSub?.cancel();
     super.dispose();
   }
@@ -346,7 +556,9 @@ Time: $displayTime
                           Text(
                             _booking.paymentMethodType == 'cash'
                                 ? 'Awaiting worker confirmation for cash payment.\n(Service Charge to Pay: €${serviceAmountVal.toStringAsFixed(2)})'
-                                : 'Your quick service is completed. Please complete the service charge payment of €${serviceAmountVal.toStringAsFixed(2)} to finalize the booking.\n(Already Paid Online: €${alreadyPaidOnline.toStringAsFixed(2)})',
+                                : _booking.paymentMethodType == 'qrcode'
+                                    ? 'Please scan the QR code displayed on the worker\'s device to pay €${serviceAmountVal.toStringAsFixed(2)}.\nOnce paid, your booking will be confirmed automatically.'
+                                    : 'Your quick service is completed. Please complete the service charge payment of €${serviceAmountVal.toStringAsFixed(2)} to finalize the booking.\n(Already Paid Online: €${alreadyPaidOnline.toStringAsFixed(2)})',
                             textAlign: TextAlign.center,
                             style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[700]),
                           ),
@@ -355,58 +567,15 @@ Time: $displayTime
                             width: double.infinity,
                             height: 50,
                             child: ElevatedButton(
-                              onPressed: () {
-                                showModalBottomSheet(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  backgroundColor: Colors.transparent,
-                                  builder: (_) => BookingPaymentSheet(
-                                    currentType: booking.paymentMethodType != null 
-                                        ? PaymentMethodType.values.firstWhere((e) => e.name == booking.paymentMethodType?.toLowerCase(), orElse: () => PaymentMethodType.cash)
-                                        : PaymentMethodType.cash,
-                                    currentCardId: booking.paymentMethod, // We might need to adjust this depending on how card ID is stored
-                                    isQuickService: true,
-                                    isQuickServicePostPayment: true,
-                                    onConfirm: (type, {cardId}) async {
-                                      try {
-                                        final response = await ref.read(quickServicesRepositoryProvider).processPayment(booking.id, type.name, cardId);
-                                        if (mounted) {
-                                          setState(() {
-                                            _booking = _booking.copyWith(
-                                              paymentMethodType: type.name,
-                                            );
-                                          });
-                                          if (response['checkoutUrl'] != null && type.name == 'iban') {
-                                            final url = Uri.parse(response['checkoutUrl']);
-                                            if (await canLaunchUrl(url)) {
-                                              await launchUrl(url, mode: LaunchMode.externalApplication);
-                                            }
-                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opening secure payment gateway...'), backgroundColor: AppColors.success));
-                                          } else if (type.name == 'qrcode' || type.name == 'cash') {
-                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please check with the worker to confirm payment.'), backgroundColor: AppColors.success));
-                                          } else {
-                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payment Successful'), backgroundColor: AppColors.success));
-                                          }
-                                        }
-                                      } catch (e) {
-                                        if (mounted) {
-                                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Payment failed: $e. Please retry or choose a different method.'), backgroundColor: Colors.red));
-                                        }
-                                      }
-                                      return true;
-                                    },
-                                  ),
-                                );
-                              },
+                              onPressed: _openPaymentSheet,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: _booking.paymentMethodType == 'cash' || _booking.paymentMethodType == 'qrcode' ? Colors.grey[300] : AppColors.primaryGold,
                                 foregroundColor: AppColors.backgroundDark,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                               child: Text(
-                                _booking.paymentMethodType == 'cash' ? 'Change Payment Method' :
-                                _booking.paymentMethodType == 'qrcode' ? 'Scan QR on Worker Device' :
-                                _booking.paymentMethodType == 'iban' ? 'Complete Bank Transfer' :
+                                _booking.paymentMethodType == 'cash' || _booking.paymentMethodType == 'qrcode' ? 'Change Payment Method' :
+                                _booking.paymentMethodType == 'iban' ? 'Complete Online Payment' :
                                 'Pay Now', 
                                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
                               ),
@@ -1463,7 +1632,31 @@ Time: $displayTime
                             : const Text('Cancel Booking', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       ),
                     ),
-                  ] else if (status == 'ASSIGNED' || status == 'ACCEPTED' || status == 'IN_PROGRESS') ...[
+                  ] else if (status == 'IN_PROGRESS') ...[
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGold.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.primaryGold.withOpacity(0.5)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.engineering_outlined, color: AppColors.primaryGold),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'The assigned ${_getExpertVisitName(booking.serviceTitle).split('/').first} has arrived and already started their work.',
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.backgroundDark,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ] else if (status == 'ASSIGNED' || status == 'ACCEPTED') ...[
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -1478,7 +1671,10 @@ Time: $displayTime
                           Expanded(
                             child: Text(
                               'The assigned ${_getExpertVisitName(booking.serviceTitle).split('/').first} will come to complete the service.',
-                              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.backgroundDark, fontWeight: FontWeight.w600),
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.backgroundDark,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ],
