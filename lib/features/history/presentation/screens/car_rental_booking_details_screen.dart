@@ -772,7 +772,7 @@ Time: ${DateFormat('h:mm a').format(startDate)}
       builder: (ctx) => AlertDialog(
         backgroundColor: Theme.of(context).cardTheme.color,
         title: const Text('Cancel Booking'),
-        content: Text('Are you sure you want to cancel this booking? A refund of €${estimatedRefund.toStringAsFixed(2)} will be credited to your original payment method within 24 hours.'),
+        content: Text('Are you sure you want to cancel this booking? A refund of €${estimatedRefund.toStringAsFixed(2)} will be credited to your original payment method within 3-5 business days.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),

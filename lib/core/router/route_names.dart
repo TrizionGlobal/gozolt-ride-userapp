@@ -236,4 +236,6 @@ abstract final class RouteNames {
   static const String quickServicesPrinterScannerConfirmation = 'quick-services-printer-scanner-confirmation';
   static const String quickServiceHistoryDetails = 'quick-service-history-details';
   static const String quickServicesPaymentFailed = 'quick-services-payment-failed';
+  static const String quickServicePaymentConfirmation = 'quick-service-payment-confirmation';
+  static const String quickServicePaymentFailure = 'quick-service-payment-failure';
 }

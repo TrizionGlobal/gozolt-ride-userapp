@@ -89,7 +89,7 @@ class BikeRentalCancellationSuccessScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'The amount will be credited to the same account used for booking within 24 hours.',
+                        'The amount will be credited to the same account used for booking within 3-5 business days.',
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
                         ),

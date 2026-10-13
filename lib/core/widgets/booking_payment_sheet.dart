@@ -12,6 +12,7 @@ class BookingPaymentSheet extends ConsumerStatefulWidget {
   final PaymentMethodType currentType;
   final String? currentCardId;
   final bool isQuickService;
+  final bool isQuickServicePostPayment;
   final double? amount;
   final Future<bool?> Function(PaymentMethodType type, {String? cardId}) onConfirm;
 
@@ -20,6 +21,7 @@ class BookingPaymentSheet extends ConsumerStatefulWidget {
     required this.currentType,
     this.currentCardId,
     this.isQuickService = false,
+    this.isQuickServicePostPayment = false,
     this.amount,
     required this.onConfirm,
   });
@@ -55,10 +57,10 @@ class _BookingPaymentSheetState extends ConsumerState<BookingPaymentSheet> {
   }
 
   Future<void> _confirm() async {
-    if (widget.isQuickService && _selectedCardId == null) {
+    if (_selectedType == PaymentMethodType.card && _selectedCardId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please select a card to pay the upfront fee.'),
+          content: Text('Please select a card to proceed.'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -282,14 +284,14 @@ class _BookingPaymentSheetState extends ConsumerState<BookingPaymentSheet> {
     Color textColor,
     Color secondaryTextColor,
   ) {
-    final cashTitle = widget.isQuickService ? 'Pay After Service (Postpaid)' : 'Cash';
-    final cashSubtitle = widget.isQuickService ? 'Pay when the job is done' : 'Pay the driver directly';
+    final cashTitle = 'Cash';
+    final cashSubtitle = 'Pay the worker directly';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         children: [
-          if (!widget.isQuickService) ...[
+          if (!widget.isQuickService || widget.isQuickServicePostPayment) ...[
             // Cash option
           _buildOptionTile(
             icon: Icons.payments_outlined,
@@ -306,6 +308,40 @@ class _BookingPaymentSheetState extends ConsumerState<BookingPaymentSheet> {
             }),
           ),
           const SizedBox(height: 10),
+          ],
+          
+          if (widget.isQuickServicePostPayment) ...[
+            _buildOptionTile(
+              icon: Icons.payment_outlined,
+              title: 'Online Payment',
+              subtitle: 'Pay securely via Stripe Checkout',
+              isSelected: _selectedType == PaymentMethodType.iban,
+              cardColor: cardColor,
+              borderColor: borderColor,
+              textColor: textColor,
+              secondaryTextColor: secondaryTextColor,
+              onTap: () => setState(() {
+                _selectedType = PaymentMethodType.iban;
+                _selectedCardId = null;
+              }),
+            ),
+            const SizedBox(height: 10),
+            
+            _buildOptionTile(
+              icon: Icons.qr_code_2,
+              title: 'QR Code',
+              subtitle: 'Scan QR code on worker\'s device',
+              isSelected: _selectedType == PaymentMethodType.qrcode,
+              cardColor: cardColor,
+              borderColor: borderColor,
+              textColor: textColor,
+              secondaryTextColor: secondaryTextColor,
+              onTap: () => setState(() {
+                _selectedType = PaymentMethodType.qrcode;
+                _selectedCardId = null;
+              }),
+            ),
+            const SizedBox(height: 10),
           ],
           
 

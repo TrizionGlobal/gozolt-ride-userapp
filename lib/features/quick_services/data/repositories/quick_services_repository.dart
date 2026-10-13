@@ -294,12 +294,40 @@ class QuickServicesRepository {
     }
   }
 
-  Future<void> cancelQuickServiceBooking(String bookingId) async {
+  Future<Map<String, dynamic>> cancelQuickServiceBooking(String bookingId) async {
     try {
-      await _dio.post('/quick-services/user/booking/$bookingId/cancel');
+      final response = await _dio.post('/quick-services/user/booking/$bookingId/cancel');
+      return (response.data is Map<String, dynamic>) ? response.data as Map<String, dynamic> : <String, dynamic>{'success': true};
     } catch (e) {
       if (e is DioException) {
         throw Exception(e.response?.data?['message'] ?? e.message ?? 'Failed to cancel quick service');
+      }
+      throw Exception(e.toString());
+    }
+  }
+
+  Future<Map<String, dynamic>> processPayment(String bookingId, String paymentMethodType, String? paymentMethodId) async {
+    try {
+      final response = await _dio.post('/quick-services/user/booking/$bookingId/process-payment', data: {
+        'paymentMethodType': paymentMethodType,
+        'paymentMethodId': paymentMethodId,
+      });
+      return response.data;
+    } catch (e) {
+      if (e is DioException) {
+        throw Exception(e.response?.data?['message'] ?? e.message ?? 'Failed to process payment');
+      }
+      throw Exception(e.toString());
+    }
+  }
+
+  Future<Map<String, dynamic>> verifyPayment(String bookingId) async {
+    try {
+      final response = await _dio.get('/quick-services/user/booking/$bookingId/verify-payment');
+      return response.data;
+    } catch (e) {
+      if (e is DioException) {
+        throw Exception(e.response?.data?['message'] ?? e.message ?? 'Failed to verify payment');
       }
       throw Exception(e.toString());
     }

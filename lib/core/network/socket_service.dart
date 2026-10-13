@@ -183,8 +183,11 @@ class UserSocketService {
 
     final quickServiceEvents = [
       'quick-service:booked',
+      'quick-service:assigned',
+      'quick-service:started',
       'quick-service:cancelled',
       'quick-service:payment-required',
+      'quick-service:payment-method-selected',
       'quick-service:payment-success',
       'quick-service:completed'
     ];

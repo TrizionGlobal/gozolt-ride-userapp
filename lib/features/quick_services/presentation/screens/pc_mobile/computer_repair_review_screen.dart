@@ -97,7 +97,7 @@ class _ComputerRepairReviewScreenState extends ConsumerState<ComputerRepairRevie
           const QuickServicesHeader(
             currentStep: 2,
             title: 'Review & Book',
-            subtitle: 'Computer Repair',
+            subtitle: 'Computer & Laptop Repair',
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -373,7 +373,7 @@ class _ComputerRepairReviewScreenState extends ConsumerState<ComputerRepairRevie
                           extra: {
                             'bookingData': updatedData,
                             'serviceIcon': Icons.laptop,
-                            'defaultTitle': 'Computer Repair',
+                            'defaultTitle': 'Computer & Laptop Repair',
                             'onRetrySuccessRouteName': RouteNames.quickServicesComputerRepairConfirmation,
                           },
                         );
@@ -404,7 +404,7 @@ class _ComputerRepairReviewScreenState extends ConsumerState<ComputerRepairRevie
                                 extra: {
                                   'bookingData': updatedData,
                                   'serviceIcon': Icons.laptop,
-                                  'defaultTitle': 'Computer Repair',
+                                  'defaultTitle': 'Computer & Laptop Repair',
                                   'onRetrySuccessRouteName': RouteNames.quickServicesComputerRepairConfirmation,
                                 },
                               );
