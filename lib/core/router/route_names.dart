@@ -78,11 +78,31 @@ abstract final class RouteNames {
   static const String airportTransferDetails = 'airport-transfer-details';
   static const String airportTransferPassengerDetails =
       'airport-transfer-passenger-details';
+  static const String airportTransferPassengerDetails =
+      'airport-transfer-passenger-details';
   static const String airportTransferReview = 'airport-transfer-review';
+  static const String airportTransferConfirmation =
+      'airport-transfer-confirmation';
   static const String airportTransferConfirmation =
       'airport-transfer-confirmation';
   static const String airportTransferTracking = 'airport-transfer-tracking';
   static const String airportTransferCompleted = 'airport-transfer-completed';
+
+  // Food & Groceries
+  static const String foodGroceryHome = 'food-grocery-home';
+  static const String foodGroceryRestaurants = 'food-grocery-restaurants';
+  static const String foodGroceryRestaurantDetails =
+      'food-grocery-restaurant-details';
+  static const String foodGroceryFoodItemDetails =
+      'food-grocery-food-item-details';
+  static const String foodGroceryStores = 'food-grocery-stores';
+  static const String foodGroceryCatalogue = 'food-grocery-catalogue';
+  static const String foodGroceryProductDetails =
+      'food-grocery-product-details';
+  static const String foodGroceryCart = 'food-grocery-cart';
+  static const String foodGroceryDeliveryAddress =
+      'food-grocery-delivery-address';
+  static const String foodGroceryReviewOrder = 'food-grocery-review-order';
 
   // Food & Groceries
   static const String foodGroceryHome = 'food-grocery-home';
