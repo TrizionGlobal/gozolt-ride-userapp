@@ -59,6 +59,22 @@ import '../../features/airport_transfer/presentation/screens/airport_transfer_pa
 import '../../features/airport_transfer/presentation/screens/airport_transfer_review_screen.dart';
 import '../../features/airport_transfer/presentation/screens/airport_transfer_confirmation_screen.dart';
 
+// Food & Groceries
+import '../../features/food_grocery/data/models/food_restaurant.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_home_screen.dart';
+import '../../features/food_grocery/presentation/screens/restaurant_listing_screen.dart';
+import '../../features/food_grocery/presentation/screens/restaurant_details_screen.dart';
+import '../../features/food_grocery/data/models/restaurant_menu.dart';
+import '../../features/food_grocery/presentation/screens/food_item_details_screen.dart';
+import '../../features/food_grocery/presentation/screens/grocery_store_listing_screen.dart';
+import '../../features/food_grocery/data/models/grocery_store.dart';
+import '../../features/food_grocery/presentation/screens/grocery_catalogue_screen.dart';
+import '../../features/food_grocery/data/models/grocery_catalogue.dart';
+import '../../features/food_grocery/presentation/screens/grocery_product_details_screen.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_cart_screen.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_delivery_address_screen.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_review_order_screen.dart';
+
 // Quick Services
 import '../../features/quick_services/presentation/screens/service_location_screen.dart';
 import '../../features/quick_services/presentation/screens/quick_services_list_screen.dart';
@@ -91,8 +107,6 @@ import '../../features/quick_services/presentation/screens/electrical_mechanic/h
 import '../../features/quick_services/presentation/screens/electrical_mechanic/home_electric_review_screen.dart';
 import '../../features/quick_services/presentation/screens/electrical_mechanic/events_electric_details_screen.dart';
 import '../../features/quick_services/presentation/screens/electrical_mechanic/events_electric_review_screen.dart';
-
-
 
 import '../../features/quick_services/presentation/screens/hire_person/hire_person_details_screen.dart';
 import '../../features/quick_services/presentation/screens/hire_person/hire_person_review_screen.dart';
@@ -1254,6 +1268,340 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
+      // ── Food & Groceries ────────────────────────────────────
+      GoRoute(
+        path: '/food-grocery',
+        name: RouteNames.foodGroceryHome,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const FoodGroceryHomeScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/restaurants',
+        name: RouteNames.foodGroceryRestaurants,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const RestaurantListingScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/restaurant-details',
+        name: RouteNames.foodGroceryRestaurantDetails,
+        pageBuilder: (context, state) {
+          final restaurant = state.extra as FoodRestaurant?;
+
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: restaurant == null
+                ? const RestaurantListingScreen()
+                : RestaurantDetailsScreen(
+                    restaurant: restaurant,
+                  ),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/item-details',
+        name: RouteNames.foodGroceryFoodItemDetails,
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+
+          final restaurant = extra?['restaurant'] as FoodRestaurant?;
+
+          final item = extra?['item'] as RestaurantMenuItem?;
+
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: restaurant == null || item == null
+                ? const RestaurantListingScreen()
+                : FoodItemDetailsScreen(
+                    restaurant: restaurant,
+                    item: item,
+                  ),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 1),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/stores',
+        name: RouteNames.foodGroceryStores,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const GroceryStoreListingScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/catalogue',
+        name: RouteNames.foodGroceryCatalogue,
+        pageBuilder: (context, state) {
+          final store = state.extra as GroceryStore?;
+
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: store == null
+                ? const GroceryStoreListingScreen()
+                : GroceryCatalogueScreen(
+                    store: store,
+                  ),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/product-details',
+        name: RouteNames.foodGroceryProductDetails,
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+
+          final store = extra?['store'] as GroceryStore?;
+          final product = extra?['product'] as GroceryProduct?;
+
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: store == null || product == null
+                ? const GroceryStoreListingScreen()
+                : GroceryProductDetailsScreen(
+                    store: store,
+                    product: product,
+                  ),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 1),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/cart',
+        name: RouteNames.foodGroceryCart,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const FoodGroceryCartScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 1),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/delivery-address',
+        name: RouteNames.foodGroceryDeliveryAddress,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: const FoodGroceryDeliveryAddressScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/review-order',
+        name: RouteNames.foodGroceryReviewOrder,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: const FoodGroceryReviewOrderScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
       // ── Quick Services ──────────────────────────────────────
       GoRoute(
         path: '/quick-services-location',
@@ -1642,8 +1990,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/computer-repair-confirmation',
         name: RouteNames.quickServicesComputerRepairConfirmation,
         builder: (context, state) {
-          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.laptop, defaultTitle: 'Computer Repair');
+          final bookingData =
+              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return SharedQuickServiceConfirmationScreen(
+              bookingData: state.extra as QuickServiceBookingData,
+              serviceIcon: Icons.laptop,
+              defaultTitle: 'Computer Repair');
         },
       ),
       GoRoute(
@@ -1654,7 +2006,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           final bookingData = extra['bookingData'] as QuickServiceBookingData;
           final serviceIcon = extra['serviceIcon'] as IconData;
           final defaultTitle = extra['defaultTitle'] as String;
-          final onRetrySuccessRouteName = extra['onRetrySuccessRouteName'] as String;
+          final onRetrySuccessRouteName =
+              extra['onRetrySuccessRouteName'] as String;
           return SharedQuickServiceFailedScreen(
             bookingData: bookingData,
             serviceIcon: serviceIcon,

@@ -76,11 +76,29 @@ abstract final class RouteNames {
   static const String airportTransferSearch = 'airport-transfer-search';
   static const String airportTransferChoose = 'airport-transfer-choose';
   static const String airportTransferDetails = 'airport-transfer-details';
-  static const String airportTransferPassengerDetails = 'airport-transfer-passenger-details';
+  static const String airportTransferPassengerDetails =
+      'airport-transfer-passenger-details';
   static const String airportTransferReview = 'airport-transfer-review';
-  static const String airportTransferConfirmation = 'airport-transfer-confirmation';
+  static const String airportTransferConfirmation =
+      'airport-transfer-confirmation';
   static const String airportTransferTracking = 'airport-transfer-tracking';
   static const String airportTransferCompleted = 'airport-transfer-completed';
+
+  // Food & Groceries
+  static const String foodGroceryHome = 'food-grocery-home';
+  static const String foodGroceryRestaurants = 'food-grocery-restaurants';
+  static const String foodGroceryRestaurantDetails =
+      'food-grocery-restaurant-details';
+  static const String foodGroceryFoodItemDetails =
+      'food-grocery-food-item-details';
+  static const String foodGroceryStores = 'food-grocery-stores';
+  static const String foodGroceryCatalogue = 'food-grocery-catalogue';
+  static const String foodGroceryProductDetails =
+      'food-grocery-product-details';
+  static const String foodGroceryCart = 'food-grocery-cart';
+  static const String foodGroceryDeliveryAddress =
+      'food-grocery-delivery-address';
+  static const String foodGroceryReviewOrder = 'food-grocery-review-order';
 
   // Quick Services
   static const String quickServicesLocation = 'quick-services-location';
@@ -156,7 +174,6 @@ abstract final class RouteNames {
   static const String quickServicesEventsElectricConfirmation =
       'quick-services-events-electric-confirmation';
 
-
   static const String quickServicesHirePerson = 'quick-services-hire-person';
   static const String quickServicesHirePersonReview =
       'quick-services-hire-person-review';
@@ -231,9 +248,14 @@ abstract final class RouteNames {
   static const String quickServicesPestControlConfirmation =
       'quick-services-pest-control-confirmation';
 
-  static const String quickServicesPrinterScanner = 'quick-services-printer-scanner';
-  static const String quickServicesPrinterScannerReview = 'quick-services-printer-scanner-review';
-  static const String quickServicesPrinterScannerConfirmation = 'quick-services-printer-scanner-confirmation';
-  static const String quickServiceHistoryDetails = 'quick-service-history-details';
-  static const String quickServicesPaymentFailed = 'quick-services-payment-failed';
+  static const String quickServicesPrinterScanner =
+      'quick-services-printer-scanner';
+  static const String quickServicesPrinterScannerReview =
+      'quick-services-printer-scanner-review';
+  static const String quickServicesPrinterScannerConfirmation =
+      'quick-services-printer-scanner-confirmation';
+  static const String quickServiceHistoryDetails =
+      'quick-service-history-details';
+  static const String quickServicesPaymentFailed =
+      'quick-services-payment-failed';
 }
