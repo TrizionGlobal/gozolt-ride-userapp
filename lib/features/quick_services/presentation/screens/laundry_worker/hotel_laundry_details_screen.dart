@@ -240,7 +240,7 @@ class _HotelLaundryDetailsScreenState extends ConsumerState<HotelLaundryDetailsS
                         Expanded(
                           child: _buildMethodCard(
                             title: 'Pickup & Return',
-                            subtitle: 'Return date & time confirmed after collection.',
+                            subtitle: '+€${QuickServicesPricingConfig.getPickupFee('hotel_laundry').toStringAsFixed(0)} pickup fee. Return date & time confirmed after collection.',
                             icon: Icons.local_shipping_outlined,
                             isSelected: _selectedMethod == 'Pickup & Return',
                             onTap: () => setState(() => _selectedMethod = 'Pickup & Return'),

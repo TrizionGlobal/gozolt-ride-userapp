@@ -392,7 +392,7 @@ class QuickServiceBookingData {
        return 'car_mechanic';
     }
     if (category == 'Electrical Repair') {
-       if (selectedServiceTitle?.contains('Commercial') == true || selectedServiceTitle?.contains('Lift') == true) return 'lift_elevator_mechanic';
+       if (selectedServiceTitle?.contains('Commercial') == true || selectedServiceTitle?.contains('Lift') == true) return 'commercial_electric';
        if (selectedServiceTitle?.contains('Events') == true) return 'events_electric';
        return 'home_electric';
     }
@@ -407,6 +407,32 @@ class QuickServiceBookingData {
        if (selectedServiceTitle?.contains('Commercial') == true) return 'commercial_laundry';
        return 'laundry';
     }
+    if (category == 'Home Services') {
+      if (selectedServiceTitle?.contains('Cleaning') == true) return 'home_cleaning';
+      if (selectedServiceTitle?.contains('Pest') == true) return 'pest_control';
+      if (selectedServiceTitle?.contains('Garden') == true) return 'gardening';
+      if (selectedServiceTitle?.contains('Plumb') == true) return 'plumber';
+      if (selectedServiceTitle?.contains('Carpent') == true) return 'carpenter';
+      if (selectedServiceTitle?.contains('Paint') == true) return 'painter';
+      return 'home_cleaning';
+    }
+    if (category == 'Beautician /Wellness' || category.contains('Beauty') || category.contains('Wellness')) {
+      return 'beauty_wellness';
+    }
+    if (category == 'Hire a Person' || category.contains('Hire')) {
+      return 'hire_person';
+    }
+    if (category == 'Security/Bouncer' || category.contains('Security') || category.contains('Bouncer')) {
+      return 'security_personnel';
+    }
+    if (category == 'Other Services') {
+      if (selectedServiceTitle?.contains('Organis') == true) return 'event_organisers';
+      if (selectedServiceTitle?.contains('Supplier') == true) return 'suppliers';
+      return 'painter';
+    }
+    if (category == 'Appliance Repair') {
+      return 'appliance_repair';
+    }
     return category.toLowerCase().replaceAll(' ', '_');
   }
 
@@ -414,8 +440,14 @@ class QuickServiceBookingData {
     return QuickServicesPricingConfig.expertVisitName(category, selectedServiceTitle: selectedServiceTitle);
   }
 
+  bool get hasMaterialCostSelected {
+    if (materialPreference == null) return false;
+    final lower = materialPreference!.toLowerCase().trim();
+    return lower.contains('bring') || lower.contains('include');
+  }
+
   double get materialCost =>
-      (materialPreference == 'Bring materials' || materialPreference == 'Bring tools' || materialPreference == 'Bring products') ? QuickServicesPricingConfig.getMaterialCost(servicePricingKey) : 0.0;
+      hasMaterialCostSelected ? QuickServicesPricingConfig.getMaterialCost(servicePricingKey) : 0.0;
 
   double get totalEstimatedHours {
     double addonHours = 0.0;

@@ -25,7 +25,10 @@ class QuickServicesPriceSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return ValueListenableBuilder<int>(
+      valueListenable: QuickServicesPricingConfig.ratesVersion,
+      builder: (context, _, __) {
+        return Column(
       children: [
         if (bookingData.selectedAddons.isNotEmpty || (showAdditionalDetails && (bookingData.describeIssue?.trim().isNotEmpty == true || bookingData.uploadedImages?.isNotEmpty == true || bookingData.whatYouNeed?.trim().isNotEmpty == true || bookingData.requirementDescription?.trim().isNotEmpty == true))) ...[
           Container(
@@ -354,7 +357,9 @@ class QuickServicesPriceSummary extends StatelessWidget {
                               ? 'Cleaning Materials'
                               : (bookingData.materialPreference?.toLowerCase().contains('tool') == true
                                   ? 'Tools Included'
-                                  : 'Materials Included'),
+                                  : (bookingData.materialPreference?.toLowerCase().contains('product') == true
+                                      ? 'Products Included'
+                                      : 'Materials Included')),
                             style: AppTextStyles.bodyMedium)),
                     Text('€${bookingData.materialCost.toStringAsFixed(2)}',
                         style: AppTextStyles.bodyMedium
@@ -499,5 +504,7 @@ class QuickServicesPriceSummary extends StatelessWidget {
         ),
       ],
     );
+  },
+);
   }
 }

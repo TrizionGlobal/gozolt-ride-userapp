@@ -414,6 +414,9 @@ class _QuickServiceHistoryDetailsScreenState extends ConsumerState<QuickServiceH
 
   String _formatOptionValue(dynamic val) {
     if (val == null) return '';
+    if (val is List) {
+      return val.map((e) => e.toString()).join(', ');
+    }
     if (val is num) {
       return val % 1 == 0 ? val.toInt().toString() : val.toStringAsFixed(2);
     }

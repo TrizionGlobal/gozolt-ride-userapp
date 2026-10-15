@@ -424,7 +424,7 @@ class _PestControlDetailsScreenState extends ConsumerState<PestControlDetailsScr
                               Text('Bring materials', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 2),
                               Text(
-                                _materialPreference == 'Bring materials' ? '+€${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.category).toStringAsFixed(2)} extra charge' : 'Use my materials (No extra charge)',
+                                _materialPreference == 'Bring materials' ? '+€${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.servicePricingKey).toStringAsFixed(2)} extra charge' : 'Use my materials (No extra charge)',
                                 style: AppTextStyles.bodySmall.copyWith(
                                   color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey[600],
                                   fontWeight: _materialPreference == 'Bring materials' ? FontWeight.bold : FontWeight.normal,

@@ -208,7 +208,7 @@ class _MobileRepairReviewScreenState extends ConsumerState<MobileRepairReviewScr
                                 _buildDetailRow('Type:', device.deviceType),
                                 if (device.operatingSystem != null && device.operatingSystem!.isNotEmpty)
                                   _buildDetailRow('OS:', device.operatingSystem!),
-                                _buildDetailRow('Issue:', device.issue),
+                                _buildDetailRow('Issues:', device.issue),
                               ],
                             ),
                           ),

@@ -30,8 +30,8 @@ class _PainterDetailsScreenState extends ConsumerState<PainterDetailsScreen> {
   final ImagePicker _picker = ImagePicker();
   final List<XFile> _selectedImages = [];
 
-  String? _propertyType;
   final List<String> _propertyTypes = ['Apartment', 'House', 'Office', 'Shop', 'Other'];
+  String? _selectedPropertyType;
 
   final List<String> _paintingAreasList = ['Interior Walls', 'Exterior Walls', 'Ceiling', 'Doors / Windows', 'Other'];
   final List<String> _selectedPaintingAreas = [];
@@ -48,7 +48,7 @@ class _PainterDetailsScreenState extends ConsumerState<PainterDetailsScreen> {
       _describeIssueController.text = widget.bookingData.describeIssue!;
     }
     if (widget.bookingData.propertyType != null) {
-      _propertyType = widget.bookingData.propertyType;
+      _selectedPropertyType = widget.bookingData.propertyType;
     }
     if (widget.bookingData.paintingAreas != null) {
       _selectedPaintingAreas.addAll(widget.bookingData.paintingAreas!);
@@ -127,30 +127,42 @@ class _PainterDetailsScreenState extends ConsumerState<PainterDetailsScreen> {
                 children: [
                   _buildCard(
                     title: 'Property Type',
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+                    child: Column(
                       children: _propertyTypes.map((type) {
-                        final isSelected = _propertyType == type;
-                        return ChoiceChip(
-                          label: Text(type),
-                          selected: isSelected,
-                          onSelected: (selected) {
-                            setState(() => _propertyType = selected ? type : null);
+                        return InkWell(
+                          onTap: () {
+                            setState(() => _selectedPropertyType = type);
                           },
-                          selectedColor: AppColors.primaryGold,
-                          backgroundColor: Colors.transparent,
-                          labelStyle: AppTextStyles.bodyMedium.copyWith(
-                            color: isSelected ? Colors.black : Colors.black87,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            side: BorderSide(
-                              color: isSelected ? AppColors.primaryGold : Colors.grey.shade400,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6.0),
+                            child: Row(
+                              children: [
+                                SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: Radio<String>(
+                                    value: type,
+                                    groupValue: _selectedPropertyType,
+                                    fillColor: WidgetStateProperty.resolveWith<Color>((states) {
+                                      if (states.contains(WidgetState.selected)) {
+                                        return AppColors.primaryGold;
+                                      }
+                                      return Colors.grey.shade400;
+                                    }),
+                                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    visualDensity: VisualDensity.compact,
+                                    onChanged: (val) {
+                                      if (val != null) {
+                                        setState(() => _selectedPropertyType = val);
+                                      }
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Text(type, style: AppTextStyles.bodyMedium),
+                              ],
                             ),
                           ),
-                          showCheckmark: false,
                         );
                       }).toList(),
                     ),
@@ -278,7 +290,7 @@ class _PainterDetailsScreenState extends ConsumerState<PainterDetailsScreen> {
                               Text('Bring materials', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 2),
                               Text(
-                                _materialPreference == 'Bring materials' ? '+€${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.category).toStringAsFixed(2)} extra charge' : 'Use my materials (No extra charge)',
+                                _materialPreference == 'Bring materials' ? '+€${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.servicePricingKey).toStringAsFixed(2)} extra charge' : 'Use my materials (No extra charge)',
                                 style: AppTextStyles.bodySmall.copyWith(
                                   color: _materialPreference == 'Bring materials' ? AppColors.primaryGold : Colors.grey[600],
                                   fontWeight: _materialPreference == 'Bring materials' ? FontWeight.bold : FontWeight.normal,
@@ -322,7 +334,7 @@ class _PainterDetailsScreenState extends ConsumerState<PainterDetailsScreen> {
                   ElevatedButton(
                     onPressed: () {
                       if (_isUploading) return;
-                      if (_propertyType == null) {
+                      if (_selectedPropertyType == null) {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a property type')));
                         return;
                       }
@@ -333,7 +345,7 @@ class _PainterDetailsScreenState extends ConsumerState<PainterDetailsScreen> {
                       
                       final updatedData = widget.bookingData.copyWith(
                         selectedServiceTitle: 'Painter',
-                        propertyType: _propertyType,
+                        propertyType: _selectedPropertyType,
                         paintingAreas: _selectedPaintingAreas,
                         roomCount: _roomCount,
                         paintProvided: _materialPreference == 'Bring materials',

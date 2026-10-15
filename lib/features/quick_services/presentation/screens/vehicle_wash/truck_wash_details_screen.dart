@@ -231,7 +231,7 @@ class _TruckWashDetailsScreenState extends ConsumerState<TruckWashDetailsScreen>
                             ),
                             child: Center(
                               child: Text(
-                                'Pickup & Return',
+                                'Pickup & Return (+€${QuickServicesPricingConfig.getPickupFee('truck_wash').toStringAsFixed(0)})',
                                 style: AppTextStyles.bodyMedium.copyWith(
                                   fontWeight: _serviceMode == 'Pickup & Return' ? FontWeight.bold : FontWeight.normal,
                                   color: _serviceMode == 'Pickup & Return' ? AppColors.primaryGold : null,

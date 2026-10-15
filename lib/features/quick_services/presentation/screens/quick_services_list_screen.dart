@@ -54,17 +54,7 @@ const List<_ServiceCategory> _categories = [
     _SubService('Commercial', Icons.business, iconPath: 'assets/images/updated_userapp_images/quick_services_images/commercial_repair.png'),
     _SubService('Events', Icons.event, iconPath: 'assets/images/updated_userapp_images/quick_services_images/events_repair.png'),
   ]),
-  _ServiceCategory('Appliance Repair', Icons.ac_unit, iconPath: 'assets/images/updated_userapp_images/quick_services_images/appliances.png', [
-    _SubService('Refrigerator', Icons.kitchen),
-    _SubService('Air Conditioner', Icons.ac_unit),
-    _SubService('Washing Machine', Icons.local_laundry_service),
-    _SubService('Television', Icons.tv),
-    _SubService('Fan', Icons.air),
-    _SubService('Mixer', Icons.blender),
-    _SubService('Gas Stove', Icons.microwave),
-    _SubService('Water Purifier', Icons.water_drop),
-    _SubService('Others', Icons.miscellaneous_services),
-  ]),
+  _ServiceCategory('Appliance Repair', Icons.ac_unit, iconPath: 'assets/images/updated_userapp_images/quick_services_images/appliances.png', []),
   _ServiceCategory('Beautician /Wellness', Icons.spa, iconPath: 'assets/images/updated_userapp_images/quick_services_images/beautician.png', [
     _SubService('Male', Icons.man),
     _SubService('Female', Icons.woman),
@@ -77,16 +67,8 @@ const List<_ServiceCategory> _categories = [
     _SubService('Hotel', Icons.hotel, iconPath: 'assets/images/updated_userapp_images/quick_services_images/hotel_laundry.png'),
     _SubService('Commercials', Icons.business, iconPath: 'assets/images/updated_userapp_images/quick_services_images/commercial_laundry.png'),
   ]),
-  _ServiceCategory('Hire a Person', Icons.person_outline, iconPath: 'assets/images/updated_userapp_images/quick_services_images/hire_a_person.png', [
-    _SubService('Male', Icons.man),
-    _SubService('Female', Icons.woman),
-    _SubService('Others', Icons.group),
-  ]),
-  _ServiceCategory('Security/Bouncer', Icons.security, iconPath: 'assets/images/updated_userapp_images/quick_services_images/security_personal.png', [
-    _SubService('Event Security', Icons.event),
-    _SubService('Bouncer / Door Security', Icons.security),
-    _SubService('Others', Icons.group),
-  ]),
+  _ServiceCategory('Hire a Person', Icons.person_outline, iconPath: 'assets/images/updated_userapp_images/quick_services_images/hire_a_person.png', []),
+  _ServiceCategory('Security/Bouncer', Icons.security, iconPath: 'assets/images/updated_userapp_images/quick_services_images/security_personal.png', []),
   _ServiceCategory('Other Services', Icons.miscellaneous_services, iconPath: 'assets/images/updated_userapp_images/quick_services_images/other_services.png', [
     _SubService('Event Organisers', Icons.event, iconPath: 'assets/images/updated_userapp_images/quick_services_images/event_organisers.png'),
     _SubService('Suppliers', Icons.inventory, iconPath: 'assets/images/updated_userapp_images/quick_services_images/suppliers.png'),
@@ -217,14 +199,17 @@ class _QuickServicesListScreenState extends ConsumerState<QuickServicesListScree
                             nextRoute = RouteNames.quickServicesEventOrganisers;
                           } else if (category.title == 'Other Services' && subService.title == 'Suppliers') {
                             nextRoute = RouteNames.quickServicesSuppliers;
-                          } else if (category.title == 'Security / Bouncer' || category.title == 'Security Personnel' || subService.title == 'Security / Bouncer') {
+                          } else if (category.title.contains('Security') || category.title.contains('Bouncer') || subService.title.contains('Security')) {
                             nextRoute = RouteNames.quickServicesSecurityPersonnel;
-                          } else if (category.title == 'Hire Person' || subService.title == 'Hire Person') {
+                          } else if (category.title.contains('Hire') || subService.title.contains('Hire')) {
                             nextRoute = RouteNames.quickServicesHirePerson;
                           } else {
                             nextRoute = RouteNames.quickServicesHomeCleaning;
                           }
 
+                          // Dismiss the bottom sheet modal first
+                          Navigator.pop(context);
+                          
                           // Always go through location & schedule screen first
                           context.pushNamed(
                             RouteNames.quickServicesLocation,
@@ -326,15 +311,38 @@ class _QuickServicesListScreenState extends ConsumerState<QuickServicesListScree
                           return GestureDetector(
                             onTap: () {
                               if (category.title == 'Appliance Repair') {
-                                context.pushNamed(RouteNames.quickServicesApplianceRepair, extra: widget.bookingData.copyWith(category: category.title, selectedServiceTitle: null));
+                                context.pushNamed(
+                                  RouteNames.quickServicesLocation,
+                                  extra: {
+                                    'bookingData': widget.bookingData.copyWith(
+                                      category: 'Appliance Repair',
+                                      selectedServiceTitle: 'Appliance Repair',
+                                    ),
+                                    'nextRoute': RouteNames.quickServicesApplianceRepair,
+                                  },
+                                );
                               } else if (category.title == 'Hire a Person') {
-                                context.pushNamed(RouteNames.quickServicesHirePerson, extra: widget.bookingData.copyWith(category: category.title, selectedServiceTitle: 'Hire a Person'));
+                                context.pushNamed(
+                                  RouteNames.quickServicesLocation,
+                                  extra: {
+                                    'bookingData': widget.bookingData.copyWith(
+                                      category: 'Hire a Person',
+                                      selectedServiceTitle: 'Hire a Person',
+                                    ),
+                                    'nextRoute': RouteNames.quickServicesHirePerson,
+                                  },
+                                );
                               } else if (category.title == 'Security/Bouncer') {
-                                context.pushNamed(RouteNames.quickServicesSecurityPersonnel, extra: widget.bookingData.copyWith(category: category.title, selectedServiceTitle: 'Security Personnel'));
-                              } else if (category.title == 'Mobile Repair') {
-                                context.pushNamed(RouteNames.quickServicesMobileRepair, extra: widget.bookingData.copyWith(category: category.title, selectedServiceTitle: 'Mobile Repair'));
-                              } else if (category.title == 'Computer & Laptop Repair' || category.title == 'Computer & Laptop') {
-                                context.pushNamed(RouteNames.quickServicesComputerRepair, extra: widget.bookingData.copyWith(category: category.title, selectedServiceTitle: 'Computer & Laptop Repair'));
+                                context.pushNamed(
+                                  RouteNames.quickServicesLocation,
+                                  extra: {
+                                    'bookingData': widget.bookingData.copyWith(
+                                      category: 'Security/Bouncer',
+                                      selectedServiceTitle: 'Security Personnel',
+                                    ),
+                                    'nextRoute': RouteNames.quickServicesSecurityPersonnel,
+                                  },
+                                );
                               } else {
                                 _showSubServicesModal(context, category);
                               }

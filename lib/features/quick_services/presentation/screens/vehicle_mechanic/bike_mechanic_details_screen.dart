@@ -421,7 +421,7 @@ Text(
                               Text('Bring tools', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 2),
                               Text(
-                                _materialPreference == 'Bring tools' ? '+€${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.category).toStringAsFixed(2)} extra charge' : 'Use my tools (No extra charge)',
+                                _materialPreference == 'Bring tools' ? '+€${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.servicePricingKey).toStringAsFixed(2)} extra charge' : 'Use my tools (No extra charge)',
                                 style: AppTextStyles.bodySmall.copyWith(
                                   color: _materialPreference == 'Bring tools' ? AppColors.primaryGold : Colors.grey[600],
                                   fontWeight: _materialPreference == 'Bring tools' ? FontWeight.bold : FontWeight.normal,
@@ -439,7 +439,7 @@ Text(
                             inactiveTrackColor: Colors.grey[300],
                             onChanged: (val) {
                               setState(() {
-                                _materialPreference = val ? 'Bring materials' : 'Use my tools';
+                                _materialPreference = val ? 'Bring tools' : 'Use my tools';
                               });
                             },
                           ),

@@ -26,7 +26,7 @@ class _ComputerRepairDetailsScreenState extends ConsumerState<ComputerRepairDeta
   String? _selectedDeviceType;
   String? _selectedBrand;
   String? _selectedModel;
-  String? _selectedIssue;
+  final List<String> _selectedIssues = [];
 
   final List<ComputerDevice> _savedComputers = [];
 
@@ -179,8 +179,8 @@ class _ComputerRepairDetailsScreenState extends ConsumerState<ComputerRepairDeta
       return;
     }
 
-    if (_selectedIssue == null) {
-      _showError('Please select an issue');
+    if (_selectedIssues.isEmpty) {
+      _showError('Please select at least one issue');
       return;
     }
 
@@ -190,7 +190,7 @@ class _ComputerRepairDetailsScreenState extends ConsumerState<ComputerRepairDeta
           deviceType: _selectedDeviceType!,
           brand: finalBrand,
           model: finalModel,
-          issue: _selectedIssue!,
+          issue: _selectedIssues.join(', '),
         ),
       );
       
@@ -198,7 +198,7 @@ class _ComputerRepairDetailsScreenState extends ConsumerState<ComputerRepairDeta
       _selectedDeviceType = null;
       _selectedBrand = null;
       _selectedModel = null;
-      _selectedIssue = null;
+      _selectedIssues.clear();
       _customDeviceTypeController.clear();
       _customBrandController.clear();
       _customModelController.clear();
@@ -523,10 +523,19 @@ class _ComputerRepairDetailsScreenState extends ConsumerState<ComputerRepairDeta
 
 
 
-                  // What is the issue? (2 Column Radio List)
-                  Text(
-                    'What is the issue?',
-                    style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                  // What is the issue? (2 Column Checkbox List)
+                  Row(
+                    children: [
+                      Text(
+                        'What is the issue?',
+                        style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '(Select all that apply)',
+                        style: AppTextStyles.bodySmall.copyWith(color: Colors.grey),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -534,13 +543,13 @@ class _ComputerRepairDetailsScreenState extends ConsumerState<ComputerRepairDeta
                     children: [
                       Expanded(
                         child: Column(
-                          children: _leftIssues.map((issue) => _buildRadioTile(issue)).toList(),
+                          children: _leftIssues.map((issue) => _buildCheckboxTile(issue)).toList(),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Column(
-                          children: _rightIssues.map((issue) => _buildRadioTile(issue)).toList(),
+                          children: _rightIssues.map((issue) => _buildCheckboxTile(issue)).toList(),
                         ),
                       ),
                     ],
@@ -612,7 +621,7 @@ class _ComputerRepairDetailsScreenState extends ConsumerState<ComputerRepairDeta
                                   style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700]),
                                 ),
                               Text(
-                                'Issue: ${computer.issue}',
+                                'Issues: ${computer.issue}',
                                 style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[700]),
                               ),
                             ],
@@ -678,7 +687,7 @@ class _ComputerRepairDetailsScreenState extends ConsumerState<ComputerRepairDeta
                           const SizedBox(height: 2),
                           Text(
                             _materialPreference == 'Bring tools'
-                                ? '+\u20ac${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.category).toStringAsFixed(2)} extra charge'
+                                ? '+\u20ac${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.servicePricingKey).toStringAsFixed(2)} extra charge'
                                 : 'Use my tools (No extra charge)',
                             style: AppTextStyles.bodySmall.copyWith(
                               color: _materialPreference == 'Bring tools' ? AppColors.primaryGold : Colors.grey[600],
@@ -832,20 +841,45 @@ class _ComputerRepairDetailsScreenState extends ConsumerState<ComputerRepairDeta
     );
   }
 
-  Widget _buildRadioTile(String issue) {
-    final isSelected = _selectedIssue == issue;
+  Widget _buildCheckboxTile(String issue) {
+    final isSelected = _selectedIssues.contains(issue);
     return GestureDetector(
-      onTap: () => setState(() => _selectedIssue = issue),
+      onTap: () {
+        setState(() {
+          if (isSelected) {
+            _selectedIssues.remove(issue);
+          } else {
+            _selectedIssues.add(issue);
+          }
+        });
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4.0),
         child: Row(
           children: [
-            Icon(
-              isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-              size: 20,
-              color: isSelected ? AppColors.primaryGold : Colors.grey,
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: Checkbox(
+                value: isSelected,
+                activeColor: AppColors.primaryGold,
+                checkColor: Colors.black,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                side: BorderSide(color: Colors.grey.shade400),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+                onChanged: (val) {
+                  setState(() {
+                    if (val == true) {
+                      _selectedIssues.add(issue);
+                    } else {
+                      _selectedIssues.remove(issue);
+                    }
+                  });
+                },
+              ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 8),
             Expanded(
               child: Text(
                 issue,

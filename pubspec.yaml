@@ -118,6 +118,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/
     - assets/images/
     - assets/images/beauty/
     - assets/images/updated_userapp_images/

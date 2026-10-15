@@ -33,7 +33,7 @@ class _PrinterScannerDetailsScreenState extends ConsumerState<PrinterScannerDeta
   final TextEditingController _customModelController = TextEditingController();
   final TextEditingController _serialNumberController = TextEditingController();
   
-  String? _selectedIssue;
+  final List<String> _selectedIssues = [];
   final TextEditingController _whatYouNeedController = TextEditingController();
   final TextEditingController _problemDescriptionController = TextEditingController();
   
@@ -166,8 +166,8 @@ class _PrinterScannerDetailsScreenState extends ConsumerState<PrinterScannerDeta
       return;
     }
 
-    if (_selectedIssue == null) {
-      _showError('Please select an issue');
+    if (_selectedIssues.isEmpty) {
+      _showError('Please select at least one issue');
       return;
     }
 
@@ -178,7 +178,7 @@ class _PrinterScannerDetailsScreenState extends ConsumerState<PrinterScannerDeta
           brand: brand,
           model: model,
           serialNumber: _serialNumberController.text.trim().isNotEmpty ? _serialNumberController.text.trim() : null,
-          issues: [_selectedIssue!],
+          issues: List<String>.from(_selectedIssues),
         ),
       );
 
@@ -189,7 +189,7 @@ class _PrinterScannerDetailsScreenState extends ConsumerState<PrinterScannerDeta
       _customBrandController.clear();
       _customModelController.clear();
       _serialNumberController.clear();
-      _selectedIssue = null;
+      _selectedIssues.clear();
     });
 
     FocusScope.of(context).unfocus();
@@ -378,20 +378,26 @@ class _PrinterScannerDetailsScreenState extends ConsumerState<PrinterScannerDeta
                   const SizedBox(height: 24),
 
                   // 3. Select Issue
-                  Text('3. Select Issue', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                  Row(
+                    children: [
+                      Text('3. Select Issue', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                      const SizedBox(width: 6),
+                      Text('(Select all that apply)', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey)),
+                    ],
+                  ),
                   const SizedBox(height: 10),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: Column(
-                          children: _leftIssues.map((issue) => _buildRadioTile(issue)).toList(),
+                          children: _leftIssues.map((issue) => _buildCheckboxTile(issue)).toList(),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Column(
-                          children: _rightIssues.map((issue) => _buildRadioTile(issue)).toList(),
+                          children: _rightIssues.map((issue) => _buildCheckboxTile(issue)).toList(),
                         ),
                       ),
                     ],
@@ -527,7 +533,7 @@ class _PrinterScannerDetailsScreenState extends ConsumerState<PrinterScannerDeta
                           const SizedBox(height: 2),
                           Text(
                             _materialPreference == 'Bring tools'
-                                ? '+\u20ac${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.category).toStringAsFixed(2)} extra charge'
+                                ? '+\u20ac${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.servicePricingKey).toStringAsFixed(2)} extra charge'
                                 : 'Use my tools (No extra charge)',
                             style: AppTextStyles.bodySmall.copyWith(
                               color: _materialPreference == 'Bring tools' ? AppColors.primaryGold : Colors.grey[600],
@@ -687,20 +693,45 @@ class _PrinterScannerDetailsScreenState extends ConsumerState<PrinterScannerDeta
   List<String> get _leftIssues => _issues.sublist(0, (_issues.length / 2).ceil());
   List<String> get _rightIssues => _issues.sublist((_issues.length / 2).ceil());
 
-  Widget _buildRadioTile(String issue) {
-    final isSelected = _selectedIssue == issue;
+  Widget _buildCheckboxTile(String issue) {
+    final isSelected = _selectedIssues.contains(issue);
     return GestureDetector(
-      onTap: () => setState(() => _selectedIssue = issue),
+      onTap: () {
+        setState(() {
+          if (isSelected) {
+            _selectedIssues.remove(issue);
+          } else {
+            _selectedIssues.add(issue);
+          }
+        });
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4.0),
         child: Row(
           children: [
-            Icon(
-              isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-              size: 20,
-              color: isSelected ? AppColors.primaryGold : Colors.grey,
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: Checkbox(
+                value: isSelected,
+                activeColor: AppColors.primaryGold,
+                checkColor: Colors.black,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                side: BorderSide(color: Colors.grey.shade400),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+                onChanged: (val) {
+                  setState(() {
+                    if (val == true) {
+                      _selectedIssues.add(issue);
+                    } else {
+                      _selectedIssues.remove(issue);
+                    }
+                  });
+                },
+              ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 8),
             Expanded(
               child: Text(
                 issue,

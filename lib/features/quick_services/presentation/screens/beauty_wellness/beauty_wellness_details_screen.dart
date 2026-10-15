@@ -531,7 +531,7 @@ class _BeautyWellnessDetailsScreenState extends ConsumerState<BeautyWellnessDeta
                               Text(_materialPreference, style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
                               const SizedBox(height: 2),
                               Text(
-                                _materialPreference == 'Bring products' ? '+€${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.category).toStringAsFixed(2)} extra charge' : 'No extra charge',
+                                _materialPreference == 'Bring products' ? '+€${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.servicePricingKey).toStringAsFixed(2)} extra charge' : 'No extra charge',
                                 style: AppTextStyles.bodySmall.copyWith(
                                   color: _materialPreference == 'Bring products' ? AppColors.primaryGold : Colors.grey[600],
                                   fontWeight: _materialPreference == 'Bring products' ? FontWeight.bold : FontWeight.normal,

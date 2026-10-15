@@ -228,7 +228,7 @@ class _ComputerRepairReviewScreenState extends ConsumerState<ComputerRepairRevie
                                     _buildDetailRow('Type:', d.deviceType),
                                     if (d.operatingSystem != null && d.operatingSystem!.isNotEmpty)
                                       _buildDetailRow('OS:', d.operatingSystem!),
-                                    _buildDetailRow('Issue:', d.issue),
+                                    _buildDetailRow('Issues:', d.issue),
                                   ],
                                 ),
                               ),

@@ -117,7 +117,11 @@ class QuickServicesRepository {
       // IT & Mobile
       if (data.mobileDevices != null && data.mobileDevices!.isNotEmpty) {
         options['Mobile Devices'] = data.mobileDevices!.map((d) => {
-          'Type': d.deviceType, 'Brand': d.deviceBrand, 'Model': d.deviceModel, 'Issue': d.issue
+          'Type': d.deviceType,
+          'Brand': d.deviceBrand,
+          'Model': d.deviceModel,
+          if (d.operatingSystem != null && d.operatingSystem!.isNotEmpty) 'OS': d.operatingSystem,
+          'Issues': d.issue,
         }).toList();
       }
       if (data.deviceType != null) options['Device Type'] = data.deviceType;
@@ -129,7 +133,11 @@ class QuickServicesRepository {
       
       if (data.computerDevices != null && data.computerDevices!.isNotEmpty) {
         options['Computer Devices'] = data.computerDevices!.map((d) => {
-          'Type': d.deviceType, 'Brand': d.brand, 'Model': d.model, 'Issue': d.issue
+          'Type': d.deviceType,
+          'Brand': d.brand,
+          'Model': d.model,
+          if (d.operatingSystem != null && d.operatingSystem!.isNotEmpty) 'OS': d.operatingSystem,
+          'Issues': d.issue,
         }).toList();
       }
       if (data.computerDeviceType != null) options['Computer Type'] = data.computerDeviceType;

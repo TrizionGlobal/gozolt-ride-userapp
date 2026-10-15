@@ -23,7 +23,7 @@ class MobileRepairDetailsScreen extends ConsumerStatefulWidget {
 class _MobileRepairDetailsScreenState extends ConsumerState<MobileRepairDetailsScreen> {
   bool _isUploading = false;
   String _materialPreference = 'Bring tools';
-  String? _selectedIssue;
+  final List<String> _selectedIssues = [];
   
   final List<MobileDevice> _savedDevices = [];
 
@@ -35,10 +35,10 @@ class _MobileRepairDetailsScreenState extends ConsumerState<MobileRepairDetailsS
     if (finalDeviceType == null || finalDeviceType.isEmpty ||
         finalBrand == null || finalBrand.isEmpty ||
         finalModel == null || finalModel.isEmpty ||
-        _selectedIssue == null) {
+        _selectedIssues.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please select or enter device type, brand, model, and an issue.'),
+          content: Text('Please select or enter device type, brand, model, and at least one issue.'),
           backgroundColor: Colors.red,
         ),
       );
@@ -50,14 +50,14 @@ class _MobileRepairDetailsScreenState extends ConsumerState<MobileRepairDetailsS
         deviceType: finalDeviceType,
         deviceBrand: finalBrand,
         deviceModel: finalModel,
-        issue: _selectedIssue!,
+        issue: _selectedIssues.join(', '),
       ));
 
       // Reset form
       _selectedDeviceType = null;
       _selectedBrand = null;
       _selectedModel = null;
-      _selectedIssue = null;
+      _selectedIssues.clear();
       
       _customDeviceTypeController.clear();
       _customBrandController.clear();
@@ -477,9 +477,18 @@ class _MobileRepairDetailsScreenState extends ConsumerState<MobileRepairDetailsS
                           _buildCustomTextField(_customModelController, 'Enter Model Name (e.g. Zenfone 10)'),
                         const SizedBox(height: 24),
                         // Select Issue
-                        Text(
-                          'Select Issue',
-                          style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                        Row(
+                          children: [
+                            Text(
+                              'Select Issue',
+                              style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '(Select all that apply)',
+                              style: AppTextStyles.bodySmall.copyWith(color: Colors.grey),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 8),
                         Row(
@@ -487,13 +496,13 @@ class _MobileRepairDetailsScreenState extends ConsumerState<MobileRepairDetailsS
                           children: [
                             Expanded(
                               child: Column(
-                                children: _leftIssues.map((issue) => _buildRadioTile(issue)).toList(),
+                                children: _leftIssues.map((issue) => _buildCheckboxTile(issue)).toList(),
                               ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Column(
-                                children: _rightIssues.map((issue) => _buildRadioTile(issue)).toList(),
+                                children: _rightIssues.map((issue) => _buildCheckboxTile(issue)).toList(),
                               ),
                             ),
                           ],
@@ -556,7 +565,7 @@ class _MobileRepairDetailsScreenState extends ConsumerState<MobileRepairDetailsS
                                       _buildDeviceDetailRow('OS', device.operatingSystem!),
                                     ],
                                     const SizedBox(height: 4),
-                                    _buildDeviceDetailRow('Issue', device.issue),
+                                    _buildDeviceDetailRow('Issues', device.issue),
                                   ],
                                 ),
                               ),
@@ -617,7 +626,7 @@ class _MobileRepairDetailsScreenState extends ConsumerState<MobileRepairDetailsS
                                 const SizedBox(height: 2),
                                 Text(
                                   _materialPreference == 'Bring tools'
-                                      ? '+\u20ac${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.category).toStringAsFixed(2)} extra charge'
+                                      ? '+\u20ac${QuickServicesPricingConfig.getMaterialCost(widget.bookingData.servicePricingKey).toStringAsFixed(2)} extra charge'
                                       : 'Use my tools (No extra charge)',
                                   style: AppTextStyles.bodySmall.copyWith(
                                     color: _materialPreference == 'Bring tools' ? AppColors.primaryGold : Colors.grey[600],
@@ -774,20 +783,45 @@ class _MobileRepairDetailsScreenState extends ConsumerState<MobileRepairDetailsS
     );
   }
 
-  Widget _buildRadioTile(String issue) {
-    final isSelected = _selectedIssue == issue;
+  Widget _buildCheckboxTile(String issue) {
+    final isSelected = _selectedIssues.contains(issue);
     return GestureDetector(
-      onTap: () => setState(() => _selectedIssue = issue),
+      onTap: () {
+        setState(() {
+          if (isSelected) {
+            _selectedIssues.remove(issue);
+          } else {
+            _selectedIssues.add(issue);
+          }
+        });
+      },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4.0),
         child: Row(
           children: [
-            Icon(
-              isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-              size: 20,
-              color: isSelected ? AppColors.primaryGold : Colors.grey,
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: Checkbox(
+                value: isSelected,
+                activeColor: AppColors.primaryGold,
+                checkColor: Colors.black,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                side: BorderSide(color: Colors.grey.shade400),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+                onChanged: (val) {
+                  setState(() {
+                    if (val == true) {
+                      _selectedIssues.add(issue);
+                    } else {
+                      _selectedIssues.remove(issue);
+                    }
+                  });
+                },
+              ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 8),
             Expanded(
               child: Text(
                 issue,

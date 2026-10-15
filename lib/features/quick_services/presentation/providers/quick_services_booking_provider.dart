@@ -6,7 +6,9 @@ import '../../data/repositories/quick_services_repository.dart';
 
 final quickServicesRepositoryProvider = Provider<QuickServicesRepository>((ref) {
   final dio = ref.watch(dioProvider);
-  return QuickServicesRepository(dio);
+  final repo = QuickServicesRepository(dio);
+  repo.fetchPricingRules();
+  return repo;
 });
 
 final quickServicesBookingProvider = StateNotifierProvider<QuickServicesBookingNotifier, AsyncValue<String?>>((ref) {
