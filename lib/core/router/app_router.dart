@@ -2220,8 +2220,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/computer-repair-confirmation',
         name: RouteNames.quickServicesComputerRepairConfirmation,
         builder: (context, state) {
-          final bookingData = _resolveQuickServiceData(state.extra);
-          return SharedQuickServiceConfirmationScreen(bookingData: bookingData, serviceIcon: Icons.laptop, defaultTitle: 'Computer & Laptop Repair');
+          final bookingData =
+              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return SharedQuickServiceConfirmationScreen(
+              bookingData: state.extra as QuickServiceBookingData,
+              serviceIcon: Icons.laptop,
+              defaultTitle: 'Computer Repair');
         },
       ),
       GoRoute(
@@ -2232,8 +2236,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           final bookingData = extra['bookingData'] as QuickServiceBookingData;
           final serviceIcon = extra['serviceIcon'] as IconData;
           final defaultTitle = extra['defaultTitle'] as String;
-          final onRetrySuccessRouteName =
-              extra['onRetrySuccessRouteName'] as String;
           final onRetrySuccessRouteName =
               extra['onRetrySuccessRouteName'] as String;
           return SharedQuickServiceFailedScreen(
