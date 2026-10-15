@@ -80,6 +80,8 @@ abstract final class RouteNames {
   static const String airportTransferDetails = 'airport-transfer-details';
   static const String airportTransferPassengerDetails =
       'airport-transfer-passenger-details';
+  static const String airportTransferPassengerDetails =
+      'airport-transfer-passenger-details';
   static const String airportTransferReview = 'airport-transfer-review';
   static const String airportTransferConfirmation = 'airport-transfer-confirmation';
   static const String airportTransferPaymentConfirmation = 'airport-transfer-payment-confirmation';

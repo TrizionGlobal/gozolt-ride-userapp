@@ -2234,6 +2234,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           final defaultTitle = extra['defaultTitle'] as String;
           final onRetrySuccessRouteName =
               extra['onRetrySuccessRouteName'] as String;
+          final onRetrySuccessRouteName =
+              extra['onRetrySuccessRouteName'] as String;
           return SharedQuickServiceFailedScreen(
             bookingData: bookingData,
             serviceIcon: serviceIcon,
