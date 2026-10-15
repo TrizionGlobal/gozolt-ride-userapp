@@ -66,7 +66,9 @@ class TransportGrid extends StatelessWidget {
                       'assets/images/updated_userapp_images/groceries.png',
                   label: 'Food & Groceries',
                   isActive: true,
-                  onTap: () => _showComingSoon(context),
+                  onTap: () {
+                    context.pushNamed(RouteNames.foodGroceryHome);
+                  },
                 ),
               ),
               const SizedBox(width: 14),
