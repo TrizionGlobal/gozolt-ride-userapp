@@ -31,8 +31,7 @@ class _HospitalLaundryDetailsScreenState extends ConsumerState<HospitalLaundryDe
   final TextEditingController _customServiceController = TextEditingController();
   
   String _selectedMethod = 'On-Site Service';
-  String _selectedService = '';
-  double _servicePricePerKg = 0.0;
+  final Set<String> _selectedServices = {};
   String _materialPreference = 'Bring materials';
   
   final List<XFile> _selectedImages = [];
@@ -252,9 +251,30 @@ class _HospitalLaundryDetailsScreenState extends ConsumerState<HospitalLaundryDe
                   const SizedBox(height: 20),
 
                   // Select Services
-                  Text(
-                    'Select Services',
-                    style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Select Services',
+                        style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      if (_selectedServices.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGold.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${_selectedServices.length} selected',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: isDark ? AppColors.primaryGold : const Color(0xFFB45309),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 10),
 
@@ -265,48 +285,76 @@ class _HospitalLaundryDetailsScreenState extends ConsumerState<HospitalLaundryDe
                       final title = svc['title'] as String;
                       final unitPrice = svc['unitPrice'] as double;
                       final iconData = svc['icon'] as IconData?;
-                      final isSelected = _selectedService == title;
+                      final isSelected = _selectedServices.contains(title);
 
                       return GestureDetector(
                         onTap: () {
                           setState(() {
-                            _selectedService = title;
-                            _servicePricePerKg = unitPrice;
+                            if (_selectedServices.contains(title)) {
+                              _selectedServices.remove(title);
+                            } else {
+                              _selectedServices.add(title);
+                            }
                           });
                         },
                         child: Container(
                           width: (MediaQuery.of(context).size.width - 48) / 2,
                           height: 90,
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                           decoration: BoxDecoration(
-                            color: Theme.of(context).cardTheme.color,
+                            color: isSelected
+                                ? (isDark ? Colors.amber.shade900.withOpacity(0.2) : const Color(0xFFFFFDF5))
+                                : Theme.of(context).cardTheme.color,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
                               color: isSelected ? AppColors.primaryGold : Colors.grey.withOpacity(0.3),
-                              width: 1.5,
+                              width: isSelected ? 2.0 : 1.5,
                             ),
                           ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+                          child: Stack(
                             children: [
-                              if (iconData != null)
-                                Icon(
-                                  iconData,
-                                  color: isSelected ? AppColors.primaryGold : Colors.grey[700],
-                                  size: 26,
+                              Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    if (iconData != null)
+                                      Icon(
+                                        iconData,
+                                        color: isSelected ? AppColors.primaryGold : Colors.grey[700],
+                                        size: 26,
+                                      ),
+                                    if (iconData != null) const SizedBox(height: 6),
+                                    Text(
+                                      title,
+                                      textAlign: TextAlign.center,
+                                      style: AppTextStyles.bodySmall.copyWith(
+                                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                        fontSize: 12,
+                                        height: 1.2,
+                                      ),
+                                      maxLines: 2,
+                                      softWrap: true,
+                                    ),
+                                  ],
                                 ),
-                              if (iconData != null) const SizedBox(height: 8),
-                              Text(
-                                title,
-                                textAlign: TextAlign.center,
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                  fontSize: 12,
-                                  height: 1.2,
-                                ),
-                                maxLines: 2,
-                                softWrap: true,
                               ),
+                              if (isSelected)
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(2),
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.primaryGold,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.check,
+                                      size: 11,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                         ),
@@ -491,11 +539,11 @@ class _HospitalLaundryDetailsScreenState extends ConsumerState<HospitalLaundryDe
                     onPressed: () {
 
                       if (_isUploading) return;
-                      if (_selectedService.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a service.'), backgroundColor: Colors.red));
+                      if (_selectedServices.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select at least one service.'), backgroundColor: Colors.red));
                         return;
                       }
-                      if ((_selectedService == 'Other Laundry Service' || _selectedService == 'Other Linen') && _customServiceController.text.trim().isEmpty) {
+                      if ((_selectedServices.contains('Other Laundry Service') || _selectedServices.contains('Other Linen')) && _customServiceController.text.trim().isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please specify the service type.'), backgroundColor: Colors.red));
                         return;
                       }
@@ -520,15 +568,19 @@ class _HospitalLaundryDetailsScreenState extends ConsumerState<HospitalLaundryDe
                         return;
                       }
 
-                      final finalServiceType = (_selectedService == 'Other Laundry Service' || _selectedService == 'Other Linen') && _customServiceController.text.trim().isNotEmpty
-                          ? _customServiceController.text.trim()
-                          : _selectedService;
+                      final finalServiceTypes = _selectedServices.map((svc) {
+                        if ((svc == 'Other Laundry Service' || svc == 'Other Linen') && _customServiceController.text.trim().isNotEmpty) {
+                          return _customServiceController.text.trim();
+                        }
+                        return svc;
+                      }).toList();
 
 
                       final updatedData = widget.bookingData.copyWith(
                         selectedServiceTitle: 'Hospital Laundry',
                         laundryServiceMethod: _selectedMethod,
-                        commercialLaundryTypes: finalServiceType.isNotEmpty ? [finalServiceType] : [],
+                        commercialLaundryTypes: finalServiceTypes,
+                        laundryServiceType: finalServiceTypes.join(', '),
                         requestedReturnDate: _selectedMethod == 'Pickup & Return' ? _requestedDate : null,
                         requestedReturnTime: _selectedMethod == 'Pickup & Return' ? _requestedTime : null,
                         facilityName: _facilityNameController.text.trim(),

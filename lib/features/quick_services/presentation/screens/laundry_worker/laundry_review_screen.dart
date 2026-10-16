@@ -73,7 +73,7 @@ class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
         children: [
           QuickServicesHeader(
             currentStep: 2,
-            title: 'Review Booking',
+            title: 'Review & Book',
             subtitle: (data.selectedServiceTitle ?? 'Home').toLowerCase().endsWith('laundry') ? data.selectedServiceTitle! : '${data.selectedServiceTitle ?? 'Home'} Laundry',
           ),
           Expanded(
@@ -124,14 +124,16 @@ class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
                           ],
                         ),
                         const SizedBox(height: 16),
-                        if (data.selectedServiceTitle == 'Hospital Laundry' || data.selectedServiceTitle == 'Hotel Laundry' || data.selectedServiceTitle == 'Commercial Laundry') ...[
-                          if (data.facilityName != null) _buildDetailRow(data.selectedServiceTitle == 'Commercial Laundry' ? 'Business Name' : (data.selectedServiceTitle == 'Hotel Laundry' ? 'Hotel Name' : 'Facility Name'), data.facilityName!),
+                        if (data.selectedServiceTitle == 'Hospital Laundry' || data.selectedServiceTitle == 'Hotel Laundry' || data.selectedServiceTitle == 'Commercial Laundry' || data.selectedServiceTitle == 'Commercials Laundry' || data.selectedServiceTitle?.contains('Commercial') == true || data.selectedServiceTitle?.contains('Hotel') == true || data.selectedServiceTitle?.contains('Hospital') == true) ...[
+                          if (data.facilityName != null) _buildDetailRow(data.selectedServiceTitle?.contains('Commercial') == true ? 'Business Name' : (data.selectedServiceTitle?.contains('Hotel') == true ? 'Hotel Name' : 'Facility Name'), data.facilityName!),
                           if (data.businessType != null) _buildDetailRow('Business Type', data.businessType!),
                           if (data.collectionPoint != null) _buildDetailRow('Collection Point', data.collectionPoint!),
                           if (data.facilityContactPerson != null) _buildDetailRow('Contact Person', data.facilityContactPerson!),
                           if (data.facilityContactNumber != null) _buildDetailRow('Contact Number', data.facilityContactNumber!),
                           if (data.commercialLaundryTypes != null && data.commercialLaundryTypes!.isNotEmpty)
-                            _buildDetailRow('Laundry Types', data.commercialLaundryTypes!.join(', ')),
+                            _buildDetailRow(data.commercialLaundryTypes!.length > 1 ? 'Laundry Types' : 'Laundry Type', data.commercialLaundryTypes!.join(', '))
+                          else if (data.laundryServiceType != null && data.laundryServiceType!.isNotEmpty)
+                            _buildDetailRow(data.laundryServiceType!.contains(',') ? 'Laundry Types' : 'Laundry Type', data.laundryServiceType!),
                           if (data.serviceFrequency != null) _buildDetailRow('Frequency', data.serviceFrequency!),
                           if (data.requestedReturnDate != null) _buildDetailRow('Return Date', DateFormat('dd MMM yyyy').format(data.requestedReturnDate!)),
                           if (data.requestedReturnTime != null) _buildDetailRow('Return Time', data.requestedReturnTime!.format(context)),
@@ -140,8 +142,10 @@ class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
                             _buildDetailRow('Method', data.laundryServiceMethod!),
                           if (data.requestedReturnDate != null) _buildDetailRow('Return Date', DateFormat('dd MMM yyyy').format(data.requestedReturnDate!)),
                           if (data.requestedReturnTime != null) _buildDetailRow('Return Time', data.requestedReturnTime!.format(context)),
-                          if (data.laundryServiceType != null)
-                            _buildDetailRow('Service', data.laundryServiceType!),
+                          if (data.commercialLaundryTypes != null && data.commercialLaundryTypes!.isNotEmpty)
+                            _buildDetailRow(data.commercialLaundryTypes!.length > 1 ? 'Services' : 'Service', data.commercialLaundryTypes!.join(', '))
+                          else if (data.laundryServiceType != null)
+                            _buildDetailRow(data.laundryServiceType!.contains(',') ? 'Services' : 'Service', data.laundryServiceType!),
                           _buildDetailRow('Estimated Quantity', '${data.laundryQuantityKg ?? 1} kg'),
                           if (specialCareList.isNotEmpty) ...[
                             const SizedBox(height: 4),
