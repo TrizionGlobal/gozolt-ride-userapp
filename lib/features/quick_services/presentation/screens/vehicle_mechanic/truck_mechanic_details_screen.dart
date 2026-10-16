@@ -31,10 +31,10 @@ class _TruckMechanicDetailsScreenState extends ConsumerState<TruckMechanicDetail
         _typeController.text.trim().isEmpty ||
         _makeController.text.trim().isEmpty ||
         _modelController.text.trim().isEmpty ||
-        _selectedIssue == null) {
+        _selectedIssues.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please fill all required car details and select an issue.'),
+          content: Text('Please fill all required truck details and select at least one issue.'),
           backgroundColor: Colors.red,
         ),
       );
@@ -42,6 +42,7 @@ class _TruckMechanicDetailsScreenState extends ConsumerState<TruckMechanicDetail
     }
 
     setState(() {
+      final issuesList = _selectedIssues.toList();
       _savedVehicles.add(MechanicVehicle(
         type: _typeController.text.trim(),
         make: _makeController.text.trim(),
@@ -49,7 +50,8 @@ class _TruckMechanicDetailsScreenState extends ConsumerState<TruckMechanicDetail
         year: _yearController.text.trim().isNotEmpty ? _yearController.text.trim() : null,
         registration: _registrationController.text.trim().isNotEmpty ? _registrationController.text.trim() : null,
         mileage: _mileageController.text.trim().isNotEmpty ? _mileageController.text.trim() : null,
-        issue: _selectedIssue!,
+        issue: issuesList.join(', '),
+        issues: issuesList,
       ));
 
       // Reset form
@@ -60,7 +62,7 @@ class _TruckMechanicDetailsScreenState extends ConsumerState<TruckMechanicDetail
       _yearController.clear();
       _registrationController.clear();
       _mileageController.clear();
-      _selectedIssue = null;
+      _selectedIssues.clear();
 
       FocusScope.of(context).unfocus();
     });
@@ -87,7 +89,7 @@ class _TruckMechanicDetailsScreenState extends ConsumerState<TruckMechanicDetail
   final List<XFile> _selectedImages = [];
   final ImagePicker _picker = ImagePicker();
 
-  String? _selectedIssue;
+  final Set<String> _selectedIssues = {};
   final List<String> _issues = [
     'Battery Issue',
     'Flat Tyre',
@@ -222,20 +224,34 @@ class _TruckMechanicDetailsScreenState extends ConsumerState<TruckMechanicDetail
                   _buildTextField(_mileageController, 'e.g. 50,000 km', false),
                   const SizedBox(height: 24),
 
-                  Text(
-                    'What is the issue?',
-                    style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold, color: const Color(0xFF324461)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'What is the issue?',
+                        style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold, color: const Color(0xFF324461)),
+                      ),
+                      if (_selectedIssues.isNotEmpty)
+                        Text(
+                          '${_selectedIssues.length} selected',
+                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: _issues.map((issue) {
-                      final isSelected = _selectedIssue == issue;
+                      final isSelected = _selectedIssues.contains(issue);
                       return GestureDetector(
                         onTap: () {
                           setState(() {
-                            _selectedIssue = isSelected ? null : issue;
+                            if (isSelected) {
+                              _selectedIssues.remove(issue);
+                            } else {
+                              _selectedIssues.add(issue);
+                            }
                           });
                         },
                         child: Container(
@@ -244,20 +260,35 @@ class _TruckMechanicDetailsScreenState extends ConsumerState<TruckMechanicDetail
                           decoration: BoxDecoration(
                             color: isSelected ? AppColors.primaryGold : Colors.transparent,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: isSelected ? AppColors.primaryGold : Colors.grey.withOpacity(0.3)),
+                            border: Border.all(
+                              color: isSelected ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
+                              width: isSelected ? 1.5 : 1,
+                            ),
                           ),
                           alignment: Alignment.center,
                           padding: const EdgeInsets.symmetric(horizontal: 4),
-                          child: Text(
-                            issue,
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                              color: isSelected ? Colors.black : const Color(0xFF324461),
-                            ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (isSelected) ...[
+                                const Icon(Icons.check, size: 13, color: Colors.black),
+                                const SizedBox(width: 4),
+                              ],
+                              Flexible(
+                                child: Text(
+                                  issue,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    color: isSelected ? Colors.black : const Color(0xFF324461),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       );
@@ -358,9 +389,41 @@ class _TruckMechanicDetailsScreenState extends ConsumerState<TruckMechanicDetail
                                 padding: EdgeInsets.symmetric(vertical: 12.0),
                                 child: Divider(height: 1),
                               ),
-                              Text(
-                                'Issue: ${vehicle.issue}',
-                                style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.red[700]),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    (vehicle.issues.length > 1 || vehicle.issue.contains(',')) ? 'Issues: ' : 'Issue: ',
+                                    style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: Colors.red[700]),
+                                  ),
+                                  Expanded(
+                                    child: Wrap(
+                                      spacing: 6,
+                                      runSpacing: 4,
+                                      children: (vehicle.issues.isNotEmpty
+                                              ? vehicle.issues
+                                              : vehicle.issue.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty))
+                                          .map((issue) {
+                                        return Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red.withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(6),
+                                            border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                                          ),
+                                          child: Text(
+                                            issue,
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.red[700],
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ),
+                                ],
                               ),
                               if (vehicle.registration != null || vehicle.year != null || vehicle.mileage != null) ...[
                                 const SizedBox(height: 4),

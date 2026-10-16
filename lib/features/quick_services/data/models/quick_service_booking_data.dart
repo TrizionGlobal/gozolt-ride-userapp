@@ -46,6 +46,7 @@ class MechanicVehicle {
   final String? registration;
   final String? mileage;
   final String issue;
+  final List<String> issues;
 
   const MechanicVehicle({
     required this.type,
@@ -55,7 +56,13 @@ class MechanicVehicle {
     this.registration,
     this.mileage,
     required this.issue,
+    this.issues = const [],
   });
+
+  String get displayIssues {
+    if (issues.isNotEmpty) return issues.join(', ');
+    return issue;
+  }
 
   MechanicVehicle copyWith({
     String? type,
@@ -65,6 +72,7 @@ class MechanicVehicle {
     String? registration,
     String? mileage,
     String? issue,
+    List<String>? issues,
   }) {
     return MechanicVehicle(
       type: type ?? this.type,
@@ -74,6 +82,7 @@ class MechanicVehicle {
       registration: registration ?? this.registration,
       mileage: mileage ?? this.mileage,
       issue: issue ?? this.issue,
+      issues: issues ?? this.issues,
     );
   }
 }

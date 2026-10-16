@@ -1553,7 +1553,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               state.extra as QuickServiceBookingData? ?? _dummyBookingData;
           return SharedQuickServiceConfirmationScreen(
               bookingData: state.extra as QuickServiceBookingData,
-              serviceIcon: Icons.elevator,
+              serviceIcon: Icons.bolt,
               defaultTitle: 'Commercial Electric');
         },
       ),

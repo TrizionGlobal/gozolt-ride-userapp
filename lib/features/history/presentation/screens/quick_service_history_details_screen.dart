@@ -383,9 +383,6 @@ class _QuickServiceHistoryDetailsScreenState extends ConsumerState<QuickServiceH
     } else if (lowerCat.contains('mechanic')) {
       return 'Mechanic Visit/hr';
     } else if (lowerCat.contains('electric')) {
-      if (lowerCat.contains('commercial') || lowerCat.contains('lift') || lowerCat.contains('events')) {
-        return 'Mechanic Visit/hr';
-      }
       return 'Expert Visit/hr';
     } else if (lowerCat.contains('engineer') || 
                lowerCat.contains('computer') ||
@@ -902,13 +899,93 @@ Time: $displayTime
                                             children: item.entries
                                                 .where((entry) => entry.value != null && entry.value.toString().isNotEmpty)
                                                 .map<Widget>((entry) {
+                                              final keyStr = entry.key.toString();
+                                              final isIssueKey = keyStr.toLowerCase().contains('issue');
+
+                                              if (isIssueKey) {
+                                                List<String> issuesList = [];
+                                                if (entry.value is List) {
+                                                  issuesList = (entry.value as List)
+                                                      .map((x) => x.toString().trim())
+                                                      .where((x) => x.isNotEmpty)
+                                                      .toList();
+                                                } else {
+                                                  issuesList = entry.value
+                                                      .toString()
+                                                      .split(',')
+                                                      .map((x) => x.trim())
+                                                      .where((x) => x.isNotEmpty)
+                                                      .toList();
+                                                }
+
+                                                return Padding(
+                                                  padding: const EdgeInsets.only(bottom: 6.0),
+                                                  child: Row(
+                                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                                    children: [
+                                                      SizedBox(
+                                                        width: 95,
+                                                        child: Text(
+                                                          issuesList.length > 1 ? 'Issues:' : 'Issue:',
+                                                          style: AppTextStyles.bodySmall.copyWith(
+                                                            color: Theme.of(context).brightness == Brightness.dark
+                                                                ? Colors.grey[400]
+                                                                : Colors.grey.shade700,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      Expanded(
+                                                        child: Wrap(
+                                                          spacing: 6,
+                                                          runSpacing: 4,
+                                                          children: issuesList.map((issue) {
+                                                            return Container(
+                                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                                              decoration: BoxDecoration(
+                                                                color: AppColors.primaryGold.withValues(alpha: 0.15),
+                                                                borderRadius: BorderRadius.circular(6),
+                                                                border: Border.all(
+                                                                  color: AppColors.primaryGold.withValues(alpha: 0.4),
+                                                                ),
+                                                              ),
+                                                              child: Text(
+                                                                issue,
+                                                                style: AppTextStyles.bodySmall.copyWith(
+                                                                  fontWeight: FontWeight.w600,
+                                                                  fontSize: 11,
+                                                                ),
+                                                              ),
+                                                            );
+                                                          }).toList(),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              }
+
                                               return Padding(
                                                 padding: const EdgeInsets.only(bottom: 6.0),
                                                 child: Row(
                                                   crossAxisAlignment: CrossAxisAlignment.start,
                                                   children: [
-                                                    Text('${_formatOptionKey(entry.key.toString())}: ', style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey.shade700)),
-                                                    Expanded(child: Text(_formatOptionValue(entry.value), style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold))),
+                                                    SizedBox(
+                                                      width: 95,
+                                                      child: Text(
+                                                        '${_formatOptionKey(keyStr)}:',
+                                                        style: AppTextStyles.bodySmall.copyWith(
+                                                          color: Theme.of(context).brightness == Brightness.dark
+                                                              ? Colors.grey[400]
+                                                              : Colors.grey.shade700,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      child: Text(
+                                                        _formatOptionValue(entry.value),
+                                                        style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
+                                                      ),
+                                                    ),
                                                   ],
                                                 ),
                                               );
@@ -1075,7 +1152,7 @@ Time: $displayTime
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Selected Add-ons & Details',
+                            'Service Summary',
                             style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 12),

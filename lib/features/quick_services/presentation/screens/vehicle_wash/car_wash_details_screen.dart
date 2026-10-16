@@ -50,14 +50,14 @@ class _CarWashDetailsScreenState extends ConsumerState<CarWashDetailsScreen> {
     final title = widget.bookingData.selectedServiceTitle ?? '';
     if (title.contains('Bike')) {
       return [
-        {'title': 'Standard Wash', 'price': 10.0, 'displayPrice': ''},
-        {'title': 'Detailed Wash', 'price': 15.0, 'displayPrice': ''},
+        {'title': 'Standard Wash', 'price': 0.0, 'displayPrice': ''},
+        {'title': 'Detailed Wash', 'price': 0.0, 'displayPrice': ''},
       ];
     }
     return [
-      {'title': 'Exterior Wash', 'price': 15.0, 'displayPrice': ''},
-      {'title': 'Interior Cleaning', 'price': 18.0, 'displayPrice': ''},
-      {'title': 'Full Wash', 'price': 30.0, 'displayPrice': ''},
+      {'title': 'Exterior Wash', 'price': 0.0, 'displayPrice': ''},
+      {'title': 'Interior Cleaning', 'price': 0.0, 'displayPrice': ''},
+      {'title': 'Full Wash', 'price': 0.0, 'displayPrice': ''},
     ];
   }
 
@@ -378,10 +378,11 @@ class _CarWashDetailsScreenState extends ConsumerState<CarWashDetailsScreen> {
                                         ),
                                       ),
                                     ),
-                                    Text(
-                                      displayPrice,
-                                      style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
-                                    ),
+                                    if (displayPrice.isNotEmpty)
+                                      Text(
+                                        displayPrice,
+                                        style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                                      ),
                                   ],
                                 ),
                               ),
@@ -535,13 +536,6 @@ class _CarWashDetailsScreenState extends ConsumerState<CarWashDetailsScreen> {
                                         style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600]),
                                       ),
                                     ],
-                                  ),
-                                  Text(
-                                    '€${vehicle.washPackagePrice.toStringAsFixed(0)}',
-                                    style: AppTextStyles.titleMedium.copyWith(
-                                      color: isDark ? AppColors.primaryGold : const Color(0xFFD97706),
-                                      fontWeight: FontWeight.bold,
-                                    ),
                                   ),
                                 ],
                               ),

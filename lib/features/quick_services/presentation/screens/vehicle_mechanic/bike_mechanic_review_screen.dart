@@ -213,8 +213,12 @@ class _BikeMechanicReviewScreenState extends ConsumerState<BikeMechanicReviewScr
                                   ],
                                 ),
                                 const SizedBox(height: 4),
-                                _buildDetailRow('Type:', v.type ?? 'Car'),
-                                _buildDetailRow('Issue:', v.issue),
+                                _buildDetailRow('Type:', v.type.isNotEmpty ? v.type : 'Bike'),
+                                _buildIssuesRow(v.issues.isNotEmpty
+                                    ? v.issues
+                                    : v.issue.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList()),
+                                if (v.registration != null && v.registration!.isNotEmpty)
+                                  _buildDetailRow('Registration:', v.registration!),
                                 if (v.year != null || v.mileage != null)
                                   _buildDetailRow('Details:', [if (v.year != null) 'Year: ${v.year}', if (v.mileage != null) 'Mileage: ${v.mileage}'].join(', ')),
                               ],
@@ -386,9 +390,51 @@ class _BikeMechanicReviewScreenState extends ConsumerState<BikeMechanicReviewScr
     );
   }
 
+  Widget _buildIssuesRow(List<String> issuesList) {
+    final cleanIssues = issuesList.where((i) => i.trim().isNotEmpty).toList();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              cleanIssues.length > 1 ? 'Issues:' : 'Issue:',
+              style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600]),
+            ),
+          ),
+          Expanded(
+            child: Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: cleanIssues.map((issue) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGold.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.4)),
+                  ),
+                  child: Text(
+                    issue,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDetailRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      padding: const EdgeInsets.symmetric(vertical: 3.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -43,9 +43,9 @@ class QuickServicesPriceSummary extends StatelessWidget {
               children: [
                 Text(
                   (bookingData.selectedAddons.isNotEmpty && (showAdditionalDetails && (bookingData.describeIssue?.trim().isNotEmpty == true || bookingData.uploadedImages?.isNotEmpty == true || bookingData.whatYouNeed?.trim().isNotEmpty == true || bookingData.requirementDescription?.trim().isNotEmpty == true)))
-                      ? 'Selected Add-ons & Details'
+                      ? 'Service Summary'
                       : (bookingData.selectedAddons.isNotEmpty)
-                          ? 'Selected Add-ons'
+                          ? 'Service Summary'
                           : 'Additional Details',
                   style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
                 ),

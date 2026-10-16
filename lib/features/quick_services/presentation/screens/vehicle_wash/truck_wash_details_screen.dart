@@ -47,9 +47,9 @@ class _TruckWashDetailsScreenState extends ConsumerState<TruckWashDetailsScreen>
   final ImagePicker _picker = ImagePicker();
 
   final List<Map<String, dynamic>> _washPackages = [
-    {'title': 'Exterior Wash', 'price': 25.0, 'displayPrice': ''},
-    {'title': 'Interior Cleaning', 'price': 35.0, 'displayPrice': ''},
-    {'title': 'Full Wash', 'price': 50.0, 'displayPrice': ''},
+    {'title': 'Exterior Wash', 'price': 0.0, 'displayPrice': ''},
+    {'title': 'Interior Cleaning', 'price': 0.0, 'displayPrice': ''},
+    {'title': 'Full Wash', 'price': 0.0, 'displayPrice': ''},
   ];
 
   final List<String> _vehicleConditions = [
@@ -369,10 +369,11 @@ class _TruckWashDetailsScreenState extends ConsumerState<TruckWashDetailsScreen>
                                         ),
                                       ),
                                     ),
-                                    Text(
-                                      displayPrice,
-                                      style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
-                                    ),
+                                    if (displayPrice.isNotEmpty)
+                                      Text(
+                                        displayPrice,
+                                        style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                                      ),
                                   ],
                                 ),
                               ),
@@ -526,13 +527,6 @@ class _TruckWashDetailsScreenState extends ConsumerState<TruckWashDetailsScreen>
                                         style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600]),
                                       ),
                                     ],
-                                  ),
-                                  Text(
-                                    '€${vehicle.washPackagePrice.toStringAsFixed(0)}',
-                                    style: AppTextStyles.titleMedium.copyWith(
-                                      color: isDark ? AppColors.primaryGold : const Color(0xFFD97706),
-                                      fontWeight: FontWeight.bold,
-                                    ),
                                   ),
                                 ],
                               ),

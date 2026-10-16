@@ -154,9 +154,6 @@ class QuickServicesPricingConfig {
     } else if (lowerCat.contains('mechanic')) {
       return 'Mechanic Visit/hr';
     } else if (lowerCat.contains('electric')) {
-      if (selectedServiceTitle?.contains('Commercial') == true || selectedServiceTitle?.contains('Lift') == true || selectedServiceTitle?.contains('Events') == true) {
-        return 'Mechanic Visit/hr';
-      }
       return 'Expert Visit/hr';
     } else if (lowerCat.contains('engineer') || 
                lowerCat.contains('computer') ||

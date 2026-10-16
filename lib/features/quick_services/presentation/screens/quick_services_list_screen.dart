@@ -99,10 +99,10 @@ class _QuickServicesListScreenState extends ConsumerState<QuickServicesListScree
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) {
+      builder: (sheetContext) {
         return Container(
           decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
+            color: Theme.of(sheetContext).scaffoldBackgroundColor,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: SafeArea(
@@ -131,7 +131,7 @@ class _QuickServicesListScreenState extends ConsumerState<QuickServicesListScree
                       ),
                       IconButton(
                         icon: Icon(Icons.close, color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight),
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () => Navigator.pop(sheetContext),
                       ),
                     ],
                   ),
@@ -141,7 +141,7 @@ class _QuickServicesListScreenState extends ConsumerState<QuickServicesListScree
                     runSpacing: 8,
                     children: category.subServices.map((subService) {
                       return GestureDetector(
-                        onTap: () {
+                        onTap: () async {
                           // We no longer set _selectedCategoryTitle so it doesn't stay highlighted
                           // when navigating back.
                           
@@ -255,16 +255,21 @@ class _QuickServicesListScreenState extends ConsumerState<QuickServicesListScree
                           }
 
                           // Dismiss the bottom sheet modal first
-                          Navigator.pop(context);
+                          Navigator.pop(sheetContext);
                           
                           // Always go through location & schedule screen first
-                          context.pushNamed(
+                          await this.context.pushNamed(
                             RouteNames.quickServicesLocation,
                             extra: {
                               'bookingData': updatedData,
                               'nextRoute': nextRoute,
                             },
                           );
+
+                          // When returning back from location & schedule, keep the category modal open
+                          if (mounted) {
+                            _showSubServicesModal(this.context, category);
+                          }
                         },
                         child: Container(
                           width: (MediaQuery.of(context).size.width - 48 - 8) / 2, // 2 columns

@@ -60,8 +60,18 @@ class QuickServicesRepository {
       
       // Mechanic
       if (data.mechanicVehicles != null && data.mechanicVehicles!.isNotEmpty) {
-        options['Vehicles'] = data.mechanicVehicles!.map((v) => {
-          'Type': v.type, 'Make': v.make, 'Model': v.model, 'Year': v.year, 'Registration': v.registration, 'Issue': v.issue
+        options['Vehicles'] = data.mechanicVehicles!.map((v) {
+          final issueText = v.displayIssues;
+          final isMultiple = v.issues.length > 1 || issueText.contains(',');
+          return {
+            'Type': v.type,
+            'Make': v.make,
+            'Model': v.model,
+            if (v.year != null && v.year!.isNotEmpty) 'Year': v.year,
+            if (v.registration != null && v.registration!.isNotEmpty) 'Registration': v.registration,
+            if (v.mileage != null && v.mileage!.isNotEmpty) 'Mileage': v.mileage,
+            (isMultiple ? 'Issues' : 'Issue'): issueText,
+          };
         }).toList();
       } else {
         if (data.carType != null) options['Car Type'] = data.carType;

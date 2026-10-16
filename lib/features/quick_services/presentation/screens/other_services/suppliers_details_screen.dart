@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +9,6 @@ import '../../../../../core/router/route_names.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_additional_details.dart';
-import '../../../../../core/config/quick_services_pricing_config.dart';
 
 class SuppliersDetailsScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData bookingData;
@@ -69,13 +67,52 @@ class _SuppliersDetailsScreenState extends ConsumerState<SuppliersDetailsScreen>
 
 
   Widget _buildLabel(String text) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Text(
         text,
         style: AppTextStyles.titleSmall.copyWith(
           fontWeight: FontWeight.bold,
-          color: const Color(0xFF324461),
+          color: isDark ? Colors.white : const Color(0xFF324461),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryTile(String category, bool isDark) {
+    final isSelected = _supplyCategory == category;
+    return GestureDetector(
+      onTap: () {
+        setState(() => _supplyCategory = isSelected ? null : category);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        height: 44,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primaryGold
+              : (isDark ? Theme.of(context).cardTheme.color : Colors.white),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primaryGold
+                : (isDark ? Colors.grey.withValues(alpha: 0.3) : Colors.grey.shade400),
+            width: isSelected ? 1.5 : 1.0,
+          ),
+        ),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            category,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: isSelected ? Colors.black : (isDark ? Colors.white : Colors.black87),
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            ),
+          ),
         ),
       ),
     );
@@ -103,32 +140,49 @@ class _SuppliersDetailsScreenState extends ConsumerState<SuppliersDetailsScreen>
                 children: [
                   // Supply Category
                   _buildLabel('Supply Category'),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _categories.map((category) {
-                      final isSelected = _supplyCategory == category;
-                      return ChoiceChip(
-                        label: Text(category),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          setState(() => _supplyCategory = selected ? category : null);
-                        },
-                        selectedColor: AppColors.primaryGold,
-                        backgroundColor: Colors.transparent,
-                        labelStyle: AppTextStyles.bodyMedium.copyWith(
-                          color: isSelected ? Colors.black : (isDark ? Colors.white : Colors.black87),
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          side: BorderSide(
-                            color: isSelected ? AppColors.primaryGold : Colors.grey.shade400,
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      const double spacing = 10;
+                      final double itemWidth = (constraints.maxWidth - spacing) / 2;
+                      return Column(
+                        children: [
+                          Row(
+                            children: [
+                              SizedBox(
+                                width: itemWidth,
+                                child: _buildCategoryTile(_categories[0], isDark),
+                              ),
+                              const SizedBox(width: spacing),
+                              SizedBox(
+                                width: itemWidth,
+                                child: _buildCategoryTile(_categories[1], isDark),
+                              ),
+                            ],
                           ),
-                        ),
-                        showCheckmark: false,
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              SizedBox(
+                                width: itemWidth,
+                                child: _buildCategoryTile(_categories[2], isDark),
+                              ),
+                              const SizedBox(width: spacing),
+                              SizedBox(
+                                width: itemWidth,
+                                child: _buildCategoryTile(_categories[3], isDark),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Center(
+                            child: SizedBox(
+                              width: itemWidth,
+                              child: _buildCategoryTile(_categories[4], isDark),
+                            ),
+                          ),
+                        ],
                       );
-                    }).toList(),
+                    },
                   ),
                   const SizedBox(height: 16),
 
@@ -270,29 +324,6 @@ class _SuppliersDetailsScreenState extends ConsumerState<SuppliersDetailsScreen>
                       });
                     },
                   ),
-                  const SizedBox(height: 24),
-                  
-                  // Info Banner
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF8E1), // Light yellow
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.info, color: Color(0xFFFBC02D), size: 20),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'The supplier will confirm availability and final price.',
-                            style: AppTextStyles.bodySmall.copyWith(color: Colors.black87),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
                   const SizedBox(height: 32),
                   
                   // Continue Button
