@@ -361,7 +361,7 @@ class _PestControlDetailsScreenState extends ConsumerState<PestControlDetailsScr
                   ),
 
                   // 3. Affected Areas
-                  _buildSectionHeader('3', 'Affected Areas', subtitle: '(Select all that apply)'),
+                  _buildSectionHeader('3', 'Affected Areas'),
                   _buildTextGridSelection(
                     _affectedAreasOptions,
                     _selectedAffectedAreas,

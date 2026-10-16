@@ -438,6 +438,8 @@ class _QuickServiceHistoryDetailsScreenState extends ConsumerState<QuickServiceH
       'materialcost',
       'issuedescription',
       'requirements',
+      'comments',
+      'comment',
       'subtotal',
       'tax',
       'total',
@@ -513,8 +515,16 @@ class _QuickServiceHistoryDetailsScreenState extends ConsumerState<QuickServiceH
     final double remainingBalance = (status == 'AWAITING_PAYMENT') ? serviceAmountVal : 0.0;
 
     final displayBookingId = 'GZ-QS-${booking.id.substring(0, 8).toUpperCase()}';
-    final displayDate = DateFormat('dd MMM yyyy').format(booking.bookingDate);
-    final displayTime = DateFormat('h:mm a').format(booking.bookingDate);
+    final displayDate = DateFormat('dd MMM yyyy').format(booking.bookingDate.toLocal());
+    final displayTime = DateFormat('h:mm a').format(booking.bookingDate.toLocal());
+
+    final String issueDescriptionText = (booking.requirements != null && booking.requirements!.trim().isNotEmpty)
+        ? booking.requirements!.trim()
+        : (booking.options['Issue Description']?.toString().trim().isNotEmpty == true
+            ? booking.options['Issue Description'].toString().trim()
+            : (booking.options['Comments']?.toString().trim().isNotEmpty == true
+                ? booking.options['Comments'].toString().trim()
+                : ''));
     
     // Extract Validation PIN
     String validationPin = '';
@@ -1139,8 +1149,7 @@ Time: $displayTime
                   ],
 
                   // Selected Add-ons Card (Matching Price Summary style)
-                  // Selected Add-ons Card (Matching Price Summary style)
-                  if (booking.addOns.where((a) => a is Map).isNotEmpty || (booking.requirements != null && booking.requirements!.trim().isNotEmpty) || (booking.images != null && booking.images!.isNotEmpty)) ...[
+                  if (booking.addOns.where((a) => a is Map).isNotEmpty || issueDescriptionText.isNotEmpty || (booking.images != null && booking.images!.isNotEmpty)) ...[
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -1189,10 +1198,10 @@ Time: $displayTime
                               );
                             }),
                           
-                          if (booking.addOns.where((a) => a is Map).isNotEmpty && ((booking.requirements != null && booking.requirements!.trim().isNotEmpty) || (booking.images != null && booking.images!.isNotEmpty)))
+                          if (booking.addOns.where((a) => a is Map).isNotEmpty && (issueDescriptionText.isNotEmpty || (booking.images != null && booking.images!.isNotEmpty)))
                             const Divider(height: 24),
                           
-                          if (booking.requirements != null && booking.requirements!.trim().isNotEmpty) ...[
+                          if (issueDescriptionText.isNotEmpty) ...[
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -1200,7 +1209,7 @@ Time: $displayTime
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
-                                    'Issue description: ${booking.requirements!}',
+                                    'Issue description: $issueDescriptionText',
                                     style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[700]),
                                   ),
                                 ),

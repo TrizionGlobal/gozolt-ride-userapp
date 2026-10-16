@@ -129,7 +129,7 @@ class _HirePersonDetailsScreenState extends ConsumerState<HirePersonDetailsScree
       genderPreference: _selectedGender,
       whatYouNeed: _whatYouNeedController.text.trim(),
       describeIssue: _describeIssueController.text.trim(),
-      comments: commentsText,
+      comments: null,
       uploadedImages: _selectedImages.map((img) => img.path).toList(),
       subtotal: 0.0,
       baseEstimatedHours: estimatedHours,

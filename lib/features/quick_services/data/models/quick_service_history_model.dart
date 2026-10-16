@@ -86,7 +86,7 @@ class QuickServiceHistoryModel {
       id: json['id'] ?? '',
       serviceCategory: json['serviceCategory'] ?? '',
       serviceTitle: json['serviceTitle'] ?? '',
-      bookingDate: json['bookingDate'] != null ? DateTime.parse(json['bookingDate']) : DateTime.now(),
+      bookingDate: json['bookingDate'] != null ? DateTime.parse(json['bookingDate']).toLocal() : DateTime.now(),
       status: json['status'] ?? 'PENDING',
       options: parsedOptions,
       addOns: parsedAddOns,

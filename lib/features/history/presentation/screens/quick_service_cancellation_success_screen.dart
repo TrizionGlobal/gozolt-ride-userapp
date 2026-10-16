@@ -165,7 +165,7 @@ class QuickServiceCancellationSuccessScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'The upfront booking fee is non-refundable per platform cancellation policy.',
+                        'The upfront booking fee is non-refundable as per platform cancellation policy.',
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: AppColors.textSecondary,
                         ),

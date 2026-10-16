@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/constants/asset_paths.dart';
-import '../../../../core/router/route_names.dart';
-import '../../../ride/presentation/providers/active_ride_provider.dart';
-import '../../../ride/presentation/providers/active_ride_state.dart';
+import 'transport_grid.dart';
 
 class GoPlacesSection extends StatelessWidget {
   const GoPlacesSection({super.key});
@@ -58,27 +54,17 @@ class _PlaceData {
   const _PlaceData({required this.name, required this.imagePath});
 }
 
-class _PlaceCard extends ConsumerWidget {
+class _PlaceCard extends StatelessWidget {
   final _PlaceData data;
 
   const _PlaceCard({required this.data});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
         HapticFeedback.lightImpact();
-        
-        final activeState = ref.read(activeRideProvider);
-        if (activeState.ride != null && activeState.status != ActiveRideStatus.cancelled) {
-          context.pushNamed(RouteNames.rideActive);
-          return;
-        }
-
-        context.pushNamed(
-          RouteNames.searchDestination,
-          queryParameters: {'destination': data.name},
-        );
+        TransportGrid.showTransportModal(context, destination: data.name);
       },
       child: ClipRRect(
         borderRadius: BorderRadius.circular(14),
@@ -93,7 +79,7 @@ class _PlaceCard extends ConsumerWidget {
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => Container(
                   color: Theme.of(context).cardTheme.color,
-                  child: Center(
+                  child: const Center(
                     child: Icon(Icons.place,
                         color: AppColors.primaryGold, size: 40),
                   ),

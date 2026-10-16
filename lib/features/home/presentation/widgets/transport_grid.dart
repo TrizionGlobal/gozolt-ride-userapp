@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
-import '../../../../core/constants/asset_paths.dart';
 import '../../../../core/router/route_names.dart';
+import '../../../ride/presentation/providers/active_ride_provider.dart';
+import '../../../ride/presentation/providers/active_ride_state.dart';
 
 class TransportGrid extends StatelessWidget {
   const TransportGrid({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(20),
@@ -40,7 +40,7 @@ class TransportGrid extends StatelessWidget {
                       'assets/images/updated_userapp_images/transport.png',
                   label: 'Transport',
                   isActive: true,
-                  onTap: () => _showTransportModal(context),
+                  onTap: () => showTransportModal(context),
                 ),
               ),
               const SizedBox(width: 14),
@@ -78,7 +78,7 @@ class TransportGrid extends StatelessWidget {
     );
   }
 
-  void _showTransportModal(BuildContext context) {
+  static void showTransportModal(BuildContext context, {String? destination}) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -108,7 +108,22 @@ class TransportGrid extends StatelessWidget {
                       isActive: true,
                       onTap: () {
                         Navigator.pop(ctx);
-                        context.pushNamed(RouteNames.searchDestination);
+                        try {
+                          final activeState = ProviderScope.containerOf(context, listen: false)
+                              .read(activeRideProvider);
+                          if (activeState.ride != null &&
+                              activeState.status != ActiveRideStatus.cancelled) {
+                            context.pushNamed(RouteNames.rideActive);
+                            return;
+                          }
+                        } catch (_) {}
+
+                        context.pushNamed(
+                          RouteNames.searchDestination,
+                          queryParameters: destination != null
+                              ? {'destination': destination}
+                              : const {},
+                        );
                       },
                     ),
                   ),
