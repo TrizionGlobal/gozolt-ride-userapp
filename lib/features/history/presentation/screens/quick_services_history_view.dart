@@ -178,31 +178,38 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
 
   IconData _getServiceIcon(String category, String title) {
     final t = title.toLowerCase();
-    switch (t) {
-      case 'home cleaning': return Icons.cleaning_services;
-      case 'pest control': return Icons.pest_control;
-      case 'gardening': return Icons.yard;
-      case 'plumbing': return Icons.plumbing;
-      case 'carpenter': return Icons.carpenter;
-      case 'painter': return Icons.format_paint;
-      case 'mobile': return Icons.smartphone;
-      case 'laptop/computer': return Icons.laptop;
-      case 'printer / scanner': return Icons.print;
-      case 'car': return Icons.directions_car;
-      case 'bike': return Icons.two_wheeler;
-      case 'truck': return Icons.local_shipping;
-      case 'refrigerator': return Icons.kitchen;
-      case 'air conditioner': return Icons.ac_unit;
-      case 'washing machine': return Icons.local_laundry_service;
-      case 'television': return Icons.tv;
-      case 'fan': return Icons.air;
-      case 'appliance repair': return Icons.ac_unit;
-      case 'electrical repair': return Icons.electrical_services;
-      case 'vehicle mechanic': return Icons.handyman;
-      case 'vehicle wash': return Icons.local_car_wash;
-      case 'pc & mobile repair': return Icons.computer;
-      case 'beauty & wellness': return Icons.spa;
-    }
+    if (t.contains('bike mechanic')) return Icons.two_wheeler;
+    if (t.contains('truck mechanic')) return Icons.local_shipping;
+    if (t.contains('car mechanic')) return Icons.directions_car;
+    if (t.contains('bike wash')) return Icons.two_wheeler;
+    if (t.contains('truck wash')) return Icons.local_shipping;
+    if (t.contains('car wash')) return Icons.local_car_wash;
+    if (t.contains('mobile')) return Icons.smartphone;
+    if (t.contains('laptop') || t.contains('computer')) return Icons.laptop;
+    if (t.contains('printer') || t.contains('scanner')) return Icons.print;
+    if (t.contains('home cleaning') || t.contains('cleaning')) return Icons.cleaning_services;
+    if (t.contains('pest')) return Icons.pest_control;
+    if (t.contains('garden')) return Icons.yard;
+    if (t.contains('plumb')) return Icons.plumbing;
+    if (t.contains('carpent')) return Icons.carpenter;
+    if (t.contains('paint')) return Icons.format_paint;
+    if (t.contains('laundry')) return Icons.local_laundry_service;
+    if (t.contains('beauty') || t.contains('wellness')) return Icons.spa;
+    if (t.contains('security') || t.contains('bouncer')) return Icons.security;
+    if (t.contains('hire')) return Icons.person_search;
+    if (t.contains('refrigerator')) return Icons.kitchen;
+    if (t.contains('air conditioner') || t.contains('conditioner') || t.contains('ac')) return Icons.ac_unit;
+    if (t.contains('washing machine')) return Icons.local_laundry_service;
+    if (t.contains('television') || t.contains('tv')) return Icons.tv;
+    if (t.contains('fan')) return Icons.air;
+    if (t.contains('appliance')) return Icons.ac_unit;
+    if (t.contains('commercial electric') || t.contains('lift') || t.contains('elevator')) return Icons.elevator;
+    if (t.contains('electric')) return Icons.electrical_services;
+    if (t.contains('mechanic')) return Icons.handyman;
+    if (t.contains('wash')) return Icons.local_car_wash;
+    if (t == 'car') return Icons.directions_car;
+    if (t == 'bike') return Icons.two_wheeler;
+    if (t == 'truck') return Icons.local_shipping;
     
     final c = category.toLowerCase();
     switch (c) {
@@ -260,10 +267,7 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
     final double serviceAmount = (rawService != null && isWorkEnded) ? double.parse(rawService.toStringAsFixed(2)) : 0.0;
     final double totalAmount = initialPaid + serviceAmount;
 
-    String title = booking.serviceTitle;
-    if (booking.serviceCategory.toLowerCase().contains('beauty') || booking.serviceCategory.toLowerCase().contains('wellness')) {
-      title = 'Beauty & Wellness';
-    }
+    final String title = booking.displayTitle;
 
     String subtitle = booking.serviceCategory;
     final validAddOns = booking.addOns.where((a) => a is Map).toList();
@@ -339,7 +343,7 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
-                          _getServiceIcon(booking.serviceCategory, booking.serviceTitle),
+                          _getServiceIcon(booking.serviceCategory, title),
                           color: AppColors.primaryGold,
                           size: 24,
                         ),
@@ -353,7 +357,8 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
                               title,
                               style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
                             ),
-                            if (booking.addOns.isNotEmpty || booking.options.isNotEmpty) ...[
+                            if ((booking.addOns.isNotEmpty || booking.options.isNotEmpty) &&
+                                subtitle.trim().toLowerCase() != title.trim().toLowerCase()) ...[
                               const SizedBox(height: 4),
                               Text(
                                 subtitle,

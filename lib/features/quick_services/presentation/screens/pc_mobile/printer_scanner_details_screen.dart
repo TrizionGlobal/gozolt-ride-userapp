@@ -209,10 +209,10 @@ class _PrinterScannerDetailsScreenState extends ConsumerState<PrinterScannerDeta
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(
+          QuickServicesHeader(
             currentStep: 1,
             title: 'Service Requirements',
-            subtitle: 'Printer & Scanner Repair',
+            subtitle: widget.bookingData.selectedServiceTitle ?? 'Printer & Scanner Repair',
           ),
             
           Expanded(

@@ -178,6 +178,7 @@ class _ServiceLocationScreenState extends State<ServiceLocationScreen> {
           // ── Header ───────────────────────────────────────
           QuickServicesHeader(
             title: 'Location & Schedule',
+            subtitle: widget.bookingData?.selectedServiceTitle ?? widget.bookingData?.category,
           ),
           
           // ── Content ──────────────────────────────────────

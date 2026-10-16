@@ -115,10 +115,10 @@ class _LiftElevatorMechanicReviewScreenState extends ConsumerState<LiftElevatorM
       ],),
       body: Column(
         children: [
-          const QuickServicesHeader(
+          QuickServicesHeader(
             currentStep: 2,
             title: 'Review & Book',
-            subtitle: 'Commercial Mechanic',
+            subtitle: _bookingData.selectedServiceTitle ?? 'Commercial Electric',
           ),
           
           // Certified technician required banner

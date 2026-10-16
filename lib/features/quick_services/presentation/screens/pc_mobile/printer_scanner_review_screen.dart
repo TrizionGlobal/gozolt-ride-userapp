@@ -94,10 +94,10 @@ class _PrinterScannerReviewScreenState extends ConsumerState<PrinterScannerRevie
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(
+          QuickServicesHeader(
             currentStep: 2,
             title: 'Review & Book',
-            subtitle: 'Printer & Scanner Repair',
+            subtitle: _bookingData.selectedServiceTitle ?? 'Printer & Scanner Repair',
           ),
           Expanded(
             child: SingleChildScrollView(

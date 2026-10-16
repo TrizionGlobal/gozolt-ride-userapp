@@ -283,10 +283,10 @@ class _MobileRepairDetailsScreenState extends ConsumerState<MobileRepairDetailsS
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(
+          QuickServicesHeader(
             currentStep: 1,
             title: 'Service Requirements',
-            subtitle: 'Mobile Repair',
+            subtitle: widget.bookingData.selectedServiceTitle ?? 'Mobile Repair',
           ),
             
           Expanded(

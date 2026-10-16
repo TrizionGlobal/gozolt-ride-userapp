@@ -48,10 +48,10 @@ class _EventsElectricReviewScreenState extends ConsumerState<EventsElectricRevie
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(
+          QuickServicesHeader(
             currentStep: 2,
             title: 'Review & Book',
-            subtitle: 'Events Electric',
+            subtitle: _bookingData.selectedServiceTitle ?? 'Events Electric',
           ),
           Expanded(
             child: SingleChildScrollView(

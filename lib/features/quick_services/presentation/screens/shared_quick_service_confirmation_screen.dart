@@ -5,7 +5,6 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
 import '../../data/models/quick_service_booking_data.dart';
-import '../../../ride/data/models/saved_payment_method.dart';
 
 class SharedQuickServiceConfirmationScreen extends StatelessWidget {
   final QuickServiceBookingData bookingData;
@@ -153,11 +152,6 @@ Amount Paid: €${((bookingData.upfrontBookingFee + bookingData.materialCost) - 
                             'Amount Paid Now',
                             '€${((bookingData.upfrontBookingFee + bookingData.materialCost) - (bookingData.useGoCoins ? (bookingData.upfrontBookingFee + bookingData.materialCost).clamp(0.0, 6.0) : 0.0)).toStringAsFixed(2)}',
                             isTotal: false,
-                          ),
-                          _buildDetailRow(
-                            'Remaining Amount (After Service)',
-                            'Based on hours spent × hourly rate',
-                            isTotal: true,
                           ),
                         ],
                       ),

@@ -1482,8 +1482,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesCarMechanicConfirmation,
         builder: (context, state) => SharedQuickServiceConfirmationScreen(
             bookingData: state.extra as QuickServiceBookingData,
-            serviceIcon: Icons.build,
-            defaultTitle: 'Mechanic'),
+            serviceIcon: Icons.directions_car,
+            defaultTitle: 'Car Mechanic'),
       ),
 
       GoRoute(
@@ -1524,8 +1524,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesTruckMechanicConfirmation,
         builder: (context, state) => SharedQuickServiceConfirmationScreen(
             bookingData: state.extra as QuickServiceBookingData,
-            serviceIcon: Icons.build,
-            defaultTitle: 'Mechanic'),
+            serviceIcon: Icons.local_shipping,
+            defaultTitle: 'Truck Mechanic'),
       ),
       GoRoute(
         path: '/lift-elevator',
@@ -1554,7 +1554,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           return SharedQuickServiceConfirmationScreen(
               bookingData: state.extra as QuickServiceBookingData,
               serviceIcon: Icons.elevator,
-              defaultTitle: 'Lift / Elevator');
+              defaultTitle: 'Commercial Electric');
         },
       ),
       GoRoute(
@@ -1584,7 +1584,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           return SharedQuickServiceConfirmationScreen(
               bookingData: state.extra as QuickServiceBookingData,
               serviceIcon: Icons.electrical_services,
-              defaultTitle: 'Electrical');
+              defaultTitle: 'Home Electric');
         },
       ),
       GoRoute(
@@ -1778,7 +1778,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           return SharedQuickServiceConfirmationScreen(
               bookingData: state.extra as QuickServiceBookingData,
               serviceIcon: Icons.local_car_wash,
-              defaultTitle: 'Vehicle Wash');
+              defaultTitle: 'Car Wash');
         },
       ),
       GoRoute(
@@ -1807,8 +1807,8 @@ final routerProvider = Provider<GoRouter>((ref) {
               state.extra as QuickServiceBookingData? ?? _dummyBookingData;
           return SharedQuickServiceConfirmationScreen(
               bookingData: state.extra as QuickServiceBookingData,
-              serviceIcon: Icons.local_car_wash,
-              defaultTitle: 'Vehicle Wash');
+              serviceIcon: Icons.local_shipping,
+              defaultTitle: 'Truck Wash');
         },
       ),
       GoRoute(
@@ -2033,7 +2033,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           return SharedQuickServiceConfirmationScreen(
               bookingData: state.extra as QuickServiceBookingData,
               serviceIcon: Icons.print,
-              defaultTitle: 'Printer / Scanner');
+              defaultTitle: 'Printer & Scanner Repair');
         },
       ),
       GoRoute(
@@ -2041,8 +2041,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesBikeMechanicConfirmation,
         builder: (context, state) => SharedQuickServiceConfirmationScreen(
             bookingData: state.extra as QuickServiceBookingData,
-            serviceIcon: Icons.build,
-            defaultTitle: 'Mechanic'),
+            serviceIcon: Icons.two_wheeler,
+            defaultTitle: 'Bike Mechanic'),
       ),
     ],
   );

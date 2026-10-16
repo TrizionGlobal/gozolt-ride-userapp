@@ -138,7 +138,7 @@ class _TruckWashDetailsScreenState extends ConsumerState<TruckWashDetailsScreen>
       if (title.contains('bike')) return 'Bike';
       if (title.contains('truck')) return 'Truck';
       if (title.contains('car')) return 'Car';
-      return 'Car';
+      return 'Truck';
     }
     final vName = getVehicleName();
     final fullServiceName = '$vName Wash';

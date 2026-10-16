@@ -94,10 +94,10 @@ class _ComputerRepairReviewScreenState extends ConsumerState<ComputerRepairRevie
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(
+          QuickServicesHeader(
             currentStep: 2,
             title: 'Review & Book',
-            subtitle: 'Computer & Laptop Repair',
+            subtitle: _bookingData.selectedServiceTitle ?? 'Computer & Laptop Repair',
           ),
           Expanded(
             child: SingleChildScrollView(

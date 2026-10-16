@@ -65,7 +65,7 @@ class _TruckWashReviewScreenState extends ConsumerState<TruckWashReviewScreen> {
           QuickServicesHeader(
             currentStep: 2,
             title: 'Review & Book',
-            subtitle: _bookingData.selectedServiceTitle ?? 'Car Wash',
+            subtitle: _bookingData.selectedServiceTitle ?? 'Truck Wash',
           ),
           Expanded(
             child: SingleChildScrollView(

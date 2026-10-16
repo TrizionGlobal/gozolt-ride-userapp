@@ -140,4 +140,114 @@ class QuickServiceHistoryModel {
       userEmail: userEmail,
     );
   }
+
+  String get displayTitle {
+    final cat = serviceCategory.trim().toLowerCase();
+    final title = serviceTitle.trim();
+    final lowerTitle = title.toLowerCase();
+
+    // 1. Vehicle Mechanic
+    if (cat.contains('mechanic')) {
+      if (lowerTitle == 'car' || lowerTitle == 'car mechanic' || lowerTitle.contains('car mechanic')) {
+        return 'Car Mechanic';
+      }
+      if (lowerTitle == 'bike' || lowerTitle == 'bike mechanic' || lowerTitle.contains('bike mechanic')) {
+        return 'Bike Mechanic';
+      }
+      if (lowerTitle == 'truck' || lowerTitle == 'truck mechanic' || lowerTitle.contains('truck mechanic')) {
+        return 'Truck Mechanic';
+      }
+
+      final vehicles = options['Vehicles'];
+      if (vehicles is List && vehicles.isNotEmpty && vehicles.first is Map) {
+        final type = (vehicles.first['Type'] ?? '').toString().toLowerCase();
+        if (type.contains('bike')) return 'Bike Mechanic';
+        if (type.contains('truck')) return 'Truck Mechanic';
+        if (type.contains('car')) return 'Car Mechanic';
+      }
+      if (options['Bike Type'] != null) return 'Bike Mechanic';
+      if (options['Truck Type'] != null) return 'Truck Mechanic';
+      if (options['Car Type'] != null) return 'Car Mechanic';
+
+      return title.isNotEmpty && title.toLowerCase() != 'vehicle mechanic' ? title : 'Car Mechanic';
+    }
+
+    // 2. Vehicle Wash
+    if (cat.contains('wash')) {
+      if (lowerTitle == 'car' || lowerTitle == 'car wash' || lowerTitle.contains('car wash')) {
+        return 'Car Wash';
+      }
+      if (lowerTitle == 'bike' || lowerTitle == 'bike wash' || lowerTitle.contains('bike wash')) {
+        return 'Bike Wash';
+      }
+      if (lowerTitle == 'truck' || lowerTitle == 'truck wash' || lowerTitle.contains('truck wash')) {
+        return 'Truck Wash';
+      }
+
+      final washVehicles = options['Car Wash Vehicles'];
+      if (washVehicles is List && washVehicles.isNotEmpty && washVehicles.first is Map) {
+        final type = (washVehicles.first['Type'] ?? '').toString().toLowerCase();
+        if (type.contains('bike')) return 'Bike Wash';
+        if (type.contains('truck')) return 'Truck Wash';
+        if (type.contains('car')) return 'Car Wash';
+      }
+      if (options['Bike Type'] != null) return 'Bike Wash';
+      if (options['Truck Type'] != null) return 'Truck Wash';
+      if (options['Car Type'] != null) return 'Car Wash';
+
+      return title.isNotEmpty && title.toLowerCase() != 'vehicle wash' ? title : 'Car Wash';
+    }
+
+    // Fallbacks if serviceTitle is just 'car', 'bike', 'truck'
+    if (lowerTitle == 'car') return cat.contains('wash') ? 'Car Wash' : 'Car Mechanic';
+    if (lowerTitle == 'bike') return cat.contains('wash') ? 'Bike Wash' : 'Bike Mechanic';
+    if (lowerTitle == 'truck') return cat.contains('wash') ? 'Truck Wash' : 'Truck Mechanic';
+
+    // 3. PC & Mobile Repair
+    if (cat.contains('pc') || cat.contains('mobile')) {
+      if (lowerTitle == 'mobile' || lowerTitle == 'mobile repair' || lowerTitle.contains('mobile')) {
+        return 'Mobile Repair';
+      }
+      if (lowerTitle.contains('laptop') || lowerTitle.contains('computer')) {
+        return 'Computer & Laptop Repair';
+      }
+      if (lowerTitle.contains('printer') || lowerTitle.contains('scanner')) {
+        return 'Printer & Scanner Repair';
+      }
+      if (options['Mobile Devices'] != null) return 'Mobile Repair';
+      if (options['Computer Devices'] != null) return 'Computer & Laptop Repair';
+      if (options['Printer Devices'] != null) return 'Printer & Scanner Repair';
+    }
+
+    // 4. Laundry
+    if (cat.contains('laundry')) {
+      if (lowerTitle == 'home' || lowerTitle == 'home laundry') return 'Home Laundry';
+      if (lowerTitle == 'hospital' || lowerTitle == 'hospital laundry') return 'Hospital Laundry';
+      if (lowerTitle == 'hotel' || lowerTitle == 'hotel laundry') return 'Hotel Laundry';
+      if (lowerTitle.contains('commercial')) return 'Commercial Laundry';
+      if (title.isNotEmpty) return lowerTitle.endsWith('laundry') ? title : '$title Laundry';
+    }
+
+    // 5. Electrical Repair
+    if (cat.contains('electrical') || cat.contains('electric')) {
+      if (lowerTitle == 'home' || lowerTitle == 'home electric') return 'Home Electric';
+      if (lowerTitle.contains('commercial') || lowerTitle.contains('lift') || lowerTitle.contains('elevator')) {
+        return 'Commercial Electric';
+      }
+      if (lowerTitle.contains('event')) return 'Events Electric';
+    }
+
+    // 6. Beauty & Wellness
+    if (cat.contains('beauty') || cat.contains('wellness') || lowerTitle.contains('beauty') || lowerTitle.contains('wellness')) {
+      if (title.contains('•')) return title;
+      if (lowerTitle == 'female' || lowerTitle == 'male' || lowerTitle == 'kids' || lowerTitle == 'others') {
+        return 'Beauty & Wellness • $title';
+      }
+      return 'Beauty & Wellness';
+    }
+
+    if (title.isNotEmpty) return title;
+    return serviceCategory.isNotEmpty ? serviceCategory : 'Quick Service';
+  }
 }
+

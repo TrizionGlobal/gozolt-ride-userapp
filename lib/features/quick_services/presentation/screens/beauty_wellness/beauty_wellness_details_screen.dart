@@ -61,7 +61,8 @@ class _BeautyWellnessDetailsScreenState extends ConsumerState<BeautyWellnessDeta
   }
 
   void _loadTreatments() {
-    final sub = widget.bookingData.selectedServiceTitle ?? 'Female';
+    final rawSub = widget.bookingData.selectedServiceTitle ?? 'Female';
+    final sub = rawSub.contains('•') ? rawSub.split('•').last.trim() : rawSub;
     if (sub == 'Female' || sub == 'Others') {
       _treatments = [
         {'title': 'Body Care', 'category': 'Skin', 'price': 30.0, 'icon': Icons.spa, 'image': 'assets/images/beauty/beauty_skin_care.jpg'},
@@ -165,7 +166,8 @@ class _BeautyWellnessDetailsScreenState extends ConsumerState<BeautyWellnessDeta
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final subCategory = widget.bookingData.selectedServiceTitle ?? 'Female';
+    final rawSubCategory = widget.bookingData.selectedServiceTitle ?? 'Female';
+    final subCategory = rawSubCategory.contains('•') ? rawSubCategory.split('•').last.trim() : rawSubCategory;
     
     // Group treatments by category
     final Map<String, List<Map<String, dynamic>>> groupedTreatments = {};
@@ -586,6 +588,7 @@ class _BeautyWellnessDetailsScreenState extends ConsumerState<BeautyWellnessDeta
 
                       final selectedList = _selectedTreatments.toList();
                       final updatedData = widget.bookingData.copyWith(
+                        selectedServiceTitle: 'Beauty & Wellness • $subCategory',
                         beautySelectedTreatments: selectedList,
                         beautyTreatmentsSubtotal: _calculatedSubtotal,
                         peopleCount: _peopleCount,

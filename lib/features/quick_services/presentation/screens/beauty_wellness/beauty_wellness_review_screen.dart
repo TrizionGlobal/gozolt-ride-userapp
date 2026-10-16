@@ -58,7 +58,9 @@ class _BeautyWellnessReviewScreenState extends ConsumerState<BeautyWellnessRevie
           QuickServicesHeader(
             currentStep: 2,
             title: 'Review & Book',
-            subtitle: 'Beauty & Wellness • ${_bookingData.selectedServiceTitle ?? 'Female'}',
+            subtitle: _bookingData.selectedServiceTitle?.contains('•') == true
+                ? _bookingData.selectedServiceTitle!
+                : 'Beauty & Wellness • ${_bookingData.selectedServiceTitle ?? 'Female'}',
           ),
           Expanded(
             child: SingleChildScrollView(

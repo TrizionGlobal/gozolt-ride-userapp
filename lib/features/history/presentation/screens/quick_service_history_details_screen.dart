@@ -45,7 +45,7 @@ class _QuickServiceHistoryDetailsScreenState extends ConsumerState<QuickServiceH
       RouteNames.quickServicePaymentConfirmation,
       extra: {
         'bookingId': _booking.id,
-        'serviceTitle': _booking.serviceTitle,
+        'serviceTitle': _booking.displayTitle,
         'amount': amount,
         'paymentMethod': paymentMethod,
         'stripePaymentIntentId': stripePaymentIntentId,
@@ -70,7 +70,7 @@ class _QuickServiceHistoryDetailsScreenState extends ConsumerState<QuickServiceH
       RouteNames.quickServicePaymentFailure,
       extra: {
         'bookingId': _booking.id,
-        'serviceTitle': _booking.serviceTitle,
+        'serviceTitle': _booking.displayTitle,
         'amount': amount,
         'errorMessage': errorMessage,
         'onRetry': () {
@@ -328,6 +328,54 @@ class _QuickServiceHistoryDetailsScreenState extends ConsumerState<QuickServiceH
     super.dispose();
   }
 
+  IconData _getServiceIcon(String category, String title) {
+    final t = title.toLowerCase();
+    if (t.contains('bike mechanic')) return Icons.two_wheeler;
+    if (t.contains('truck mechanic')) return Icons.local_shipping;
+    if (t.contains('car mechanic')) return Icons.directions_car;
+    if (t.contains('bike wash')) return Icons.two_wheeler;
+    if (t.contains('truck wash')) return Icons.local_shipping;
+    if (t.contains('car wash')) return Icons.local_car_wash;
+    if (t.contains('mobile')) return Icons.smartphone;
+    if (t.contains('laptop') || t.contains('computer')) return Icons.laptop;
+    if (t.contains('printer') || t.contains('scanner')) return Icons.print;
+    if (t.contains('home cleaning') || t.contains('cleaning')) return Icons.cleaning_services;
+    if (t.contains('pest')) return Icons.pest_control;
+    if (t.contains('garden')) return Icons.yard;
+    if (t.contains('plumb')) return Icons.plumbing;
+    if (t.contains('carpent')) return Icons.carpenter;
+    if (t.contains('paint')) return Icons.format_paint;
+    if (t.contains('laundry')) return Icons.local_laundry_service;
+    if (t.contains('beauty') || t.contains('wellness')) return Icons.spa;
+    if (t.contains('security') || t.contains('bouncer')) return Icons.security;
+    if (t.contains('hire')) return Icons.person_search;
+    if (t.contains('refrigerator')) return Icons.kitchen;
+    if (t.contains('air conditioner') || t.contains('conditioner') || t.contains('ac')) return Icons.ac_unit;
+    if (t.contains('washing machine')) return Icons.local_laundry_service;
+    if (t.contains('television') || t.contains('tv')) return Icons.tv;
+    if (t.contains('fan')) return Icons.air;
+    if (t.contains('appliance')) return Icons.ac_unit;
+    if (t.contains('commercial electric') || t.contains('lift') || t.contains('elevator')) return Icons.elevator;
+    if (t.contains('electric')) return Icons.electrical_services;
+    if (t.contains('mechanic')) return Icons.handyman;
+    if (t.contains('wash')) return Icons.local_car_wash;
+    if (t == 'car') return Icons.directions_car;
+    if (t == 'bike') return Icons.two_wheeler;
+    if (t == 'truck') return Icons.local_shipping;
+    
+    final c = category.toLowerCase();
+    switch (c) {
+      case 'home services': return Icons.home_repair_service;
+      case 'pc & mobile repair': return Icons.computer;
+      case 'vehicle mechanic': return Icons.handyman;
+      case 'vehicle wash': return Icons.local_car_wash;
+      case 'electrical repair': return Icons.electrical_services;
+      case 'appliance repair': return Icons.ac_unit;
+    }
+    
+    return Icons.home_repair_service;
+  }
+
   String _getExpertVisitName(String serviceTitle) {
     final lowerCat = serviceTitle.toLowerCase();
     if (lowerCat.contains('security') || lowerCat.contains('bouncer')) {
@@ -457,7 +505,7 @@ class _QuickServiceHistoryDetailsScreenState extends ConsumerState<QuickServiceH
     final int displayBilledHours = billedHours < 1 ? 1 : billedHours;
 
     final double hourlyRateVal = double.tryParse(booking.options['hourlyRate']?.toString() ?? '') ??
-        _getQuickServiceHourlyRate(booking.serviceTitle);
+        _getQuickServiceHourlyRate(booking.displayTitle);
     final double rawServiceAmount = isWorkEnded
         ? (double.tryParse(booking.options['serviceAmount']?.toString() ?? '') ??
             (double.tryParse(booking.options['finalHourlyCost']?.toString() ?? '') ?? (displayBilledHours * hourlyRateVal)))
@@ -480,7 +528,7 @@ class _QuickServiceHistoryDetailsScreenState extends ConsumerState<QuickServiceH
     final qrDataJson = '''
 Service ID: $displayBookingId
 Validation PIN: $validationPin
-Service: ${booking.serviceTitle}
+Service: ${booking.displayTitle}
 Date: $displayDate
 Time: $displayTime
 '''.trim();
@@ -758,12 +806,12 @@ Time: $displayTime
                         Row(
                           children: [
                             Icon(
-                              booking.serviceTitle.toLowerCase() == 'beauty & wellness' ? Icons.spa : Icons.home_repair_service, 
+                              _getServiceIcon(booking.serviceCategory, booking.displayTitle), 
                               size: 18, 
-                              color: Colors.grey
+                              color: AppColors.primaryGold,
                             ),
                             const SizedBox(width: 10),
-                            Text(booking.serviceTitle, style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)),
+                            Text(booking.displayTitle, style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)),
                           ],
                         ),
                         const SizedBox(height: 10),
@@ -1649,7 +1697,7 @@ Time: $displayTime
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'The assigned ${_getExpertVisitName(booking.serviceTitle).split('/').first} has arrived and already started their work.',
+                              'The assigned ${_getExpertVisitName(booking.displayTitle).split('/').first} has arrived and already started their work.',
                               style: AppTextStyles.bodyMedium.copyWith(
                                 color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.backgroundDark,
                                 fontWeight: FontWeight.w600,
@@ -1673,7 +1721,7 @@ Time: $displayTime
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'The assigned ${_getExpertVisitName(booking.serviceTitle).split('/').first} will come to complete the service.',
+                              'The assigned ${_getExpertVisitName(booking.displayTitle).split('/').first} will come to complete the service.',
                               style: AppTextStyles.bodyMedium.copyWith(
                                 color: Theme.of(context).brightness == Brightness.dark ? Colors.white : AppColors.backgroundDark,
                                 fontWeight: FontWeight.w600,

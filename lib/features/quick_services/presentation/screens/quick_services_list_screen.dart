@@ -145,7 +145,54 @@ class _QuickServicesListScreenState extends ConsumerState<QuickServicesListScree
                           // We no longer set _selectedCategoryTitle so it doesn't stay highlighted
                           // when navigating back.
                           
-                          final updatedData = widget.bookingData.copyWith(category: category.title, selectedServiceTitle: subService.title);
+                          String resolvedTitle = subService.title;
+                          if (category.title == 'Vehicle Mechanic') {
+                            if (subService.title.contains('Bike')) {
+                              resolvedTitle = 'Bike Mechanic';
+                            } else if (subService.title.contains('Truck')) {
+                              resolvedTitle = 'Truck Mechanic';
+                            } else {
+                              resolvedTitle = 'Car Mechanic';
+                            }
+                          } else if (category.title == 'Vehicle Wash') {
+                            if (subService.title.contains('Bike')) {
+                              resolvedTitle = 'Bike Wash';
+                            } else if (subService.title.contains('Truck')) {
+                              resolvedTitle = 'Truck Wash';
+                            } else {
+                              resolvedTitle = 'Car Wash';
+                            }
+                          } else if (category.title == 'Electrical Repair') {
+                            if (subService.title == 'Home') {
+                              resolvedTitle = 'Home Electric';
+                            } else if (subService.title == 'Commercial' || subService.title.contains('Lift')) {
+                              resolvedTitle = 'Commercial Electric';
+                            } else if (subService.title == 'Events') {
+                              resolvedTitle = 'Events Electric';
+                            }
+                          } else if (category.title == 'Laundry' || category.title == 'Laundry Worker') {
+                            if (subService.title == 'Home') {
+                              resolvedTitle = 'Home Laundry';
+                            } else if (subService.title == 'Hospital') {
+                              resolvedTitle = 'Hospital Laundry';
+                            } else if (subService.title == 'Hotel') {
+                              resolvedTitle = 'Hotel Laundry';
+                            } else if (subService.title == 'Commercials' || subService.title == 'Commercial') {
+                              resolvedTitle = 'Commercial Laundry';
+                            } else {
+                              resolvedTitle = '${subService.title} Laundry';
+                            }
+                          } else if (category.title == 'Beautician /Wellness') {
+                            resolvedTitle = 'Beauty & Wellness • ${subService.title}';
+                          } else if (subService.title == 'Mobile') {
+                            resolvedTitle = 'Mobile Repair';
+                          } else if (subService.title == 'Laptop/Computer' || subService.title == 'Computer' || subService.title == 'Computer & Laptop') {
+                            resolvedTitle = 'Computer & Laptop Repair';
+                          } else if (subService.title == 'Printer / Scanner' || subService.title == 'Printer' || subService.title == 'Scanner') {
+                            resolvedTitle = 'Printer & Scanner Repair';
+                          }
+
+                          final updatedData = widget.bookingData.copyWith(category: category.title, selectedServiceTitle: resolvedTitle);
                           
                           // Determine the nextRoute for the location/schedule screen
                           String nextRoute;

@@ -128,10 +128,10 @@ class _TruckMechanicDetailsScreenState extends ConsumerState<TruckMechanicDetail
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(
+          QuickServicesHeader(
             currentStep: 1,
             title: 'Service Requirements',
-            subtitle: 'Truck Mechanic',
+            subtitle: widget.bookingData.selectedServiceTitle ?? 'Truck Mechanic',
           ),
           Expanded(
             child: SingleChildScrollView(

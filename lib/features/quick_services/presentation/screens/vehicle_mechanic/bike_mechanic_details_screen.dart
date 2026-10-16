@@ -128,10 +128,10 @@ class _BikeMechanicDetailsScreenState extends ConsumerState<BikeMechanicDetailsS
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(
+          QuickServicesHeader(
             currentStep: 1,
             title: 'Service Requirements',
-            subtitle: 'Bike Mechanic',
+            subtitle: widget.bookingData.selectedServiceTitle ?? 'Bike Mechanic',
           ),
           Expanded(
             child: SingleChildScrollView(

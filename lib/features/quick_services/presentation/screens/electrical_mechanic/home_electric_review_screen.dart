@@ -48,10 +48,10 @@ class _HomeElectricReviewScreenState extends ConsumerState<HomeElectricReviewScr
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(
+          QuickServicesHeader(
             currentStep: 2,
             title: 'Review & Book',
-            subtitle: 'Home Electric',
+            subtitle: _bookingData.selectedServiceTitle ?? 'Home Electric',
           ),
           Expanded(
             child: SingleChildScrollView(

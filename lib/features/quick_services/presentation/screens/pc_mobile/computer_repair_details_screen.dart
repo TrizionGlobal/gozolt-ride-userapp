@@ -244,10 +244,10 @@ class _ComputerRepairDetailsScreenState extends ConsumerState<ComputerRepairDeta
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(
+          QuickServicesHeader(
             currentStep: 1,
             title: 'Service Requirements',
-            subtitle: 'Computer & Laptop Repair',
+            subtitle: widget.bookingData.selectedServiceTitle ?? 'Computer & Laptop Repair',
           ),
             
           Expanded(

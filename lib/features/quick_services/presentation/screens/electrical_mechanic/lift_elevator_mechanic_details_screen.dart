@@ -163,10 +163,10 @@ class _LiftElevatorMechanicDetailsScreenState extends ConsumerState<LiftElevator
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
-          const QuickServicesHeader(
+          QuickServicesHeader(
             currentStep: 1,
             title: 'Service Requirements',
-            subtitle: 'Commercial Electric',
+            subtitle: widget.bookingData.selectedServiceTitle ?? 'Commercial Electric',
           ),
           Expanded(
             child: SingleChildScrollView(
