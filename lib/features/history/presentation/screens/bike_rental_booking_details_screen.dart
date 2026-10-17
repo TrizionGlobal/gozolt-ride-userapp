@@ -95,8 +95,8 @@ class BikeRentalBookingDetailsScreen extends ConsumerWidget {
                 final vehicle = booking['vehicle'];
           final supplier = vehicle['supplier'];
           final status = booking['status'] as String;
-          final startDate = DateTime.parse(booking['startDate']).toLocal();
-          final endDate = DateTime.parse(booking['endDate']).toLocal();
+          final startDate = _parseRentalDate(booking['startDate']);
+          final endDate = _parseRentalDate(booking['endDate']);
           
           final fullBookingId = booking['id'] as String;
           final displayBookingId = fullBookingId.length >= 8 
@@ -559,7 +559,7 @@ Pickup Time: ${DateFormat('h:mm a').format(startDate)}
                       padding: const EdgeInsets.only(bottom: 8.0),
                       child: _buildInfoCard(context, [
                         _buildStatusRow(context, ext['status']),
-                        _buildInfoRow(context, 'Requested End Date', DateFormat('MMM dd, yyyy h:mm a').format(DateTime.parse(ext['newEndDate']).toLocal())),
+                        _buildInfoRow(context, 'Requested End Date', DateFormat('MMM dd, yyyy h:mm a').format(_parseRentalDate(ext['newEndDate']))),
                         _buildInfoRow(context, 'Additional Cost', '€${double.parse(ext['additionalCost'].toString()).toStringAsFixed(2)}', isBold: true),
                         if (ext['reason'] != null)
                           _buildInfoRow(context, 'Reason', ext['reason']),
@@ -844,7 +844,7 @@ Pickup Time: ${DateFormat('h:mm a').format(startDate)}
 
   void _handleExtend(BuildContext context, WidgetRef ref, Map<String, dynamic> booking) async {
     try {
-      final DateTime currentEndDate = DateTime.parse(booking['endDate']).toLocal();
+      final DateTime currentEndDate = _parseRentalDate(booking['endDate']);
       
       // Pick new date
       final DateTime? newDate = await showDatePicker(
@@ -869,14 +869,6 @@ Pickup Time: ${DateFormat('h:mm a').format(startDate)}
 
       if (newDate == null) return;
       if (!context.mounted) return;
-      
-      final DateTime newDateWithTime = DateTime(
-        newDate.year,
-        newDate.month,
-        newDate.day,
-        currentEndDate.hour,
-        currentEndDate.minute,
-      );
 
       // Show loading
       showDialog(
@@ -890,7 +882,7 @@ Pickup Time: ${DateFormat('h:mm a').format(startDate)}
         final datasource = BikeRentalRemoteDatasource(dio);
         
         // Calculate
-        final newEndDateStr = newDateWithTime.toUtc().toIso8601String();
+        final newEndDateStr = DateTime.utc(newDate.year, newDate.month, newDate.day, currentEndDate.hour, currentEndDate.minute).toIso8601String();
         final calcResult = await datasource.calculateExtensionCost(booking['id'], newEndDateStr);
         
         if (!context.mounted) return;
@@ -951,8 +943,8 @@ Pickup Time: ${DateFormat('h:mm a').format(startDate)}
             const SizedBox(height: 24),
             
             _buildInfoCard(innerContext, [
-              _buildInfoRow(innerContext, 'Original Return', DateFormat('MMM d, yyyy - h:mm a').format(DateTime.parse(calcResult['originalEndDate']).toLocal())),
-              _buildInfoRow(innerContext, 'New Return', DateFormat('MMM d, yyyy - h:mm a').format(DateTime.parse(calcResult['newEndDate']).toLocal()), isBold: true),
+              _buildInfoRow(innerContext, 'Original Return', DateFormat('MMM d, yyyy - h:mm a').format(_parseRentalDate(calcResult['originalEndDate']))),
+              _buildInfoRow(innerContext, 'New Return', DateFormat('MMM d, yyyy - h:mm a').format(_parseRentalDate(calcResult['newEndDate'])), isBold: true),
               const Divider(),
               _buildInfoRow(innerContext, 'Existing Rent Amount', '€${double.parse(calcResult['existingTotal'].toString()).toStringAsFixed(2)}'),
               const Divider(),
@@ -1062,5 +1054,12 @@ Pickup Time: ${DateFormat('h:mm a').format(startDate)}
     );
       },
     );
+  }
+
+  static DateTime _parseRentalDate(dynamic dateStr) {
+    if (dateStr == null) return DateTime.now();
+    if (dateStr is DateTime) return dateStr;
+    final clean = dateStr.toString().replaceAll('Z', '');
+    return DateTime.tryParse(clean) ?? DateTime.now();
   }
 }

@@ -593,7 +593,7 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        DateFormat('dd MMM yyyy, h:mm a').format(booking.bookingDate.toLocal()),
+                        DateFormat('dd MMM yyyy, h:mm a').format(booking.bookingDate),
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
                           fontSize: 13,

@@ -37,8 +37,8 @@ class BikeRentalRemoteDatasource {
     try {
       final formData = FormData.fromMap({
         'bikeId': bikeId,
-        'startDate': startDate.toIso8601String(),
-        'endDate': endDate.toIso8601String(),
+        'startDate': DateTime.utc(startDate.year, startDate.month, startDate.day, startDate.hour, startDate.minute).toIso8601String(),
+        'endDate': DateTime.utc(endDate.year, endDate.month, endDate.day, endDate.hour, endDate.minute).toIso8601String(),
         if (protectionPackageId != null) 'protectionPackageId': protectionPackageId,
         if (addonIds != null && addonIds.isNotEmpty) 'addonIds': addonIds.join(','),
         if (deliveryType != null) 'deliveryType': deliveryType,

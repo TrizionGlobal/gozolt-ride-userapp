@@ -1,31 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/constants/app_colors.dart';
-import 'package:flutter/services.dart';
 import '../../../../core/constants/app_text_styles.dart';
-import '../../../../core/utils/input_validators.dart';
 import '../../../ride/data/models/location_data.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../widgets/quick_services_header.dart';
 import '../../data/models/quick_service_booking_data.dart';
+import '../../../home/presentation/providers/home_providers.dart';
 
-class ServiceLocationScreen extends StatefulWidget {
+class ServiceLocationScreen extends ConsumerStatefulWidget {
   final QuickServiceBookingData? bookingData;
   final String? nextRoute;
 
   const ServiceLocationScreen({super.key, this.bookingData, this.nextRoute});
 
   @override
-  State<ServiceLocationScreen> createState() => _ServiceLocationScreenState();
+  ConsumerState<ServiceLocationScreen> createState() => _ServiceLocationScreenState();
 }
 
-class _ServiceLocationScreenState extends State<ServiceLocationScreen> {
+class _ServiceLocationScreenState extends ConsumerState<ServiceLocationScreen> {
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
 
@@ -161,9 +158,6 @@ class _ServiceLocationScreenState extends State<ServiceLocationScreen> {
   void dispose() {
     _dateController.dispose();
     _timeController.dispose();
-    _nameController.dispose();
-    _phoneController.dispose();
-    _emailController.dispose();
     super.dispose();
   }
 
@@ -332,67 +326,6 @@ class _ServiceLocationScreenState extends State<ServiceLocationScreen> {
                               ),
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    Text('User Details', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      controller: _nameController,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                      textCapitalization: TextCapitalization.words,
-                      inputFormatters: [InputValidators.nameInputFormatter],
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) return 'Full Name is required';
-                        if (!InputValidators.isValidName(value)) return 'Enter a valid name';
-                        return null;
-                      },
-                      decoration: InputDecoration(
-                        hintText: 'Full Name',
-                        prefixIcon: const Icon(Icons.person_outline),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.withOpacity(0.3))),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.withOpacity(0.3))),
-                        filled: true,
-                        fillColor: Theme.of(context).cardTheme.color,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      controller: _phoneController,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                      keyboardType: TextInputType.phone,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) return 'Phone number is required';
-                        if (value.length < 8) return 'Enter a valid phone number';
-                        return null;
-                      },
-                      decoration: InputDecoration(
-                        hintText: 'Phone Number',
-                        prefixIcon: const Icon(Icons.phone_outlined),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.withOpacity(0.3))),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.withOpacity(0.3))),
-                        filled: true,
-                        fillColor: Theme.of(context).cardTheme.color,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      controller: _emailController,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) return 'Email is required';
-                        if (!InputValidators.isValidEmail(value)) return 'Enter a valid email address';
-                        return null;
-                      },
-                      decoration: InputDecoration(
-                        hintText: 'Email Address',
-                        prefixIcon: const Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.withOpacity(0.3))),
-                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.withOpacity(0.3))),
-                        filled: true,
-                        fillColor: Theme.of(context).cardTheme.color,
-                      ),
-                    ),
                     const SizedBox(height: 32),
                     ElevatedButton(
                       onPressed: () {
@@ -406,22 +339,31 @@ class _ServiceLocationScreenState extends State<ServiceLocationScreen> {
                           return;
                         }
                         if (_formKey.currentState!.validate()) {
+                          final profile = ref.read(userProfileProvider).valueOrNull;
+                          final fullName = [profile?.firstName, profile?.lastName]
+                              .where((s) => s != null && s.trim().isNotEmpty)
+                              .join(' ')
+                              .trim();
+                          final userName = fullName.isNotEmpty ? fullName : (profile?.displayName ?? '');
+                          final userPhone = profile?.phone ?? '';
+                          final userEmail = profile?.email ?? '';
+
                           final bookingData = (widget.bookingData ?? QuickServiceBookingData(
                             category: '',
                             selectedService: '',
                             scheduleDate: _selectedDate!,
                             scheduleTime: _selectedTime!,
                             location: _selectedLocation!,
-                            userName: _nameController.text.trim(),
-                            userPhone: _phoneController.text.trim(),
-                            userEmail: _emailController.text.trim(),
+                            userName: userName,
+                            userPhone: userPhone,
+                            userEmail: userEmail,
                           )).copyWith(
                             scheduleDate: _selectedDate!,
                             scheduleTime: _selectedTime!,
                             location: _selectedLocation!,
-                            userName: _nameController.text.trim(),
-                            userPhone: _phoneController.text.trim(),
-                            userEmail: _emailController.text.trim(),
+                            userName: userName,
+                            userPhone: userPhone,
+                            userEmail: userEmail,
                           );
                           
                           if (widget.nextRoute != null) {

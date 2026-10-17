@@ -515,8 +515,8 @@ class _QuickServiceHistoryDetailsScreenState extends ConsumerState<QuickServiceH
     final double remainingBalance = (status == 'AWAITING_PAYMENT') ? serviceAmountVal : 0.0;
 
     final displayBookingId = 'GZ-QS-${booking.id.substring(0, 8).toUpperCase()}';
-    final displayDate = DateFormat('dd MMM yyyy').format(booking.bookingDate.toLocal());
-    final displayTime = DateFormat('h:mm a').format(booking.bookingDate.toLocal());
+    final displayDate = DateFormat('dd MMM yyyy').format(booking.bookingDate);
+    final displayTime = DateFormat('h:mm a').format(booking.bookingDate);
 
     final String issueDescriptionText = (booking.requirements != null && booking.requirements!.trim().isNotEmpty)
         ? booking.requirements!.trim()

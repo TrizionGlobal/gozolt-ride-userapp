@@ -148,8 +148,8 @@ class _BikeRentalsHistoryViewState extends ConsumerState<BikeRentalsHistoryView>
                           final vehicle = booking['vehicle'];
               final supplier = vehicle['supplier'];
               final status = booking['status'] as String;
-              final startDate = DateTime.parse(booking['startDate']);
-              final endDate = DateTime.parse(booking['endDate']);
+              final startDate = DateTime.parse(booking['startDate'].toString().replaceAll('Z', ''));
+              final endDate = DateTime.parse(booking['endDate'].toString().replaceAll('Z', ''));
               final grandTotal = booking['grandTotal'];
               final pickupLocation = booking['pickupLocation'] ?? '';
               

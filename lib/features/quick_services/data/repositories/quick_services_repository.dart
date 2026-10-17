@@ -238,14 +238,14 @@ class QuickServicesRepository {
         'serviceTitle': data.selectedServiceTitle ?? data.category,
         'serviceMethod': data.laundryServiceMethod ?? '',
         'serviceType': data.laundryServiceType ?? '',
-        // Combine date and time
-        'bookingDate': DateTime(
+        // Combine date and time (preserving exact wall-clock appointment in UTC)
+        'bookingDate': DateTime.utc(
           data.scheduleDate.year,
           data.scheduleDate.month,
           data.scheduleDate.day,
           data.scheduleTime.hour,
           data.scheduleTime.minute,
-        ).toUtc().toIso8601String(),
+        ).toIso8601String(),
         'upfrontFee': data.upfrontBookingFee,
         'materialCost': data.materialCost,
         'discountAmount': discountAmount,
