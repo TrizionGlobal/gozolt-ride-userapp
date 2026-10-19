@@ -441,6 +441,7 @@ class _LaundryDetailsScreenState extends ConsumerState<LaundryDetailsScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please specify the custom laundry service.'), backgroundColor: Colors.red));
                         return;
                       }
+                      if (!QuickServicesBookingDraft.validate(context)) return;
 
                       final finalServiceTypes = _selectedServices.map((svc) {
                         if (svc == 'Other Laundry Service' && _customServiceController.text.trim().isNotEmpty) {

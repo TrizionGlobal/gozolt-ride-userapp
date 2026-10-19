@@ -730,6 +730,7 @@ class _MobileRepairDetailsScreenState extends ConsumerState<MobileRepairDetailsS
                         );
                         return;
                       }
+                      if (!QuickServicesBookingDraft.validate(context)) return;
 
                       final updatedData = widget.bookingData.copyWith(
                         selectedServiceTitle: 'Mobile Repair',

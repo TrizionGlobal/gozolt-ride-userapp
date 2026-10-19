@@ -286,6 +286,8 @@ class QuickServiceBookingData {
   final PaymentMethodType paymentMethodType;
   final String? paymentMethodId;
   final bool useGoCoins;
+  final double? discountAmount;
+  final int? coinsUsed;
   final String? dressPreference;
   final String? alcoholServed;
 
@@ -501,6 +503,8 @@ class QuickServiceBookingData {
     this.paymentMethodType = PaymentMethodType.cash,
     this.paymentMethodId,
     this.useGoCoins = false,
+    this.discountAmount,
+    this.coinsUsed,
     this.selectedService = '',
     required this.scheduleDate,
     required this.scheduleTime,
@@ -679,6 +683,8 @@ class QuickServiceBookingData {
     PaymentMethodType? paymentMethodType,
     String? paymentMethodId,
     bool? useGoCoins,
+    double? discountAmount,
+    int? coinsUsed,
     String? dressPreference,
     String? alcoholServed,
     String? deviceType,
@@ -810,6 +816,8 @@ class QuickServiceBookingData {
       paymentMethodType: paymentMethodType ?? this.paymentMethodType,
       paymentMethodId: paymentMethodId ?? this.paymentMethodId,
       useGoCoins: useGoCoins ?? this.useGoCoins,
+      discountAmount: discountAmount ?? this.discountAmount,
+      coinsUsed: coinsUsed ?? this.coinsUsed,
       dressPreference: dressPreference ?? this.dressPreference,
       alcoholServed: alcoholServed ?? this.alcoholServed,
       deviceType: deviceType ?? this.deviceType,

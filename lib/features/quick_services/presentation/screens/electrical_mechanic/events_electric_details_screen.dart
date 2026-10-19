@@ -137,6 +137,7 @@ class _EventsElectricDetailsScreenState extends ConsumerState<EventsElectricDeta
     );
 
     if (_isUploading) return;
+    if (!QuickServicesBookingDraft.validate(context)) return;
     if (_selectedImages.isNotEmpty) {
       setState(() => _isUploading = true);
       ref.read(quickServicesBookingProvider.notifier).uploadImages(

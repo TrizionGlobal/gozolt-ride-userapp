@@ -30,8 +30,10 @@ class _SharedQuickServiceFailedScreenState extends ConsumerState<SharedQuickServ
   bool _isRetrying = false;
 
   void _showPaymentSheet() {
-    final finalTotal = ((widget.bookingData.upfrontBookingFee + widget.bookingData.materialCost) - 
-                        (widget.bookingData.useGoCoins ? (widget.bookingData.upfrontBookingFee + widget.bookingData.materialCost).clamp(0.0, 6.0) : 0.0))
+    final discount = widget.bookingData.useGoCoins 
+        ? (widget.bookingData.discountAmount ?? (widget.bookingData.upfrontBookingFee + widget.bookingData.materialCost).clamp(0.0, 6.0))
+        : 0.0;
+    final finalTotal = ((widget.bookingData.upfrontBookingFee + widget.bookingData.materialCost) - discount)
                        .clamp(0.0, double.infinity);
 
     showModalBottomSheet(

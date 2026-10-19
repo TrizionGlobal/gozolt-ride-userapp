@@ -301,6 +301,7 @@ class _HomeCleaningDetailsScreenState extends ConsumerState<HomeCleaningDetailsS
                           );
                           return;
                         }
+                        if (!QuickServicesBookingDraft.validate(context)) return;
                         List<ServiceAddon> selectedAddons = [];
                         _counts.forEach((key, count) {
                           if (count > 0) {

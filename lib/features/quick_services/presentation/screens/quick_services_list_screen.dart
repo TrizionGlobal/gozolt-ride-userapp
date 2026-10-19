@@ -7,6 +7,8 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../widgets/quick_services_header.dart';
 import '../../data/models/quick_service_booking_data.dart';
+import '../../data/models/quick_services_booking_draft.dart';
+import '../../../home/presentation/providers/home_providers.dart';
 
 class _SubService {
   final String title;
@@ -91,6 +93,18 @@ class _QuickServicesListScreenState extends ConsumerState<QuickServicesListScree
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(quickServicesRepositoryProvider).fetchPricingRules();
     });
+  }
+
+  void _prepareBookingDraft() {
+    QuickServicesBookingDraft.reset();
+    final profile = ref.read(userProfileProvider).valueOrNull;
+    final fullName = [profile?.firstName, profile?.lastName]
+        .where((s) => s != null && s.trim().isNotEmpty)
+        .join(' ')
+        .trim();
+    QuickServicesBookingDraft.userName = fullName.isNotEmpty ? fullName : (profile?.displayName ?? '');
+    QuickServicesBookingDraft.userPhone = profile?.phone ?? '';
+    QuickServicesBookingDraft.userEmail = profile?.email ?? '';
   }
 
   void _showSubServicesModal(BuildContext context, _ServiceCategory category) {
@@ -257,16 +271,17 @@ class _QuickServicesListScreenState extends ConsumerState<QuickServicesListScree
                           // Dismiss the bottom sheet modal first
                           Navigator.pop(sheetContext);
                           
-                          // Always go through location & schedule screen first
+                          _prepareBookingDraft();
                           await this.context.pushNamed(
-                            RouteNames.quickServicesLocation,
-                            extra: {
-                              'bookingData': updatedData,
-                              'nextRoute': nextRoute,
-                            },
+                            nextRoute,
+                            extra: updatedData.copyWith(
+                              userName: QuickServicesBookingDraft.userName,
+                              userPhone: QuickServicesBookingDraft.userPhone,
+                              userEmail: QuickServicesBookingDraft.userEmail,
+                            ),
                           );
 
-                          // When returning back from location & schedule, keep the category modal open
+                          // When returning back, keep the category modal open
                           if (mounted) {
                             _showSubServicesModal(this.context, category);
                           }
@@ -362,38 +377,39 @@ class _QuickServicesListScreenState extends ConsumerState<QuickServicesListScree
                                 final width = isLastOddItem ? constraints.maxWidth : itemWidth;
                           return GestureDetector(
                             onTap: () {
+                              _prepareBookingDraft();
                               if (category.title == 'Appliance Repair') {
                                 context.pushNamed(
-                                  RouteNames.quickServicesLocation,
-                                  extra: {
-                                    'bookingData': widget.bookingData.copyWith(
-                                      category: 'Appliance Repair',
-                                      selectedServiceTitle: 'Appliance Repair',
-                                    ),
-                                    'nextRoute': RouteNames.quickServicesApplianceRepair,
-                                  },
+                                  RouteNames.quickServicesApplianceRepair,
+                                  extra: widget.bookingData.copyWith(
+                                    category: 'Appliance Repair',
+                                    selectedServiceTitle: 'Appliance Repair',
+                                    userName: QuickServicesBookingDraft.userName,
+                                    userPhone: QuickServicesBookingDraft.userPhone,
+                                    userEmail: QuickServicesBookingDraft.userEmail,
+                                  ),
                                 );
                               } else if (category.title == 'Hire a Person') {
                                 context.pushNamed(
-                                  RouteNames.quickServicesLocation,
-                                  extra: {
-                                    'bookingData': widget.bookingData.copyWith(
-                                      category: 'Hire a Person',
-                                      selectedServiceTitle: 'Hire a Person',
-                                    ),
-                                    'nextRoute': RouteNames.quickServicesHirePerson,
-                                  },
+                                  RouteNames.quickServicesHirePerson,
+                                  extra: widget.bookingData.copyWith(
+                                    category: 'Hire a Person',
+                                    selectedServiceTitle: 'Hire a Person',
+                                    userName: QuickServicesBookingDraft.userName,
+                                    userPhone: QuickServicesBookingDraft.userPhone,
+                                    userEmail: QuickServicesBookingDraft.userEmail,
+                                  ),
                                 );
                               } else if (category.title == 'Security/Bouncer') {
                                 context.pushNamed(
-                                  RouteNames.quickServicesLocation,
-                                  extra: {
-                                    'bookingData': widget.bookingData.copyWith(
-                                      category: 'Security/Bouncer',
-                                      selectedServiceTitle: 'Security Personnel',
-                                    ),
-                                    'nextRoute': RouteNames.quickServicesSecurityPersonnel,
-                                  },
+                                  RouteNames.quickServicesSecurityPersonnel,
+                                  extra: widget.bookingData.copyWith(
+                                    category: 'Security/Bouncer',
+                                    selectedServiceTitle: 'Security Personnel',
+                                    userName: QuickServicesBookingDraft.userName,
+                                    userPhone: QuickServicesBookingDraft.userPhone,
+                                    userEmail: QuickServicesBookingDraft.userEmail,
+                                  ),
                                 );
                               } else {
                                 _showSubServicesModal(context, category);

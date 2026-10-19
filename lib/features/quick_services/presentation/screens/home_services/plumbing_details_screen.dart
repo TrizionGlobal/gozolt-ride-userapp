@@ -288,6 +288,7 @@ class _PlumbingDetailsScreenState extends ConsumerState<PlumbingDetailsScreen> {
                           );
                           return;
                         }
+                        if (!QuickServicesBookingDraft.validate(context)) return;
   
                         List<ServiceAddon> selectedAddons = selectedKeys.map((key) {
                           return ServiceAddon(name: key, count: _counts[key]!, hoursPerUnit: _hours[key]!); 

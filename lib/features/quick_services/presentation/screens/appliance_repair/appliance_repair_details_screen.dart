@@ -308,6 +308,7 @@ class _ApplianceRepairDetailsScreenState extends ConsumerState<ApplianceRepairDe
                           );
                           return;
                         }
+                        if (!QuickServicesBookingDraft.validate(context)) return;
                         
                         List<ServiceAddon> selectedAddons = [];
                         _applianceCounts.forEach((appliance, count) {

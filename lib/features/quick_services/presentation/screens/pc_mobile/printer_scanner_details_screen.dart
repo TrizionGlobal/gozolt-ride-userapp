@@ -616,6 +616,7 @@ class _PrinterScannerDetailsScreenState extends ConsumerState<PrinterScannerDeta
                         );
                         return;
                       }
+                      if (!QuickServicesBookingDraft.validate(context)) return;
 
                       final updatedData = widget.bookingData.copyWith(
                         selectedServiceTitle: 'Printer & Scanner Repair',

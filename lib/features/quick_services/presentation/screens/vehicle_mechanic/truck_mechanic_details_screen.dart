@@ -594,6 +594,7 @@ Text(
                         );
                         return;
                       }
+                      if (!QuickServicesBookingDraft.validate(context)) return;
 
                       final updatedBookingData = widget.bookingData.copyWith(
                         mechanicVehicles: _savedVehicles,

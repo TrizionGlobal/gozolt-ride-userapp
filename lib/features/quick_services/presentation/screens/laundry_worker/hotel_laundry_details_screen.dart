@@ -569,6 +569,7 @@ class _HotelLaundryDetailsScreenState extends ConsumerState<HotelLaundryDetailsS
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select Requested Return Date and Time.'), backgroundColor: Colors.red));
                         return;
                       }
+                      if (!QuickServicesBookingDraft.validate(context)) return;
 
                       final finalServiceTypes = _selectedServices.map((svc) {
                         if ((svc == 'Other Laundry Service' || svc == 'Other Linen') && _customServiceController.text.trim().isNotEmpty) {

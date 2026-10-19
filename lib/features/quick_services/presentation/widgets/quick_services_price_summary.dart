@@ -1,13 +1,15 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/quick_service_booking_data.dart';
+import '../../data/models/quick_services_coins_helper.dart';
 import '../../../../core/config/quick_services_pricing_config.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/asset_paths.dart';
 
-class QuickServicesPriceSummary extends StatelessWidget {
+class QuickServicesPriceSummary extends ConsumerWidget {
   final QuickServiceBookingData bookingData;
   final String? note;
   final bool useGoCoins;
@@ -24,7 +26,15 @@ class QuickServicesPriceSummary extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final double upfrontRaw = bookingData.upfrontBookingFee + bookingData.materialCost;
+    final payment = QuickServicesCoinsHelper.getPaymentDetails(
+      ref: ref,
+      upfrontRaw: upfrontRaw,
+      useGoCoins: useGoCoins,
+      isWatching: true,
+    );
+
     return ValueListenableBuilder<int>(
       valueListenable: QuickServicesPricingConfig.ratesVersion,
       builder: (context, _, __) {
@@ -394,25 +404,36 @@ class QuickServicesPriceSummary extends StatelessWidget {
                           shape: BoxShape.circle,
                         ),
                         child: Image.asset(AssetPaths.iconGoCoin,
-                            width: 24, height: 24),
+                            width: 32, height: 32),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 14),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text('Redeem GoCoins',
-                                style: AppTextStyles.titleSmall
+                                style: AppTextStyles.titleMedium
                                     .copyWith(fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 2),
-                            Text('Balance: ${useGoCoins ? (600 - ((bookingData.upfrontBookingFee + bookingData.materialCost) * 100).clamp(0, 600)).toInt() : 600} Coins',
-                                style: AppTextStyles.bodySmall
-                                    .copyWith(color: Colors.grey)),
+                            const SizedBox(height: 3),
+                            Text('Balance: ${payment.balance} Coins',
+                                style: AppTextStyles.bodyMedium
+                                    .copyWith(color: AppColors.textSecondary)),
+                            if (payment.potentialDiscount > 0)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Text(
+                                  'Save €${payment.potentialDiscount.toStringAsFixed(2)} with ${payment.potentialCoins} coins',
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: AppColors.primaryGold,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                       ),
                       Transform.scale(
-                        scale: 0.8,
+                        scale: 0.9,
                         child: Switch.adaptive(
                           value: useGoCoins,
                           activeColor: AppColors.backgroundDark,
@@ -428,7 +449,7 @@ class QuickServicesPriceSummary extends StatelessWidget {
                 ),
               ],
 
-              if (useGoCoins) ...[
+              if (useGoCoins && payment.discount > 0) ...[
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -438,7 +459,7 @@ class QuickServicesPriceSummary extends StatelessWidget {
                             style: AppTextStyles.bodyMedium
                                 .copyWith(color: AppColors.primaryGold))),
                     Text(
-                      '-€${((bookingData.upfrontBookingFee + bookingData.materialCost)).clamp(0.0, 6.0).toStringAsFixed(2)}', // 600 coins = max €6 discount
+                      '-€${payment.discount.toStringAsFixed(2)}',
                       style: AppTextStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.bold,
                           color: AppColors.primaryGold),
@@ -456,7 +477,7 @@ class QuickServicesPriceSummary extends StatelessWidget {
                         .copyWith(fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    '€${(bookingData.upfrontBookingFee + bookingData.materialCost - (useGoCoins ? (bookingData.upfrontBookingFee + bookingData.materialCost).clamp(0.0, 6.0) : 0.0)).clamp(0.0, double.infinity).toStringAsFixed(2)}',
+                    '€${payment.finalTotal.toStringAsFixed(2)}',
                     style: AppTextStyles.titleMedium.copyWith(
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).primaryColor,

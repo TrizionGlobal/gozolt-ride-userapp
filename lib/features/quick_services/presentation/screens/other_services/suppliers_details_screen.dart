@@ -338,6 +338,7 @@ class _SuppliersDetailsScreenState extends ConsumerState<SuppliersDetailsScreen>
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter the required item')));
                         return;
                       }
+                      if (!QuickServicesBookingDraft.validate(context)) return;
                       
                       final updatedData = widget.bookingData.copyWith(
                         selectedServiceTitle: 'Suppliers',

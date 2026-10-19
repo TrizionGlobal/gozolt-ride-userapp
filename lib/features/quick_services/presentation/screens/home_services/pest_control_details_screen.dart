@@ -98,7 +98,7 @@ class _PestControlDetailsScreenState extends ConsumerState<PestControlDetailsScr
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select an Observed Pest Level.')));
       return;
     }
-
+    if (!QuickServicesBookingDraft.validate(context)) return;
 
     final pestType = _selectedPestTypes.join(', ');
 

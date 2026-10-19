@@ -151,6 +151,19 @@ class _EventOrganisersDetailsScreenState extends ConsumerState<EventOrganisersDe
                     ElevatedButton(
                       onPressed: () {
                         if (_isUploading) return;
+                        if (_eventType == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select an event type')));
+                          return;
+                        }
+                        if (_guestCountController.text.trim().isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter estimated number of guests')));
+                          return;
+                        }
+                        if (_eventDuration == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select event duration')));
+                          return;
+                        }
+                        if (!QuickServicesBookingDraft.validate(context)) return;
                         final updatedData = widget.bookingData.copyWith(
                           selectedServiceTitle: 'Event Organisers',
                           eventType: _eventType,

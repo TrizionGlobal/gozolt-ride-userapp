@@ -585,6 +585,7 @@ class _BeautyWellnessDetailsScreenState extends ConsumerState<BeautyWellnessDeta
                         _showErrorSnackBar('Please select at least one treatment service');
                         return;
                       }
+                      if (!QuickServicesBookingDraft.validate(context)) return;
 
                       final selectedList = _selectedTreatments.toList();
                       final updatedData = widget.bookingData.copyWith(

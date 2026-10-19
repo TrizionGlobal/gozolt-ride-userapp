@@ -339,6 +339,17 @@ class _GardeningDetailsScreenState extends ConsumerState<GardeningDetailsScreen>
                     onPressed: () {
                       if (_isUploading) return;
                       final selectedKeys = _selectedServices.toList();
+                      if (selectedKeys.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('Please select at least one service to continue.', style: TextStyle(color: Colors.white)),
+                            backgroundColor: Colors.red.shade600,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                        return;
+                      }
+                      if (!QuickServicesBookingDraft.validate(context)) return;
 
                       double newSubtotal = selectedKeys.length * 25.00;
 

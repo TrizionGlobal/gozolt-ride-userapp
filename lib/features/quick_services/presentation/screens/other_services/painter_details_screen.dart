@@ -342,6 +342,7 @@ class _PainterDetailsScreenState extends ConsumerState<PainterDetailsScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select at least one painting area')));
                         return;
                       }
+                      if (!QuickServicesBookingDraft.validate(context)) return;
                       
                       final updatedData = widget.bookingData.copyWith(
                         selectedServiceTitle: 'Painter',

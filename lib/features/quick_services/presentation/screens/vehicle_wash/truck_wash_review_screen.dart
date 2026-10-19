@@ -10,6 +10,7 @@ import '../../../../../core/constants/app_colors.dart';
 import '../../../../../core/constants/app_text_styles.dart';
 import '../../../../../core/router/route_names.dart';
 import '../../../data/models/quick_service_booking_data.dart';
+import '../../../data/models/quick_services_coins_helper.dart';
 import '../../widgets/quick_services_price_summary.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../../../ride/data/models/saved_payment_method.dart';
@@ -317,12 +318,19 @@ class _TruckWashReviewScreenState extends ConsumerState<TruckWashReviewScreen> {
                   ElevatedButton(
                     onPressed: _isBooking ? null : () async {
 
-                      final finalTotal = ((_bookingData.upfrontBookingFee + _bookingData.materialCost) - (_useGoCoins ? (_bookingData.upfrontBookingFee + _bookingData.materialCost).clamp(0.0, 6.0) : 0.0)).clamp(0.0, double.infinity);
+                      final payment = QuickServicesCoinsHelper.getPaymentDetails(
+                      ref: ref,
+                      upfrontRaw: _bookingData.upfrontBookingFee + _bookingData.materialCost,
+                      useGoCoins: _useGoCoins,
+                    );
+                    final finalTotal = payment.finalTotal;
                       
                       if (finalTotal <= 0.0) {
                         final updatedData = _bookingData.copyWith(
                           paymentMethodType: PaymentMethodType.cash,
                           useGoCoins: _useGoCoins,
+                          discountAmount: payment.discount,
+                          coinsUsed: payment.coinsUsed,
                         );
                         
                       setState(() => _isBooking = true);
@@ -345,10 +353,12 @@ class _TruckWashReviewScreenState extends ConsumerState<TruckWashReviewScreen> {
                           amount: finalTotal,
                           onConfirm: (type, {cardId}) async {
                             final updatedData = _bookingData.copyWith(
-                                paymentMethodType: type,
-                                paymentMethodId: cardId,
-                                useGoCoins: _useGoCoins,
-                              );
+                              paymentMethodType: type,
+                              paymentMethodId: cardId,
+                              useGoCoins: _useGoCoins,
+                              discountAmount: payment.discount,
+                              coinsUsed: payment.coinsUsed,
+                            );
                             final bookingId = await ref.read(quickServicesBookingProvider.notifier).bookQuickService(updatedData);
                             if (bookingId != null && mounted) {
                               context.pushNamed(RouteNames.quickServicesTruckWashConfirmation, extra: updatedData.copyWith(bookingId: bookingId));

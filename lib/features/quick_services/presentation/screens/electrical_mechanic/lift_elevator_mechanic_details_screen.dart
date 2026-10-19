@@ -139,6 +139,7 @@ class _LiftElevatorMechanicDetailsScreenState extends ConsumerState<LiftElevator
     );
 
     if (_isUploading) return;
+    if (!QuickServicesBookingDraft.validate(context)) return;
     if (_selectedImages.isNotEmpty) {
       setState(() => _isUploading = true);
       ref.read(quickServicesBookingProvider.notifier).uploadImages(

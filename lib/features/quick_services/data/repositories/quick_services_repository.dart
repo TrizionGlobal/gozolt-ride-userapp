@@ -229,9 +229,13 @@ class QuickServicesRepository {
       
       final double treatmentsSubtotal = data.beautyTreatmentsSubtotal ?? 0.0;
       final double upfrontRaw = data.upfrontBookingFee + data.materialCost;
-      final double discountAmount = data.useGoCoins ? upfrontRaw.clamp(0.0, 6.0) : 0.0;
+      final double discountAmount = data.useGoCoins ? (data.discountAmount ?? upfrontRaw.clamp(0.0, 6.0)) : 0.0;
       final double finalTotal = upfrontRaw + treatmentsSubtotal - discountAmount;
       final String? estimatedPrice = QuickServicesPricingConfig.getEstimatedSparePrice(data.servicePricingKey);
+
+      if (data.useGoCoins && (data.coinsUsed ?? 0) > 0) {
+        options['Coins Used'] = data.coinsUsed;
+      }
 
       final payload = {
         'serviceCategory': data.category,
@@ -249,6 +253,7 @@ class QuickServicesRepository {
         'upfrontFee': data.upfrontBookingFee,
         'materialCost': data.materialCost,
         'discountAmount': discountAmount,
+        'walletAmountUsed': discountAmount,
         'totalAmount': finalTotal, // Final upfront payment after discount
         'estimatedPrice': estimatedPrice,
         'options': options,
