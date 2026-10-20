@@ -99,6 +99,18 @@ abstract final class RouteNames {
   static const String foodGroceryDeliveryAddress =
       'food-grocery-delivery-address';
   static const String foodGroceryReviewOrder = 'food-grocery-review-order';
+  static const String foodGroceryPaymentMethod = 'food-grocery-payment-method';
+  static const String foodGroceryOrderProcessing =
+      'food-grocery-order-processing';
+  static const String foodGroceryAwaitingSupplier =
+      'food-grocery-awaiting-supplier';
+  static const String foodGroceryLiveTracking = 'food-grocery-live-tracking';
+  static const String foodGrocerySubstitution = 'food-grocery-substitution';
+  static const String foodGroceryDeliveryArrival =
+      'food-grocery-delivery-arrival';
+  static const String foodGroceryOrderCompleted =
+      'food-grocery-order-completed';
+  static const String foodGroceryRatingReview = 'food-grocery-rating-review';
 
   // Quick Services
   static const String quickServicesLocation = 'quick-services-location';

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/router/route_names.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/router/route_names.dart';
+import '../../data/models/food_grocery_cart.dart';
 import '../../data/models/grocery_catalogue.dart';
 import '../../data/models/grocery_store.dart';
+import '../providers/food_grocery_cart_provider.dart';
 import '../providers/grocery_catalogue_provider.dart';
 import '../widgets/food_grocery_header.dart';
 
@@ -95,10 +97,82 @@ class _GroceryCatalogueScreenState
     );
   }
 
-  void _addProduct(
+  Future<bool> _confirmReplaceCart(
+    String currentSupplier,
+  ) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final shouldReplace = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: isDark ? AppColors.cardDark : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          title: Text(
+            'Start a new cart?',
+            style: AppTextStyles.titleMedium.copyWith(
+              color:
+                  isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: Text(
+            'Your cart contains items from $currentSupplier. '
+            'Adding this product will clear your current cart.',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: isDark
+                  ? AppColors.textSecondary
+                  : AppColors.textSecondaryLight,
+              height: 1.4,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(false);
+              },
+              child: Text(
+                'CANCEL',
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: isDark
+                      ? AppColors.textSecondary
+                      : AppColors.textSecondaryLight,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(true);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGold,
+                foregroundColor: AppColors.backgroundDark,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(11),
+                ),
+              ),
+              child: Text(
+                'START NEW CART',
+                style: AppTextStyles.labelLarge.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    return shouldReplace ?? false;
+  }
+
+  Future<void> _addProduct(
     GroceryProduct product,
     GroceryCatalogueState catalogueState,
-  ) {
+  ) async {
     if (!widget.store.isOrderable) {
       _showMessage(
         'This store is no longer accepting orders',
@@ -128,6 +202,66 @@ class _GroceryCatalogueScreenState
       return;
     }
 
+    final cartItem = FoodGroceryCartItem(
+      lineId: 'grocery-${widget.store.id}-${product.id}',
+      productId: product.id,
+      supplierId: widget.store.id,
+      supplierName: widget.store.name,
+      name: product.name,
+      cartType: FoodGroceryCartType.grocery,
+      unitPrice: product.currentPrice,
+      quantity: 1,
+      imageUrl: product.imageUrl,
+      variantId: null,
+      variantName: product.unitText,
+      maximumQuantity: product.allowedQuantity,
+      isEstimatedWeight: false,
+    );
+
+    final cartNotifier = ref.read(
+      foodGroceryCartProvider.notifier,
+    );
+
+    final result = cartNotifier.addItem(
+      cartItem,
+    );
+
+    if (result == CartAddResult.differentSupplier) {
+      final currentCart = ref.read(
+        foodGroceryCartProvider,
+      );
+
+      final shouldReplace = await _confirmReplaceCart(
+        currentCart.supplierName ?? 'another supplier',
+      );
+
+      if (!shouldReplace || !mounted) {
+        return;
+      }
+
+      cartNotifier.replaceCartWith(
+        cartItem,
+      );
+
+      ref
+          .read(
+            groceryCatalogueProvider(
+              widget.store.id,
+            ).notifier,
+          )
+          .clearCartPreview();
+    } else if (result == CartAddResult.outOfStock) {
+      _showMessage(
+        'The selected quantity is no longer available',
+      );
+      return;
+    }
+
+    cartNotifier.updateCharges(
+      deliveryFee: widget.store.deliveryFee,
+      serviceFee: 0,
+    );
+
     ref
         .read(
           groceryCatalogueProvider(
@@ -135,6 +269,43 @@ class _GroceryCatalogueScreenState
           ).notifier,
         )
         .addSimpleProduct(product);
+  }
+
+  void _decreaseProduct(
+    GroceryProduct product,
+  ) {
+    final lineId = 'grocery-${widget.store.id}-${product.id}';
+
+    ref
+        .read(
+          foodGroceryCartProvider.notifier,
+        )
+        .decreaseQuantity(lineId);
+
+    ref
+        .read(
+          groceryCatalogueProvider(
+            widget.store.id,
+          ).notifier,
+        )
+        .decreaseProduct(product);
+  }
+
+  int _cartQuantityFor(
+    FoodGroceryCartState cartState,
+    GroceryProduct product,
+  ) {
+    if (cartState.cartType != FoodGroceryCartType.grocery ||
+        cartState.supplierId != widget.store.id) {
+      return 0;
+    }
+
+    return cartState.items
+        .where((item) => item.productId == product.id)
+        .fold<int>(
+          0,
+          (total, item) => total + item.quantity,
+        );
   }
 
   Future<void> _showOfferDetails() async {
@@ -241,6 +412,18 @@ class _GroceryCatalogueScreenState
       groceryCatalogueProvider(widget.store.id),
     );
 
+    final cartState = ref.watch(
+      foodGroceryCartProvider,
+    );
+
+    final isCurrentStoreCart =
+        cartState.cartType == FoodGroceryCartType.grocery &&
+            cartState.supplierId == widget.store.id;
+
+    final currentStoreItemCount = isCurrentStoreCart ? cartState.itemCount : 0;
+
+    final currentStoreSubtotal = isCurrentStoreCart ? cartState.subtotal : 0.0;
+
     final visibleProducts = _visibleProducts(catalogueState);
 
     return Scaffold(
@@ -269,7 +452,7 @@ class _GroceryCatalogueScreenState
                   16,
                   16,
                   16,
-                  catalogueState.cartItemCount > 0 ? 100 : 28,
+                  currentStoreItemCount > 0 ? 100 : 28,
                 ),
                 children: [
                   _StoreOverviewCard(
@@ -299,7 +482,7 @@ class _GroceryCatalogueScreenState
                   const SizedBox(height: 12),
                   _MinimumOrderProgress(
                     minimumOrder: widget.store.minimumOrder,
-                    currentSubtotal: catalogueState.cartSubtotal,
+                    currentSubtotal: currentStoreSubtotal,
                     isDark: isDark,
                   ),
                   const SizedBox(height: 18),
@@ -394,8 +577,9 @@ class _GroceryCatalogueScreenState
                                 width: cardWidth,
                                 child: _GroceryProductCard(
                                   product: product,
-                                  quantity: catalogueState.quantityFor(
-                                    product.id,
+                                  quantity: _cartQuantityFor(
+                                    cartState,
+                                    product,
                                   ),
                                   storeOrderable: widget.store.isOrderable,
                                   isDark: isDark,
@@ -417,15 +601,7 @@ class _GroceryCatalogueScreenState
                                     );
                                   },
                                   onDecrease: () {
-                                    ref
-                                        .read(
-                                          groceryCatalogueProvider(
-                                            widget.store.id,
-                                          ).notifier,
-                                        )
-                                        .decreaseProduct(
-                                          product,
-                                        );
+                                    _decreaseProduct(product);
                                   },
                                 ),
                               );
@@ -440,7 +616,7 @@ class _GroceryCatalogueScreenState
           ),
         ],
       ),
-      bottomNavigationBar: catalogueState.cartItemCount == 0
+      bottomNavigationBar: !isCurrentStoreCart || cartState.isEmpty
           ? null
           : SafeArea(
               top: false,
@@ -495,7 +671,7 @@ class _GroceryCatalogueScreenState
                             ),
                           ),
                           child: Text(
-                            '${catalogueState.cartItemCount}',
+                            '${cartState.itemCount}',
                             style: AppTextStyles.labelSmall.copyWith(
                               color: AppColors.backgroundDark,
                               fontWeight: FontWeight.w700,
@@ -505,7 +681,7 @@ class _GroceryCatalogueScreenState
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            '${catalogueState.cartItemCount} ${catalogueState.cartItemCount == 1 ? 'Item' : 'Items'} • €${catalogueState.cartSubtotal.toStringAsFixed(2)}',
+                            '${cartState.itemCount} ${cartState.itemCount == 1 ? 'Item' : 'Items'} • €${cartState.subtotal.toStringAsFixed(2)}',
                             style: AppTextStyles.labelLarge.copyWith(
                               color: AppColors.backgroundDark,
                               fontWeight: FontWeight.w700,

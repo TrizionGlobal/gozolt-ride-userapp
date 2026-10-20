@@ -175,20 +175,13 @@ class _FoodGroceryDeliveryAddressScreenState
       foodGroceryDeliveryProvider,
     );
 
-    final selectedAddress = deliveryState.selectedAddress;
-
     return Scaffold(
       backgroundColor:
           isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       body: Column(
         children: [
-          FoodGroceryHeader(
+          const FoodGroceryHeader(
             title: 'Delivery Address',
-            deliveryLocation:
-                selectedAddress?.fullAddress ?? 'Choose delivery address',
-            onChangeLocation: () {
-              _showAddressForm();
-            },
           ),
           Expanded(
             child: SafeArea(
