@@ -97,6 +97,14 @@ import '../../features/food_grocery/presentation/screens/grocery_product_details
 import '../../features/food_grocery/presentation/screens/food_grocery_cart_screen.dart';
 import '../../features/food_grocery/presentation/screens/food_grocery_delivery_address_screen.dart';
 import '../../features/food_grocery/presentation/screens/food_grocery_review_order_screen.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_payment_method_screen.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_order_processing_screen.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_awaiting_supplier_screen.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_live_tracking_screen.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_substitution_screen.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_delivery_arrival_screen.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_order_completed_screen.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_rating_review_screen.dart';
 
 // Quick Services
 import '../../features/quick_services/presentation/screens/service_location_screen.dart';
@@ -639,12 +647,17 @@ final routerProvider = Provider<GoRouter>((ref) {
           final amountVal = extra['amount'] ?? q['amount'];
           return QuickServicePaymentConfirmationScreen(
             bookingId: extra['bookingId']?.toString() ?? q['bookingId'] ?? '',
-            serviceTitle: extra['serviceTitle']?.toString() ?? q['serviceTitle'] ?? 'Quick Service',
+            serviceTitle: extra['serviceTitle']?.toString() ??
+                q['serviceTitle'] ??
+                'Quick Service',
             amount: (amountVal is num)
                 ? (amountVal as num).toDouble()
                 : (double.tryParse(amountVal?.toString() ?? '0') ?? 0.0),
-            paymentMethod: extra['paymentMethod']?.toString() ?? q['paymentMethod'] ?? 'Online Payment (Stripe)',
-            stripePaymentIntentId: extra['stripePaymentIntentId']?.toString() ?? q['paymentIntentId'],
+            paymentMethod: extra['paymentMethod']?.toString() ??
+                q['paymentMethod'] ??
+                'Online Payment (Stripe)',
+            stripePaymentIntentId: extra['stripePaymentIntentId']?.toString() ??
+                q['paymentIntentId'],
             onDone: extra['onDone'] as VoidCallback?,
           );
         },
@@ -658,12 +671,17 @@ final routerProvider = Provider<GoRouter>((ref) {
           final amountVal = extra['amount'] ?? q['amount'];
           return QuickServicePaymentConfirmationScreen(
             bookingId: extra['bookingId']?.toString() ?? q['bookingId'] ?? '',
-            serviceTitle: extra['serviceTitle']?.toString() ?? q['serviceTitle'] ?? 'Quick Service',
+            serviceTitle: extra['serviceTitle']?.toString() ??
+                q['serviceTitle'] ??
+                'Quick Service',
             amount: (amountVal is num)
                 ? (amountVal as num).toDouble()
                 : (double.tryParse(amountVal?.toString() ?? '0') ?? 0.0),
-            paymentMethod: extra['paymentMethod']?.toString() ?? q['paymentMethod'] ?? 'Online Payment (Stripe)',
-            stripePaymentIntentId: extra['stripePaymentIntentId']?.toString() ?? q['paymentIntentId'],
+            paymentMethod: extra['paymentMethod']?.toString() ??
+                q['paymentMethod'] ??
+                'Online Payment (Stripe)',
+            stripePaymentIntentId: extra['stripePaymentIntentId']?.toString() ??
+                q['paymentIntentId'],
             onDone: extra['onDone'] as VoidCallback?,
           );
         },
@@ -678,11 +696,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           final amountVal = extra['amount'] ?? q['amount'];
           return QuickServicePaymentFailureScreen(
             bookingId: extra['bookingId']?.toString() ?? q['bookingId'] ?? '',
-            serviceTitle: extra['serviceTitle']?.toString() ?? q['serviceTitle'] ?? 'Quick Service',
+            serviceTitle: extra['serviceTitle']?.toString() ??
+                q['serviceTitle'] ??
+                'Quick Service',
             amount: (amountVal is num)
                 ? (amountVal as num).toDouble()
                 : (double.tryParse(amountVal?.toString() ?? '0') ?? 0.0),
-            errorMessage: extra['errorMessage']?.toString() ?? q['errorMessage'],
+            errorMessage:
+                extra['errorMessage']?.toString() ?? q['errorMessage'],
             onRetry: extra['onRetry'] as VoidCallback?,
             onCancel: extra['onCancel'] as VoidCallback?,
           );
@@ -697,11 +718,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           final amountVal = extra['amount'] ?? q['amount'];
           return QuickServicePaymentFailureScreen(
             bookingId: extra['bookingId']?.toString() ?? q['bookingId'] ?? '',
-            serviceTitle: extra['serviceTitle']?.toString() ?? q['serviceTitle'] ?? 'Quick Service',
+            serviceTitle: extra['serviceTitle']?.toString() ??
+                q['serviceTitle'] ??
+                'Quick Service',
             amount: (amountVal is num)
                 ? (amountVal as num).toDouble()
                 : (double.tryParse(amountVal?.toString() ?? '0') ?? 0.0),
-            errorMessage: extra['errorMessage']?.toString() ?? q['errorMessage'],
+            errorMessage:
+                extra['errorMessage']?.toString() ?? q['errorMessage'],
             onRetry: extra['onRetry'] as VoidCallback?,
             onCancel: extra['onCancel'] as VoidCallback?,
           );
@@ -1845,6 +1869,235 @@ final routerProvider = Provider<GoRouter>((ref) {
               state.uri.queryParameters['id'] ??
               '';
           return AirportTransferHistoryDetailsScreen(bookingId: bookingId);
+        },
+      ),
+      GoRoute(
+        path: '/food-grocery/payment-method',
+        name: RouteNames.foodGroceryPaymentMethod,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: const FoodGroceryPaymentMethodScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/order-processing',
+        name: RouteNames.foodGroceryOrderProcessing,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: const FoodGroceryOrderProcessingScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return FadeTransition(
+                opacity: CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeInOut,
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/awaiting-supplier',
+        name: RouteNames.foodGroceryAwaitingSupplier,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: const FoodGroceryAwaitingSupplierScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/live-tracking',
+        name: RouteNames.foodGroceryLiveTracking,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: const FoodGroceryLiveTrackingScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/substitution',
+        name: RouteNames.foodGrocerySubstitution,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: const FoodGrocerySubstitutionScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/delivery-arrival',
+        name: RouteNames.foodGroceryDeliveryArrival,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: const FoodGroceryDeliveryArrivalScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/order-completed',
+        name: RouteNames.foodGroceryOrderCompleted,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: const FoodGroceryOrderCompletedScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return FadeTransition(
+                opacity: CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeInOut,
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/rating-review',
+        name: RouteNames.foodGroceryRatingReview,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const FoodGroceryRatingReviewScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
         },
       ),
 
