@@ -62,25 +62,30 @@ import '../../features/airport_transfer/presentation/screens/airport_transfer_de
 import '../../features/airport_transfer/presentation/screens/airport_transfer_passenger_details_screen.dart';
 import '../../features/airport_transfer/presentation/screens/airport_transfer_review_screen.dart';
 import '../../features/airport_transfer/presentation/screens/airport_transfer_confirmation_screen.dart';
-import '../../features/airport_transfer/presentation/screens/airport_transfer_payment_confirmation_screen.dart';
-import '../../features/airport_transfer/presentation/screens/airport_transfer_payment_failure_screen.dart';
-import '../../features/history/presentation/screens/airport_transfer_history_details_screen.dart';
 
 // Food & Groceries
-// import '../../features/food_grocery/data/models/food_restaurant.dart';
-// import '../../features/food_grocery/presentation/screens/food_grocery_home_screen.dart';
-// import '../../features/food_grocery/presentation/screens/restaurant_listing_screen.dart';
-// import '../../features/food_grocery/presentation/screens/restaurant_details_screen.dart';
-// import '../../features/food_grocery/data/models/restaurant_menu.dart';
-// import '../../features/food_grocery/presentation/screens/food_item_details_screen.dart';
-// import '../../features/food_grocery/presentation/screens/grocery_store_listing_screen.dart';
-// import '../../features/food_grocery/data/models/grocery_store.dart';
-// import '../../features/food_grocery/presentation/screens/grocery_catalogue_screen.dart';
-// import '../../features/food_grocery/data/models/grocery_catalogue.dart';
-// import '../../features/food_grocery/presentation/screens/grocery_product_details_screen.dart';
-// import '../../features/food_grocery/presentation/screens/food_grocery_cart_screen.dart';
-// import '../../features/food_grocery/presentation/screens/food_grocery_delivery_address_screen.dart';
-// import '../../features/food_grocery/presentation/screens/food_grocery_review_order_screen.dart';
+import '../../features/food_grocery/data/models/food_restaurant.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_home_screen.dart';
+import '../../features/food_grocery/presentation/screens/restaurant_listing_screen.dart';
+import '../../features/food_grocery/presentation/screens/restaurant_details_screen.dart';
+import '../../features/food_grocery/data/models/restaurant_menu.dart';
+import '../../features/food_grocery/presentation/screens/food_item_details_screen.dart';
+import '../../features/food_grocery/presentation/screens/grocery_store_listing_screen.dart';
+import '../../features/food_grocery/data/models/grocery_store.dart';
+import '../../features/food_grocery/presentation/screens/grocery_catalogue_screen.dart';
+import '../../features/food_grocery/data/models/grocery_catalogue.dart';
+import '../../features/food_grocery/presentation/screens/grocery_product_details_screen.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_cart_screen.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_delivery_address_screen.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_review_order_screen.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_payment_method_screen.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_order_processing_screen.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_awaiting_supplier_screen.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_live_tracking_screen.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_substitution_screen.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_delivery_arrival_screen.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_order_completed_screen.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_rating_review_screen.dart';
 
 // Quick Services
 import '../../features/quick_services/presentation/screens/service_location_screen.dart';
@@ -623,12 +628,17 @@ final routerProvider = Provider<GoRouter>((ref) {
           final amountVal = extra['amount'] ?? q['amount'];
           return QuickServicePaymentConfirmationScreen(
             bookingId: extra['bookingId']?.toString() ?? q['bookingId'] ?? '',
-            serviceTitle: extra['serviceTitle']?.toString() ?? q['serviceTitle'] ?? 'Quick Service',
+            serviceTitle: extra['serviceTitle']?.toString() ??
+                q['serviceTitle'] ??
+                'Quick Service',
             amount: (amountVal is num)
                 ? (amountVal as num).toDouble()
                 : (double.tryParse(amountVal?.toString() ?? '0') ?? 0.0),
-            paymentMethod: extra['paymentMethod']?.toString() ?? q['paymentMethod'] ?? 'Online Payment (Stripe)',
-            stripePaymentIntentId: extra['stripePaymentIntentId']?.toString() ?? q['paymentIntentId'],
+            paymentMethod: extra['paymentMethod']?.toString() ??
+                q['paymentMethod'] ??
+                'Online Payment (Stripe)',
+            stripePaymentIntentId: extra['stripePaymentIntentId']?.toString() ??
+                q['paymentIntentId'],
             onDone: extra['onDone'] as VoidCallback?,
           );
         },
@@ -642,12 +652,17 @@ final routerProvider = Provider<GoRouter>((ref) {
           final amountVal = extra['amount'] ?? q['amount'];
           return QuickServicePaymentConfirmationScreen(
             bookingId: extra['bookingId']?.toString() ?? q['bookingId'] ?? '',
-            serviceTitle: extra['serviceTitle']?.toString() ?? q['serviceTitle'] ?? 'Quick Service',
+            serviceTitle: extra['serviceTitle']?.toString() ??
+                q['serviceTitle'] ??
+                'Quick Service',
             amount: (amountVal is num)
                 ? (amountVal as num).toDouble()
                 : (double.tryParse(amountVal?.toString() ?? '0') ?? 0.0),
-            paymentMethod: extra['paymentMethod']?.toString() ?? q['paymentMethod'] ?? 'Online Payment (Stripe)',
-            stripePaymentIntentId: extra['stripePaymentIntentId']?.toString() ?? q['paymentIntentId'],
+            paymentMethod: extra['paymentMethod']?.toString() ??
+                q['paymentMethod'] ??
+                'Online Payment (Stripe)',
+            stripePaymentIntentId: extra['stripePaymentIntentId']?.toString() ??
+                q['paymentIntentId'],
             onDone: extra['onDone'] as VoidCallback?,
           );
         },
@@ -662,11 +677,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           final amountVal = extra['amount'] ?? q['amount'];
           return QuickServicePaymentFailureScreen(
             bookingId: extra['bookingId']?.toString() ?? q['bookingId'] ?? '',
-            serviceTitle: extra['serviceTitle']?.toString() ?? q['serviceTitle'] ?? 'Quick Service',
+            serviceTitle: extra['serviceTitle']?.toString() ??
+                q['serviceTitle'] ??
+                'Quick Service',
             amount: (amountVal is num)
                 ? (amountVal as num).toDouble()
                 : (double.tryParse(amountVal?.toString() ?? '0') ?? 0.0),
-            errorMessage: extra['errorMessage']?.toString() ?? q['errorMessage'],
+            errorMessage:
+                extra['errorMessage']?.toString() ?? q['errorMessage'],
             onRetry: extra['onRetry'] as VoidCallback?,
             onCancel: extra['onCancel'] as VoidCallback?,
           );
@@ -681,11 +699,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           final amountVal = extra['amount'] ?? q['amount'];
           return QuickServicePaymentFailureScreen(
             bookingId: extra['bookingId']?.toString() ?? q['bookingId'] ?? '',
-            serviceTitle: extra['serviceTitle']?.toString() ?? q['serviceTitle'] ?? 'Quick Service',
+            serviceTitle: extra['serviceTitle']?.toString() ??
+                q['serviceTitle'] ??
+                'Quick Service',
             amount: (amountVal is num)
                 ? (amountVal as num).toDouble()
                 : (double.tryParse(amountVal?.toString() ?? '0') ?? 0.0),
-            errorMessage: extra['errorMessage']?.toString() ?? q['errorMessage'],
+            errorMessage:
+                extra['errorMessage']?.toString() ?? q['errorMessage'],
             onRetry: extra['onRetry'] as VoidCallback?,
             onCancel: extra['onCancel'] as VoidCallback?,
           );
@@ -1442,62 +1463,567 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       GoRoute(
-        path: '/airport-transfer-payment-confirmation',
-        name: RouteNames.airportTransferPaymentConfirmation,
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>? ?? {};
-          final q = state.uri.queryParameters;
-          final amountVal = extra['amount'] ?? q['amount'];
-          return AirportTransferPaymentConfirmationScreen(
-            bookingId: extra['bookingId']?.toString() ?? q['bookingId'] ?? '',
-            bookingReference: extra['bookingReference']?.toString() ?? q['bookingReference'],
-            serviceTitle: extra['serviceTitle']?.toString() ?? q['serviceTitle'] ?? 'Airport Transfer',
-            amount: (amountVal is num)
-                ? amountVal.toDouble()
-                : (double.tryParse(amountVal?.toString() ?? '0') ?? 0.0),
-            paymentMethod: extra['paymentMethod']?.toString() ?? q['paymentMethod'] ?? 'Online Payment (Stripe)',
-            stripePaymentIntentId: extra['stripePaymentIntentId']?.toString() ?? q['paymentIntentId'],
-            pickupLocation: extra['pickupLocation']?.toString() ?? q['pickupLocation'],
-            dropoffLocation: extra['dropoffLocation']?.toString() ?? q['dropoffLocation'],
-            pickupDateTime: extra['pickupDateTime']?.toString() ?? q['pickupDateTime'],
-            returnDateTime: extra['returnDateTime']?.toString() ?? q['returnDateTime'],
-            onDone: extra['onDone'] as VoidCallback?,
+        path: '/food-grocery',
+        name: RouteNames.foodGroceryHome,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const FoodGroceryHomeScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
           );
         },
       ),
 
       GoRoute(
-        path: '/airport-transfer-payment-failure',
-        name: RouteNames.airportTransferPaymentFailure,
-        builder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>? ?? {};
-          final q = state.uri.queryParameters;
-          final amountVal = extra['amount'] ?? q['amount'];
-          return AirportTransferPaymentFailureScreen(
-            bookingId: extra['bookingId']?.toString() ?? q['bookingId'] ?? '',
-            bookingReference: extra['bookingReference']?.toString() ?? q['bookingReference'],
-            serviceTitle: extra['serviceTitle']?.toString() ?? q['serviceTitle'] ?? 'Airport Transfer',
-            amount: (amountVal is num)
-                ? amountVal.toDouble()
-                : (double.tryParse(amountVal?.toString() ?? '0') ?? 0.0),
-            errorMessage: extra['errorMessage']?.toString() ?? q['errorMessage'],
-            onRetry: extra['onRetry'] as VoidCallback?,
-            onCancel: extra['onCancel'] as VoidCallback?,
+        path: '/food-grocery/restaurants',
+        name: RouteNames.foodGroceryRestaurants,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const RestaurantListingScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
           );
         },
       ),
 
       GoRoute(
-        path: '/airport-transfer-history-details',
-        name: RouteNames.airportTransferHistoryDetails,
-        builder: (context, state) {
-          final bookingId = state.extra as String? ??
-              state.uri.queryParameters['id'] ??
-              '';
-          return AirportTransferHistoryDetailsScreen(bookingId: bookingId);
+        path: '/food-grocery/restaurant-details',
+        name: RouteNames.foodGroceryRestaurantDetails,
+        pageBuilder: (context, state) {
+          final restaurant = state.extra as FoodRestaurant?;
+
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: restaurant == null
+                ? const RestaurantListingScreen()
+                : RestaurantDetailsScreen(
+                    restaurant: restaurant,
+                  ),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
         },
       ),
 
+      GoRoute(
+        path: '/food-grocery/item-details',
+        name: RouteNames.foodGroceryFoodItemDetails,
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+
+          final restaurant = extra?['restaurant'] as FoodRestaurant?;
+
+          final item = extra?['item'] as RestaurantMenuItem?;
+
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: restaurant == null || item == null
+                ? const RestaurantListingScreen()
+                : FoodItemDetailsScreen(
+                    restaurant: restaurant,
+                    item: item,
+                  ),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 1),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/stores',
+        name: RouteNames.foodGroceryStores,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const GroceryStoreListingScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/catalogue',
+        name: RouteNames.foodGroceryCatalogue,
+        pageBuilder: (context, state) {
+          final store = state.extra as GroceryStore?;
+
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: store == null
+                ? const GroceryStoreListingScreen()
+                : GroceryCatalogueScreen(
+                    store: store,
+                  ),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/product-details',
+        name: RouteNames.foodGroceryProductDetails,
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+
+          final store = extra?['store'] as GroceryStore?;
+          final product = extra?['product'] as GroceryProduct?;
+
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: store == null || product == null
+                ? const GroceryStoreListingScreen()
+                : GroceryProductDetailsScreen(
+                    store: store,
+                    product: product,
+                  ),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 1),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/cart',
+        name: RouteNames.foodGroceryCart,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const FoodGroceryCartScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 1),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/delivery-address',
+        name: RouteNames.foodGroceryDeliveryAddress,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: const FoodGroceryDeliveryAddressScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/review-order',
+        name: RouteNames.foodGroceryReviewOrder,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: const FoodGroceryReviewOrderScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/payment-method',
+        name: RouteNames.foodGroceryPaymentMethod,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: const FoodGroceryPaymentMethodScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/order-processing',
+        name: RouteNames.foodGroceryOrderProcessing,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: const FoodGroceryOrderProcessingScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return FadeTransition(
+                opacity: CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeInOut,
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/awaiting-supplier',
+        name: RouteNames.foodGroceryAwaitingSupplier,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: const FoodGroceryAwaitingSupplierScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/live-tracking',
+        name: RouteNames.foodGroceryLiveTracking,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: const FoodGroceryLiveTrackingScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/substitution',
+        name: RouteNames.foodGrocerySubstitution,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: const FoodGrocerySubstitutionScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/delivery-arrival',
+        name: RouteNames.foodGroceryDeliveryArrival,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: const FoodGroceryDeliveryArrivalScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/order-completed',
+        name: RouteNames.foodGroceryOrderCompleted,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: const FoodGroceryOrderCompletedScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return FadeTransition(
+                opacity: CurvedAnimation(
+                  parent: animation,
+                  curve: Curves.easeInOut,
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/rating-review',
+        name: RouteNames.foodGroceryRatingReview,
+        pageBuilder: (context, state) {
+          return CustomTransitionPage(
+            key: state.pageKey,
+            child: const FoodGroceryRatingReviewScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
 
       // ── Quick Services ──────────────────────────────────────
       GoRoute(
@@ -1889,6 +2415,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final bookingData = _resolveQuickServiceData(state.extra);
           return SharedQuickServiceConfirmationScreen(bookingData: bookingData, serviceIcon: Icons.laptop, defaultTitle: 'Computer & Laptop Repair');
+          final bookingData =
+              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+          return SharedQuickServiceConfirmationScreen(
+              bookingData: state.extra as QuickServiceBookingData,
+              serviceIcon: Icons.laptop,
+              defaultTitle: 'Computer & Laptop Repair');
         },
       ),
       GoRoute(
