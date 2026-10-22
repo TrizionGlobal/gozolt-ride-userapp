@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart' as geocoding;
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
+import '../../../ride/data/models/location_data.dart';
+import '../../../ride/presentation/screens/map_pin_selection_screen.dart';
 import '../widgets/food_grocery_header.dart';
 
 class FoodGroceryHomeScreen extends StatefulWidget {
@@ -16,9 +20,20 @@ class FoodGroceryHomeScreen extends StatefulWidget {
 class _FoodGroceryHomeScreenState extends State<FoodGroceryHomeScreen> {
   final TextEditingController _searchController = TextEditingController();
 
-  // Temporary values. These will later come from providers and APIs.
-  String _deliveryLocation = 'Valletta, Malta';
+  String _deliveryLocation = 'Detecting your location...';
+  bool _isDetectingLocation = false;
+
+  // Temporary until connected to the active-order API.
   bool _hasActiveOrder = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _detectCurrentLocation();
+    });
+  }
 
   @override
   void dispose() {
@@ -26,29 +41,127 @@ class _FoodGroceryHomeScreenState extends State<FoodGroceryHomeScreen> {
     super.dispose();
   }
 
-  void _showTemporaryMessage(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            message,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: Colors.white,
+  Future<void> _detectCurrentLocation() async {
+    if (_isDetectingLocation) return;
+
+    setState(() {
+      _isDetectingLocation = true;
+    });
+
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+
+      if (!serviceEnabled) {
+        if (!mounted) return;
+
+        setState(() {
+          _deliveryLocation = 'Turn on location services';
+        });
+        return;
+      }
+
+      var permission = await Geolocator.checkPermission();
+
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied) {
+        if (!mounted) return;
+
+        setState(() {
+          _deliveryLocation = 'Select your delivery location';
+        });
+        return;
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (!mounted) return;
+
+        setState(() {
+          _deliveryLocation = 'Enable location permission';
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Location permission is disabled. Enable it from app settings.',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: Colors.white,
+              ),
+            ),
+            behavior: SnackBarBehavior.floating,
+            action: const SnackBarAction(
+              label: 'SETTINGS',
+              onPressed: Geolocator.openAppSettings,
             ),
           ),
-          behavior: SnackBarBehavior.floating,
+        );
+
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 8),
         ),
       );
+
+      final placemarks = await geocoding.placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (!mounted) return;
+
+      String address = 'Current location';
+
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+
+        final addressParts = <String>[
+          if ((place.street ?? '').trim().isNotEmpty) place.street!.trim(),
+          if ((place.locality ?? '').trim().isNotEmpty) place.locality!.trim(),
+          if ((place.country ?? '').trim().isNotEmpty) place.country!.trim(),
+        ];
+
+        if (addressParts.isNotEmpty) {
+          address = addressParts.join(', ');
+        }
+      }
+
+      setState(() {
+        _deliveryLocation = address;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _deliveryLocation = 'Select your delivery location';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isDetectingLocation = false;
+        });
+      }
+    }
   }
 
-  void _changeLocation() {
-    // TODO(FOOD_GROCERY_API):
-    // Replace with the saved-address/location-selection screen.
+  Future<void> _changeLocation() async {
+    final selectedLocation = await Navigator.of(context).push<LocationData>(
+      MaterialPageRoute<LocationData>(
+        builder: (context) {
+          return const MapPinSelectionScreen();
+        },
+      ),
+    );
+
+    if (!mounted || selectedLocation == null) return;
+
     setState(() {
-      _deliveryLocation = _deliveryLocation == 'Valletta, Malta'
-          ? 'Sliema, Malta'
-          : 'Valletta, Malta';
+      _deliveryLocation = selectedLocation.address;
     });
   }
 
@@ -64,9 +177,39 @@ class _FoodGroceryHomeScreenState extends State<FoodGroceryHomeScreen> {
     );
   }
 
+  void _searchFoodAndGroceries(String value) {
+    final query = value.trim().toLowerCase();
+
+    if (query.isEmpty) return;
+
+    const groceryKeywords = <String>[
+      'grocery',
+      'groceries',
+      'milk',
+      'bread',
+      'eggs',
+      'fruit',
+      'vegetable',
+      'detergent',
+      'store',
+      'market',
+    ];
+
+    final isGrocerySearch = groceryKeywords.any(
+      query.contains,
+    );
+
+    if (isGrocerySearch) {
+      _openGrocery();
+    } else {
+      _openFood();
+    }
+  }
+
   void _openTracking() {
-    // Screen 14 route will be connected later.
-    _showTemporaryMessage('Live Order Tracking will open here');
+    context.pushNamed(
+      RouteNames.foodGroceryLiveTracking,
+    );
   }
 
   @override
@@ -84,6 +227,9 @@ class _FoodGroceryHomeScreenState extends State<FoodGroceryHomeScreen> {
             title: 'Food & Groceries',
             deliveryLocation: _deliveryLocation,
             onChangeLocation: _changeLocation,
+            onBack: () {
+              context.goNamed(RouteNames.home);
+            },
           ),
           Expanded(
             child: SafeArea(
@@ -94,13 +240,7 @@ class _FoodGroceryHomeScreenState extends State<FoodGroceryHomeScreen> {
                   _SearchField(
                     controller: _searchController,
                     isDark: isDark,
-                    onSubmitted: (value) {
-                      if (value.trim().isEmpty) return;
-
-                      _showTemporaryMessage(
-                        'Searching for ${value.trim()}',
-                      );
-                    },
+                    onSubmitted: _searchFoodAndGroceries,
                   ),
                   const SizedBox(height: 18),
                   _SectionHeading(
@@ -149,12 +289,6 @@ class _FoodGroceryHomeScreenState extends State<FoodGroceryHomeScreen> {
                     title: 'Offers for you',
                     subtitle: 'Save more on your next order',
                     isDark: isDark,
-                    actionText: 'View all',
-                    onActionPressed: () {
-                      _showTemporaryMessage(
-                        'All Food & Grocery offers will open here',
-                      );
-                    },
                   ),
                   const SizedBox(height: 12),
                   SizedBox(
@@ -169,11 +303,7 @@ class _FoodGroceryHomeScreenState extends State<FoodGroceryHomeScreen> {
                           startColor: AppColors.primaryGoldDark,
                           endColor: AppColors.primaryGold,
                           textColor: AppColors.backgroundDark,
-                          onTap: () {
-                            _showTemporaryMessage(
-                              'Restaurant offer selected',
-                            );
-                          },
+                          onTap: _openFood,
                         ),
                         const SizedBox(width: 12),
                         _OfferCard(
@@ -183,11 +313,7 @@ class _FoodGroceryHomeScreenState extends State<FoodGroceryHomeScreen> {
                           startColor: const Color(0xFF134E5E),
                           endColor: const Color(0xFF71B280),
                           textColor: Colors.white,
-                          onTap: () {
-                            _showTemporaryMessage(
-                              'Free-delivery offer selected',
-                            );
-                          },
+                          onTap: _openGrocery,
                         ),
                         const SizedBox(width: 12),
                         _OfferCard(
@@ -198,8 +324,8 @@ class _FoodGroceryHomeScreenState extends State<FoodGroceryHomeScreen> {
                           endColor: const Color(0xFF5863A8),
                           textColor: Colors.white,
                           onTap: () {
-                            _showTemporaryMessage(
-                              'GO Coins offer selected',
+                            context.pushNamed(
+                              RouteNames.rewards,
                             );
                           },
                         ),
@@ -211,12 +337,6 @@ class _FoodGroceryHomeScreenState extends State<FoodGroceryHomeScreen> {
                     title: 'Recommended near you',
                     subtitle: 'Popular choices around $_deliveryLocation',
                     isDark: isDark,
-                    actionText: 'See all',
-                    onActionPressed: () {
-                      _showTemporaryMessage(
-                        'Recommended suppliers will open here',
-                      );
-                    },
                   ),
                   const SizedBox(height: 12),
                   SizedBox(
@@ -232,11 +352,7 @@ class _FoodGroceryHomeScreenState extends State<FoodGroceryHomeScreen> {
                           deliveryFee: '€1.50 delivery',
                           icon: Icons.lunch_dining_rounded,
                           isDark: isDark,
-                          onTap: () {
-                            _showTemporaryMessage(
-                              'Harbour Kitchen selected',
-                            );
-                          },
+                          onTap: _openFood,
                         ),
                         const SizedBox(width: 12),
                         _SupplierCard(
@@ -247,11 +363,7 @@ class _FoodGroceryHomeScreenState extends State<FoodGroceryHomeScreen> {
                           deliveryFee: '€2.00 delivery',
                           icon: Icons.shopping_basket_rounded,
                           isDark: isDark,
-                          onTap: () {
-                            _showTemporaryMessage(
-                              'Fresh Market selected',
-                            );
-                          },
+                          onTap: _openGrocery,
                         ),
                       ],
                     ),
@@ -268,12 +380,7 @@ class _FoodGroceryHomeScreenState extends State<FoodGroceryHomeScreen> {
                     itemSummary: 'Margherita Pizza • Garlic Bread',
                     previousTotal: '€18.50',
                     isDark: isDark,
-                    onReorder: () {
-                      // Backend must revalidate price, stock and availability.
-                      _showTemporaryMessage(
-                        'Checking availability and latest price',
-                      );
-                    },
+                    onReorder: _openFood,
                   ),
                 ],
               ),
@@ -355,15 +462,11 @@ class _SectionHeading extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.isDark,
-    this.actionText,
-    this.onActionPressed,
   });
 
   final String title;
   final String subtitle;
   final bool isDark;
-  final String? actionText;
-  final VoidCallback? onActionPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -397,17 +500,6 @@ class _SectionHeading extends StatelessWidget {
             ],
           ),
         ),
-        if (actionText != null && onActionPressed != null)
-          TextButton(
-            onPressed: onActionPressed,
-            child: Text(
-              actionText!,
-              style: AppTextStyles.labelSmall.copyWith(
-                color: AppColors.primaryGoldDark,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
       ],
     );
   }

@@ -9,12 +9,13 @@ class FoodGroceryHeader extends StatelessWidget {
     required this.title,
     this.deliveryLocation,
     this.onChangeLocation,
+    this.onBack,
   });
 
   final String title;
   final String? deliveryLocation;
   final VoidCallback? onChangeLocation;
-
+  final VoidCallback? onBack;
   bool get _showDeliveryLocation {
     return deliveryLocation != null && deliveryLocation!.trim().isNotEmpty;
   }
@@ -53,8 +54,13 @@ class FoodGroceryHeader extends StatelessWidget {
                   Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap: () {
-                        Navigator.of(context).maybePop();
+                      onTap: () async {
+                        if (onBack != null) {
+                          onBack!();
+                          return;
+                        }
+
+                        await Navigator.of(context).maybePop();
                       },
                       customBorder: const CircleBorder(),
                       child: Container(

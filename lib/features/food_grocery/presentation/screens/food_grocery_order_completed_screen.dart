@@ -414,14 +414,21 @@ class _GoCoinsCard extends StatelessWidget {
           Container(
             width: 43,
             height: 43,
-            decoration: const BoxDecoration(
-              color: AppColors.primaryGold,
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              color: AppColors.primaryGold.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.monetization_on_outlined,
-              size: 23,
-              color: AppColors.backgroundDark,
+            child: Image.asset(
+              'assets/images/icon_gocoin.png', // use your exact asset path
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(
+                  Icons.toll_rounded,
+                  size: 23,
+                  color: AppColors.primaryGoldDark,
+                );
+              },
             ),
           ),
           const SizedBox(width: 11),
