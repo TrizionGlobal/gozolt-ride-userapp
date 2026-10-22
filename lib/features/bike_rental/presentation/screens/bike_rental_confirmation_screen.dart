@@ -57,7 +57,7 @@ Transmission: ${widget.bike?.transmission ?? "-"}
 Mileage: ${widget.bike?.mileage ?? "-"} km/l
 Seats: ${widget.bike?.seats ?? "-"}
 Color: ${widget.bike?.color ?? "-"}
-Pickup Date: ${DateFormat('MMM dd, yyyy').format(pickupDate)}
+Pickup Date: ${DateFormat('dd MMM yyyy').format(pickupDate)}
 Pickup Time: ${DateFormat('h:mm a').format(pickupDate)}
 
 (ID: $fullBookingId)

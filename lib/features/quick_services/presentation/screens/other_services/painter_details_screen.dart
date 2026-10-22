@@ -344,7 +344,7 @@ class _PainterDetailsScreenState extends ConsumerState<PainterDetailsScreen> {
                       }
                       if (!QuickServicesBookingDraft.validate(context)) return;
                       
-                      final updatedData = widget.bookingData.copyWith(
+                      final updatedData = widget.bookingData.applyDraft().copyWith(
                         selectedServiceTitle: 'Painter',
                         propertyType: _selectedPropertyType,
                         paintingAreas: _selectedPaintingAreas,

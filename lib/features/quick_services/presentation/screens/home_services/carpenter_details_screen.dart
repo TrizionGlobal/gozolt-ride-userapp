@@ -305,7 +305,7 @@ class _CarpenterDetailsScreenState extends ConsumerState<CarpenterDetailsScreen>
                           newSubtotal += 15.00 * _counts[key]!;
                         }
   
-                        final updatedData = widget.bookingData.copyWith(
+                        final updatedData = widget.bookingData.applyDraft().copyWith(
                           selectedAddons: selectedAddons,
                           subtotal: 0.0,
                           baseEstimatedHours: 0.0,

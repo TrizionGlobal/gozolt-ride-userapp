@@ -76,7 +76,7 @@ Status: Booking Confirmed
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Your airport transfer request has been received.',
+                        'Your airport transfer has been booked! Your chauffeur will meet you at your pickup location and drop you off at your chosen destination.',
                         textAlign: TextAlign.center,
                         style: AppTextStyles.bodyMedium.copyWith(
                           color: isDark
@@ -212,7 +212,7 @@ Status: Booking Confirmed
                             const SizedBox(width: 9),
                             Expanded(
                               child: Text(
-                                'Your transfer is subject to supplier and driver availability. You will receive an update after confirmation.',
+                                'Your chauffeur will meet you at the pickup location with your welcome sign (if requested) and assist with luggage. Direct drop-off at your destination with no vehicle handover or return required.',
                                 style: AppTextStyles.bodySmall.copyWith(
                                   height: 1.4,
                                 ),

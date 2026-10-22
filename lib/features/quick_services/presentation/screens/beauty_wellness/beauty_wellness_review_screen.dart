@@ -29,7 +29,7 @@ class _BeautyWellnessReviewScreenState extends ConsumerState<BeautyWellnessRevie
   @override
   void initState() {
     super.initState();
-    _bookingData = widget.bookingData;
+    _bookingData = widget.bookingData.applyDraft();
   }
 
   void _showErrorSnackBar(String msg) {

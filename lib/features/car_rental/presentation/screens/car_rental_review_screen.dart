@@ -304,8 +304,8 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
                         ],
                       ),
                       const Divider(height: 32),
-                      _buildRow('Pickup', searchState.pickupDate != null ? DateFormat('MMM dd, yyyy • h:mm a').format(searchState.pickupDate!) : 'N/A'),
-                      _buildRow('Drop-off', searchState.dropoffDate != null ? DateFormat('MMM dd, yyyy • h:mm a').format(searchState.dropoffDate!) : 'N/A'),
+                      _buildRow('Pickup', searchState.pickupDate != null ? DateFormat('dd MMM yyyy • h:mm a').format(searchState.pickupDate!) : 'N/A'),
+                      _buildRow('Drop-off', searchState.dropoffDate != null ? DateFormat('dd MMM yyyy • h:mm a').format(searchState.dropoffDate!) : 'N/A'),
                       _buildRow('Location', searchState.pickupLocation?.isNotEmpty == true ? searchState.pickupLocation! : (searchState.deliveryType == 'DOORSTEP_DELIVERY' ? (searchState.deliveryAddress ?? 'Doorstep Delivery') : 'Supplier Hub')),
                     ],
                   ),
@@ -757,7 +757,7 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
                     _buildModalRow('Total Price', '€${double.parse(grandTotal.toString()).toStringAsFixed(2)}'),
                     const SizedBox(height: 12),
                     if (returnDate != null)
-                      _buildModalRow('Return Date', DateFormat('MMM dd, yyyy').format(returnDate)),
+                      _buildModalRow('Return Date', DateFormat('dd MMM yyyy').format(returnDate)),
                     
                     if (isExpired) ...[
                       const SizedBox(height: 12),

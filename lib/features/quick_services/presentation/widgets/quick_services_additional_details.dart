@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:go_router/go_router.dart';
@@ -46,8 +47,7 @@ class _QuickServicesAdditionalDetailsState extends State<QuickServicesAdditional
   void _updateDateText() {
     final date = QuickServicesBookingDraft.selectedDate;
     if (date == null) return;
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    _dateController.text = '${date.day} ${months[date.month - 1]} ${date.year}';
+    _dateController.text = DateFormat('dd MMM yyyy').format(date);
   }
 
   void _updateTimeText() {

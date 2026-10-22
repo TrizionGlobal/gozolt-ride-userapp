@@ -7,6 +7,14 @@ class InputValidators {
   static final nameInputFormatter =
       FilteringTextInputFormatter.allow(RegExp(r"[a-zA-ZÀ-ÿ\s\-']"));
 
+  /// Strictly blocks any letters from number fields (allows only digits, +, space, hyphen)
+  static final phoneInputFormatter =
+      FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s-]'));
+
+  /// Allows only decimal numbers (digits and single decimal point)
+  static final decimalNumberFormatter =
+      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*'));
+
   /// Rejects empty, numbers-only, or special-chars-only names
   static bool isValidName(String value) {
     final trimmed = value.trim();
@@ -27,3 +35,94 @@ class InputValidators {
   static final currencyInputFormatter =
       FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'));
 }
+
+/// Automatically capitalizes the first letter of each word
+class CapitalizeWordsFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) return newValue;
+
+    final text = newValue.text;
+    final buffer = StringBuffer();
+    bool capitalizeNext = true;
+
+    for (int i = 0; i < text.length; i++) {
+      final char = text[i];
+      if (capitalizeNext && RegExp(r'[a-zA-ZÀ-ÿ]').hasMatch(char)) {
+        buffer.write(char.toUpperCase());
+        capitalizeNext = false;
+      } else {
+        buffer.write(char);
+        if (char == ' ' || char == '-' || char == "'" || char == '(' || char == '[') {
+          capitalizeNext = true;
+        }
+      }
+    }
+
+    final capitalized = buffer.toString();
+    if (capitalized == text) return newValue;
+
+    return newValue.copyWith(
+      text: capitalized,
+      selection: newValue.selection,
+    );
+  }
+}
+
+/// Automatically capitalizes the first letter of each sentence
+class CapitalizeSentencesFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) return newValue;
+
+    final text = newValue.text;
+    final buffer = StringBuffer();
+    bool capitalizeNext = true;
+
+    for (int i = 0; i < text.length; i++) {
+      final char = text[i];
+      if (capitalizeNext && RegExp(r'[a-zA-ZÀ-ÿ]').hasMatch(char)) {
+        buffer.write(char.toUpperCase());
+        capitalizeNext = false;
+      } else {
+        buffer.write(char);
+        if (char == '.' || char == '!' || char == '?' || char == '\n') {
+          capitalizeNext = true;
+        }
+      }
+    }
+
+    final capitalized = buffer.toString();
+    if (capitalized == text) return newValue;
+
+    return newValue.copyWith(
+      text: capitalized,
+      selection: newValue.selection,
+    );
+  }
+}
+
+/// Automatically converts text to uppercase (e.g. Flight numbers)
+class UpperCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) return newValue;
+    final upper = newValue.text.toUpperCase();
+    if (upper == newValue.text) return newValue;
+
+    return newValue.copyWith(
+      text: upper,
+      selection: newValue.selection,
+    );
+  }
+}
+

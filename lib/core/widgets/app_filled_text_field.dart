@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_text_styles.dart';
 
@@ -9,6 +10,8 @@ class AppFilledTextField extends StatelessWidget {
   final bool readOnly;
   final TextEditingController? controller;
   final String? value;
+  final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
 
   const AppFilledTextField({
     super.key,
@@ -18,6 +21,8 @@ class AppFilledTextField extends StatelessWidget {
     this.readOnly = false,
     this.controller,
     this.value,
+    this.keyboardType,
+    this.inputFormatters,
   });
 
   @override
@@ -35,6 +40,8 @@ class AppFilledTextField extends StatelessWidget {
       readOnly: isPicker || readOnly,
       onTap: onTap,
       controller: activeController,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
       style: AppTextStyles.bodyMedium.copyWith(
         color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
         fontSize: 13,

@@ -618,7 +618,7 @@ class _PrinterScannerDetailsScreenState extends ConsumerState<PrinterScannerDeta
                       }
                       if (!QuickServicesBookingDraft.validate(context)) return;
 
-                      final updatedData = widget.bookingData.copyWith(
+                      final updatedData = widget.bookingData.applyDraft().copyWith(
                         selectedServiceTitle: 'Printer & Scanner Repair',
                         printerDevices: _savedPrinters,
                         whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty ? _whatYouNeedController.text.trim() : null,

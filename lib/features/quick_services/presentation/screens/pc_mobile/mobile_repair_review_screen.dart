@@ -31,7 +31,7 @@ class _MobileRepairReviewScreenState extends ConsumerState<MobileRepairReviewScr
   @override
   void initState() {
     super.initState();
-    _bookingData = widget.bookingData;
+    _bookingData = widget.bookingData.applyDraft();
   }
 
   void _showFullImage(BuildContext context, String path) {

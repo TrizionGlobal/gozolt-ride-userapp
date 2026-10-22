@@ -9,6 +9,7 @@ import '../providers/airport_transfer_vehicle_provider.dart';
 import '../widgets/airport_transfer_header.dart';
 import '../../../../core/widgets/gozolt_button.dart';
 import '../../../../core/widgets/app_filled_text_field.dart';
+import '../../../../core/utils/input_validators.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 
@@ -119,6 +120,12 @@ Future<void> _showFilterModal() async {
             luggageCount: draft.totalLuggage,
             isRoundTrip: draft.isRoundTrip,
             returnDate: draft.returnDate,
+            distanceKm: vehiclesAsync.value?.isNotEmpty == true
+                ? vehiclesAsync.value!.first.distanceKm
+                : null,
+            durationMinutes: vehiclesAsync.value?.isNotEmpty == true
+                ? vehiclesAsync.value!.first.durationMinutes
+                : null,
             onEdit: () => Navigator.of(context).pop(),
           ),
           _buildCategoryTabs(isDark),
@@ -661,6 +668,8 @@ class _AirportTransferFilterModalState
                         controller: _minPriceController,
                         hint: 'Min €',
                         icon: Icons.euro_rounded,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [InputValidators.decimalNumberFormatter],
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -669,6 +678,8 @@ class _AirportTransferFilterModalState
                         controller: _maxPriceController,
                         hint: 'Max €',
                         icon: Icons.euro_rounded,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [InputValidators.decimalNumberFormatter],
                       ),
                     ),
                   ],
@@ -793,6 +804,8 @@ class _JourneySummaryCard extends StatelessWidget {
     required this.isRoundTrip,
     required this.returnDate,
     required this.onEdit,
+    this.distanceKm,
+    this.durationMinutes,
   });
   final bool isDark;
   final String pickupAddress;
@@ -804,12 +817,16 @@ class _JourneySummaryCard extends StatelessWidget {
   final bool isRoundTrip;
   final DateTime? returnDate;
   final VoidCallback onEdit;
+  final double? distanceKm;
+  final int? durationMinutes;
+
   @override
   Widget build(BuildContext context) {
     final dateText = pickupDate == null
         ? 'Date not selected'
         : DateFormat('dd MMM').format(pickupDate!);
     final journeyDetails = <String>[
+      if (distanceKm != null) '${distanceKm!.toStringAsFixed(1)} km (${durationMinutes ?? 20} min)',
       dateText,
       if (pickupTime != null && pickupTime!.isNotEmpty) pickupTime!,
       '$passengerCount ${passengerCount == 1 ? 'passenger' : 'passengers'}',
@@ -969,7 +986,7 @@ class _TransferVehicleCard extends ConsumerWidget {
                       ),
                       _VehicleSpecification(
                         icon: Icons.schedule_rounded,
-                        text: vehicle.estimatedDurationText,
+                        text: vehicle.routeInfoText,
                         isDark: isDark,
                       ),
                     ],
@@ -985,11 +1002,36 @@ class _TransferVehicleCard extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Fixed transfer price',
-                              style: AppTextStyles.labelSmall.copyWith(
-                                color: AppColors.success,
-                              ),
+                            Row(
+                              children: [
+                                Text(
+                                  vehicle.isRoundTrip ? 'Round-trip (5% off)' : 'All-inclusive fare',
+                                  style: AppTextStyles.labelSmall.copyWith(
+                                    color: AppColors.success,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? const Color(0xFF27272A) : const Color(0xFFF4F4F5),
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                      color: isDark ? const Color(0xFF3F3F46) : const Color(0xFFE4E4E7),
+                                      width: 0.5,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    vehicle.ratePerKmText,
+                                    style: AppTextStyles.labelSmall.copyWith(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.primaryGold,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 2),
                             Text(
@@ -1072,14 +1114,11 @@ class _TransferVehicleCard extends ConsumerWidget {
   }
 
   Widget _buildBadges() {
-    if (!vehicle.isRecommended && !vehicle.isBestValue) {
-      return const SizedBox.shrink();
-    }
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 7),
       child: Wrap(
         spacing: 6,
+        runSpacing: 4,
         children: [
           if (vehicle.isBestValue)
             const _VehicleBadge(
@@ -1090,6 +1129,16 @@ class _TransferVehicleCard extends ConsumerWidget {
             const _VehicleBadge(
               text: 'RECOMMENDED',
               color: AppColors.primaryGold,
+            ),
+          if (vehicle.isMeetAndGreetIncluded)
+            const _VehicleBadge(
+              text: 'MEET & GREET',
+              color: Color(0xFF3B82F6),
+            ),
+          if (vehicle.freeWaitingMinutes > 0)
+            _VehicleBadge(
+              text: '${vehicle.freeWaitingMinutes}M WAITING',
+              color: const Color(0xFF8B5CF6),
             ),
         ],
       ),

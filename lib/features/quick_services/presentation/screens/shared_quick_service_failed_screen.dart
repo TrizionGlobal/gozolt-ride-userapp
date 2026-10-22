@@ -46,7 +46,7 @@ class _SharedQuickServiceFailedScreenState extends ConsumerState<SharedQuickServ
         isQuickService: true,
         amount: finalTotal,
         onConfirm: (type, {cardId}) async {
-          final updatedData = widget.bookingData.copyWith(
+          final updatedData = widget.bookingData.applyDraft().copyWith(
             paymentMethodType: type,
             paymentMethodId: cardId,
           );

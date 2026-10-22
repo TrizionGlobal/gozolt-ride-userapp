@@ -11,6 +11,8 @@ import '../../data/models/airport_transfer_draft.dart';
 import '../providers/airport_transfer_provider.dart';
 import '../widgets/airport_transfer_location_search.dart';
 import '../widgets/airport_transfer_header.dart';
+import '../../../../core/widgets/app_filled_text_field.dart';
+import '../../../../core/utils/input_validators.dart';
 
 class AirportTransferSearchScreen extends ConsumerStatefulWidget {
   const AirportTransferSearchScreen({super.key});
@@ -81,12 +83,25 @@ class _AirportTransferSearchScreenState
     );
   }
 
+  Widget _buildSectionHeader(bool isDark, String title) {
+    return Text(
+      title.toUpperCase(),
+      style: TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.2,
+        color: isDark ? AppColors.primaryGold : Colors.black54,
+      ),
+    );
+  }
+
   Future<DateTime?> _showDatePicker({
     DateTime? initialDate,
     DateTime? firstDate,
   }) {
     final now = DateTime.now();
     final minimumDate = firstDate ?? now;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return showDatePicker(
       context: context,
@@ -96,10 +111,18 @@ class _AirportTransferSearchScreenState
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-                  primary: AppColors.primaryGold,
-                  onPrimary: Colors.black,
-                ),
+            colorScheme: isDark
+                ? const ColorScheme.dark(
+                    primary: AppColors.primaryGold,
+                    onPrimary: Colors.black,
+                    surface: AppColors.surfaceDark,
+                    onSurface: AppColors.textPrimary,
+                  )
+                : const ColorScheme.light(
+                    primary: AppColors.primaryGold,
+                    onPrimary: Colors.white,
+                    onSurface: AppColors.textPrimaryLight,
+                  ),
           ),
           child: child!,
         );
@@ -153,31 +176,28 @@ class _AirportTransferSearchScreenState
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            timePickerTheme: TimePickerThemeData(
-              backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
-              hourMinuteTextStyle: AppTextStyles.headlineMedium.copyWith(
-                color: isDark ? AppColors.textPrimary : Colors.black87,
-                fontWeight: FontWeight.w600,
-              ),
-              hourMinuteColor: AppColors.primaryGold.withValues(
-                alpha: 0.16,
-              ),
-              dialHandColor: AppColors.primaryGold,
-              dialBackgroundColor:
-                  isDark ? AppColors.cardDark : Colors.grey.shade100,
-              dialTextColor: isDark ? AppColors.textPrimary : Colors.black87,
-              entryModeIconColor: AppColors.primaryGold,
-              helpTextStyle: AppTextStyles.labelSmall.copyWith(
-                color: isDark ? AppColors.textSecondary : Colors.black54,
-                fontWeight: FontWeight.w500,
-              ),
+            colorScheme: isDark
+                ? const ColorScheme.dark(
+                    primary: AppColors.primaryGold,
+                    surface: AppColors.surfaceDark,
+                    onSurface: AppColors.textPrimary,
+                  )
+                : const ColorScheme.light(
+                    primary: AppColors.primaryGold,
+                    onSurface: AppColors.textPrimaryLight,
+                  ),
+            textTheme: Theme.of(context).textTheme.copyWith(
+              displayLarge:
+                  const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              displayMedium:
+                  const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-                  primary: AppColors.primaryGold,
-                  onPrimary: Colors.white,
-                  surface: isDark ? AppColors.surfaceDark : Colors.white,
-                  onSurface: isDark ? AppColors.textPrimary : Colors.black87,
-                ),
+            timePickerTheme: const TimePickerThemeData(
+              hourMinuteTextStyle:
+                  TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              dayPeriodTextStyle:
+                  TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+            ),
           ),
           child: child!,
         );
@@ -524,27 +544,37 @@ class _AirportTransferSearchScreenState
                     Row(
                       children: [
                         Expanded(
-                          child: _SelectionTile(
-                            label: 'DATE',
-                            value: _pickupDate == null
-                                ? 'Select date'
-                                : DateFormat('dd MMM yyyy')
-                                    .format(_pickupDate!),
-                            icon: Icons.calendar_month_rounded,
-                            isPlaceholder: _pickupDate == null,
-                            onTap: _selectPickupDate,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildSectionHeader(isDark, 'Pickup Date'),
+                              const SizedBox(height: 8),
+                              AppFilledTextField(
+                                hint: 'Select Date',
+                                value: _pickupDate != null
+                                    ? DateFormat('dd MMM yyyy')
+                                        .format(_pickupDate!)
+                                    : null,
+                                icon: Icons.calendar_today,
+                                onTap: _selectPickupDate,
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 16),
                         Expanded(
-                          child: _SelectionTile(
-                            label: 'TIME',
-                            value: _pickupTime == null
-                                ? 'Select time'
-                                : _pickupTime!.format(context),
-                            icon: Icons.schedule_rounded,
-                            isPlaceholder: _pickupTime == null,
-                            onTap: _selectPickupTime,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildSectionHeader(isDark, 'Pickup Time'),
+                              const SizedBox(height: 8),
+                              AppFilledTextField(
+                                hint: 'Select Time',
+                                value: _pickupTime?.format(context),
+                                icon: Icons.access_time,
+                                onTap: _selectPickupTime,
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -553,6 +583,7 @@ class _AirportTransferSearchScreenState
                     TextFormField(
                       controller: _flightNumberController,
                       textCapitalization: TextCapitalization.characters,
+                      inputFormatters: [UpperCaseTextFormatter()],
                       style: AppTextStyles.bodyMedium.copyWith(
                         fontWeight: FontWeight.w500,
                         height: 1.25,
@@ -601,27 +632,37 @@ class _AirportTransferSearchScreenState
                       Row(
                         children: [
                           Expanded(
-                            child: _SelectionTile(
-                              label: 'RETURN DATE',
-                              value: _returnDate == null
-                                  ? 'Select date'
-                                  : DateFormat('dd MMM yyyy')
-                                      .format(_returnDate!),
-                              icon: Icons.calendar_month_rounded,
-                              isPlaceholder: _returnDate == null,
-                              onTap: _selectReturnDate,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildSectionHeader(isDark, 'Return Date'),
+                                const SizedBox(height: 8),
+                                AppFilledTextField(
+                                  hint: 'Select Date',
+                                  value: _returnDate != null
+                                      ? DateFormat('dd MMM yyyy')
+                                          .format(_returnDate!)
+                                      : null,
+                                  icon: Icons.calendar_today,
+                                  onTap: _selectReturnDate,
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 16),
                           Expanded(
-                            child: _SelectionTile(
-                              label: 'RETURN TIME',
-                              value: _returnTime == null
-                                  ? 'Select time'
-                                  : _returnTime!.format(context),
-                              icon: Icons.schedule_rounded,
-                              isPlaceholder: _returnTime == null,
-                              onTap: _selectReturnTime,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildSectionHeader(isDark, 'Return Time'),
+                                const SizedBox(height: 8),
+                                AppFilledTextField(
+                                  hint: 'Select Time',
+                                  value: _returnTime?.format(context),
+                                  icon: Icons.access_time,
+                                  onTap: _selectReturnTime,
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -630,6 +671,7 @@ class _AirportTransferSearchScreenState
                       TextFormField(
                         controller: _returnFlightNumberController,
                         textCapitalization: TextCapitalization.characters,
+                        inputFormatters: [UpperCaseTextFormatter()],
                         style: AppTextStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.w500,
                           height: 1.25,
@@ -947,61 +989,64 @@ class _CounterSheet extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             for (final row in rows)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(
-                  row.label,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: isDark ? AppColors.textPrimary : Colors.black87,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                subtitle: Text(
-                  row.description,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: isDark ? AppColors.textSecondary : Colors.black54,
-                    fontWeight: FontWeight.w400,
-                    height: 1.3,
-                  ),
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton.outlined(
-                      onPressed: row.value > row.minimum
-                          ? () => row.onChanged(row.value - 1)
-                          : null,
-                      icon: const Icon(
-                        Icons.remove,
-                        size: 20,
-                      ),
+              Material(
+                color: Colors.transparent,
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    row.label,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: isDark ? AppColors.textPrimary : Colors.black87,
+                      fontWeight: FontWeight.w500,
                     ),
-                    SizedBox(
-                      width: 38,
-                      child: Text(
-                        '${row.value}',
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color:
-                              isDark ? AppColors.textPrimary : Colors.black87,
-                          fontWeight: FontWeight.w600,
+                  ),
+                  subtitle: Text(
+                    row.description,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: isDark ? AppColors.textSecondary : Colors.black54,
+                      fontWeight: FontWeight.w400,
+                      height: 1.3,
+                    ),
+                  ),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton.outlined(
+                        onPressed: row.value > row.minimum
+                            ? () => row.onChanged(row.value - 1)
+                            : null,
+                        icon: const Icon(
+                          Icons.remove,
+                          size: 20,
                         ),
                       ),
-                    ),
-                    IconButton.filled(
-                      onPressed: row.value < 12
-                          ? () => row.onChanged(row.value + 1)
-                          : null,
-                      style: IconButton.styleFrom(
-                        backgroundColor: AppColors.primaryGold,
-                        foregroundColor: Colors.white,
+                      SizedBox(
+                        width: 38,
+                        child: Text(
+                          '${row.value}',
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color:
+                                isDark ? AppColors.textPrimary : Colors.black87,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
-                      icon: const Icon(
-                        Icons.add,
-                        size: 20,
+                      IconButton.filled(
+                        onPressed: row.value < 12
+                            ? () => row.onChanged(row.value + 1)
+                            : null,
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppColors.primaryGold,
+                          foregroundColor: Colors.white,
+                        ),
+                        icon: const Icon(
+                          Icons.add,
+                          size: 20,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             const SizedBox(height: 12),

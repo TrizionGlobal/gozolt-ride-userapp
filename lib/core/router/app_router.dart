@@ -155,6 +155,11 @@ final _dummyBookingData = QuickServiceBookingData(
   userEmail: 'test@example.com',
 );
 
+QuickServiceBookingData _resolveQuickServiceData(Object? extra) {
+  final data = extra as QuickServiceBookingData? ?? _dummyBookingData;
+  return data.applyDraft();
+}
+
 final routerProvider = Provider<GoRouter>((ref) {
   final redirectNotifier = ref.read(authRedirectProvider);
   final startupNotifier = ref.read(startupProvider);
@@ -1359,7 +1364,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesList,
         builder: (context, state) => QuickServicesListScreen(
           bookingData:
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+              _resolveQuickServiceData(state.extra),
         ),
       ),
       GoRoute(
@@ -1367,7 +1372,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesHomeCleaning,
         builder: (context, state) => HomeCleaningDetailsScreen(
           bookingData:
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+              _resolveQuickServiceData(state.extra),
         ),
       ),
       GoRoute(
@@ -1375,14 +1380,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesHomeCleaningReview,
         builder: (context, state) => HomeCleaningReviewScreen(
           bookingData:
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+              _resolveQuickServiceData(state.extra),
         ),
       ),
       GoRoute(
         path: '/quick-services-home-cleaning-confirmation',
         name: RouteNames.quickServicesHomeCleaningConfirmation,
         builder: (context, state) => SharedQuickServiceConfirmationScreen(
-            bookingData: state.extra as QuickServiceBookingData,
+            bookingData: _resolveQuickServiceData(state.extra),
             serviceIcon: Icons.cleaning_services,
             defaultTitle: 'Home Cleaning'),
       ),
@@ -1392,7 +1397,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesPlumbing,
         builder: (context, state) => PlumbingDetailsScreen(
           bookingData:
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+              _resolveQuickServiceData(state.extra),
         ),
       ),
       GoRoute(
@@ -1400,14 +1405,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesPlumbingReview,
         builder: (context, state) => PlumbingReviewScreen(
           bookingData:
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+              _resolveQuickServiceData(state.extra),
         ),
       ),
       GoRoute(
         path: '/quick-services-plumbing-confirmation',
         name: RouteNames.quickServicesPlumbingConfirmation,
         builder: (context, state) => SharedQuickServiceConfirmationScreen(
-            bookingData: state.extra as QuickServiceBookingData,
+            bookingData: _resolveQuickServiceData(state.extra),
             serviceIcon: Icons.plumbing,
             defaultTitle: 'Plumbing'),
       ),
@@ -1417,7 +1422,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesCarpenter,
         builder: (context, state) => CarpenterDetailsScreen(
           bookingData:
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+              _resolveQuickServiceData(state.extra),
         ),
       ),
       GoRoute(
@@ -1425,14 +1430,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesCarpenterReview,
         builder: (context, state) => CarpenterReviewScreen(
           bookingData:
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+              _resolveQuickServiceData(state.extra),
         ),
       ),
       GoRoute(
         path: '/quick-services-carpenter-confirmation',
         name: RouteNames.quickServicesCarpenterConfirmation,
         builder: (context, state) => SharedQuickServiceConfirmationScreen(
-            bookingData: state.extra as QuickServiceBookingData,
+            bookingData: _resolveQuickServiceData(state.extra),
             serviceIcon: Icons.carpenter,
             defaultTitle: 'Carpenter'),
       ),
@@ -1442,7 +1447,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesApplianceRepair,
         builder: (context, state) => ApplianceRepairDetailsScreen(
           bookingData:
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+              _resolveQuickServiceData(state.extra),
         ),
       ),
       GoRoute(
@@ -1450,14 +1455,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesApplianceRepairReview,
         builder: (context, state) => ApplianceRepairReviewScreen(
           bookingData:
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+              _resolveQuickServiceData(state.extra),
         ),
       ),
       GoRoute(
         path: '/quick-services-appliance-repair-confirmation',
         name: RouteNames.quickServicesApplianceRepairConfirmation,
         builder: (context, state) => SharedQuickServiceConfirmationScreen(
-            bookingData: state.extra as QuickServiceBookingData,
+            bookingData: _resolveQuickServiceData(state.extra),
             serviceIcon: Icons.ac_unit,
             defaultTitle: 'AC & Appliance Repair'),
       ),
@@ -1466,7 +1471,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesCarMechanic,
         builder: (context, state) => CarMechanicDetailsScreen(
           bookingData:
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+              _resolveQuickServiceData(state.extra),
         ),
       ),
       GoRoute(
@@ -1474,14 +1479,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesCarMechanicReview,
         builder: (context, state) => CarMechanicReviewScreen(
           bookingData:
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+              _resolveQuickServiceData(state.extra),
         ),
       ),
       GoRoute(
         path: '/quick-services-car-mechanic-confirmation',
         name: RouteNames.quickServicesCarMechanicConfirmation,
         builder: (context, state) => SharedQuickServiceConfirmationScreen(
-            bookingData: state.extra as QuickServiceBookingData,
+            bookingData: _resolveQuickServiceData(state.extra),
             serviceIcon: Icons.directions_car,
             defaultTitle: 'Car Mechanic'),
       ),
@@ -1491,7 +1496,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesBikeMechanic,
         builder: (context, state) => BikeMechanicDetailsScreen(
           bookingData:
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+              _resolveQuickServiceData(state.extra),
         ),
       ),
       GoRoute(
@@ -1499,7 +1504,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesBikeMechanicReview,
         builder: (context, state) => BikeMechanicReviewScreen(
           bookingData:
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+              _resolveQuickServiceData(state.extra),
         ),
       ),
 
@@ -1508,7 +1513,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesTruckMechanic,
         builder: (context, state) => TruckMechanicDetailsScreen(
           bookingData:
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+              _resolveQuickServiceData(state.extra),
         ),
       ),
       GoRoute(
@@ -1516,14 +1521,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesTruckMechanicReview,
         builder: (context, state) => TruckMechanicReviewScreen(
           bookingData:
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData,
+              _resolveQuickServiceData(state.extra),
         ),
       ),
       GoRoute(
         path: '/quick-services-truck-mechanic-confirmation',
         name: RouteNames.quickServicesTruckMechanicConfirmation,
         builder: (context, state) => SharedQuickServiceConfirmationScreen(
-            bookingData: state.extra as QuickServiceBookingData,
+            bookingData: _resolveQuickServiceData(state.extra),
             serviceIcon: Icons.local_shipping,
             defaultTitle: 'Truck Mechanic'),
       ),
@@ -1532,7 +1537,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesLiftElevator,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return LiftElevatorMechanicDetailsScreen(bookingData: bookingData);
         },
       ),
@@ -1541,7 +1546,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesLiftElevatorReview,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return LiftElevatorMechanicReviewScreen(bookingData: bookingData);
         },
       ),
@@ -1550,9 +1555,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesLiftElevatorConfirmation,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return SharedQuickServiceConfirmationScreen(
-              bookingData: state.extra as QuickServiceBookingData,
+              bookingData: bookingData,
               serviceIcon: Icons.bolt,
               defaultTitle: 'Commercial Electric');
         },
@@ -1562,7 +1567,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesElectrical,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return HomeElectricDetailsScreen(bookingData: bookingData);
         },
       ),
@@ -1571,7 +1576,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesElectricalReview,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return HomeElectricReviewScreen(bookingData: bookingData);
         },
       ),
@@ -1580,9 +1585,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesElectricalConfirmation,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return SharedQuickServiceConfirmationScreen(
-              bookingData: state.extra as QuickServiceBookingData,
+              bookingData: bookingData,
               serviceIcon: Icons.electrical_services,
               defaultTitle: 'Home Electric');
         },
@@ -1592,7 +1597,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesEventsElectric,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return EventsElectricDetailsScreen(bookingData: bookingData);
         },
       ),
@@ -1601,7 +1606,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesEventsElectricReview,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return EventsElectricReviewScreen(bookingData: bookingData);
         },
       ),
@@ -1610,9 +1615,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesEventsElectricConfirmation,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return SharedQuickServiceConfirmationScreen(
-              bookingData: state.extra as QuickServiceBookingData,
+              bookingData: bookingData,
               serviceIcon: Icons.event,
               defaultTitle: 'Events Electric');
         },
@@ -1623,7 +1628,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesHirePerson,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return HirePersonDetailsScreen(bookingData: bookingData);
         },
       ),
@@ -1632,7 +1637,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesHirePersonReview,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return HirePersonReviewScreen(bookingData: bookingData);
         },
       ),
@@ -1641,9 +1646,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesHirePersonConfirmation,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return SharedQuickServiceConfirmationScreen(
-              bookingData: state.extra as QuickServiceBookingData,
+              bookingData: bookingData,
               serviceIcon: Icons.person_outline,
               defaultTitle: 'Hire a Person');
         },
@@ -1653,7 +1658,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesSecurityPersonnel,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return SecurityPersonnelDetailsScreen(bookingData: bookingData);
         },
       ),
@@ -1662,7 +1667,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesSecurityPersonnelReview,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return SecurityPersonnelReviewScreen(bookingData: bookingData);
         },
       ),
@@ -1671,9 +1676,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesSecurityPersonnelConfirmation,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return SharedQuickServiceConfirmationScreen(
-              bookingData: state.extra as QuickServiceBookingData,
+              bookingData: bookingData,
               serviceIcon: Icons.security,
               defaultTitle: 'Security Personnel');
         },
@@ -1683,7 +1688,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesMobileRepair,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return MobileRepairDetailsScreen(bookingData: bookingData);
         },
       ),
@@ -1692,7 +1697,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesMobileRepairReview,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return MobileRepairReviewScreen(bookingData: bookingData);
         },
       ),
@@ -1701,9 +1706,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesMobileRepairConfirmation,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return SharedQuickServiceConfirmationScreen(
-              bookingData: state.extra as QuickServiceBookingData,
+              bookingData: bookingData,
               serviceIcon: Icons.smartphone,
               defaultTitle: 'Mobile Repair');
         },
@@ -1713,7 +1718,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesComputerRepair,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return ComputerRepairDetailsScreen(bookingData: bookingData);
         },
       ),
@@ -1722,7 +1727,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesComputerRepairReview,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return ComputerRepairReviewScreen(bookingData: bookingData);
         },
       ),
@@ -1730,8 +1735,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/computer-repair-confirmation',
         name: RouteNames.quickServicesComputerRepairConfirmation,
         builder: (context, state) {
-          final bookingData = state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return SharedQuickServiceConfirmationScreen(bookingData: state.extra as QuickServiceBookingData, serviceIcon: Icons.laptop, defaultTitle: 'Computer & Laptop Repair');
+          final bookingData = _resolveQuickServiceData(state.extra);
+          return SharedQuickServiceConfirmationScreen(bookingData: bookingData, serviceIcon: Icons.laptop, defaultTitle: 'Computer & Laptop Repair');
         },
       ),
       GoRoute(
@@ -1756,7 +1761,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesCarWash,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return CarWashDetailsScreen(bookingData: bookingData);
         },
       ),
@@ -1765,7 +1770,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesCarWashReview,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return CarWashReviewScreen(bookingData: bookingData);
         },
       ),
@@ -1774,9 +1779,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesCarWashConfirmation,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return SharedQuickServiceConfirmationScreen(
-              bookingData: state.extra as QuickServiceBookingData,
+              bookingData: bookingData,
               serviceIcon: Icons.local_car_wash,
               defaultTitle: 'Car Wash');
         },
@@ -1786,7 +1791,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesTruckWash,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return TruckWashDetailsScreen(bookingData: bookingData);
         },
       ),
@@ -1795,7 +1800,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesTruckWashReview,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return TruckWashReviewScreen(bookingData: bookingData);
         },
       ),
@@ -1804,9 +1809,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesTruckWashConfirmation,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return SharedQuickServiceConfirmationScreen(
-              bookingData: state.extra as QuickServiceBookingData,
+              bookingData: bookingData,
               serviceIcon: Icons.local_shipping,
               defaultTitle: 'Truck Wash');
         },
@@ -1816,7 +1821,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesLaundry,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return LaundryDetailsScreen(bookingData: bookingData);
         },
       ),
@@ -1825,7 +1830,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesHospitalLaundry,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return HospitalLaundryDetailsScreen(bookingData: bookingData);
         },
       ),
@@ -1834,7 +1839,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesHotelLaundry,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return HotelLaundryDetailsScreen(bookingData: bookingData);
         },
       ),
@@ -1843,7 +1848,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesCommercialLaundry,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return CommercialLaundryDetailsScreen(bookingData: bookingData);
         },
       ),
@@ -1852,7 +1857,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesLaundryReview,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return LaundryReviewScreen(bookingData: bookingData);
         },
       ),
@@ -1861,9 +1866,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesLaundryConfirmation,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return SharedQuickServiceConfirmationScreen(
-              bookingData: state.extra as QuickServiceBookingData,
+              bookingData: bookingData,
               serviceIcon: Icons.local_laundry_service,
               defaultTitle: 'Laundry');
         },
@@ -1873,7 +1878,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesPainter,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return PainterDetailsScreen(bookingData: bookingData);
         },
       ),
@@ -1882,7 +1887,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesEventOrganisers,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return EventOrganisersDetailsScreen(bookingData: bookingData);
         },
       ),
@@ -1891,7 +1896,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesSuppliers,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return SuppliersDetailsScreen(bookingData: bookingData);
         },
       ),
@@ -1900,7 +1905,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesOtherServicesReview,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return OtherServicesReviewScreen(bookingData: bookingData);
         },
       ),
@@ -1909,9 +1914,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesOtherServicesConfirmation,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return SharedQuickServiceConfirmationScreen(
-              bookingData: state.extra as QuickServiceBookingData,
+              bookingData: bookingData,
               serviceIcon: Icons.miscellaneous_services,
               defaultTitle: 'Other Services');
         },
@@ -1921,7 +1926,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesBeautyWellness,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return BeautyWellnessDetailsScreen(bookingData: bookingData);
         },
       ),
@@ -1930,7 +1935,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesBeautyWellnessReview,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return BeautyWellnessReviewScreen(bookingData: bookingData);
         },
       ),
@@ -1939,9 +1944,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesBeautyWellnessConfirmation,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return SharedQuickServiceConfirmationScreen(
-              bookingData: state.extra as QuickServiceBookingData,
+              bookingData: bookingData,
               serviceIcon: Icons.spa,
               defaultTitle: 'Beauty & Wellness');
         },
@@ -1951,7 +1956,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesGardening,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return GardeningDetailsScreen(bookingData: bookingData);
         },
       ),
@@ -1960,7 +1965,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesGardeningReview,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return GardeningReviewScreen(bookingData: bookingData);
         },
       ),
@@ -1969,9 +1974,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesGardeningConfirmation,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return SharedQuickServiceConfirmationScreen(
-              bookingData: state.extra as QuickServiceBookingData,
+              bookingData: bookingData,
               serviceIcon: Icons.yard,
               defaultTitle: 'Gardening');
         },
@@ -1981,7 +1986,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesPestControl,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return PestControlDetailsScreen(bookingData: bookingData);
         },
       ),
@@ -1990,7 +1995,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesPestControlReview,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return PestControlReviewScreen(bookingData: bookingData);
         },
       ),
@@ -1999,9 +2004,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesPestControlConfirmation,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return SharedQuickServiceConfirmationScreen(
-              bookingData: state.extra as QuickServiceBookingData,
+              bookingData: bookingData,
               serviceIcon: Icons.pest_control,
               defaultTitle: 'Pest Control');
         },
@@ -2011,7 +2016,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesPrinterScanner,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return PrinterScannerDetailsScreen(bookingData: bookingData);
         },
       ),
@@ -2020,7 +2025,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesPrinterScannerReview,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return PrinterScannerReviewScreen(bookingData: bookingData);
         },
       ),
@@ -2029,9 +2034,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.quickServicesPrinterScannerConfirmation,
         builder: (context, state) {
           final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
+              _resolveQuickServiceData(state.extra);
           return SharedQuickServiceConfirmationScreen(
-              bookingData: state.extra as QuickServiceBookingData,
+              bookingData: bookingData,
               serviceIcon: Icons.print,
               defaultTitle: 'Printer & Scanner Repair');
         },
@@ -2040,7 +2045,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/quick-services-bike-mechanic-confirmation',
         name: RouteNames.quickServicesBikeMechanicConfirmation,
         builder: (context, state) => SharedQuickServiceConfirmationScreen(
-            bookingData: state.extra as QuickServiceBookingData,
+            bookingData: _resolveQuickServiceData(state.extra),
             serviceIcon: Icons.two_wheeler,
             defaultTitle: 'Bike Mechanic'),
       ),

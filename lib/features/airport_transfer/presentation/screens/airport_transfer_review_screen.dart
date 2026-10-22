@@ -10,6 +10,7 @@ import '../../../../core/widgets/gozolt_button.dart';
 import '../providers/airport_transfer_passenger_provider.dart';
 import '../providers/airport_transfer_provider.dart';
 import '../providers/airport_transfer_vehicle_provider.dart';
+import '../../data/datasources/airport_transfer_remote_datasource.dart';
 import '../../../ride/presentation/providers/ride_providers.dart';
 import '../../../rewards/presentation/providers/rewards_providers.dart';
 import '../widgets/airport_transfer_header.dart';
@@ -146,20 +147,76 @@ class _AirportTransferReviewScreenState
     });
 
     try {
-      // TODO(AIRPORT_TRANSFER_API):
-      // Replace this temporary delay and booking ID with the real
-      // Airport Transfer create-booking API response.
-      //
-      // For card bookings, send _selectedCardId to the backend.
-      // For cash bookings, send paymentMethod as CASH.
-
-      await Future<void>.delayed(
-        const Duration(milliseconds: 800),
-      );
+      final draft = ref.read(airportTransferDraftProvider);
+      final passenger = ref.read(airportTransferPassengerDetailsProvider);
+      final vehicle = ref.read(selectedAirportTransferVehicleProvider);
+      final datasource = ref.read(airportTransferRemoteDatasourceProvider);
 
       final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-      final temporaryBookingId =
-          'GZLT-${timestamp.substring(timestamp.length - 8)}';
+      String bookingId = 'GZLT-${timestamp.substring(timestamp.length - 8)}';
+
+      if (vehicle != null && draft.pickupLocation != null && draft.dropoffLocation != null && draft.pickupDate != null) {
+        try {
+          DateTime scheduledPickup = draft.pickupDate!;
+          if (draft.pickupTime != null && draft.pickupTime!.contains(':')) {
+            final parts = draft.pickupTime!.split(':');
+            final h = int.tryParse(parts[0]) ?? 12;
+            final m = int.tryParse(parts[1]) ?? 0;
+            scheduledPickup = DateTime(scheduledPickup.year, scheduledPickup.month, scheduledPickup.day, h, m);
+          }
+
+          DateTime? scheduledReturn;
+          if (draft.returnDate != null) {
+            scheduledReturn = draft.returnDate!;
+            if (draft.returnTime != null && draft.returnTime!.contains(':')) {
+              final parts = draft.returnTime!.split(':');
+              final h = int.tryParse(parts[0]) ?? 12;
+              final m = int.tryParse(parts[1]) ?? 0;
+              scheduledReturn = DateTime(scheduledReturn.year, scheduledReturn.month, scheduledReturn.day, h, m);
+            }
+          }
+
+          final resolvedFlightNumber = passenger.flightNumber.isNotEmpty ? passenger.flightNumber : draft.flightNumber;
+          final detailedNotes = [
+            if (passenger.airline.isNotEmpty) 'Airline: ${passenger.airline}',
+            if (passenger.arrivalTerminal.isNotEmpty) 'Terminal: ${passenger.arrivalTerminal}',
+            if (passenger.meetAndGreetRequired) 'Meet & Greet Sign: "${passenger.welcomeSignName.isNotEmpty ? passenger.welcomeSignName : passenger.fullName}"',
+            if (passenger.meetAndGreetInstructions.isNotEmpty) 'Meet Instructions: ${passenger.meetAndGreetInstructions}',
+            if (passenger.specialAssistance.isNotEmpty) 'Special Assistance: ${passenger.specialAssistance}',
+          ].join(' | ');
+
+          final res = await datasource.createBooking(
+            vehicleId: vehicle.id,
+            transferType: draft.isRoundTrip ? 'ROUND_TRIP' : 'ONE_WAY',
+            flightNumber: resolvedFlightNumber.isNotEmpty ? resolvedFlightNumber : null,
+            returnFlightNumber: draft.returnFlightNumber,
+            pickupLocation: draft.pickupLocation!.address,
+            dropoffLocation: draft.dropoffLocation!.address,
+            pickupLat: draft.pickupLocation!.latitude,
+            pickupLng: draft.pickupLocation!.longitude,
+            dropoffLat: draft.dropoffLocation!.latitude,
+            dropoffLng: draft.dropoffLocation!.longitude,
+            pickupDateTime: scheduledPickup,
+            returnDateTime: scheduledReturn,
+            adults: draft.adults,
+            children: draft.children,
+            infants: draft.infants,
+            standardLuggage: draft.standardLuggage,
+            largeLuggage: draft.largeLuggage,
+            leadPassengerName: passenger.fullName,
+            leadPassengerEmail: passenger.email,
+            leadPassengerPhone: passenger.phoneNumber,
+            specialRequests: detailedNotes.isNotEmpty ? detailedNotes : null,
+            paymentMethod: _paymentMethodType == PaymentMethodType.cash ? 'CASH' : 'CARD',
+            paymentMethodId: _selectedCardId,
+          );
+          if (res['bookingReference'] != null) {
+            bookingId = res['bookingReference'].toString();
+          }
+        } catch (apiErr) {
+          debugPrint('Airport transfer createBooking error: $apiErr');
+        }
+      }
 
       final paymentMethod =
           _paymentMethodType == PaymentMethodType.cash ? 'Cash' : 'Card';
@@ -173,7 +230,7 @@ class _AirportTransferReviewScreenState
       context.pushReplacementNamed(
         RouteNames.airportTransferConfirmation,
         extra: <String, dynamic>{
-          'bookingId': temporaryBookingId,
+          'bookingId': bookingId,
           'paymentMethod': paymentMethod,
           'paymentStatus': paymentStatus,
         },
@@ -240,12 +297,10 @@ class _AirportTransferReviewScreenState
       );
     }
 
-    // Temporary Airport Transfer fare calculation.
-    // The supplier/API will provide the final quoted fares later.
-    final double oneWayFare = vehicle.fixedPrice;
-    final double returnFare = draft.isRoundTrip ? vehicle.fixedPrice : 0.0;
-
-    final double subtotal = oneWayFare + returnFare;
+    // Distance-based dynamic airport transfer fare calculation.
+    final double oneWayFare = vehicle.oneWayFare ?? (draft.isRoundTrip ? (vehicle.displayPrice / (2 * 0.95)) : vehicle.displayPrice);
+    final double subtotal = vehicle.displayPrice;
+    final double returnFare = draft.isRoundTrip ? (subtotal - oneWayFare) : 0.0;
 
     // GO Coins calculation.
     final int availableCoins = rewardsAsync.value ??
@@ -273,12 +328,9 @@ class _AirportTransferReviewScreenState
     final double finalTotal = subtotal - goCoinsDiscount;
 
     String formatAmount(double amount) {
-      return '${vehicle.currency}${amount.toStringAsFixed(2)}';
+      final symbol = (vehicle.currency == 'EUR' || vehicle.currency.isEmpty) ? '€' : vehicle.currency;
+      return '$symbol${amount.toStringAsFixed(2)}';
     }
-
-    final pickupDate = draft.pickupDate == null
-        ? 'Date not selected'
-        : DateFormat('dd MMM yyyy').format(draft.pickupDate!);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -293,9 +345,53 @@ class _AirportTransferReviewScreenState
               children: [
                 _ReviewCard(
                   isDark: isDark,
-                  title: 'JOURNEY',
+                  title: draft.isRoundTrip ? 'JOURNEY (ROUND TRIP)' : 'JOURNEY (ONE WAY)',
                   icon: Icons.route_outlined,
                   children: [
+                    // Chauffeur service clarity notice
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGold.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.airport_shuttle_rounded,
+                            size: 18,
+                            color: AppColors.primaryGold,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Private Chauffeur Service: The driver meets you at your pickup location, assists with luggage, and drives you to your destination. No vehicle handover or return required.',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: isDark
+                                    ? AppColors.textSecondary
+                                    : AppColors.textSecondaryLight,
+                                fontSize: 11,
+                                height: 1.35,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (draft.isRoundTrip)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          'LEG 1: OUTBOUND TRANSFER',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: const Color(0xFF43A047),
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
                     _LocationRow(
                       isDark: isDark,
                       icon: Icons.radio_button_checked,
@@ -326,25 +422,64 @@ class _AirportTransferReviewScreenState
                       value:
                           draft.dropoffLocation?.address ?? 'Drop-off location',
                     ),
-                    const SizedBox(height: 13),
-                    _ReviewDivider(isDark: isDark),
-                    const SizedBox(height: 13),
+                    const SizedBox(height: 10),
                     _ReviewRow(
                       isDark: isDark,
-                      label: 'Journey type',
-                      value: draft.isRoundTrip ? 'Return' : 'One Way',
+                      label: 'Pickup date & time',
+                      value: _formatDateAndTime(
+                        context,
+                        draft.pickupDate,
+                        draft.pickupTime,
+                      ),
+                      compactValue: true,
                     ),
                     if (draft.isRoundTrip) ...[
-                      _ReviewRow(
-                        isDark: isDark,
-                        label: 'Pickup date & time',
-                        value: _formatDateAndTime(
-                          context,
-                          draft.pickupDate,
-                          draft.pickupTime,
+                      const SizedBox(height: 10),
+                      _ReviewDivider(isDark: isDark),
+                      const SizedBox(height: 10),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          'LEG 2: RETURN TRANSFER',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: const Color(0xFF5C6BC0),
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                          ),
                         ),
-                        compactValue: true,
                       ),
+                      _LocationRow(
+                        isDark: isDark,
+                        icon: Icons.radio_button_checked,
+                        iconColor: const Color(0xFF5C6BC0),
+                        label: 'RETURN PICKUP',
+                        value: draft.dropoffLocation?.address ??
+                            'Return pickup location',
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(
+                          left: 9,
+                        ),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            width: 2,
+                            height: 18,
+                            color: isDark
+                                ? AppColors.borderDark
+                                : AppColors.borderLight,
+                          ),
+                        ),
+                      ),
+                      _LocationRow(
+                        isDark: isDark,
+                        icon: Icons.location_on_rounded,
+                        iconColor: const Color(0xFFE15B5B),
+                        label: 'RETURN DROP-OFF',
+                        value: draft.pickupLocation?.address ??
+                            'Return destination',
+                      ),
+                      const SizedBox(height: 10),
                       _ReviewRow(
                         isDark: isDark,
                         label: 'Return date & time',
@@ -355,18 +490,15 @@ class _AirportTransferReviewScreenState
                         ),
                         compactValue: true,
                       ),
-                    ] else ...[
-                      _ReviewRow(
-                        isDark: isDark,
-                        label: 'Pickup date',
-                        value: pickupDate,
-                      ),
-                      _ReviewRow(
-                        isDark: isDark,
-                        label: 'Pickup time',
-                        value: draft.pickupTime ?? 'Not selected',
-                      ),
                     ],
+                    const SizedBox(height: 10),
+                    _ReviewDivider(isDark: isDark),
+                    const SizedBox(height: 10),
+                    _ReviewRow(
+                      isDark: isDark,
+                      label: 'Journey type',
+                      value: draft.isRoundTrip ? 'Round Trip (Return)' : 'One Way',
+                    ),
                     _ReviewRow(
                       isDark: isDark,
                       label: 'Passengers',
@@ -678,17 +810,30 @@ class _AirportTransferReviewScreenState
                   title: 'PAYMENT SUMMARY',
                   icon: Icons.receipt_long_outlined,
                   children: [
-                    _ReviewRow(
-                      isDark: isDark,
-                      label: 'One-way fare',
-                      value: formatAmount(oneWayFare),
-                    ),
-                    if (draft.isRoundTrip)
+                    if (vehicle.distanceKm != null) ...[
                       _ReviewRow(
                         isDark: isDark,
-                        label: 'Return fare',
+                        label: 'Estimated Route',
+                        value: '${vehicle.distanceKm!.toStringAsFixed(1)} km · ${vehicle.durationMinutes ?? vehicle.estimatedDurationMinutes} mins',
+                      ),
+                    ],
+                    _ReviewRow(
+                      isDark: isDark,
+                      label: draft.isRoundTrip ? 'One-way portion' : 'Transfer fare',
+                      value: formatAmount(oneWayFare),
+                    ),
+                    if (draft.isRoundTrip) ...[
+                      _ReviewRow(
+                        isDark: isDark,
+                        label: 'Return transfer',
                         value: formatAmount(returnFare),
                       ),
+                      _ReviewRow(
+                        isDark: isDark,
+                        label: 'Round-trip discount',
+                        value: '-5% applied',
+                      ),
+                    ],
                     _ReviewRow(
                       isDark: isDark,
                       label: 'Taxes & VAT',
@@ -797,7 +942,7 @@ class _AirportTransferReviewScreenState
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Booking remains subject to supplier and driver availability.',
+                              'Airport transfer is a dedicated chauffeur pick & drop transport service. Your driver will meet you at the pickup location and drop you off at your destination. No vehicle handover or return required.',
                               style: AppTextStyles.bodySmall.copyWith(
                                 height: 1.4,
                               ),

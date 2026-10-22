@@ -253,7 +253,7 @@ class _CarRentalSearchScreenState extends ConsumerState<CarRentalSearchScreen> {
                             const SizedBox(height: 8),
                             AppFilledTextField(
                               hint: 'Select Date',
-                              value: _pickupDate != null ? DateFormat('MMM dd, yyyy').format(_pickupDate!) : null,
+                              value: _pickupDate != null ? DateFormat('dd MMM yyyy').format(_pickupDate!) : null,
                               icon: Icons.calendar_today,
                               onTap: () => _selectDate(true),
                             ),
@@ -290,7 +290,7 @@ class _CarRentalSearchScreenState extends ConsumerState<CarRentalSearchScreen> {
                             const SizedBox(height: 8),
                             AppFilledTextField(
                               hint: 'Select Date',
-                              value: _dropoffDate != null ? DateFormat('MMM dd, yyyy').format(_dropoffDate!) : null,
+                              value: _dropoffDate != null ? DateFormat('dd MMM yyyy').format(_dropoffDate!) : null,
                               icon: Icons.calendar_today,
                               onTap: () => _selectDate(false),
                             ),

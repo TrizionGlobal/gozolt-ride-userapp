@@ -30,7 +30,7 @@ class _PestControlReviewScreenState extends ConsumerState<PestControlReviewScree
   @override
   void initState() {
     super.initState();
-    _bookingData = widget.bookingData;
+    _bookingData = widget.bookingData.applyDraft();
   }
 
   @override

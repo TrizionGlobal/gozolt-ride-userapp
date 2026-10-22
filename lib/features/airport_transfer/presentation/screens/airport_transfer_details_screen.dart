@@ -51,6 +51,10 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
         ? 'Date not selected'
         : DateFormat('dd MMM yyyy').format(draft.pickupDate!);
 
+    final returnDate = draft.returnDate == null
+        ? 'Date not selected'
+        : DateFormat('dd MMM yyyy').format(draft.returnDate!);
+
     final imageHeight = (MediaQuery.sizeOf(context).width * 0.48)
         .clamp(180.0, 230.0)
         .toDouble();
@@ -100,22 +104,14 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(
-                        width: double.infinity,
+                      _VehicleImageGallery(
+                        images: vehicle.images.isNotEmpty
+                            ? vehicle.images
+                            : (vehicle.imageUrl.isNotEmpty
+                                ? [vehicle.imageUrl]
+                                : const []),
                         height: imageHeight,
-                        child: vehicle.imageUrl.isEmpty
-                            ? _VehicleImageFallback(
-                                isDark: isDark,
-                              )
-                            : Image.network(
-                                vehicle.imageUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return _VehicleImageFallback(
-                                    isDark: isDark,
-                                  );
-                                },
-                              ),
+                        isDark: isDark,
                       ),
                       Padding(
                         padding: const EdgeInsets.all(14),
@@ -252,9 +248,54 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
                 const SizedBox(height: 14),
                 _DetailsCard(
                   isDark: isDark,
-                  title: 'YOUR JOURNEY',
+                  title: draft.isRoundTrip ? 'YOUR JOURNEYS (ROUND TRIP)' : 'YOUR JOURNEY (ONE WAY)',
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Notice about chauffeur pick & drop
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 14),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGold.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(
+                              Icons.airport_shuttle_rounded,
+                              size: 18,
+                              color: AppColors.primaryGold,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Chauffeured Service: The driver meets you at your pickup location and drops you off at your destination. No vehicle handover or return required.',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: isDark
+                                      ? AppColors.textSecondary
+                                      : AppColors.textSecondaryLight,
+                                  fontSize: 11,
+                                  height: 1.35,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (draft.isRoundTrip)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            'LEG 1: OUTBOUND TRANSFER',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: const Color(0xFF43A047),
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
                       _JourneyLocationRow(
                         isDark: isDark,
                         icon: Icons.radio_button_checked,
@@ -286,17 +327,10 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
                         value: draft.dropoffLocation?.address ??
                             'Drop-off location',
                       ),
-                      const SizedBox(height: 14),
-                      Divider(
-                        height: 1,
-                        color: isDark
-                            ? AppColors.borderDark
-                            : AppColors.borderLight,
-                      ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 10),
                       Wrap(
                         spacing: 16,
-                        runSpacing: 10,
+                        runSpacing: 8,
                         children: [
                           _JourneyInfo(
                             icon: Icons.calendar_today_outlined,
@@ -312,6 +346,77 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
                             ),
                         ],
                       ),
+                      if (draft.isRoundTrip) ...[
+                        const SizedBox(height: 14),
+                        Divider(
+                          height: 1,
+                          color: isDark
+                              ? AppColors.borderDark
+                              : AppColors.borderLight,
+                        ),
+                        const SizedBox(height: 14),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            'LEG 2: RETURN TRANSFER',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: const Color(0xFF5C6BC0),
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                        _JourneyLocationRow(
+                          isDark: isDark,
+                          icon: Icons.radio_button_checked,
+                          iconColor: const Color(0xFF5C6BC0),
+                          label: 'RETURN PICKUP',
+                          value: draft.dropoffLocation?.address ??
+                              'Return pickup location',
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            left: 9,
+                          ),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Container(
+                              width: 2,
+                              height: 18,
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : AppColors.borderLight,
+                            ),
+                          ),
+                        ),
+                        _JourneyLocationRow(
+                          isDark: isDark,
+                          icon: Icons.location_on_rounded,
+                          iconColor: const Color(0xFFE15B5B),
+                          label: 'RETURN DROP-OFF',
+                          value: draft.pickupLocation?.address ??
+                              'Return destination',
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 16,
+                          runSpacing: 8,
+                          children: [
+                            _JourneyInfo(
+                              icon: Icons.calendar_today_outlined,
+                              text: returnDate,
+                              isDark: isDark,
+                            ),
+                            if (draft.returnTime != null &&
+                                draft.returnTime!.isNotEmpty)
+                              _JourneyInfo(
+                                icon: Icons.schedule_outlined,
+                                text: draft.returnTime!,
+                                isDark: isDark,
+                              ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -325,7 +430,7 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
                         isDark: isDark,
                         icon: Icons.schedule_rounded,
                         title: 'Free waiting',
-                        value: '60 minutes',
+                        value: '${vehicle.freeWaitingMinutes} minutes',
                       ),
                       _TransferBenefitDivider(isDark: isDark),
                       _TransferBenefitRow(
@@ -346,7 +451,9 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
                         isDark: isDark,
                         icon: Icons.person_outline_rounded,
                         title: 'Meet & Greet',
-                        value: 'Included',
+                        value: vehicle.isMeetAndGreetIncluded
+                            ? 'Complimentary Included'
+                            : 'Standard Pickup',
                       ),
                     ],
                   ),
@@ -357,9 +464,31 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
                   title: 'PRICE SUMMARY',
                   child: Column(
                     children: [
+                      if (vehicle.distanceKm != null) ...[
+                        _PriceRow(
+                          isDark: isDark,
+                          label: 'Estimated Route',
+                          value: '${vehicle.distanceKm!.toStringAsFixed(1)} km (${vehicle.durationMinutes ?? vehicle.estimatedDurationMinutes} min)',
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+                      if (vehicle.isRoundTrip) ...[
+                        _PriceRow(
+                          isDark: isDark,
+                          label: 'One-way Transfer',
+                          value: vehicle.formattedOneWayPrice,
+                        ),
+                        const SizedBox(height: 10),
+                        _PriceRow(
+                          isDark: isDark,
+                          label: 'Round-trip Discount',
+                          value: '5% applied',
+                        ),
+                        const SizedBox(height: 10),
+                      ],
                       _PriceRow(
                         isDark: isDark,
-                        label: 'Transfer',
+                        label: vehicle.isRoundTrip ? 'Round-trip Total' : 'Transfer Fare',
                         value: vehicle.formattedPrice,
                       ),
                       const SizedBox(height: 10),
@@ -856,6 +985,146 @@ class _VehicleImageFallback extends StatelessWidget {
         Icons.airport_shuttle_rounded,
         size: 70,
         color: isDark ? AppColors.textSecondary : const Color(0xFF9BA4AD),
+      ),
+    );
+  }
+}
+
+class _VehicleImageGallery extends StatefulWidget {
+  const _VehicleImageGallery({
+    required this.images,
+    required this.height,
+    required this.isDark,
+  });
+
+  final List<String> images;
+  final double height;
+  final bool isDark;
+
+  @override
+  State<_VehicleImageGallery> createState() => _VehicleImageGalleryState();
+}
+
+class _VehicleImageGalleryState extends State<_VehicleImageGallery> {
+  int _currentIndex = 0;
+  late final PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.images.isEmpty) {
+      return SizedBox(
+        width: double.infinity,
+        height: widget.height,
+        child: _VehicleImageFallback(
+          isDark: widget.isDark,
+        ),
+      );
+    }
+
+    if (widget.images.length == 1) {
+      return SizedBox(
+        width: double.infinity,
+        height: widget.height,
+        child: Image.network(
+          widget.images.first,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _VehicleImageFallback(
+              isDark: widget.isDark,
+            );
+          },
+        ),
+      );
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      height: widget.height,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: widget.images.length,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+              itemBuilder: (context, index) {
+                return Image.network(
+                  widget.images[index],
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return _VehicleImageFallback(
+                      isDark: widget.isDark,
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 48,
+            child: IgnorePointer(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.55),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 12,
+            right: 14,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(
+                widget.images.length,
+                (index) => Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  width: _currentIndex == index ? 9 : 7,
+                  height: _currentIndex == index ? 9 : 7,
+                  decoration: BoxDecoration(
+                    color: _currentIndex == index
+                        ? AppColors.primaryGold
+                        : Colors.white.withValues(alpha: 0.65),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.35),
+                        blurRadius: 2,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

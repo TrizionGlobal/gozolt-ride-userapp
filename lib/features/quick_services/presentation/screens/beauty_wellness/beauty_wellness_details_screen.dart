@@ -588,7 +588,7 @@ class _BeautyWellnessDetailsScreenState extends ConsumerState<BeautyWellnessDeta
                       if (!QuickServicesBookingDraft.validate(context)) return;
 
                       final selectedList = _selectedTreatments.toList();
-                      final updatedData = widget.bookingData.copyWith(
+                      final updatedData = widget.bookingData.applyDraft().copyWith(
                         selectedServiceTitle: 'Beauty & Wellness • $subCategory',
                         beautySelectedTreatments: selectedList,
                         beautyTreatmentsSubtotal: _calculatedSubtotal,

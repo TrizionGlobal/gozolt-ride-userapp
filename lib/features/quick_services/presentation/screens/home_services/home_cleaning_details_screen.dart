@@ -314,7 +314,7 @@ class _HomeCleaningDetailsScreenState extends ConsumerState<HomeCleaningDetailsS
                         });
 
 
-                        final updatedData = widget.bookingData.copyWith(
+                        final updatedData = widget.bookingData.applyDraft().copyWith(
                           selectedAddons: selectedAddons,
                           materialPreference: _materialPreference,
                           subtotal: 0.0,

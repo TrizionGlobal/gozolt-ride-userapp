@@ -98,8 +98,7 @@ class _HospitalLaundryDetailsScreenState extends ConsumerState<HospitalLaundryDe
 
   void _updateDateText() {
     if (_requestedDate == null) return;
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    _dateController.text = '${_requestedDate!.day} ${months[_requestedDate!.month - 1]} ${_requestedDate!.year}';
+    _dateController.text = DateFormat('dd MMM yyyy').format(_requestedDate!);
   }
 
   void _updateTimeText() {
@@ -237,7 +236,7 @@ class _HospitalLaundryDetailsScreenState extends ConsumerState<HospitalLaundryDe
                         Expanded(
                           child: _buildMethodCard(
                             title: 'Pickup & Return',
-                            subtitle: '+€${QuickServicesPricingConfig.getPickupFee('hospital_laundry').toStringAsFixed(0)} pickup fee. Return date & time confirmed after collection.',
+                            subtitle: '+€${QuickServicesPricingConfig.getPickupFee('hospital_laundry').toStringAsFixed(0)} pickup fee.',
                             icon: Icons.local_shipping_outlined,
                             isSelected: _selectedMethod == 'Pickup & Return',
                             onTap: () => setState(() => _selectedMethod = 'Pickup & Return'),
@@ -577,7 +576,7 @@ class _HospitalLaundryDetailsScreenState extends ConsumerState<HospitalLaundryDe
                       }).toList();
 
 
-                      final updatedData = widget.bookingData.copyWith(
+                      final updatedData = widget.bookingData.applyDraft().copyWith(
                         selectedServiceTitle: 'Hospital Laundry',
                         laundryServiceMethod: _selectedMethod,
                         commercialLaundryTypes: finalServiceTypes,

@@ -596,7 +596,7 @@ Text(
                       }
                       if (!QuickServicesBookingDraft.validate(context)) return;
 
-                      final updatedBookingData = widget.bookingData.copyWith(
+                      final updatedBookingData = widget.bookingData.applyDraft().copyWith(
                         mechanicVehicles: _savedVehicles,
                         whatYouNeed: _whatYouNeedController.text.isNotEmpty ? _whatYouNeedController.text : null,
                         describeIssue: _describeIssueController.text.isNotEmpty ? _describeIssueController.text : null,

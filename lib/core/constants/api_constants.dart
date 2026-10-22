@@ -1,6 +1,6 @@
 abstract final class ApiConstants {
   // ── Base URL ───────────────────────────────────────────
-  static const bool useLocal = false;
+  static const bool useLocal = true;
 
   static const String baseUrl = useLocal 
       ? 'http://127.0.0.1:4000/v1' 
@@ -118,6 +118,13 @@ abstract final class ApiConstants {
 
   // ── Documents ──────────────────────────────────────────────
   static const String documentsUpload = '/documents/upload';
+
+  // ── Airport Transfer ──────────────────────────────────────
+  static const String airportTransferVehicles = '/airport-transfers/vehicles';
+  static const String airportTransferBook = '/airport-transfers/bookings';
+  static const String airportTransferMyBookings = '/airport-transfers/my-bookings';
+  static String airportTransferBookingDetails(String id) => '/airport-transfers/my-bookings/$id';
+  static String airportTransferCancel(String id) => '/airport-transfers/my-bookings/$id/cancel';
 
   // ── Helpers ───────────────────────────────────────────────
   static String fullUrl(String path) {
