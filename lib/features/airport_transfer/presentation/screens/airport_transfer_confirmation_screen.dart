@@ -226,7 +226,7 @@ Status: Booking Confirmed
                         width: double.infinity,
                         height: 48,
                         child: ElevatedButton(
-                          onPressed: () => context.go('/home'),
+                          onPressed: () => context.go('/my-rides'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryGold,
                             foregroundColor: Colors.white,
@@ -236,10 +236,33 @@ Status: Booking Confirmed
                             ),
                           ),
                           child: Text(
-                            'Done',
+                            'View My Transfers',
                             style: AppTextStyles.labelLarge.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: OutlinedButton(
+                          onPressed: () => context.go('/home'),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                              color: isDark ? AppColors.borderDark : Colors.grey.shade400,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: Text(
+                            'Back to Home',
+                            style: AppTextStyles.labelLarge.copyWith(
+                              color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),

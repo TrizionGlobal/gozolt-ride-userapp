@@ -10,6 +10,7 @@ import '../../../../core/widgets/gozolt_button.dart';
 import '../../data/models/airport_transfer_passenger_details.dart';
 import '../providers/airport_transfer_passenger_provider.dart';
 import '../providers/airport_transfer_provider.dart';
+import '../../../home/presentation/providers/home_providers.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/utils/input_validators.dart';
 import '../widgets/airport_transfer_header.dart';
@@ -49,16 +50,36 @@ class _AirportTransferPassengerDetailsScreenState
 
     final saved = ref.read(airportTransferPassengerDetailsProvider);
     final draft = ref.read(airportTransferDraftProvider);
+    final profile = ref.read(userProfileProvider).valueOrNull;
 
-    _fullNameController = TextEditingController(text: saved.fullName);
+    final profileName = '${profile?.firstName ?? ''} ${profile?.lastName ?? ''}'.trim();
+    final initialName = saved.fullName.isNotEmpty
+        ? saved.fullName
+        : profileName;
 
-    _phoneController = TextEditingController(text: saved.phoneNumber);
+    final initialPhone = saved.phoneNumber.isNotEmpty
+        ? saved.phoneNumber
+        : (profile?.phone?.trim().isNotEmpty == true ? profile!.phone!.trim() : '');
 
-    _emailController = TextEditingController(text: saved.email);
+    final initialEmail = saved.email.isNotEmpty
+        ? saved.email
+        : (profile?.email?.trim().isNotEmpty == true ? profile!.email!.trim() : '');
 
-    _whatsAppController = TextEditingController(text: saved.whatsAppNumber);
+    final initialWhatsApp = saved.whatsAppNumber.isNotEmpty
+        ? saved.whatsAppNumber
+        : (saved.phoneNumber.isNotEmpty ? saved.phoneNumber : initialPhone);
 
-    _nationalityController = TextEditingController(text: saved.nationality);
+    _fullNameController = TextEditingController(text: initialName);
+
+    _phoneController = TextEditingController(text: initialPhone);
+
+    _emailController = TextEditingController(text: initialEmail);
+
+    _whatsAppController = TextEditingController(text: initialWhatsApp);
+
+    _nationalityController = TextEditingController(
+      text: saved.nationality.isNotEmpty ? saved.nationality : 'Maltese',
+    );
 
     _flightNumberController = TextEditingController(
       text: saved.flightNumber.isNotEmpty
@@ -70,7 +91,9 @@ class _AirportTransferPassengerDetailsScreenState
 
     _terminalController = TextEditingController(text: saved.arrivalTerminal);
 
-    _welcomeSignController = TextEditingController(text: saved.welcomeSignName);
+    _welcomeSignController = TextEditingController(
+      text: saved.welcomeSignName.isNotEmpty ? saved.welcomeSignName : initialName,
+    );
 
     _meetInstructionsController = TextEditingController(
       text: saved.meetAndGreetInstructions,
@@ -110,13 +133,17 @@ class _AirportTransferPassengerDetailsScreenState
       fullName: _fullNameController.text.trim(),
       phoneNumber: _phoneController.text.trim(),
       email: _emailController.text.trim(),
-      whatsAppNumber: _whatsAppController.text.trim(),
+      whatsAppNumber: _whatsAppController.text.trim().isNotEmpty
+          ? _whatsAppController.text.trim()
+          : _phoneController.text.trim(),
       nationality: _nationalityController.text.trim(),
       flightNumber: _flightNumberController.text.trim(),
       airline: _airlineController.text.trim(),
       arrivalTerminal: _terminalController.text.trim(),
       meetAndGreetRequired: _meetAndGreetRequired,
-      welcomeSignName: _welcomeSignController.text.trim(),
+      welcomeSignName: _welcomeSignController.text.trim().isNotEmpty
+          ? _welcomeSignController.text.trim()
+          : _fullNameController.text.trim(),
       meetAndGreetInstructions: _meetInstructionsController.text.trim(),
       specialAssistance: _assistanceController.text.trim(),
     );

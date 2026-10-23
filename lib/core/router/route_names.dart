@@ -81,6 +81,7 @@ abstract final class RouteNames {
   static const String airportTransferConfirmation = 'airport-transfer-confirmation';
   static const String airportTransferTracking = 'airport-transfer-tracking';
   static const String airportTransferCompleted = 'airport-transfer-completed';
+  static const String airportTransferHistoryDetails = 'airport-transfer-history-details';
 
   // Quick Services
   static const String quickServicesLocation = 'quick-services-location';

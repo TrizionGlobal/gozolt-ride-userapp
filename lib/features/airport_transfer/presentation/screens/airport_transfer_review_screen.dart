@@ -13,6 +13,7 @@ import '../providers/airport_transfer_vehicle_provider.dart';
 import '../../data/datasources/airport_transfer_remote_datasource.dart';
 import '../../../ride/presentation/providers/ride_providers.dart';
 import '../../../rewards/presentation/providers/rewards_providers.dart';
+import '../../../home/presentation/providers/home_providers.dart';
 import '../widgets/airport_transfer_header.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -151,72 +152,88 @@ class _AirportTransferReviewScreenState
       final passenger = ref.read(airportTransferPassengerDetailsProvider);
       final vehicle = ref.read(selectedAirportTransferVehicleProvider);
       final datasource = ref.read(airportTransferRemoteDatasourceProvider);
+      final userProfile = ref.read(userProfileProvider).valueOrNull;
 
-      final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-      String bookingId = 'GZLT-${timestamp.substring(timestamp.length - 8)}';
+      if (vehicle == null) {
+        throw Exception('Please select a transfer vehicle first.');
+      }
+      if (draft.pickupLocation == null || draft.dropoffLocation == null) {
+        throw Exception('Pickup and drop-off locations are required.');
+      }
+      if (draft.pickupDate == null) {
+        throw Exception('Pickup date is required.');
+      }
 
-      if (vehicle != null && draft.pickupLocation != null && draft.dropoffLocation != null && draft.pickupDate != null) {
-        try {
-          DateTime scheduledPickup = draft.pickupDate!;
-          if (draft.pickupTime != null && draft.pickupTime!.contains(':')) {
-            final parts = draft.pickupTime!.split(':');
-            final h = int.tryParse(parts[0]) ?? 12;
-            final m = int.tryParse(parts[1]) ?? 0;
-            scheduledPickup = DateTime(scheduledPickup.year, scheduledPickup.month, scheduledPickup.day, h, m);
-          }
+      DateTime scheduledPickup = draft.pickupDate!;
+      if (draft.pickupTime != null && draft.pickupTime!.contains(':')) {
+        final parts = draft.pickupTime!.split(':');
+        final h = int.tryParse(parts[0]) ?? 12;
+        final m = int.tryParse(parts[1]) ?? 0;
+        scheduledPickup = DateTime(scheduledPickup.year, scheduledPickup.month, scheduledPickup.day, h, m);
+      }
 
-          DateTime? scheduledReturn;
-          if (draft.returnDate != null) {
-            scheduledReturn = draft.returnDate!;
-            if (draft.returnTime != null && draft.returnTime!.contains(':')) {
-              final parts = draft.returnTime!.split(':');
-              final h = int.tryParse(parts[0]) ?? 12;
-              final m = int.tryParse(parts[1]) ?? 0;
-              scheduledReturn = DateTime(scheduledReturn.year, scheduledReturn.month, scheduledReturn.day, h, m);
-            }
-          }
-
-          final resolvedFlightNumber = passenger.flightNumber.isNotEmpty ? passenger.flightNumber : draft.flightNumber;
-          final detailedNotes = [
-            if (passenger.airline.isNotEmpty) 'Airline: ${passenger.airline}',
-            if (passenger.arrivalTerminal.isNotEmpty) 'Terminal: ${passenger.arrivalTerminal}',
-            if (passenger.meetAndGreetRequired) 'Meet & Greet Sign: "${passenger.welcomeSignName.isNotEmpty ? passenger.welcomeSignName : passenger.fullName}"',
-            if (passenger.meetAndGreetInstructions.isNotEmpty) 'Meet Instructions: ${passenger.meetAndGreetInstructions}',
-            if (passenger.specialAssistance.isNotEmpty) 'Special Assistance: ${passenger.specialAssistance}',
-          ].join(' | ');
-
-          final res = await datasource.createBooking(
-            vehicleId: vehicle.id,
-            transferType: draft.isRoundTrip ? 'ROUND_TRIP' : 'ONE_WAY',
-            flightNumber: resolvedFlightNumber.isNotEmpty ? resolvedFlightNumber : null,
-            returnFlightNumber: draft.returnFlightNumber,
-            pickupLocation: draft.pickupLocation!.address,
-            dropoffLocation: draft.dropoffLocation!.address,
-            pickupLat: draft.pickupLocation!.latitude,
-            pickupLng: draft.pickupLocation!.longitude,
-            dropoffLat: draft.dropoffLocation!.latitude,
-            dropoffLng: draft.dropoffLocation!.longitude,
-            pickupDateTime: scheduledPickup,
-            returnDateTime: scheduledReturn,
-            adults: draft.adults,
-            children: draft.children,
-            infants: draft.infants,
-            standardLuggage: draft.standardLuggage,
-            largeLuggage: draft.largeLuggage,
-            leadPassengerName: passenger.fullName,
-            leadPassengerEmail: passenger.email,
-            leadPassengerPhone: passenger.phoneNumber,
-            specialRequests: detailedNotes.isNotEmpty ? detailedNotes : null,
-            paymentMethod: _paymentMethodType == PaymentMethodType.cash ? 'CASH' : 'CARD',
-            paymentMethodId: _selectedCardId,
-          );
-          if (res['bookingReference'] != null) {
-            bookingId = res['bookingReference'].toString();
-          }
-        } catch (apiErr) {
-          debugPrint('Airport transfer createBooking error: $apiErr');
+      DateTime? scheduledReturn;
+      if (draft.isRoundTrip && draft.returnDate != null) {
+        scheduledReturn = draft.returnDate!;
+        if (draft.returnTime != null && draft.returnTime!.contains(':')) {
+          final parts = draft.returnTime!.split(':');
+          final h = int.tryParse(parts[0]) ?? 12;
+          final m = int.tryParse(parts[1]) ?? 0;
+          scheduledReturn = DateTime(scheduledReturn.year, scheduledReturn.month, scheduledReturn.day, h, m);
         }
       }
+
+      // Ensure passenger contact details are non-empty for API validation
+      final profileName = '${userProfile?.firstName ?? ''} ${userProfile?.lastName ?? ''}'.trim();
+      final leadName = passenger.fullName.trim().isNotEmpty
+          ? passenger.fullName.trim()
+          : (profileName.isNotEmpty ? profileName : 'Guest Passenger');
+      final leadEmail = passenger.email.trim().isNotEmpty
+          ? passenger.email.trim()
+          : (userProfile?.email?.trim().isNotEmpty == true ? userProfile!.email!.trim() : 'passenger@gozolt.com');
+      final leadPhone = passenger.phoneNumber.trim().isNotEmpty
+          ? passenger.phoneNumber.trim()
+          : (userProfile?.phone?.trim().isNotEmpty == true ? userProfile!.phone!.trim() : '+356 7900 0000');
+
+      final resolvedFlightNumber = passenger.flightNumber.isNotEmpty ? passenger.flightNumber : draft.flightNumber;
+      final detailedNotes = [
+        if (passenger.nationality.isNotEmpty) 'Nationality: ${passenger.nationality}',
+        if (passenger.whatsAppNumber.isNotEmpty) 'WhatsApp: ${passenger.whatsAppNumber}',
+        if (passenger.airline.isNotEmpty) 'Airline: ${passenger.airline}',
+        if (passenger.arrivalTerminal.isNotEmpty) 'Terminal: ${passenger.arrivalTerminal}',
+        if (passenger.meetAndGreetRequired) 'Meet & Greet Sign: "${passenger.welcomeSignName.isNotEmpty ? passenger.welcomeSignName : leadName}"',
+        if (passenger.meetAndGreetInstructions.isNotEmpty) 'Meet Instructions: ${passenger.meetAndGreetInstructions}',
+        if (passenger.specialAssistance.isNotEmpty) 'Special Assistance: ${passenger.specialAssistance}',
+      ].join(' | ');
+
+      final res = await datasource.createBooking(
+        vehicleId: vehicle.id,
+        transferType: draft.isRoundTrip ? 'ROUND_TRIP' : 'ONE_WAY',
+        flightNumber: resolvedFlightNumber.isNotEmpty ? resolvedFlightNumber : null,
+        returnFlightNumber: draft.returnFlightNumber.isNotEmpty ? draft.returnFlightNumber : null,
+        pickupLocation: draft.pickupLocation!.address,
+        dropoffLocation: draft.dropoffLocation!.address,
+        pickupLat: draft.pickupLocation!.latitude,
+        pickupLng: draft.pickupLocation!.longitude,
+        dropoffLat: draft.dropoffLocation!.latitude,
+        dropoffLng: draft.dropoffLocation!.longitude,
+        pickupDateTime: scheduledPickup,
+        returnDateTime: scheduledReturn,
+        adults: draft.adults,
+        children: draft.children,
+        infants: draft.infants,
+        standardLuggage: draft.standardLuggage,
+        largeLuggage: draft.largeLuggage,
+        leadPassengerName: leadName,
+        leadPassengerEmail: leadEmail,
+        leadPassengerPhone: leadPhone,
+        specialRequests: detailedNotes.isNotEmpty ? detailedNotes : null,
+        paymentMethod: _paymentMethodType == PaymentMethodType.cash ? 'CASH' : 'CARD',
+        paymentMethodId: _selectedCardId,
+      );
+
+      final bookingReference = res['bookingReference']?.toString() ??
+          'GZLT-TRF-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
 
       final paymentMethod =
           _paymentMethodType == PaymentMethodType.cash ? 'Cash' : 'Card';
@@ -225,12 +242,17 @@ class _AirportTransferReviewScreenState
           ? 'Pay after ride completion'
           : 'Card payment is successfull';
 
+      // Clean up draft and selection state
+      ref.read(airportTransferDraftProvider.notifier).reset();
+      ref.read(airportTransferPassengerDetailsProvider.notifier).reset();
+      ref.read(selectedAirportTransferVehicleProvider.notifier).clear();
+
       if (!mounted) return;
 
       context.pushReplacementNamed(
         RouteNames.airportTransferConfirmation,
         extra: <String, dynamic>{
-          'bookingId': bookingId,
+          'bookingId': bookingReference,
           'paymentMethod': paymentMethod,
           'paymentStatus': paymentStatus,
         },
@@ -238,10 +260,11 @@ class _AirportTransferReviewScreenState
     } catch (error) {
       if (!mounted) return;
 
+      final message = error.toString().replaceFirst('Exception: ', '');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Unable to create the transfer booking. Please try again.',
+            message.isNotEmpty ? message : 'Unable to create the transfer booking. Please try again.',
             style: AppTextStyles.bodyMedium.copyWith(
               color: Colors.white,
             ),

@@ -60,6 +60,7 @@ import '../../features/airport_transfer/presentation/screens/airport_transfer_de
 import '../../features/airport_transfer/presentation/screens/airport_transfer_passenger_details_screen.dart';
 import '../../features/airport_transfer/presentation/screens/airport_transfer_review_screen.dart';
 import '../../features/airport_transfer/presentation/screens/airport_transfer_confirmation_screen.dart';
+import '../../features/history/presentation/screens/airport_transfer_history_details_screen.dart';
 
 // Quick Services
 import '../../features/quick_services/presentation/screens/service_location_screen.dart';
@@ -1344,6 +1345,17 @@ final routerProvider = Provider<GoRouter>((ref) {
               );
             },
           );
+        },
+      ),
+
+      GoRoute(
+        path: '/airport-transfer-history-details',
+        name: RouteNames.airportTransferHistoryDetails,
+        builder: (context, state) {
+          final bookingId = state.extra as String? ??
+              state.uri.queryParameters['id'] ??
+              '';
+          return AirportTransferHistoryDetailsScreen(bookingId: bookingId);
         },
       ),
 
