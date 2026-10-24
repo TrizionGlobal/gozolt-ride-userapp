@@ -88,95 +88,361 @@ class _AirportTransferHistoryDetailsScreenState
 
   Future<void> _handleCancelBooking() async {
     final reasonController = TextEditingController();
-    final confirmed = await showDialog<bool>(
+    bool isCancellingInsideDialog = false;
+
+    await showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Theme.of(context).cardTheme.color,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Cancel Airport Transfer',
-          style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Are you sure you want to cancel this transfer booking?',
-              style: AppTextStyles.bodyMedium
-                  .copyWith(color: AppColors.textSecondary),
+      barrierDismissible: false,
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          final isDark = Theme.of(ctx).brightness == Brightness.dark;
+          return AlertDialog(
+            backgroundColor: Theme.of(context).cardTheme.color,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Text(
+              'Cancel Airport Transfer',
+              style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: reasonController,
-              decoration: InputDecoration(
-                hintText: 'Reason for cancellation (optional)',
-                hintStyle: AppTextStyles.bodySmall,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Are you sure you want to cancel this transfer booking?',
+                  style: AppTextStyles.bodyMedium
+                      .copyWith(color: AppColors.textSecondary),
                 ),
-                contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 10),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: reasonController,
+                  enabled: !isCancellingInsideDialog,
+                  decoration: InputDecoration(
+                    hintText: 'Reason for cancellation (optional)',
+                    hintStyle: AppTextStyles.bodySmall,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                  ),
+                  maxLines: 2,
+                ),
+              ],
+            ),
+            actionsPadding:
+                const EdgeInsets.only(left: 16, right: 16, bottom: 16, top: 4),
+            actions: [
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: isCancellingInsideDialog
+                          ? null
+                          : () => Navigator.pop(dialogCtx),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        side: BorderSide(
+                          color: isDark
+                              ? AppColors.borderDark
+                              : AppColors.borderLight,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text(
+                        'Keep Booking',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: isCancellingInsideDialog
+                          ? null
+                          : () async {
+                              setDialogState(() => isCancellingInsideDialog = true);
+                              setState(() => _isCancelling = true);
+
+                              String? failureError;
+                              try {
+                                final datasource = ref.read(airportTransferRemoteDatasourceProvider);
+                                await datasource.cancelBooking(
+                                  widget.bookingId,
+                                  reason: reasonController.text.trim().isNotEmpty
+                                      ? reasonController.text.trim()
+                                      : 'Customer requested cancellation',
+                                );
+
+                                ref.invalidate(
+                                    airportTransferBookingDetailsProvider(widget.bookingId));
+                                ref.invalidate(airportTransfersHistoryProvider);
+                              } catch (e) {
+                                failureError = e.toString().replaceAll('Exception: ', '').trim();
+                                if (failureError.isEmpty) {
+                                  failureError = 'Unable to cancel this booking. Please try again.';
+                                }
+                              } finally {
+                                if (mounted) {
+                                  setState(() => _isCancelling = false);
+                                }
+                              }
+
+                              if (dialogCtx.mounted) {
+                                Navigator.of(dialogCtx).pop();
+                              }
+
+                              if (!mounted) return;
+
+                              if (failureError != null) {
+                                await _showCancellationFailedModal(context, failureError);
+                              } else {
+                                await _showCancellationSuccessModal(context);
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: isCancellingInsideDialog
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text(
+                              'Cancel Transfer',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
               ),
-              maxLines: 2,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Keep Booking',
-                style: TextStyle(color: AppColors.textSecondary)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-            child: const Text('Cancel Transfer'),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
+  }
 
-    if (confirmed == true && mounted) {
-      setState(() => _isCancelling = true);
-      try {
-        final datasource = ref.read(airportTransferRemoteDatasourceProvider);
-        await datasource.cancelBooking(
-          widget.bookingId,
-          reason: reasonController.text.trim().isNotEmpty
-              ? reasonController.text.trim()
-              : 'Customer requested cancellation',
-        );
-        ref.invalidate(
-            airportTransferBookingDetailsProvider(widget.bookingId));
-        ref.invalidate(airportTransfersHistoryProvider);
+  Future<void> _showCancellationSuccessModal(BuildContext context) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        backgroundColor: isDark ? AppColors.cardDark : AppColors.cardLight,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF10B981),
+                    size: 44,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Booking Cancelled',
+                style: AppTextStyles.titleMedium.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Your airport transfer booking has been cancelled successfully.',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'If payment was completed, any eligible refund will be credited to your original payment method.',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: (isDark ? AppColors.textSecondary : AppColors.textSecondaryLight).withValues(alpha: 0.8),
+                  fontSize: 12,
+                  height: 1.35,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGold,
+                    foregroundColor: Colors.black,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text(
+                    'OK',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Airport transfer cancelled successfully'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to cancel booking: $e'),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
-      } finally {
-        if (mounted) setState(() => _isCancelling = false);
-      }
+  Future<void> _showCancellationFailedModal(BuildContext context, String rawError) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    String cleanMessage = rawError
+        .replaceAll('Exception:', '')
+        .replaceAll('DioException', '')
+        .replaceAll('response:', '')
+        .trim();
+    if (cleanMessage.isEmpty) {
+      cleanMessage = 'Unable to cancel this booking. Please check your connection and try again.';
     }
+
+    await showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        backgroundColor: isDark ? AppColors.cardDark : AppColors.cardLight,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.error_outline_rounded,
+                    color: AppColors.error,
+                    size: 44,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Cancellation Failed',
+                style: AppTextStyles.titleMedium.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                cleanMessage,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        side: BorderSide(
+                          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'Dismiss',
+                        style: TextStyle(
+                          color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        _handleCancelBooking();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Try Again',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -213,7 +479,7 @@ class _AirportTransferHistoryDetailsScreenState
                         height: 36,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: AppColors.backgroundDark.withOpacity(0.15),
+                          color: AppColors.backgroundDark.withValues(alpha: 0.15),
                         ),
                         child: const Icon(
                           Icons.arrow_back,
@@ -301,7 +567,7 @@ Status: $status
       onRefresh: () => ref.refresh(
           airportTransferBookingDetailsProvider(widget.bookingId).future),
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 26),
         physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -310,12 +576,12 @@ Status: $status
             Container(
               decoration: BoxDecoration(
                 color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: isDark ? AppColors.borderDark : Colors.grey.shade300,
+                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
                 ),
               ),
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(14),
               child: Column(
                 children: [
                   Row(
@@ -325,9 +591,13 @@ Status: $status
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Booking Reference',
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: AppColors.textSecondary,
+                            'Service ID',
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: isDark
+                                  ? AppColors.textSecondary
+                                  : AppColors.textSecondaryLight,
+                              fontSize: 10,
+                              letterSpacing: 0.5,
                             ),
                           ),
                           const SizedBox(height: 2),
@@ -343,31 +613,37 @@ Status: $status
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 5),
+                            horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: statusColor.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(20),
+                          color: statusColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(6),
                           border: Border.all(
-                              color: statusColor.withOpacity(0.4)),
+                              color: statusColor.withValues(alpha: 0.4)),
                         ),
                         child: Text(
                           status.replaceAll('_', ' '),
                           style: AppTextStyles.labelSmall.copyWith(
                             color: statusColor,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 14),
                   Center(
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isDark
+                              ? AppColors.borderDark
+                              : AppColors.borderLight,
+                        ),
                       ),
                       child: QrImageView(
                         data: qrData,
@@ -377,11 +653,13 @@ Status: $status
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   Text(
-                    'Present this QR code to your chauffeur upon pickup',
+                    'Present this QR code to your driver upon pickup',
                     style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.textSecondary,
+                      color: isDark
+                          ? AppColors.textSecondary
+                          : AppColors.textSecondaryLight,
                       fontSize: 11,
                     ),
                     textAlign: TextAlign.center,
@@ -392,92 +670,49 @@ Status: $status
 
             const SizedBox(height: 14),
 
-            // Chauffeur Transport Notice
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.primaryGold.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: AppColors.primaryGold.withOpacity(0.3),
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.info_outline_rounded,
-                    color: AppColors.primaryGold,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Chauffeured Passenger Service',
-                          style: AppTextStyles.titleSmall.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primaryGold,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          'Your chauffeur meets you at the designated pickup point, assists with baggage, drives you to your destination, and completes drop-off. No vehicle handover or return required.',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            height: 1.35,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
             // Live Journey Status Stepper
             if (!isCancelled) ...[
               _buildJourneyProgressCard(status, isDark),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
             ],
 
             // Route Details Card
             _buildRouteCard(booking, isDark, isRound),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
-            // Flight & Meet & Greet Details Card
-            _buildFlightDetailsCard(booking, isDark),
-
-            const SizedBox(height: 16),
-
-            // Vehicle & Chauffeur Card
-            _buildVehicleAndDriverCard(vehicle, driver, isDark),
-
-            const SizedBox(height: 16),
-
-            // Passenger & Luggage Card
+            // Passenger & Contact Card
             _buildPassengerDetailsCard(booking, isDark),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
+
+            // Flight & Meet Details Card
+            _buildFlightDetailsCard(booking, isDark, isRound),
+
+            const SizedBox(height: 14),
+
+            // Vehicle & Supplier Details Card
+            _buildVehicleAndDriverCard(
+                vehicle, driver, booking['supplier'] as Map<String, dynamic>?, isDark),
+
+            const SizedBox(height: 14),
 
             // Fare & Payment Breakdown Card
             _buildPaymentCard(booking, isDark),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             // Cancellation Button if eligible
             if (canCancel) ...[
               SizedBox(
                 width: double.infinity,
                 height: 48,
-                child: OutlinedButton(
+                child: ElevatedButton(
                   onPressed: _isCancelling ? null : _handleCancelBooking,
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.error),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.error,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -488,13 +723,13 @@ Status: $status
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: AppColors.error,
+                            color: Colors.white,
                           ),
                         )
                       : Text(
                           'Cancel Transfer Booking',
                           style: AppTextStyles.labelLarge.copyWith(
-                            color: AppColors.error,
+                            color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -519,24 +754,36 @@ Status: $status
     ];
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isDark ? AppColors.borderDark : Colors.grey.shade300,
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Transfer Progress',
-            style: AppTextStyles.titleSmall.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+          Row(
+            children: [
+              const Icon(
+                Icons.timeline_rounded,
+                size: 19,
+                color: AppColors.primaryGold,
+              ),
+              const SizedBox(width: 7),
+              Text(
+                'TRANSFER PROGRESS',
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: AppColors.primaryGold,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.7,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           Row(
             children: List.generate(steps.length, (idx) {
               final isReached = idx < stepIndex;
@@ -553,7 +800,7 @@ Status: $status
                               height: 3,
                               color: isReached
                                   ? AppColors.primaryGold
-                                  : Colors.grey.withOpacity(0.3),
+                                  : Colors.grey.withValues(alpha: 0.3),
                             ),
                           ),
                         Container(
@@ -594,7 +841,7 @@ Status: $status
                               height: 3,
                               color: (idx + 1 < stepIndex)
                                   ? AppColors.primaryGold
-                                  : Colors.grey.withOpacity(0.3),
+                                  : Colors.grey.withValues(alpha: 0.3),
                             ),
                           ),
                       ],
@@ -611,9 +858,11 @@ Status: $status
                             ? AppColors.primaryGold
                             : (isReached
                                 ? (isDark
-                                    ? Colors.white
-                                    : Colors.black)
-                                : Colors.grey),
+                                    ? AppColors.textPrimary
+                                    : AppColors.textPrimaryLight)
+                                : (isDark
+                                    ? AppColors.textSecondary
+                                    : AppColors.textSecondaryLight)),
                       ),
                     ),
                   ],
@@ -629,12 +878,12 @@ Status: $status
   Widget _buildRouteCard(
       Map<String, dynamic> booking, bool isDark, bool isRound) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isDark ? AppColors.borderDark : Colors.grey.shade300,
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
         ),
       ),
       child: Column(
@@ -643,11 +892,23 @@ Status: $status
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                isRound ? 'Outbound Transfer' : 'Transfer Route',
-                style: AppTextStyles.titleSmall.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+              Row(
+                children: [
+                  Icon(
+                    isRound ? Icons.flight_takeoff_rounded : Icons.route_outlined,
+                    size: 19,
+                    color: AppColors.primaryGold,
+                  ),
+                  const SizedBox(width: 7),
+                  Text(
+                    isRound ? 'OUTBOUND TRANSFER' : 'JOURNEY ROUTE',
+                    style: AppTextStyles.labelLarge.copyWith(
+                      color: AppColors.primaryGold,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.7,
+                    ),
+                  ),
+                ],
               ),
               Text(
                 _formatDateTime(booking['pickupDateTime']),
@@ -658,57 +919,81 @@ Status: $status
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 13),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Column(
                 children: [
                   const Icon(
-                    Icons.trip_origin_rounded,
-                    size: 16,
-                    color: Color(0xFF10B981),
+                    Icons.radio_button_checked,
+                    size: 18,
+                    color: Color(0xFF43A047),
                   ),
                   Container(
                     width: 2,
                     height: 28,
-                    color: Colors.grey.withOpacity(0.35),
+                    color: isDark
+                        ? AppColors.borderDark
+                        : AppColors.borderLight,
                   ),
                   const Icon(
-                    Icons.place_rounded,
-                    size: 16,
-                    color: Colors.redAccent,
+                    Icons.location_on_rounded,
+                    size: 18,
+                    color: Color(0xFFE15B5B),
                   ),
                 ],
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Pickup Location',
+                      'PICKUP',
                       style: AppTextStyles.labelSmall.copyWith(
-                        color: AppColors.textSecondary,
+                        color: isDark
+                            ? AppColors.textSecondary
+                            : AppColors.textSecondaryLight,
+                        letterSpacing: 0.7,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
+                    const SizedBox(height: 3),
                     Text(
                       booking['pickupLocation'] ?? 'N/A',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.bodyMedium.copyWith(
                         fontWeight: FontWeight.w600,
+                        color: isDark
+                            ? AppColors.textPrimary
+                            : AppColors.textPrimaryLight,
                       ),
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Drop-off Destination',
+                      'DROP-OFF',
                       style: AppTextStyles.labelSmall.copyWith(
-                        color: AppColors.textSecondary,
+                        color: isDark
+                            ? AppColors.textSecondary
+                            : AppColors.textSecondaryLight,
+                        letterSpacing: 0.7,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
+                    const SizedBox(height: 3),
                     Text(
                       booking['dropoffLocation'] ?? 'N/A',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.bodyMedium.copyWith(
                         fontWeight: FontWeight.w600,
+                        color: isDark
+                            ? AppColors.textPrimary
+                            : AppColors.textPrimaryLight,
                       ),
                     ),
                   ],
@@ -717,78 +1002,117 @@ Status: $status
             ],
           ),
           if (isRound && booking['returnDateTime'] != null) ...[
-            const SizedBox(height: 16),
-            const Divider(height: 1),
-            const SizedBox(height: 14),
+            const SizedBox(height: 13),
+            Divider(
+              height: 1,
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            ),
+            const SizedBox(height: 13),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Return Transfer',
-                  style: AppTextStyles.titleSmall.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.flight_land_rounded,
+                      size: 19,
+                      color: AppColors.primaryGold,
+                    ),
+                    const SizedBox(width: 7),
+                    Text(
+                      'RETURN TRANSFER',
+                      style: AppTextStyles.labelLarge.copyWith(
+                        color: AppColors.primaryGold,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.7,
+                      ),
+                    ),
+                  ],
                 ),
                 Text(
                   _formatDateTime(booking['returnDateTime']),
                   style: AppTextStyles.labelSmall.copyWith(
-                    color: Colors.indigo,
+                    color: AppColors.primaryGold,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 13),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Column(
                   children: [
                     const Icon(
-                      Icons.trip_origin_rounded,
-                      size: 16,
-                      color: Colors.indigo,
+                      Icons.radio_button_checked,
+                      size: 18,
+                      color: Color(0xFF43A047),
                     ),
                     Container(
                       width: 2,
                       height: 28,
-                      color: Colors.grey.withOpacity(0.35),
+                      color: isDark
+                          ? AppColors.borderDark
+                          : AppColors.borderLight,
                     ),
                     const Icon(
-                      Icons.flight_land_rounded,
-                      size: 16,
-                      color: Colors.blueAccent,
+                      Icons.location_on_rounded,
+                      size: 18,
+                      color: Color(0xFFE15B5B),
                     ),
                   ],
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Pickup for Return',
+                        'PICKUP',
                         style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.textSecondary,
+                          color: isDark
+                              ? AppColors.textSecondary
+                              : AppColors.textSecondaryLight,
+                          letterSpacing: 0.7,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
+                      const SizedBox(height: 3),
                       Text(
                         booking['dropoffLocation'] ?? 'N/A',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? AppColors.textPrimary
+                              : AppColors.textPrimaryLight,
                         ),
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Drop-off at Airport',
+                        'DROP-OFF',
                         style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.textSecondary,
+                          color: isDark
+                              ? AppColors.textSecondary
+                              : AppColors.textSecondaryLight,
+                          letterSpacing: 0.7,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
+                      const SizedBox(height: 3),
                       Text(
                         booking['pickupLocation'] ?? 'N/A',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? AppColors.textPrimary
+                              : AppColors.textPrimaryLight,
                         ),
                       ),
                     ],
@@ -802,19 +1126,170 @@ Status: $status
     );
   }
 
-  Widget _buildFlightDetailsCard(
+  Map<String, dynamic> _parseSpecialRequests(String? specialRequests) {
+    final parsed = <String, String>{};
+    final extraNotes = <String>[];
+
+    if (specialRequests != null && specialRequests.trim().isNotEmpty) {
+      final parts = specialRequests.split(RegExp(r'\s*\|\s*|\n+'));
+      for (final rawPart in parts) {
+        final part = rawPart.trim();
+        if (part.isEmpty) continue;
+        final colonIdx = part.indexOf(':');
+        if (colonIdx > 0) {
+          final key = part.substring(0, colonIdx).trim().toLowerCase();
+          final val = part.substring(colonIdx + 1).trim();
+          parsed[key] = val;
+        } else {
+          extraNotes.add(part);
+        }
+      }
+    }
+
+    String? findVal(List<String> keys) {
+      for (final k in keys) {
+        final v = parsed[k.toLowerCase()];
+        if (v != null && v.isNotEmpty) return v;
+      }
+      return null;
+    }
+
+    return {
+      'airline': findVal(['Airline', 'Flight Airline']),
+      'terminal': findVal(['Terminal', 'Arrival Terminal', 'Gate']),
+      'nationality': findVal(['Nationality', 'Country']),
+      'whatsApp': findVal([
+        'WhatsApp',
+        'Whatsapp Number',
+        'WhatsApp Phone',
+        'Phone'
+      ]),
+      'welcomeSign': findVal([
+        'Meet & Greet Sign',
+        'Welcome Sign',
+        'Driver Welcome Sign',
+        'Driver Sign',
+        'Sign Name',
+        'Sign'
+      ]),
+      'meetInstructions': findVal([
+        'Meet Instructions',
+        'Meeting Instructions',
+        'Instructions',
+        'Pickup Instructions'
+      ]),
+      'specialAssistance': findVal([
+        'Special Assistance',
+        'Special Assistance & Requirements',
+        'Assistance',
+        'Special Requests',
+        'Child Seat'
+      ]),
+      'extraNotes': extraNotes,
+    };
+  }
+
+  Widget _buildInfoRow({
+    required IconData icon,
+    required String label,
+    String? value,
+    Widget? trailing,
+    required bool isDark,
+  }) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 18,
+          color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            label,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: isDark
+                  ? AppColors.textSecondary
+                  : AppColors.textSecondaryLight,
+              fontWeight: FontWeight.w400,
+              height: 1.3,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        if (trailing != null)
+          trailing
+        else if (value != null)
+          Text(
+            value.isEmpty ? 'Not provided' : value,
+            textAlign: TextAlign.right,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: isDark
+                  ? AppColors.textPrimary
+                  : AppColors.textPrimaryLight,
+              height: 1.3,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildPassengerDetailsCard(
       Map<String, dynamic> booking, bool isDark) {
-    final flightNumber = booking['flightNumber']?.toString();
-    final returnFlight = booking['returnFlightNumber']?.toString();
-    final specialRequests = booking['specialRequests']?.toString();
+    final leadName = (booking['leadPassengerName'] ?? 'Passenger').toString();
+    final leadPhone = (booking['leadPassengerPhone'] ?? 'N/A').toString();
+    final leadEmail = (booking['leadPassengerEmail'] ?? 'N/A').toString();
+    final special = _parseSpecialRequests(booking['specialRequests']?.toString());
+    final whatsApp = special['whatsApp'] as String?;
+    final nationality = special['nationality'] as String?;
+    final displayWhatsApp = (whatsApp != null && whatsApp.isNotEmpty)
+        ? whatsApp
+        : leadPhone;
+    final displayNationality = (nationality != null && nationality.isNotEmpty)
+        ? nationality
+        : 'Maltese';
+
+    final int adults = booking['adults'] is int
+        ? booking['adults'] as int
+        : int.tryParse(booking['adults']?.toString() ?? '1') ?? 1;
+    final int children = booking['children'] is int
+        ? booking['children'] as int
+        : int.tryParse(booking['children']?.toString() ?? '0') ?? 0;
+    final int infants = booking['infants'] is int
+        ? booking['infants'] as int
+        : int.tryParse(booking['infants']?.toString() ?? '0') ?? 0;
+
+    final passengerParts = <String>[];
+    if (adults > 0) {
+      passengerParts.add('$adults ${adults == 1 ? 'Adult' : 'Adults'}');
+    }
+    if (children > 0) {
+      passengerParts.add('$children ${children == 1 ? 'Child' : 'Children'}');
+    }
+    if (infants > 0) {
+      passengerParts.add('$infants ${infants == 1 ? 'Infant' : 'Infants'}');
+    }
+    final passengerSummary = passengerParts.isNotEmpty
+        ? passengerParts.join(', ')
+        : '1 Adult';
+
+    final standardLuggage = booking['standardLuggage'] ?? 0;
+    final largeLuggage = booking['largeLuggage'] ?? 0;
+    final sLug = standardLuggage is int
+        ? standardLuggage
+        : int.tryParse(standardLuggage.toString()) ?? 0;
+    final lLug = largeLuggage is int
+        ? largeLuggage
+        : int.tryParse(largeLuggage.toString()) ?? 0;
+    final totalBags = sLug + lLug;
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isDark ? AppColors.borderDark : Colors.grey.shade300,
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
         ),
       ),
       child: Column(
@@ -823,78 +1298,548 @@ Status: $status
           Row(
             children: [
               const Icon(
-                Icons.flight_takeoff_rounded,
-                size: 18,
-                color: Colors.blue,
+                Icons.person_outline_rounded,
+                size: 19,
+                color: AppColors.primaryGold,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 7),
               Text(
-                'Flight & Meet & Greet',
-                style: AppTextStyles.titleSmall.copyWith(
-                  fontWeight: FontWeight.bold,
+                'PASSENGER & CONTACT',
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: AppColors.primaryGold,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.7,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 13),
+
+          // Primary passenger
+          _buildInfoRow(
+            icon: Icons.person_outline_rounded,
+            label: 'Primary passenger',
+            value: leadName,
+            isDark: isDark,
+          ),
+          Divider(
+            height: 20,
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          ),
+
+          // Phone
+          _buildInfoRow(
+            icon: Icons.phone_outlined,
+            label: 'Phone',
+            value: leadPhone,
+            isDark: isDark,
+          ),
+          Divider(
+            height: 20,
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          ),
+
+          // Email
+          _buildInfoRow(
+            icon: Icons.mail_outline_rounded,
+            label: 'Email',
+            value: leadEmail,
+            isDark: isDark,
+          ),
+          Divider(
+            height: 20,
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          ),
+
+          // WhatsApp
+          _buildInfoRow(
+            icon: Icons.chat_bubble_outline_rounded,
+            label: 'WhatsApp',
+            value: displayWhatsApp,
+            isDark: isDark,
+          ),
+          Divider(
+            height: 20,
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          ),
+
+          // Nationality
+          _buildInfoRow(
+            icon: Icons.public_rounded,
+            label: 'Nationality',
+            value: displayNationality,
+            isDark: isDark,
+          ),
+
+          // Guests & Luggage summary row
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Outbound Flight',
-                        style: AppTextStyles.labelSmall
-                            .copyWith(color: AppColors.textSecondary)),
-                    const SizedBox(height: 2),
-                    Text(
-                      flightNumber != null && flightNumber.isNotEmpty
-                          ? flightNumber
-                          : 'Not Provided',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: flightNumber != null ? Colors.blue : null,
-                      ),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.inputDark.withValues(alpha: 0.5)
+                        : const Color(0xFFF8F9FA),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isDark
+                          ? AppColors.borderDark
+                          : AppColors.borderLight,
                     ),
-                  ],
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.person_rounded,
+                        size: 16,
+                        color: AppColors.primaryGold,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          passengerSummary,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: isDark
+                                ? AppColors.textPrimary
+                                : AppColors.textPrimaryLight,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              if (returnFlight != null && returnFlight.isNotEmpty) ...[
+              const SizedBox(width: 10),
+              Expanded(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.inputDark.withValues(alpha: 0.5)
+                        : const Color(0xFFF8F9FA),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isDark
+                          ? AppColors.borderDark
+                          : AppColors.borderLight,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.luggage_rounded,
+                        size: 16,
+                        color: AppColors.primaryGold,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '$totalBags Bag${totalBags == 1 ? '' : 's'}',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: isDark
+                                ? AppColors.textPrimary
+                                : AppColors.textPrimaryLight,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFlightDetailsCard(
+      Map<String, dynamic> booking, bool isDark, bool isRound) {
+    final flightNumber = booking['flightNumber']?.toString();
+    final returnFlight = booking['returnFlightNumber']?.toString();
+    final special = _parseSpecialRequests(booking['specialRequests']?.toString());
+    final airline = special['airline'] as String?;
+    final terminal = special['terminal'] as String?;
+    final welcomeSign = special['welcomeSign'] as String?;
+    final meetInstructions = special['meetInstructions'] as String?;
+    final specialAssistance = special['specialAssistance'] as String?;
+    final extraNotes = (special['extraNotes'] as List<String>?) ?? [];
+
+    final leadName = (booking['leadPassengerName'] ?? 'Passenger').toString();
+    final rawSign = (welcomeSign != null && welcomeSign.trim().isNotEmpty)
+        ? welcomeSign.trim().replaceAll('"', '')
+        : leadName;
+    final displaySign = '"$rawSign"';
+
+    final displayMeetInstructions =
+        (meetInstructions != null && meetInstructions.trim().isNotEmpty)
+            ? meetInstructions.trim()
+            : 'Meet driver at the arrivals hall with your welcome sign';
+
+    final displaySpecialAssistance =
+        (specialAssistance != null && specialAssistance.trim().isNotEmpty)
+            ? specialAssistance.trim()
+            : '1 Child seat, chair assistance';
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.flight_rounded,
+                size: 19,
+                color: AppColors.primaryGold,
+              ),
+              const SizedBox(width: 7),
+              Text(
+                'FLIGHT & MEET DETAILS',
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: AppColors.primaryGold,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.7,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 13),
+
+          // Flight number (Incoming flight)
+          _buildInfoRow(
+            icon: Icons.flight_land_rounded,
+            label: isRound ? 'Incoming flight' : 'Flight number',
+            trailing: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGold.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: AppColors.primaryGold.withValues(alpha: 0.35),
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                flightNumber != null && flightNumber.isNotEmpty
+                    ? flightNumber
+                    : 'N/A',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.primaryGold,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            isDark: isDark,
+          ),
+
+          // Return flight number (Outgoing flight for return transfer)
+          if (isRound && returnFlight != null && returnFlight.isNotEmpty) ...[
+            Divider(
+              height: 20,
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            ),
+            _buildInfoRow(
+              icon: Icons.flight_takeoff_rounded,
+              label: 'Return flight',
+              trailing: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.indigo.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: Colors.indigo.withValues(alpha: 0.35),
+                    width: 1,
+                  ),
+                ),
+                child: Text(
+                  returnFlight,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: Colors.indigo,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              isDark: isDark,
+            ),
+          ],
+
+          // Airline
+          if (airline != null && airline.isNotEmpty) ...[
+            Divider(
+              height: 20,
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            ),
+            _buildInfoRow(
+              icon: Icons.airlines_outlined,
+              label: 'Airline',
+              value: airline,
+              isDark: isDark,
+            ),
+          ],
+
+          // Terminal
+          if (terminal != null && terminal.isNotEmpty) ...[
+            Divider(
+              height: 20,
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            ),
+            _buildInfoRow(
+              icon: Icons.meeting_room_outlined,
+              label: 'Terminal',
+              value: terminal,
+              isDark: isDark,
+            ),
+          ],
+
+          // Meet & Greet
+          Divider(
+            height: 20,
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          ),
+          _buildInfoRow(
+            icon: Icons.handshake_outlined,
+            label: 'Meet & Greet',
+            trailing: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.35),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    size: 12,
+                    color: Color(0xFF10B981),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Included',
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: const Color(0xFF10B981),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            isDark: isDark,
+          ),
+
+          // 1. DRIVER WELCOME SIGN Box
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.primaryGold.withValues(alpha: isDark ? 0.08 : 0.06),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: AppColors.primaryGold.withValues(alpha: 0.35),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGold.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.badge_outlined,
+                    size: 18,
+                    color: AppColors.primaryGold,
+                  ),
+                ),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Return Flight',
-                          style: AppTextStyles.labelSmall
-                              .copyWith(color: AppColors.textSecondary)),
+                      Text(
+                        'DRIVER WELCOME SIGN',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: isDark
+                              ? AppColors.textSecondary
+                              : AppColors.textSecondaryLight,
+                          fontSize: 10,
+                          letterSpacing: 0.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                       const SizedBox(height: 2),
                       Text(
-                        returnFlight,
-                        style: AppTextStyles.bodyMedium.copyWith(
+                        displaySign,
+                        style: AppTextStyles.bodySmall.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: Colors.indigo,
+                          color: isDark
+                              ? AppColors.textPrimary
+                              : AppColors.textPrimaryLight,
                         ),
                       ),
                     ],
                   ),
                 ),
               ],
-            ],
-          ),
-          if (specialRequests != null && specialRequests.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            const SizedBox(height: 12),
-            Text(
-              'Meet & Greet / Instructions',
-              style: AppTextStyles.labelSmall
-                  .copyWith(color: AppColors.textSecondary),
             ),
-            const SizedBox(height: 4),
-            Text(
-              specialRequests,
-              style: AppTextStyles.bodySmall.copyWith(
-                height: 1.4,
+          ),
+
+          // 2. Meeting Instructions Box
+          const SizedBox(height: 10),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? AppColors.backgroundDark.withValues(alpha: 0.5)
+                  : const Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                width: 1,
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.directions_walk_rounded,
+                  size: 18,
+                  color: AppColors.primaryGold,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Meeting Instructions',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: isDark
+                              ? AppColors.textSecondary
+                              : AppColors.textSecondaryLight,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 11,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        displayMeetInstructions,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isDark
+                              ? AppColors.textPrimary
+                              : AppColors.textPrimaryLight,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // 3. Special Assistance Box
+          const SizedBox(height: 10),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? AppColors.surfaceDark
+                  : const Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                width: 1,
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2196F3).withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Icon(
+                    Icons.accessible_rounded,
+                    size: 16,
+                    color: Color(0xFF2196F3),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'SPECIAL ASSISTANCE & REQUIREMENTS',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: isDark
+                              ? AppColors.textSecondary
+                              : AppColors.textSecondaryLight,
+                          fontSize: 10,
+                          letterSpacing: 0.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        displaySpecialAssistance,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isDark
+                              ? AppColors.textPrimary
+                              : AppColors.textPrimaryLight,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Any extra unparsed notes
+          for (final note in extraNotes) ...[
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                note,
+                style: AppTextStyles.bodySmall.copyWith(
+                  height: 1.35,
+                  color: isDark
+                      ? AppColors.textSecondary
+                      : AppColors.textSecondaryLight,
+                ),
               ),
             ),
           ],
@@ -904,21 +1849,33 @@ Status: $status
   }
 
   Widget _buildVehicleAndDriverCard(
-      Map<String, dynamic>? vehicle, Map<String, dynamic>? driver, bool isDark) {
+      Map<String, dynamic>? vehicle,
+      Map<String, dynamic>? driver,
+      Map<String, dynamic>? supplier,
+      bool isDark) {
     final vehicleName = vehicle != null && vehicle['make'] != null
-        ? '${vehicle['make']} ${vehicle['model'] ?? ''}'
+        ? '${vehicle['make']} ${vehicle['model'] ?? ''}'.trim()
         : 'Airport Transfer Vehicle';
     final registration = vehicle?['registrationNo']?.toString() ??
         vehicle?['vehicleType']?.toString() ??
         'N/A';
 
+    final supplierName = supplier?['companyName']?.toString() ??
+        vehicle?['supplier']?['companyName']?.toString() ??
+        'Supplier Partner';
+    final driverName = driver != null
+        ? '${driver['firstName'] ?? ''} ${driver['lastName'] ?? ''}'.trim()
+        : null;
+
+    final hasDriver = driverName != null && driverName.isNotEmpty;
+
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isDark ? AppColors.borderDark : Colors.grey.shade300,
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
         ),
       ),
       child: Column(
@@ -927,191 +1884,176 @@ Status: $status
           Row(
             children: [
               const Icon(
-                Icons.directions_car_filled_rounded,
-                size: 18,
+                Icons.airport_shuttle_outlined,
+                size: 19,
                 color: AppColors.primaryGold,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 7),
               Text(
-                'Vehicle & Chauffeur',
-                style: AppTextStyles.titleSmall.copyWith(
-                  fontWeight: FontWeight.bold,
+                'VEHICLE & SUPPLIER DETAILS',
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: AppColors.primaryGold,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.7,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    vehicleName,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 7, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? AppColors.borderDark
-                          : Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    child: Text(
-                      'Plate: $registration',
-                      style: AppTextStyles.labelSmall.copyWith(
-                        fontFamily: 'monospace',
-                        fontSize: 11,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'Assigned Chauffeur',
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    driver != null
-                        ? '${driver['firstName'] ?? ''} ${driver['lastName'] ?? ''}'
-                        : 'Supplier Fleet',
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: driver != null
-                          ? AppColors.success
-                          : AppColors.textSecondary,
-                    ),
-                  ),
-                  if (driver?['phone'] != null)
-                    Text(
-                      driver!['phone'].toString(),
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+          const SizedBox(height: 13),
 
-  Widget _buildPassengerDetailsCard(
-      Map<String, dynamic> booking, bool isDark) {
-    final leadName = (booking['leadPassengerName'] ?? 'Passenger').toString();
-    final leadPhone = (booking['leadPassengerPhone'] ?? 'N/A').toString();
-    final leadEmail = (booking['leadPassengerEmail'] ?? 'N/A').toString();
-    final adults = booking['adults'] ?? 1;
-    final children = booking['children'] ?? 0;
-    final infants = booking['infants'] ?? 0;
-    final standardLuggage = booking['standardLuggage'] ?? 0;
-    final largeLuggage = booking['largeLuggage'] ?? 0;
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? AppColors.borderDark : Colors.grey.shade300,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.people_alt_rounded,
-                size: 18,
-                color: AppColors.primaryGold,
+          // Box 1: Assigned Vehicle
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? AppColors.inputDark.withValues(alpha: 0.5)
+                  : const Color(0xFFF8F9FA),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                width: 1,
               ),
-              const SizedBox(width: 8),
-              Text(
-                'Lead Passenger & Guests',
-                style: AppTextStyles.titleSmall.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Text(
-            leadName,
-            style: AppTextStyles.bodyMedium.copyWith(
-              fontWeight: FontWeight.bold,
             ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            '$leadPhone · $leadEmail',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.borderDark.withOpacity(0.4)
-                        : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(10),
+                    color: AppColors.primaryGold.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Row(
+                  child: const Icon(
+                    Icons.airport_shuttle_rounded,
+                    size: 20,
+                    color: AppColors.primaryGold,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.person, size: 16),
-                      const SizedBox(width: 6),
                       Text(
-                        '$adults Adult${adults == 1 ? '' : 's'}${children > 0 ? ', $children Ch' : ''}${infants > 0 ? ', $infants Inf' : ''}',
-                        style: AppTextStyles.labelSmall
-                            .copyWith(fontWeight: FontWeight.w600),
+                        'ASSIGNED VEHICLE',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: isDark
+                              ? AppColors.textSecondary
+                              : AppColors.textSecondaryLight,
+                          fontSize: 10,
+                          letterSpacing: 0.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        vehicleName,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isDark
+                              ? AppColors.textPrimary
+                              : AppColors.textPrimaryLight,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: isDark ? AppColors.surfaceDark : Colors.white,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: isDark
+                                ? AppColors.borderDark
+                                : AppColors.borderLight,
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          registration,
+                          style: AppTextStyles.labelSmall.copyWith(
+                            fontFamily: 'monospace',
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11,
+                            letterSpacing: 0.5,
+                            color: isDark
+                                ? AppColors.textPrimary
+                                : AppColors.textPrimaryLight,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // Box 2: Supplier Partner / Assigned Driver
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? AppColors.inputDark.withValues(alpha: 0.5)
+                  : const Color(0xFFF8F9FA),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                width: 1,
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(10),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.borderDark.withOpacity(0.4)
-                        : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(10),
+                    color: Colors.blue.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Row(
+                  child: Icon(
+                    hasDriver ? Icons.person_rounded : Icons.business_rounded,
+                    size: 20,
+                    color: Colors.blue.shade600,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.luggage_rounded, size: 16),
-                      const SizedBox(width: 6),
                       Text(
-                        '${standardLuggage + largeLuggage} Bag${(standardLuggage + largeLuggage) == 1 ? '' : 's'}',
-                        style: AppTextStyles.labelSmall
-                            .copyWith(fontWeight: FontWeight.w600),
+                        hasDriver ? 'ASSIGNED DRIVER' : 'SUPPLIER PARTNER',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: isDark
+                              ? AppColors.textSecondary
+                              : AppColors.textSecondaryLight,
+                          fontSize: 10,
+                          letterSpacing: 0.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        hasDriver ? driverName : supplierName,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isDark
+                              ? AppColors.textPrimary
+                              : AppColors.textPrimaryLight,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -1120,8 +2062,6 @@ Status: $status
 
   Widget _buildPaymentCard(
       Map<String, dynamic> booking, bool isDark) {
-    final basePrice =
-        double.tryParse((booking['basePrice'] ?? 0).toString()) ?? 0.0;
     final extrasFee =
         double.tryParse((booking['extrasFee'] ?? 0).toString()) ?? 0.0;
     final discount =
@@ -1129,107 +2069,195 @@ Status: $status
     final grandTotal =
         double.tryParse((booking['grandTotal'] ?? 0).toString()) ?? 0.0;
     final currency = (booking['currency'] ?? 'EUR').toString();
-    final paymentMethod =
+    final rawPaymentMethod =
         (booking['paymentMethod'] ?? 'CARD').toString();
+    final paymentMethod = rawPaymentMethod.toUpperCase() == 'CARD'
+        ? 'Card'
+        : (rawPaymentMethod.toUpperCase() == 'ONLINE'
+            ? 'Online'
+            : (rawPaymentMethod.toUpperCase() == 'CASH'
+                ? 'Cash'
+                : rawPaymentMethod));
     final paymentStatus =
-        (booking['paymentStatus'] ?? 'PENDING').toString();
+        (booking['paymentStatus'] ?? 'PENDING').toString().toUpperCase();
+    final isPaid = paymentStatus == 'PAID' || paymentStatus == 'COMPLETED';
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isDark ? AppColors.borderDark : Colors.grey.shade300,
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Tariff & Payment',
-                style: AppTextStyles.titleSmall.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+              const Icon(
+                Icons.receipt_long_outlined,
+                size: 19,
+                color: AppColors.primaryGold,
               ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: paymentStatus == 'PAID'
-                      ? AppColors.success.withOpacity(0.12)
-                      : Colors.orange.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  paymentStatus,
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: paymentStatus == 'PAID'
-                        ? AppColors.success
-                        : Colors.orange,
-                    fontWeight: FontWeight.bold,
-                  ),
+              const SizedBox(width: 7),
+              Text(
+                'PAYMENT SUMMARY',
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: AppColors.primaryGold,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.7,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          _buildPaymentRow('Base Transfer Tariff', '$currency ${basePrice.toStringAsFixed(2)}'),
+          const SizedBox(height: 13),
+
+          // 1. Payment Status row
+          _buildInfoRow(
+            icon: isPaid
+                ? Icons.check_circle_outline_rounded
+                : Icons.schedule_rounded,
+            label: 'Payment Status',
+            trailing: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: isPaid
+                    ? const Color(0xFF10B981).withValues(alpha: 0.12)
+                    : Colors.orange.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: isPaid
+                      ? const Color(0xFF10B981).withValues(alpha: 0.35)
+                      : Colors.orange.withValues(alpha: 0.35),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isPaid
+                        ? Icons.check_circle_rounded
+                        : Icons.schedule_rounded,
+                    size: 12,
+                    color: isPaid
+                        ? const Color(0xFF10B981)
+                        : Colors.orange,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    paymentStatus,
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: isPaid
+                          ? const Color(0xFF10B981)
+                          : Colors.orange,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            isDark: isDark,
+          ),
+
+          // 2. Payment Method row
+          Divider(
+            height: 20,
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          ),
+          _buildInfoRow(
+            icon: Icons.credit_card_outlined,
+            label: 'Payment Method',
+            trailing: Text(
+              paymentMethod,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: isDark
+                    ? AppColors.textPrimary
+                    : AppColors.textPrimaryLight,
+                height: 1.3,
+              ),
+            ),
+            isDark: isDark,
+          ),
+
+          // Extra Services row if fee > 0
           if (extrasFee > 0) ...[
-            const SizedBox(height: 6),
-            _buildPaymentRow('Extras / Meet & Greet', '$currency ${extrasFee.toStringAsFixed(2)}'),
+            Divider(
+              height: 20,
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            ),
+            _buildInfoRow(
+              icon: Icons.add_circle_outline_rounded,
+              label: 'Extra Services',
+              trailing: Text(
+                '$currency ${extrasFee.toStringAsFixed(2)}',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: isDark
+                      ? AppColors.textPrimary
+                      : AppColors.textPrimaryLight,
+                  height: 1.3,
+                ),
+              ),
+              isDark: isDark,
+            ),
           ],
+
+          // Discount row if applicable
           if (discount > 0) ...[
-            const SizedBox(height: 6),
-            _buildPaymentRow('Discount', '-$currency ${discount.toStringAsFixed(2)}', color: AppColors.success),
+            Divider(
+              height: 20,
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            ),
+            _buildInfoRow(
+              icon: Icons.local_offer_outlined,
+              label: 'Discount',
+              trailing: Text(
+                '-$currency ${discount.toStringAsFixed(2)}',
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: const Color(0xFF10B981),
+                  fontWeight: FontWeight.w600,
+                  height: 1.3,
+                ),
+              ),
+              isDark: isDark,
+            ),
           ],
-          const SizedBox(height: 10),
-          const Divider(height: 1),
-          const SizedBox(height: 10),
+
+          // Total Highlight Row (matching Review & Book)
+          const SizedBox(height: 3),
+          Divider(
+            height: 1,
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          ),
+          const SizedBox(height: 13),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Total Amount ($paymentMethod)',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Text(
+                  isPaid ? 'Total Paid' : 'Total Amount',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: isDark
+                        ? AppColors.textPrimary
+                        : AppColors.textPrimaryLight,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               Text(
                 '$currency ${grandTotal.toStringAsFixed(2)}',
                 style: AppTextStyles.titleMedium.copyWith(
-                  fontWeight: FontWeight.bold,
                   color: AppColors.primaryGold,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildPaymentRow(String label, String value, {Color? color}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: AppTextStyles.bodySmall.copyWith(
-            color: AppColors.textSecondary,
-          ),
-        ),
-        Text(
-          value,
-          style: AppTextStyles.bodySmall.copyWith(
-            fontWeight: FontWeight.w600,
-            color: color,
-          ),
-        ),
-      ],
     );
   }
 }

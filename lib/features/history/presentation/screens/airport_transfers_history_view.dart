@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
@@ -110,7 +111,7 @@ class _AirportTransfersHistoryViewState
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: AppColors.primaryGold.withOpacity(0.12),
+                    color: AppColors.primaryGold.withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -281,15 +282,36 @@ class _AirportTransfersHistoryViewState
       BuildContext context, Map<String, dynamic> booking) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bookingId = (booking['id'] ?? '').toString();
-    final bookingRef =
-        (booking['bookingReference'] ?? 'GZLT-TRF').toString();
     final status = (booking['status'] ?? 'CONFIRMED').toString();
-    final isRound = (booking['transferType'] ?? '') == 'ROUND_TRIP';
     final vehicle = booking['vehicle'] as Map<String, dynamic>?;
     final vehicleName = vehicle != null && vehicle['make'] != null
-        ? '${vehicle['make']} ${vehicle['model'] ?? ''}'
+        ? '${vehicle['make']} ${vehicle['model'] ?? ''}'.trim()
         : 'Airport Transfer Vehicle';
-    final flightNumber = booking['flightNumber']?.toString();
+    final registration = vehicle?['registrationNo']?.toString() ??
+        vehicle?['registration_no']?.toString() ??
+        vehicle?['registration']?.toString() ??
+        vehicle?['plateNumber']?.toString() ??
+        vehicle?['plate_number']?.toString() ??
+        booking['registrationNo']?.toString() ??
+        booking['registration_no']?.toString() ??
+        '';
+
+    String vehicleImageUrl = '';
+    if (vehicle != null) {
+      if (vehicle['images'] is List && (vehicle['images'] as List).isNotEmpty) {
+        final first = (vehicle['images'] as List).first?.toString() ?? '';
+        if (first.trim().isNotEmpty) {
+          vehicleImageUrl = ApiConstants.fullUrl(first.trim());
+        }
+      }
+      if (vehicleImageUrl.isEmpty) {
+        final raw = (vehicle['imageUrl'] ?? vehicle['image'] ?? '').toString().trim();
+        if (raw.isNotEmpty) {
+          vehicleImageUrl = ApiConstants.fullUrl(raw);
+        }
+      }
+    }
+
     final grandTotal =
         double.tryParse((booking['grandTotal'] ?? 0).toString()) ?? 0.0;
     final currency = (booking['currency'] ?? 'EUR').toString();
@@ -307,92 +329,153 @@ class _AirportTransfersHistoryViewState
           extra: bookingId,
         );
       },
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(14),
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: isDark ? AppColors.borderDark : Colors.grey.shade300,
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
+              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.03),
               blurRadius: 8,
-              offset: const Offset(0, 3),
+              offset: const Offset(0, 2),
             ),
           ],
         ),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Row: Reference, Round/One-way, Status
+            // 1. Vehicle Details (Top Left) & Confirmation Status (Top Right)
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryGold.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    bookingRef,
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.primaryGold,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'monospace',
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    width: 52,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF262626)
+                          : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isDark
+                            ? AppColors.borderDark
+                            : const Color(0xFFCBD5E1),
+                        width: 0.8,
+                      ),
                     ),
+                    child: vehicleImageUrl.isNotEmpty
+                        ? Image.network(
+                            vehicleImageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
+                              color:
+                                  AppColors.primaryGold.withValues(alpha: 0.12),
+                              alignment: Alignment.center,
+                              child: const Icon(
+                                Icons.directions_car_filled_rounded,
+                                size: 20,
+                                color: AppColors.primaryGold,
+                              ),
+                            ),
+                          )
+                        : Container(
+                            color:
+                                AppColors.primaryGold.withValues(alpha: 0.12),
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              Icons.directions_car_filled_rounded,
+                              size: 20,
+                              color: AppColors.primaryGold,
+                            ),
+                          ),
                   ),
                 ),
-                const SizedBox(width: 6),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: isRound
-                        ? Colors.indigo.withOpacity(0.12)
-                        : Colors.teal.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    isRound ? 'ROUND TRIP' : 'ONE WAY',
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: isRound ? Colors.indigo : Colors.teal,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 10,
-                    ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        vehicleName,
+                        style: AppTextStyles.titleSmall.copyWith(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13.5,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (registration.isNotEmpty &&
+                          registration != 'N/A') ...[
+                        const SizedBox(height: 3),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF262626)
+                                : const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : const Color(0xFFCBD5E1),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Text(
+                            registration,
+                            style: AppTextStyles.labelSmall.copyWith(
+                              fontFamily: 'monospace',
+                              fontWeight: FontWeight.w700,
+                              fontSize: 10,
+                              letterSpacing: 0.5,
+                              color: isDark
+                                  ? AppColors.textPrimary
+                                  : AppColors.textPrimaryLight,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                const Spacer(),
+                const SizedBox(width: 8),
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.12),
+                    color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: statusColor.withOpacity(0.35),
+                      color: statusColor.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 6,
-                        height: 6,
+                        width: 5.5,
+                        height: 5.5,
                         decoration: BoxDecoration(
                           color: statusColor,
                           shape: BoxShape.circle,
                         ),
                       ),
-                      const SizedBox(width: 5),
+                      const SizedBox(width: 4.5),
                       Text(
                         statusLabel,
                         style: AppTextStyles.labelSmall.copyWith(
                           color: statusColor,
                           fontWeight: FontWeight.bold,
+                          fontSize: 11,
                         ),
                       ),
                     ],
@@ -401,92 +484,53 @@ class _AirportTransfersHistoryViewState
               ],
             ),
 
-            const SizedBox(height: 12),
-
-            // Vehicle Name + Flight Badge
-            Row(
-              children: [
-                const Icon(
-                  Icons.directions_car_filled_rounded,
-                  size: 18,
-                  color: AppColors.primaryGold,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    vehicleName,
-                    style: AppTextStyles.titleSmall.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                if (flightNumber != null && flightNumber.isNotEmpty) ...[
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 2.5),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                        color: Colors.blue.withOpacity(0.25),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.flight_takeoff_rounded,
-                          size: 12,
-                          color: Colors.blue,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          flightNumber,
-                          style: AppTextStyles.labelSmall.copyWith(
-                            color: Colors.blue,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ],
-            ),
-
             const SizedBox(height: 10),
 
-            // Schedule Date & Time
+            // 2. Booked Date
             Row(
               children: [
                 Icon(
-                  Icons.access_time_rounded,
-                  size: 14,
+                  Icons.calendar_today_rounded,
+                  size: 13,
                   color: isDark
                       ? AppColors.textSecondary
                       : AppColors.textSecondaryLight,
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  _formatDateTime(pickupDateTimeStr),
+                  'Booked Date: ',
                   style: AppTextStyles.bodySmall.copyWith(
-                    fontWeight: FontWeight.w600,
                     color: isDark
-                        ? AppColors.textPrimary
-                        : AppColors.textPrimaryLight,
+                        ? AppColors.textSecondary
+                        : AppColors.textSecondaryLight,
+                    fontSize: 12,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    _formatDateTime(pickupDateTimeStr),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: isDark
+                          ? AppColors.textPrimary
+                          : AppColors.textPrimaryLight,
+                      fontSize: 12,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
 
             const SizedBox(height: 10),
-            const Divider(height: 1),
+            Divider(
+              height: 1,
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            ),
             const SizedBox(height: 10),
 
-            // Route Timeline
+            // 3. From / To Locations
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -494,17 +538,19 @@ class _AirportTransfersHistoryViewState
                   children: [
                     const Icon(
                       Icons.trip_origin_rounded,
-                      size: 13,
+                      size: 12,
                       color: Color(0xFF10B981),
                     ),
                     Container(
                       width: 1.5,
-                      height: 20,
-                      color: Colors.grey.withOpacity(0.4),
+                      height: 16,
+                      color: isDark
+                          ? AppColors.borderDark
+                          : AppColors.borderLight,
                     ),
                     const Icon(
                       Icons.place_rounded,
-                      size: 14,
+                      size: 13,
                       color: Colors.redAccent,
                     ),
                   ],
@@ -518,15 +564,23 @@ class _AirportTransfersHistoryViewState
                         pickupLocation,
                         style: AppTextStyles.bodySmall.copyWith(
                           fontWeight: FontWeight.w500,
+                          color: isDark
+                              ? AppColors.textPrimary
+                              : AppColors.textPrimaryLight,
+                          fontSize: 12,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 10),
                       Text(
                         dropoffLocation,
                         style: AppTextStyles.bodySmall.copyWith(
                           fontWeight: FontWeight.w500,
+                          color: isDark
+                              ? AppColors.textPrimary
+                              : AppColors.textPrimaryLight,
+                          fontSize: 12,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -537,25 +591,37 @@ class _AirportTransfersHistoryViewState
               ],
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
+            Divider(
+              height: 1,
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            ),
+            const SizedBox(height: 10),
 
-            // Bottom Row: Chauffeur notice & Grand Total
+            // 4. Bottom Row: Amount Paid & Grand Total
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Row(
                   children: [
                     Icon(
-                      Icons.person_pin_circle_rounded,
-                      size: 14,
-                      color: AppColors.primaryGold,
+                      Icons.payments_outlined,
+                      size: 15,
+                      color: isDark
+                          ? AppColors.textSecondary
+                          : AppColors.textSecondaryLight,
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 6),
                     Text(
-                      'Chauffeured Transfer',
+                      status == 'PENDING_PAYMENT'
+                          ? 'Total Amount'
+                          : 'Total Paid',
                       style: AppTextStyles.labelSmall.copyWith(
-                        color: AppColors.primaryGold,
+                        color: isDark
+                            ? AppColors.textSecondary
+                            : AppColors.textSecondaryLight,
                         fontWeight: FontWeight.w600,
+                        fontSize: 12,
                       ),
                     ),
                   ],
@@ -565,6 +631,7 @@ class _AirportTransfersHistoryViewState
                   style: AppTextStyles.titleMedium.copyWith(
                     color: AppColors.primaryGold,
                     fontWeight: FontWeight.bold,
+                    fontSize: 15,
                   ),
                 ),
               ],

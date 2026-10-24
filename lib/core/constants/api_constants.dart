@@ -125,6 +125,8 @@ abstract final class ApiConstants {
   static const String airportTransferMyBookings = '/airport-transfers/my-bookings';
   static String airportTransferBookingDetails(String id) => '/airport-transfers/my-bookings/$id';
   static String airportTransferCancel(String id) => '/airport-transfers/my-bookings/$id/cancel';
+  static String airportTransferVerifyPayment(String id) => '/airport-transfers/my-bookings/$id/verify-payment';
+  static String airportTransferPay(String id) => '/airport-transfers/my-bookings/$id/pay';
 
   // ── Helpers ───────────────────────────────────────────────
   static String fullUrl(String path) {

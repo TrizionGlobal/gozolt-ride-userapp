@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/router/route_names.dart';
+import '../../../history/presentation/providers/history_providers.dart';
+import '../../../home/presentation/providers/home_providers.dart';
 
-class AirportTransferConfirmationScreen extends StatelessWidget {
+class AirportTransferConfirmationScreen extends ConsumerWidget {
   final String bookingId;
   final String paymentMethod;
   final String paymentStatus;
@@ -18,12 +22,12 @@ class AirportTransferConfirmationScreen extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final qrData = '''
 GOZOLT AIRPORT TRANSFER
-Booking Reference: $bookingId
+Service ID: $bookingId
 Payment Method: $paymentMethod
 Payment Status: $paymentStatus
 Status: Booking Confirmed
@@ -70,7 +74,7 @@ Status: Booking Confirmed
                       Text(
                         'Transfer Booked!',
                         textAlign: TextAlign.center,
-                        style: AppTextStyles.headlineMedium.copyWith(
+                        style: AppTextStyles.headlineSmall.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -78,7 +82,7 @@ Status: Booking Confirmed
                       Text(
                         'Your airport transfer has been booked! Your chauffeur will meet you at your pickup location and drop you off at your chosen destination.',
                         textAlign: TextAlign.center,
-                        style: AppTextStyles.bodyMedium.copyWith(
+                        style: AppTextStyles.bodySmall.copyWith(
                           color: isDark
                               ? AppColors.textSecondary
                               : AppColors.textSecondaryLight,
@@ -103,8 +107,8 @@ Status: Booking Confirmed
                         child: Column(
                           children: [
                             Text(
-                              'BOOKING REFERENCE',
-                              style: AppTextStyles.bodySmall.copyWith(
+                              'SERVICE ID',
+                              style: AppTextStyles.labelSmall.copyWith(
                                 color: AppColors.primaryGold,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 0.7,
@@ -114,8 +118,8 @@ Status: Booking Confirmed
                             Text(
                               bookingId,
                               textAlign: TextAlign.center,
-                              style: AppTextStyles.titleLarge.copyWith(
-                                fontWeight: FontWeight.w800,
+                              style: AppTextStyles.titleMedium.copyWith(
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                             const SizedBox(height: 14),
@@ -226,19 +230,23 @@ Status: Booking Confirmed
                         width: double.infinity,
                         height: 48,
                         child: ElevatedButton(
-                          onPressed: () => context.go('/my-rides'),
+                          onPressed: () {
+                            ref.read(historyTabSelectionProvider.notifier).state = 4;
+                            ref.read(homeTabIndexProvider.notifier).state = 1;
+                            context.goNamed(RouteNames.home);
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryGold,
-                            foregroundColor: Colors.white,
+                            foregroundColor: Colors.black,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(14),
                             ),
                           ),
                           child: Text(
                             'View My Transfers',
                             style: AppTextStyles.labelLarge.copyWith(
-                              color: Colors.white,
+                              color: Colors.black,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -249,13 +257,13 @@ Status: Booking Confirmed
                         width: double.infinity,
                         height: 48,
                         child: OutlinedButton(
-                          onPressed: () => context.go('/home'),
+                          onPressed: () => context.goNamed(RouteNames.home),
                           style: OutlinedButton.styleFrom(
                             side: BorderSide(
                               color: isDark ? AppColors.borderDark : Colors.grey.shade400,
                             ),
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(14),
                             ),
                           ),
                           child: Text(
@@ -323,13 +331,17 @@ class _ConfirmationRow extends StatelessWidget {
                   color: isDark
                       ? AppColors.textSecondary
                       : AppColors.textSecondaryLight,
+                  fontWeight: FontWeight.w400,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 value,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  fontWeight: FontWeight.w600,
+                style: AppTextStyles.bodySmall.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: isDark
+                      ? AppColors.textPrimary
+                      : AppColors.textPrimaryLight,
                 ),
               ),
             ],

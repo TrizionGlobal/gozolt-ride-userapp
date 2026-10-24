@@ -288,7 +288,7 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
                         Padding(
                           padding: const EdgeInsets.only(bottom: 8),
                           child: Text(
-                            'LEG 1: OUTBOUND TRANSFER',
+                            'LEG 1: DEPARTURE TRANSFER',
                             style: AppTextStyles.bodySmall.copyWith(
                               color: const Color(0xFF43A047),
                               fontWeight: FontWeight.w700,
@@ -360,7 +360,7 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
                           child: Text(
                             'LEG 2: RETURN TRANSFER',
                             style: AppTextStyles.bodySmall.copyWith(
-                              color: const Color(0xFF5C6BC0),
+                              color: const Color(0xFF43A047),
                               fontWeight: FontWeight.w700,
                               letterSpacing: 0.5,
                             ),
@@ -369,8 +369,8 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
                         _JourneyLocationRow(
                           isDark: isDark,
                           icon: Icons.radio_button_checked,
-                          iconColor: const Color(0xFF5C6BC0),
-                          label: 'RETURN PICKUP',
+                          iconColor: const Color(0xFF43A047),
+                          label: 'PICKUP',
                           value: draft.dropoffLocation?.address ??
                               'Return pickup location',
                         ),
@@ -393,7 +393,7 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
                           isDark: isDark,
                           icon: Icons.location_on_rounded,
                           iconColor: const Color(0xFFE15B5B),
-                          label: 'RETURN DROP-OFF',
+                          label: 'DROP-OFF',
                           value: draft.pickupLocation?.address ??
                               'Return destination',
                         ),
@@ -479,12 +479,26 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
                           value: vehicle.formattedOneWayPrice,
                         ),
                         const SizedBox(height: 10),
-                        _PriceRow(
-                          isDark: isDark,
-                          label: 'Round-trip Discount',
-                          value: '5% applied',
-                        ),
-                        const SizedBox(height: 10),
+                        if (vehicle.roundTripDiscount > 0) ...[
+                          Builder(
+                            builder: (context) {
+                              final discountMultiplier = (1.0 - vehicle.roundTripDiscount / 100.0);
+                              final oneWay = vehicle.oneWayFare ?? (vehicle.displayPrice / (2 * discountMultiplier));
+                              final discountAmount = ((oneWay * 2) - vehicle.displayPrice).clamp(0.0, double.infinity);
+                              final symbol = (vehicle.currency == 'EUR' || vehicle.currency.isEmpty) ? '€' : vehicle.currency;
+                              return Column(
+                                children: [
+                                  _PriceRow(
+                                    isDark: isDark,
+                                    label: 'Round-trip Discount',
+                                    value: '-$symbol${discountAmount.toStringAsFixed(2)} (${vehicle.roundTripDiscount.toStringAsFixed(0)}% off)',
+                                  ),
+                                  const SizedBox(height: 10),
+                                ],
+                              );
+                            },
+                          ),
+                        ],
                       ],
                       _PriceRow(
                         isDark: isDark,

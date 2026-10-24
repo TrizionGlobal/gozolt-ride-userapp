@@ -65,9 +65,7 @@ class _AirportTransferPassengerDetailsScreenState
         ? saved.email
         : (profile?.email?.trim().isNotEmpty == true ? profile!.email!.trim() : '');
 
-    final initialWhatsApp = saved.whatsAppNumber.isNotEmpty
-        ? saved.whatsAppNumber
-        : (saved.phoneNumber.isNotEmpty ? saved.phoneNumber : initialPhone);
+    final initialWhatsApp = saved.whatsAppNumber;
 
     _fullNameController = TextEditingController(text: initialName);
 
@@ -92,7 +90,7 @@ class _AirportTransferPassengerDetailsScreenState
     _terminalController = TextEditingController(text: saved.arrivalTerminal);
 
     _welcomeSignController = TextEditingController(
-      text: saved.welcomeSignName.isNotEmpty ? saved.welcomeSignName : initialName,
+      text: saved.welcomeSignName,
     );
 
     _meetInstructionsController = TextEditingController(
@@ -104,6 +102,8 @@ class _AirportTransferPassengerDetailsScreenState
     );
 
     _meetAndGreetRequired = saved.meetAndGreetRequired;
+    _sameAsPhone = saved.whatsAppNumber.isNotEmpty &&
+        saved.whatsAppNumber == (saved.phoneNumber.isNotEmpty ? saved.phoneNumber : initialPhone);
   }
 
   @override
@@ -133,17 +133,15 @@ class _AirportTransferPassengerDetailsScreenState
       fullName: _fullNameController.text.trim(),
       phoneNumber: _phoneController.text.trim(),
       email: _emailController.text.trim(),
-      whatsAppNumber: _whatsAppController.text.trim().isNotEmpty
-          ? _whatsAppController.text.trim()
-          : _phoneController.text.trim(),
+      whatsAppNumber: _sameAsPhone
+          ? _phoneController.text.trim()
+          : _whatsAppController.text.trim(),
       nationality: _nationalityController.text.trim(),
       flightNumber: _flightNumberController.text.trim(),
       airline: _airlineController.text.trim(),
       arrivalTerminal: _terminalController.text.trim(),
       meetAndGreetRequired: _meetAndGreetRequired,
-      welcomeSignName: _welcomeSignController.text.trim().isNotEmpty
-          ? _welcomeSignController.text.trim()
-          : _fullNameController.text.trim(),
+      welcomeSignName: _welcomeSignController.text.trim(),
       meetAndGreetInstructions: _meetInstructionsController.text.trim(),
       specialAssistance: _assistanceController.text.trim(),
     );
@@ -330,7 +328,9 @@ class _AirportTransferPassengerDetailsScreenState
                               _sameAsPhone = selected ?? false;
 
                               if (_sameAsPhone) {
-                                _whatsAppController.text = _phoneController.text;
+                                _whatsAppController.text = _phoneController.text.trim();
+                              } else {
+                                _whatsAppController.clear();
                               }
                             });
                           },
@@ -417,32 +417,46 @@ class _AirportTransferPassengerDetailsScreenState
                     title: 'MEET & GREET',
                     icon: Icons.waving_hand_outlined,
                     children: [
-                      Material(
-                        color: Colors.transparent,
-                        child: SwitchListTile(
-                          value: _meetAndGreetRequired,
-                          contentPadding: EdgeInsets.zero,
-                          activeThumbColor: AppColors.primaryGold,
-                          title: Text(
-                            'Use Meet & Greet',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              fontWeight: FontWeight.w600,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Use Meet & Greet',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Included with this transfer',
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: isDark
+                                        ? AppColors.textSecondary
+                                        : AppColors.textSecondaryLight,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          subtitle: Text(
-                            'Included with this transfer',
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: isDark
-                                  ? AppColors.textSecondary
-                                  : AppColors.textSecondaryLight,
+                          Transform.scale(
+                            scale: 0.7,
+                            child: Switch.adaptive(
+                              value: _meetAndGreetRequired,
+                              onChanged: (value) {
+                                HapticFeedback.selectionClick();
+                                setState(() {
+                                  _meetAndGreetRequired = value;
+                                });
+                              },
+                              activeTrackColor: AppColors.primaryGold,
+                              inactiveTrackColor:
+                                  Theme.of(context).dividerTheme.color,
                             ),
                           ),
-                          onChanged: (value) {
-                            setState(() {
-                              _meetAndGreetRequired = value;
-                            });
-                          },
-                        ),
+                        ],
                       ),
                       if (_meetAndGreetRequired) ...[
                         const SizedBox(height: 10),
@@ -458,14 +472,7 @@ class _AirportTransferPassengerDetailsScreenState
                             CapitalizeWordsFormatter(),
                           ],
                           textInputAction: TextInputAction.next,
-                          validator: (value) {
-                            if (_meetAndGreetRequired &&
-                                (value == null || value.trim().isEmpty)) {
-                              return 'Enter the name for the welcome sign';
-                            }
-
-                            return null;
-                          },
+                          validator: null,
                         ),
                         const SizedBox(height: 12),
                         _buildField(

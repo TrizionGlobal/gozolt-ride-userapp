@@ -71,6 +71,8 @@ class AirportTransferRemoteDatasource {
     String? specialRequests,
     String? paymentMethod,
     String? paymentMethodId,
+    double? totalAmount,
+    double? discount,
   }) async {
     try {
       final payload = {
@@ -97,6 +99,8 @@ class AirportTransferRemoteDatasource {
         if (specialRequests != null && specialRequests.isNotEmpty) 'specialRequests': specialRequests,
         'paymentMethod': paymentMethod ?? 'CARD',
         if (paymentMethodId != null) 'paymentMethodId': paymentMethodId,
+        if (totalAmount != null) 'totalAmount': totalAmount,
+        if (discount != null) 'discount': discount,
       };
 
       final response = await _dio.post(
@@ -145,6 +149,42 @@ class AirportTransferRemoteDatasource {
         throw Exception(message);
       }
       throw Exception('Failed to cancel transfer booking: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> verifyPayment(String id) async {
+    try {
+      final response = await _dio.get(ApiConstants.airportTransferVerifyPayment(id));
+      return response.data as Map<String, dynamic>;
+    } catch (e) {
+      if (e is DioException) {
+        final message = e.response?.data?['message'] ?? 'Failed to verify transfer payment';
+        throw Exception(message);
+      }
+      throw Exception('Failed to verify transfer payment: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> processPayment(
+    String id, {
+    required String paymentMethod,
+    String? paymentMethodId,
+  }) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.airportTransferPay(id),
+        data: {
+          'paymentMethod': paymentMethod,
+          if (paymentMethodId != null) 'paymentMethodId': paymentMethodId,
+        },
+      );
+      return response.data as Map<String, dynamic>;
+    } catch (e) {
+      if (e is DioException) {
+        final message = e.response?.data?['message'] ?? 'Failed to process transfer payment';
+        throw Exception(message);
+      }
+      throw Exception('Failed to process transfer payment: $e');
     }
   }
 }

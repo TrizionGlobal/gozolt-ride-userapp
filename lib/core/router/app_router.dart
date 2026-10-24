@@ -60,6 +60,8 @@ import '../../features/airport_transfer/presentation/screens/airport_transfer_de
 import '../../features/airport_transfer/presentation/screens/airport_transfer_passenger_details_screen.dart';
 import '../../features/airport_transfer/presentation/screens/airport_transfer_review_screen.dart';
 import '../../features/airport_transfer/presentation/screens/airport_transfer_confirmation_screen.dart';
+import '../../features/airport_transfer/presentation/screens/airport_transfer_payment_confirmation_screen.dart';
+import '../../features/airport_transfer/presentation/screens/airport_transfer_payment_failure_screen.dart';
 import '../../features/history/presentation/screens/airport_transfer_history_details_screen.dart';
 
 // Quick Services
@@ -396,6 +398,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/home',
         name: RouteNames.home,
         builder: (context, state) => const NavigationShell(),
+      ),
+
+      GoRoute(
+        path: '/my-rides',
+        name: RouteNames.myRides,
+        redirect: (context, state) => '/home',
       ),
 
       // ── Ride Booking Flow ─────────────────────────────────
@@ -1344,6 +1352,49 @@ final routerProvider = Provider<GoRouter>((ref) {
                 child: child,
               );
             },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/airport-transfer-payment-confirmation',
+        name: RouteNames.airportTransferPaymentConfirmation,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final q = state.uri.queryParameters;
+          final amountVal = extra['amount'] ?? q['amount'];
+          return AirportTransferPaymentConfirmationScreen(
+            bookingId: extra['bookingId']?.toString() ?? q['bookingId'] ?? '',
+            serviceTitle: extra['serviceTitle']?.toString() ?? q['serviceTitle'] ?? 'Airport Transfer',
+            amount: (amountVal is num)
+                ? amountVal.toDouble()
+                : (double.tryParse(amountVal?.toString() ?? '0') ?? 0.0),
+            paymentMethod: extra['paymentMethod']?.toString() ?? q['paymentMethod'] ?? 'Online Payment (Stripe)',
+            stripePaymentIntentId: extra['stripePaymentIntentId']?.toString() ?? q['paymentIntentId'],
+            pickupLocation: extra['pickupLocation']?.toString() ?? q['pickupLocation'],
+            dropoffLocation: extra['dropoffLocation']?.toString() ?? q['dropoffLocation'],
+            onDone: extra['onDone'] as VoidCallback?,
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/airport-transfer-payment-failure',
+        name: RouteNames.airportTransferPaymentFailure,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final q = state.uri.queryParameters;
+          final amountVal = extra['amount'] ?? q['amount'];
+          return AirportTransferPaymentFailureScreen(
+            bookingId: extra['bookingId']?.toString() ?? q['bookingId'] ?? '',
+            bookingReference: extra['bookingReference']?.toString() ?? q['bookingReference'],
+            serviceTitle: extra['serviceTitle']?.toString() ?? q['serviceTitle'] ?? 'Airport Transfer',
+            amount: (amountVal is num)
+                ? amountVal.toDouble()
+                : (double.tryParse(amountVal?.toString() ?? '0') ?? 0.0),
+            errorMessage: extra['errorMessage']?.toString() ?? q['errorMessage'],
+            onRetry: extra['onRetry'] as VoidCallback?,
+            onCancel: extra['onCancel'] as VoidCallback?,
           );
         },
       ),

@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -15,10 +17,9 @@ import '../../../ride/presentation/providers/ride_providers.dart';
 import '../../../rewards/presentation/providers/rewards_providers.dart';
 import '../../../home/presentation/providers/home_providers.dart';
 import '../widgets/airport_transfer_header.dart';
+import '../widgets/airport_transfer_payment_sheet.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../core/widgets/booking_payment_sheet.dart';
-import '../../../ride/data/models/saved_payment_method.dart';
 import '../../../../core/constants/asset_paths.dart';
 
 class AirportTransferReviewScreen extends ConsumerStatefulWidget {
@@ -30,60 +31,83 @@ class AirportTransferReviewScreen extends ConsumerStatefulWidget {
 }
 
 class _AirportTransferReviewScreenState
-    extends ConsumerState<AirportTransferReviewScreen> {
+    extends ConsumerState<AirportTransferReviewScreen>
+    with WidgetsBindingObserver {
   bool _acceptTerms = false;
   bool _acceptPrivacy = false;
   bool _showAgreementError = false;
   bool _isBooking = false;
   bool _useGoCoins = false;
 
-  String _formatDateAndTime(
-    BuildContext context,
-    DateTime? date,
-    String? storedTime,
-  ) {
-    if (date == null) return 'Not selected';
 
-    final formattedDate = DateFormat('dd MMM yyyy').format(date);
 
-    if (storedTime == null || storedTime.isEmpty) {
-      return formattedDate;
-    }
-
-    final parts = storedTime.split(':');
-
-    if (parts.length != 2) {
-      return '$formattedDate, $storedTime';
-    }
-
-    final hour = int.tryParse(parts[0]);
-    final minute = int.tryParse(parts[1]);
-
-    if (hour == null || minute == null) {
-      return '$formattedDate, $storedTime';
-    }
-
-    final formattedTime = MaterialLocalizations.of(context).formatTimeOfDay(
-      TimeOfDay(
-        hour: hour,
-        minute: minute,
-      ),
-      alwaysUse24HourFormat: true,
-    );
-
-    return '$formattedDate, $formattedTime';
-  }
-
-  PaymentMethodType _paymentMethodType = PaymentMethodType.cash;
+  AirportPaymentOption _paymentOption = AirportPaymentOption.card;
   String? _selectedCardId;
+  String? _pendingBookingId;
+  String? _pendingBookingReference;
+  double _pendingAmount = 0.0;
+  Timer? _pollingTimer;
 
   static final Uri _termsUrl = Uri.parse(
-    'https://gozolt.com.mt/terms-and-conditions',
+    'https://sites.google.com/view/gozoltlegal-supplier/terms-of-service',
   );
 
   static final Uri _privacyUrl = Uri.parse(
-    'https://gozolt.com.mt/privacy-policy',
+    'https://sites.google.com/view/gozoltlegal-supplier/privacy-policy',
   );
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _pollingTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _pendingBookingId != null) {
+      _verifyPendingOnlinePayment();
+    }
+  }
+
+  Future<void> _verifyPendingOnlinePayment() async {
+    if (_pendingBookingId == null || !mounted) return;
+    try {
+      final res = await ref
+          .read(airportTransferRemoteDatasourceProvider)
+          .verifyPayment(_pendingBookingId!);
+      if (res['isPaid'] == true && mounted) {
+        _pollingTimer?.cancel();
+        final bookingRef = _pendingBookingReference ?? _pendingBookingId!;
+        final amountPaid = (res['amount'] is num)
+            ? (res['amount'] as num).toDouble()
+            : _pendingAmount;
+        _pendingBookingId = null;
+
+        // Clean up draft and state
+        ref.read(airportTransferDraftProvider.notifier).reset();
+        ref.read(airportTransferPassengerDetailsProvider.notifier).reset();
+        ref.read(selectedAirportTransferVehicleProvider.notifier).clear();
+
+        context.pushReplacementNamed(
+          RouteNames.airportTransferPaymentConfirmation,
+          extra: <String, dynamic>{
+            'bookingId': bookingRef,
+            'amount': amountPaid,
+            'paymentMethod': 'Online Payment (Stripe)',
+            'stripePaymentIntentId': res['stripePaymentIntentId']?.toString(),
+            'serviceTitle': 'Airport Transfer',
+          },
+        );
+      }
+    } catch (_) {}
+  }
 
   Future<void> _openLegalPage(Uri url) async {
     final opened = await launchUrl(
@@ -104,48 +128,41 @@ class _AirportTransferReviewScreenState
     }
   }
 
-  Future<void> _proceedToPayment() async {
+  Future<void> _proceedToPayment(double totalAmount) async {
     if (_isBooking) return;
 
-    var paymentConfirmed = false;
-
-    await showModalBottomSheet<void>(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {
-        return BookingPaymentSheet(
-          currentType: _paymentMethodType,
-          currentCardId: _selectedCardId,
-          onConfirm: (
-            PaymentMethodType type, {
-            String? cardId,
-          }) async {
-            if (!mounted) return false;
-
+        return AirportTransferPaymentSheet(
+          amount: totalAmount,
+          initialCardId: _selectedCardId,
+          initialOption: _paymentOption,
+          onConfirm: (option, {cardId}) async {
             setState(() {
-              _paymentMethodType = type;
-              _selectedCardId = type == PaymentMethodType.card ? cardId : null;
+              _paymentOption = option;
+              _selectedCardId = cardId;
             });
-
-            paymentConfirmed = true;
-            return true;
+            return await _processBooking(option, cardId: cardId, totalAmount: totalAmount);
           },
         );
       },
     );
-
-    if (paymentConfirmed && mounted) {
-      await _bookTransfer();
-    }
   }
 
-  Future<void> _bookTransfer() async {
-    if (_isBooking) return;
-
+  Future<bool> _processBooking(
+    AirportPaymentOption option, {
+    String? cardId,
+    required double totalAmount,
+  }) async {
     setState(() {
       _isBooking = true;
     });
+
+    String? createdBookingId;
+    String? createdBookingRef;
 
     try {
       final draft = ref.read(airportTransferDraftProvider);
@@ -169,7 +186,13 @@ class _AirportTransferReviewScreenState
         final parts = draft.pickupTime!.split(':');
         final h = int.tryParse(parts[0]) ?? 12;
         final m = int.tryParse(parts[1]) ?? 0;
-        scheduledPickup = DateTime(scheduledPickup.year, scheduledPickup.month, scheduledPickup.day, h, m);
+        scheduledPickup = DateTime(
+          scheduledPickup.year,
+          scheduledPickup.month,
+          scheduledPickup.day,
+          h,
+          m,
+        );
       }
 
       DateTime? scheduledReturn;
@@ -179,38 +202,57 @@ class _AirportTransferReviewScreenState
           final parts = draft.returnTime!.split(':');
           final h = int.tryParse(parts[0]) ?? 12;
           final m = int.tryParse(parts[1]) ?? 0;
-          scheduledReturn = DateTime(scheduledReturn.year, scheduledReturn.month, scheduledReturn.day, h, m);
+          scheduledReturn = DateTime(
+            scheduledReturn.year,
+            scheduledReturn.month,
+            scheduledReturn.day,
+            h,
+            m,
+          );
         }
       }
 
-      // Ensure passenger contact details are non-empty for API validation
-      final profileName = '${userProfile?.firstName ?? ''} ${userProfile?.lastName ?? ''}'.trim();
+      final profileName =
+          '${userProfile?.firstName ?? ''} ${userProfile?.lastName ?? ''}'.trim();
       final leadName = passenger.fullName.trim().isNotEmpty
           ? passenger.fullName.trim()
           : (profileName.isNotEmpty ? profileName : 'Guest Passenger');
       final leadEmail = passenger.email.trim().isNotEmpty
           ? passenger.email.trim()
-          : (userProfile?.email?.trim().isNotEmpty == true ? userProfile!.email!.trim() : 'passenger@gozolt.com');
+          : (userProfile?.email?.trim().isNotEmpty == true
+              ? userProfile!.email!.trim()
+              : 'passenger@gozolt.com');
       final leadPhone = passenger.phoneNumber.trim().isNotEmpty
           ? passenger.phoneNumber.trim()
-          : (userProfile?.phone?.trim().isNotEmpty == true ? userProfile!.phone!.trim() : '+356 7900 0000');
+          : (userProfile?.phone?.trim().isNotEmpty == true
+              ? userProfile!.phone!.trim()
+              : '+356 7900 0000');
 
-      final resolvedFlightNumber = passenger.flightNumber.isNotEmpty ? passenger.flightNumber : draft.flightNumber;
+      final resolvedFlightNumber = passenger.flightNumber.isNotEmpty
+          ? passenger.flightNumber
+          : draft.flightNumber;
       final detailedNotes = [
         if (passenger.nationality.isNotEmpty) 'Nationality: ${passenger.nationality}',
         if (passenger.whatsAppNumber.isNotEmpty) 'WhatsApp: ${passenger.whatsAppNumber}',
         if (passenger.airline.isNotEmpty) 'Airline: ${passenger.airline}',
         if (passenger.arrivalTerminal.isNotEmpty) 'Terminal: ${passenger.arrivalTerminal}',
-        if (passenger.meetAndGreetRequired) 'Meet & Greet Sign: "${passenger.welcomeSignName.isNotEmpty ? passenger.welcomeSignName : leadName}"',
-        if (passenger.meetAndGreetInstructions.isNotEmpty) 'Meet Instructions: ${passenger.meetAndGreetInstructions}',
-        if (passenger.specialAssistance.isNotEmpty) 'Special Assistance: ${passenger.specialAssistance}',
+        if (passenger.meetAndGreetRequired)
+          'Meet & Greet Sign: "${passenger.welcomeSignName.isNotEmpty ? passenger.welcomeSignName : leadName}"',
+        if (passenger.meetAndGreetInstructions.isNotEmpty)
+          'Meet Instructions: ${passenger.meetAndGreetInstructions}',
+        if (passenger.specialAssistance.isNotEmpty)
+          'Special Assistance: ${passenger.specialAssistance}',
       ].join(' | ');
+
+      final paymentMethodStr =
+          option == AirportPaymentOption.card ? 'CARD' : 'ONLINE';
 
       final res = await datasource.createBooking(
         vehicleId: vehicle.id,
         transferType: draft.isRoundTrip ? 'ROUND_TRIP' : 'ONE_WAY',
         flightNumber: resolvedFlightNumber.isNotEmpty ? resolvedFlightNumber : null,
-        returnFlightNumber: draft.returnFlightNumber.isNotEmpty ? draft.returnFlightNumber : null,
+        returnFlightNumber:
+            draft.returnFlightNumber.isNotEmpty ? draft.returnFlightNumber : null,
         pickupLocation: draft.pickupLocation!.address,
         dropoffLocation: draft.dropoffLocation!.address,
         pickupLat: draft.pickupLocation!.latitude,
@@ -228,50 +270,93 @@ class _AirportTransferReviewScreenState
         leadPassengerEmail: leadEmail,
         leadPassengerPhone: leadPhone,
         specialRequests: detailedNotes.isNotEmpty ? detailedNotes : null,
-        paymentMethod: _paymentMethodType == PaymentMethodType.cash ? 'CASH' : 'CARD',
-        paymentMethodId: _selectedCardId,
+        paymentMethod: paymentMethodStr,
+        paymentMethodId: option == AirportPaymentOption.card ? cardId : null,
+        totalAmount: totalAmount,
       );
 
-      final bookingReference = res['bookingReference']?.toString() ??
+      createdBookingId = res['id']?.toString();
+      createdBookingRef = res['bookingReference']?.toString() ??
           'GZLT-TRF-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
 
-      final paymentMethod =
-          _paymentMethodType == PaymentMethodType.cash ? 'Cash' : 'Card';
+      if (option == AirportPaymentOption.card) {
+        // Saved Card charged successfully
+        ref.read(airportTransferDraftProvider.notifier).reset();
+        ref.read(airportTransferPassengerDetailsProvider.notifier).reset();
+        ref.read(selectedAirportTransferVehicleProvider.notifier).clear();
 
-      final paymentStatus = _paymentMethodType == PaymentMethodType.cash
-          ? 'Pay after ride completion'
-          : 'Card payment is successfull';
+        if (mounted) {
+          context.pushReplacementNamed(
+            RouteNames.airportTransferPaymentConfirmation,
+            extra: <String, dynamic>{
+              'bookingId': createdBookingRef,
+              'amount': totalAmount,
+              'paymentMethod': 'Saved Card',
+              'stripePaymentIntentId': res['stripePaymentIntentId']?.toString(),
+              'pickupLocation': draft.pickupLocation!.address,
+              'dropoffLocation': draft.dropoffLocation!.address,
+              'serviceTitle': '${vehicle.make} ${vehicle.model} Transfer',
+            },
+          );
+        }
+        return true;
+      } else {
+        // Online Payment - Launch Stripe Checkout
+        final checkoutUrl = res['checkoutUrl']?.toString();
+        if (checkoutUrl != null) {
+          final uri = Uri.parse(checkoutUrl);
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          }
+        }
 
-      // Clean up draft and selection state
-      ref.read(airportTransferDraftProvider.notifier).reset();
-      ref.read(airportTransferPassengerDetailsProvider.notifier).reset();
-      ref.read(selectedAirportTransferVehicleProvider.notifier).clear();
+        _pendingBookingId = createdBookingId;
+        _pendingBookingReference = createdBookingRef;
+        _pendingAmount = totalAmount;
 
-      if (!mounted) return;
+        // Start polling verification
+        _pollingTimer?.cancel();
+        _pollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+          if (timer.tick > 50) {
+            timer.cancel();
+          } else {
+            _verifyPendingOnlinePayment();
+          }
+        });
 
-      context.pushReplacementNamed(
-        RouteNames.airportTransferConfirmation,
-        extra: <String, dynamic>{
-          'bookingId': bookingReference,
-          'paymentMethod': paymentMethod,
-          'paymentStatus': paymentStatus,
-        },
-      );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Opening secure Stripe Checkout... Please complete your payment.',
+              ),
+              backgroundColor: AppColors.success,
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+        return true;
+      }
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted) return false;
 
       final message = error.toString().replaceFirst('Exception: ', '');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            message.isNotEmpty ? message : 'Unable to create the transfer booking. Please try again.',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: Colors.white,
-            ),
-          ),
-          backgroundColor: AppColors.error,
-        ),
+
+      // Navigate to Payment Failure screen with retry options
+      context.pushNamed(
+        RouteNames.airportTransferPaymentFailure,
+        extra: <String, dynamic>{
+          'bookingId': createdBookingId ?? '',
+          'bookingReference': createdBookingRef ?? '',
+          'amount': totalAmount,
+          'errorMessage': message,
+          'serviceTitle': 'Airport Transfer',
+          'onRetry': () {
+            _proceedToPayment(totalAmount);
+          },
+        },
       );
+      return false;
     } finally {
       if (mounted) {
         setState(() {
@@ -284,11 +369,6 @@ class _AirportTransferReviewScreenState
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final rewardsAsync = ref.watch(userRewardsPointsProvider);
-
-    final rewardSummaryAsync = ref.watch(rewardSummaryProvider);
-    final rewardRulesAsync = ref.watch(rewardRulesProvider);
-
     final draft = ref.watch(airportTransferDraftProvider);
 
     final passenger = ref.watch(
@@ -321,39 +401,47 @@ class _AirportTransferReviewScreenState
     }
 
     // Distance-based dynamic airport transfer fare calculation.
-    final double oneWayFare = vehicle.oneWayFare ?? (draft.isRoundTrip ? (vehicle.displayPrice / (2 * 0.95)) : vehicle.displayPrice);
+    final double discountMultiplier = vehicle.roundTripDiscount > 0
+        ? (1.0 - vehicle.roundTripDiscount / 100.0)
+        : 1.0;
+    final double oneWayFare = vehicle.oneWayFare ??
+        (draft.isRoundTrip
+            ? (vehicle.displayPrice / (2 * discountMultiplier))
+            : vehicle.displayPrice);
     final double subtotal = vehicle.displayPrice;
-    final double returnFare = draft.isRoundTrip ? (subtotal - oneWayFare) : 0.0;
+    final double returnFare = draft.isRoundTrip ? oneWayFare : 0.0;
+    final double roundTripDiscountAmount = draft.isRoundTrip && vehicle.roundTripDiscount > 0
+        ? ((oneWayFare * 2) - subtotal).clamp(0.0, double.infinity)
+        : 0.0;
 
-    // GO Coins calculation.
-    final int availableCoins = rewardsAsync.value ??
-        rewardSummaryAsync.value?.currentPoints.toInt() ??
-        0;
+    // GoCoins logic (standardized with Car Rental and Quick Services)
+    final rewardSummary = ref.watch(rewardSummaryProvider).value;
+    final int balance = (rewardSummary?.currentPoints.toInt() ?? 0) > 0
+        ? rewardSummary!.currentPoints.toInt()
+        : (ref.watch(userRewardsPointsProvider).value ?? 0);
 
-    final double conversionRate =
-        rewardRulesAsync.value?.redemption.pointsToEurRatio.toDouble() ?? 400.0;
+    final int conversionRate =
+        (ref.watch(rewardRulesProvider).value?.redemption.pointsToEurRatio ?? 400.0).toInt();
 
-    final int minimumPoints =
-        rewardRulesAsync.value?.redemption.minimumPoints ?? 200;
+    final double maxEurValue = conversionRate > 0 ? (balance / conversionRate) : 0.0;
+    final double appliedEurValue = maxEurValue > subtotal ? subtotal : maxEurValue;
+    final int coinsUsed = (appliedEurValue * conversionRate).round();
 
-    final bool canUseGoCoins = availableCoins >= minimumPoints && subtotal > 0;
-
-    final double maximumCoinValue = availableCoins / conversionRate;
-
-    final double applicableCoinValue =
-        maximumCoinValue > subtotal ? subtotal : maximumCoinValue;
-
-    final double goCoinsDiscount =
-        _useGoCoins && canUseGoCoins ? applicableCoinValue : 0.0;
-
-    final int coinsUsed = (goCoinsDiscount * conversionRate).round();
-
-    final double finalTotal = subtotal - goCoinsDiscount;
+    final double discount = _useGoCoins && balance > 0 ? appliedEurValue : 0.0;
+    final double finalTotal = (subtotal - discount).clamp(0.0, double.infinity);
 
     String formatAmount(double amount) {
       final symbol = (vehicle.currency == 'EUR' || vehicle.currency.isEmpty) ? '€' : vehicle.currency;
       return '$symbol${amount.toStringAsFixed(2)}';
     }
+
+    final pickupDate = draft.pickupDate == null
+        ? 'Date not selected'
+        : DateFormat('dd MMM yyyy').format(draft.pickupDate!);
+
+    final returnDate = draft.returnDate == null
+        ? 'Date not selected'
+        : DateFormat('dd MMM yyyy').format(draft.returnDate!);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -368,53 +456,9 @@ class _AirportTransferReviewScreenState
               children: [
                 _ReviewCard(
                   isDark: isDark,
-                  title: draft.isRoundTrip ? 'JOURNEY (ROUND TRIP)' : 'JOURNEY (ONE WAY)',
+                  title: 'JOURNEY',
                   icon: Icons.route_outlined,
                   children: [
-                    // Chauffeur service clarity notice
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryGold.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(
-                            Icons.airport_shuttle_rounded,
-                            size: 18,
-                            color: AppColors.primaryGold,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Private Chauffeur Service: The driver meets you at your pickup location, assists with luggage, and drives you to your destination. No vehicle handover or return required.',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: isDark
-                                    ? AppColors.textSecondary
-                                    : AppColors.textSecondaryLight,
-                                fontSize: 11,
-                                height: 1.35,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (draft.isRoundTrip)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          'LEG 1: OUTBOUND TRANSFER',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: const Color(0xFF43A047),
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
                     _LocationRow(
                       isDark: isDark,
                       icon: Icons.radio_button_checked,
@@ -445,83 +489,47 @@ class _AirportTransferReviewScreenState
                       value:
                           draft.dropoffLocation?.address ?? 'Drop-off location',
                     ),
-                    const SizedBox(height: 10),
-                    _ReviewRow(
-                      isDark: isDark,
-                      label: 'Pickup date & time',
-                      value: _formatDateAndTime(
-                        context,
-                        draft.pickupDate,
-                        draft.pickupTime,
-                      ),
-                      compactValue: true,
-                    ),
-                    if (draft.isRoundTrip) ...[
-                      const SizedBox(height: 10),
-                      _ReviewDivider(isDark: isDark),
-                      const SizedBox(height: 10),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          'LEG 2: RETURN TRANSFER',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: const Color(0xFF5C6BC0),
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                      _LocationRow(
-                        isDark: isDark,
-                        icon: Icons.radio_button_checked,
-                        iconColor: const Color(0xFF5C6BC0),
-                        label: 'RETURN PICKUP',
-                        value: draft.dropoffLocation?.address ??
-                            'Return pickup location',
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(
-                          left: 9,
-                        ),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Container(
-                            width: 2,
-                            height: 18,
-                            color: isDark
-                                ? AppColors.borderDark
-                                : AppColors.borderLight,
-                          ),
-                        ),
-                      ),
-                      _LocationRow(
-                        isDark: isDark,
-                        icon: Icons.location_on_rounded,
-                        iconColor: const Color(0xFFE15B5B),
-                        label: 'RETURN DROP-OFF',
-                        value: draft.pickupLocation?.address ??
-                            'Return destination',
-                      ),
-                      const SizedBox(height: 10),
-                      _ReviewRow(
-                        isDark: isDark,
-                        label: 'Return date & time',
-                        value: _formatDateAndTime(
-                          context,
-                          draft.returnDate,
-                          draft.returnTime,
-                        ),
-                        compactValue: true,
-                      ),
-                    ],
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 13),
                     _ReviewDivider(isDark: isDark),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 13),
                     _ReviewRow(
                       isDark: isDark,
                       label: 'Journey type',
-                      value: draft.isRoundTrip ? 'Round Trip (Return)' : 'One Way',
+                      value: draft.isRoundTrip ? 'Round Trip' : 'One Way',
                     ),
+                    if (draft.isRoundTrip) ...[
+                      _ReviewRow(
+                        isDark: isDark,
+                        label: 'Pickup date',
+                        value: pickupDate,
+                      ),
+                      _ReviewRow(
+                        isDark: isDark,
+                        label: 'Pickup time',
+                        value: draft.pickupTime ?? 'Not selected',
+                      ),
+                      _ReviewRow(
+                        isDark: isDark,
+                        label: 'Return date',
+                        value: returnDate,
+                      ),
+                      _ReviewRow(
+                        isDark: isDark,
+                        label: 'Return time',
+                        value: draft.returnTime ?? 'Not selected',
+                      ),
+                    ] else ...[
+                      _ReviewRow(
+                        isDark: isDark,
+                        label: 'Pickup date',
+                        value: pickupDate,
+                      ),
+                      _ReviewRow(
+                        isDark: isDark,
+                        label: 'Pickup time',
+                        value: draft.pickupTime ?? 'Not selected',
+                      ),
+                    ],
                     _ReviewRow(
                       isDark: isDark,
                       label: 'Passengers',
@@ -646,34 +654,158 @@ class _AirportTransferReviewScreenState
                   isDark: isDark,
                   title: 'PASSENGER & CONTACT',
                   icon: Icons.person_outline_rounded,
+                  action: _CardEditButton(
+                    onTap: () => Navigator.of(context).pop(),
+                  ),
                   children: [
-                    _ReviewRow(
-                      isDark: isDark,
-                      label: 'Primary passenger',
-                      value: passenger.fullName,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppColors.inputDark.withValues(alpha: 0.5)
+                            : const Color(0xFFF8F9FA),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isDark
+                              ? AppColors.borderDark
+                              : AppColors.borderLight.withValues(alpha: 0.7),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryGold.withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.person_rounded,
+                              color: AppColors.primaryGold,
+                              size: 21,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'PRIMARY PASSENGER',
+                                  style: AppTextStyles.labelSmall.copyWith(
+                                    color: isDark
+                                        ? AppColors.textSecondary
+                                        : AppColors.textSecondaryLight,
+                                    fontSize: 10,
+                                    letterSpacing: 0.6,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  passenger.fullName.isEmpty
+                                      ? 'Not provided'
+                                      : passenger.fullName,
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: isDark
+                                        ? AppColors.textPrimary
+                                        : AppColors.textPrimaryLight,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (passenger.nationality.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? AppColors.surfaceDark
+                                    : Colors.white,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: isDark
+                                      ? AppColors.borderDark
+                                      : AppColors.borderLight,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.public_rounded,
+                                    size: 13,
+                                    color: isDark
+                                        ? AppColors.textSecondary
+                                        : AppColors.textSecondaryLight,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    passenger.nationality,
+                                    style: AppTextStyles.labelSmall.copyWith(
+                                      color: isDark
+                                          ? AppColors.textPrimary
+                                          : AppColors.textPrimaryLight,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                    _ReviewRow(
+                    const SizedBox(height: 12),
+                    _ContactDetailTile(
                       isDark: isDark,
-                      label: 'Phone',
+                      icon: Icons.phone_outlined,
+                      label: 'PHONE NUMBER',
                       value: passenger.phoneNumber,
                     ),
-                    _ReviewRow(
+                    const SizedBox(height: 10),
+                    _ContactDetailTile(
                       isDark: isDark,
-                      label: 'Email',
+                      icon: Icons.email_outlined,
+                      label: 'EMAIL ADDRESS',
                       value: passenger.email,
                     ),
-                    if (passenger.whatsAppNumber.isNotEmpty)
-                      _ReviewRow(
+                    if (passenger.whatsAppNumber.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      _ContactDetailTile(
                         isDark: isDark,
-                        label: 'WhatsApp',
+                        icon: Icons.chat_outlined,
+                        label: 'WHATSAPP NUMBER',
                         value: passenger.whatsAppNumber,
+                        badge: (passenger.whatsAppNumber == passenger.phoneNumber)
+                            ? Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryGold.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  'Same as phone',
+                                  style: AppTextStyles.labelSmall.copyWith(
+                                    color: AppColors.primaryGold,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              )
+                            : null,
                       ),
-                    _ReviewRow(
-                      isDark: isDark,
-                      label: 'Nationality',
-                      value: passenger.nationality,
-                      showBottomSpacing: false,
-                    ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: 14),
@@ -681,149 +813,615 @@ class _AirportTransferReviewScreenState
                   isDark: isDark,
                   title: 'FLIGHT & MEET DETAILS',
                   icon: Icons.flight_rounded,
-                  children: [
-                    _ReviewRow(
-                      isDark: isDark,
-                      label: 'Flight number',
-                      value: passenger.flightNumber,
-                    ),
-                    if (passenger.airline.isNotEmpty)
-                      _ReviewRow(
-                        isDark: isDark,
-                        label: 'Airline',
-                        value: passenger.airline,
-                      ),
-                    if (passenger.arrivalTerminal.isNotEmpty)
-                      _ReviewRow(
-                        isDark: isDark,
-                        label: 'Terminal',
-                        value: passenger.arrivalTerminal,
-                      ),
-                    _ReviewRow(
-                      isDark: isDark,
-                      label: 'Meet & Greet',
-                      value: passenger.meetAndGreetRequired
-                          ? 'Required — Included'
-                          : 'Not required',
-                      showBottomSpacing: passenger.meetAndGreetRequired ||
-                          passenger.specialAssistance.isNotEmpty,
-                    ),
-                    if (passenger.meetAndGreetRequired) ...[
-                      _ReviewRow(
-                        isDark: isDark,
-                        label: 'Welcome sign',
-                        value: passenger.welcomeSignName,
-                      ),
-                      if (passenger.meetAndGreetInstructions.isNotEmpty)
-                        _ReviewRow(
-                          isDark: isDark,
-                          label: 'Meeting instructions',
-                          value: passenger.meetAndGreetInstructions,
-                        ),
-                    ],
-                    if (passenger.specialAssistance.isNotEmpty)
-                      _ReviewRow(
-                        isDark: isDark,
-                        label: 'Special assistance',
-                        value: passenger.specialAssistance,
-                        showBottomSpacing: false,
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Container(
-                  width: double.infinity,
-                  margin: const EdgeInsets.only(bottom: 14),
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color:
-                        isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: _useGoCoins
-                          ? AppColors.primaryGold
-                          : (isDark
-                              ? AppColors.borderDark
-                              : AppColors.borderLight),
-                      width: _useGoCoins ? 1.5 : 1,
-                    ),
+                  action: _CardEditButton(
+                    onTap: () => Navigator.of(context).pop(),
                   ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 42,
-                        height: 42,
-                        padding: const EdgeInsets.all(7),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryGold.withValues(
-                            alpha: 0.12,
-                          ),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Image.asset(
-                          AssetPaths.iconGoCoin,
-                          fit: BoxFit.contain,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? AppColors.inputDark.withValues(alpha: 0.5)
+                            : const Color(0xFFF8F9FA),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: isDark
+                              ? AppColors.borderDark
+                              : AppColors.borderLight.withValues(alpha: 0.7),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Use GO Coins',
-                              style: AppTextStyles.titleSmall.copyWith(
-                                color: isDark
-                                    ? AppColors.textPrimary
-                                    : AppColors.textPrimaryLight,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              '$availableCoins coins available',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: isDark
-                                    ? AppColors.textSecondary
-                                    : AppColors.textSecondaryLight,
-                              ),
-                            ),
-                            if (_useGoCoins && canUseGoCoins) ...[
-                              const SizedBox(height: 3),
-                              Text(
-                                'Save ${formatAmount(goCoinsDiscount)} '
-                                'using $coinsUsed coins',
-                                style: AppTextStyles.bodySmall.copyWith(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryGold.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.flight_takeoff_rounded,
+                                  size: 19,
                                   color: AppColors.primaryGold,
-                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'FLIGHT NUMBER',
+                                      style: AppTextStyles.labelSmall.copyWith(
+                                        color: isDark
+                                            ? AppColors.textSecondary
+                                            : AppColors.textSecondaryLight,
+                                        fontSize: 10,
+                                        letterSpacing: 0.6,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      passenger.flightNumber.isEmpty
+                                          ? 'Not provided'
+                                          : passenger.flightNumber,
+                                      style: AppTextStyles.bodySmall.copyWith(
+                                        color: isDark
+                                            ? AppColors.textPrimary
+                                            : AppColors.textPrimaryLight,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF4CAF50).withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: const Color(0xFF4CAF50).withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.check_circle_rounded,
+                                      size: 12,
+                                      color: Color(0xFF4CAF50),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Tracked',
+                                      style: AppTextStyles.labelSmall.copyWith(
+                                        color: const Color(0xFF4CAF50),
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
-                            if (!canUseGoCoins) ...[
-                              const SizedBox(height: 3),
-                              Text(
-                                'Minimum $minimumPoints coins required',
-                                style: AppTextStyles.bodySmall.copyWith(
+                          ),
+                          if (passenger.airline.isNotEmpty ||
+                              passenger.arrivalTerminal.isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            Divider(
+                              height: 1,
+                              color: isDark
+                                  ? AppColors.borderDark.withValues(alpha: 0.5)
+                                  : AppColors.borderLight.withValues(alpha: 0.6),
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                if (passenger.airline.isNotEmpty)
+                                  Expanded(
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.airlines_outlined,
+                                          size: 15,
+                                          color: isDark
+                                              ? AppColors.textSecondary
+                                              : AppColors.textSecondaryLight,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Airline',
+                                                style: AppTextStyles.labelSmall
+                                                    .copyWith(
+                                                  color: isDark
+                                                      ? AppColors.textSecondary
+                                                      : AppColors
+                                                          .textSecondaryLight,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w400,
+                                                ),
+                                              ),
+                                              Text(
+                                                passenger.airline,
+                                                style: AppTextStyles.bodySmall
+                                                    .copyWith(
+                                                  color: isDark
+                                                      ? AppColors.textPrimary
+                                                      : AppColors
+                                                          .textPrimaryLight,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                if (passenger.airline.isNotEmpty &&
+                                    passenger.arrivalTerminal.isNotEmpty)
+                                  const SizedBox(width: 12),
+                                if (passenger.arrivalTerminal.isNotEmpty)
+                                  Expanded(
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.meeting_room_outlined,
+                                          size: 15,
+                                          color: isDark
+                                              ? AppColors.textSecondary
+                                              : AppColors.textSecondaryLight,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Arrival Terminal',
+                                                style: AppTextStyles.labelSmall
+                                                    .copyWith(
+                                                  color: isDark
+                                                      ? AppColors.textSecondary
+                                                      : AppColors
+                                                          .textSecondaryLight,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w400,
+                                                ),
+                                              ),
+                                              Text(
+                                                passenger.arrivalTerminal
+                                                        .toLowerCase()
+                                                        .contains('terminal')
+                                                    ? passenger.arrivalTerminal
+                                                    : 'Terminal ${passenger.arrivalTerminal}',
+                                                style: AppTextStyles.bodySmall
+                                                    .copyWith(
+                                                  color: isDark
+                                                      ? AppColors.textPrimary
+                                                      : AppColors
+                                                          .textPrimaryLight,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    if (passenger.meetAndGreetRequired) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGold
+                              .withValues(alpha: isDark ? 0.08 : 0.06),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: AppColors.primaryGold.withValues(alpha: 0.35),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryGold
+                                        .withValues(alpha: 0.2),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.waving_hand_rounded,
+                                    size: 15,
+                                    color: AppColors.primaryGold,
+                                  ),
+                                ),
+                                const SizedBox(width: 9),
+                                Expanded(
+                                  child: Text(
+                                    'Meet & Greet Service',
+                                    style: AppTextStyles.bodyMedium.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
+                                      color: isDark
+                                          ? AppColors.textPrimary
+                                          : AppColors.textPrimaryLight,
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 7,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryGold,
+                                    borderRadius: BorderRadius.circular(5),
+                                  ),
+                                  child: Text(
+                                    'INCLUDED',
+                                    style: AppTextStyles.labelSmall.copyWith(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 10,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 9,
+                              ),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? AppColors.surfaceDark
+                                    : Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
                                   color: isDark
-                                      ? AppColors.textSecondary
-                                      : AppColors.textSecondaryLight,
+                                      ? AppColors.borderDark
+                                      : AppColors.borderLight,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.badge_outlined,
+                                    size: 18,
+                                    color: AppColors.primaryGold,
+                                  ),
+                                  const SizedBox(width: 9),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'NAME ON WELCOME SIGN',
+                                          style:
+                                              AppTextStyles.labelSmall.copyWith(
+                                            color: isDark
+                                                ? AppColors.textSecondary
+                                                : AppColors.textSecondaryLight,
+                                            fontSize: 10,
+                                            letterSpacing: 0.5,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          passenger.welcomeSignName.isNotEmpty
+                                              ? passenger.welcomeSignName
+                                              : (passenger.fullName.isNotEmpty
+                                                  ? passenger.fullName
+                                                  : 'Not specified'),
+                                          style:
+                                              AppTextStyles.bodySmall.copyWith(
+                                            color: isDark
+                                                ? AppColors.textPrimary
+                                                : AppColors.textPrimaryLight,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (passenger
+                                .meetAndGreetInstructions.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 9,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? AppColors.backgroundDark
+                                          .withValues(alpha: 0.5)
+                                      : const Color(0xFFF9FAFB),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: isDark
+                                        ? AppColors.borderDark
+                                            .withValues(alpha: 0.5)
+                                        : AppColors.borderLight
+                                            .withValues(alpha: 0.6),
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.notes_rounded,
+                                          size: 14,
+                                          color: isDark
+                                              ? AppColors.textSecondary
+                                              : AppColors.textSecondaryLight,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Meeting Instructions',
+                                          style:
+                                              AppTextStyles.labelSmall.copyWith(
+                                            color: isDark
+                                                ? AppColors.textSecondary
+                                                : AppColors.textSecondaryLight,
+                                            fontWeight: FontWeight.w500,
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      passenger.meetAndGreetInstructions,
+                                      style: AppTextStyles.bodySmall.copyWith(
+                                        color: isDark
+                                            ? AppColors.textPrimary
+                                            : AppColors.textPrimaryLight,
+                                        height: 1.35,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ],
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Switch.adaptive(
-                        value: _useGoCoins && canUseGoCoins,
-                        activeTrackColor: AppColors.primaryGold,
-                        onChanged: canUseGoCoins
-                            ? (value) {
-                                setState(() {
-                                  _useGoCoins = value;
-                                });
-                              }
-                            : null,
+                    ] else ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? AppColors.inputDark.withValues(alpha: 0.5)
+                              : const Color(0xFFF8F9FA),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isDark
+                                ? AppColors.borderDark
+                                : AppColors.borderLight,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.info_outline_rounded,
+                              size: 16,
+                              color: isDark
+                                  ? AppColors.textSecondary
+                                  : AppColors.textSecondaryLight,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Meet & Greet: Not requested',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: isDark
+                                      ? AppColors.textSecondary
+                                      : AppColors.textSecondaryLight,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    if (passenger.specialAssistance.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? AppColors.surfaceDark
+                              : const Color(0xFFF9FAFB),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isDark
+                                ? AppColors.borderDark
+                                : AppColors.borderLight,
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2196F3)
+                                    .withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Icon(
+                                Icons.accessible_rounded,
+                                size: 16,
+                                color: Color(0xFF2196F3),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'SPECIAL ASSISTANCE & REQUIREMENTS',
+                                    style: AppTextStyles.labelSmall.copyWith(
+                                      color: isDark
+                                          ? AppColors.textSecondary
+                                          : AppColors.textSecondaryLight,
+                                      fontSize: 10,
+                                      letterSpacing: 0.5,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    passenger.specialAssistance,
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      color: isDark
+                                          ? AppColors.textPrimary
+                                          : AppColors.textPrimaryLight,
+                                      height: 1.35,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.only(bottom: 14),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color:
+                        isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: (_useGoCoins && balance > 0)
+                          ? AppColors.primaryGold
+                          : (isDark
+                              ? AppColors.borderDark
+                              : AppColors.borderLight),
+                      width: (_useGoCoins && balance > 0) ? 1.5 : 0.5,
+                    ),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGold.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Image.asset(
+                          AssetPaths.iconGoCoin,
+                          width: 32,
+                          height: 32,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Redeem GoCoins',
+                              style: AppTextStyles.titleMedium.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: isDark
+                                    ? AppColors.textPrimary
+                                    : AppColors.textPrimaryLight,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              'Balance: $balance Coins',
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: isDark
+                                    ? AppColors.textSecondary
+                                    : AppColors.textSecondaryLight,
+                              ),
+                            ),
+                            if (appliedEurValue > 0 && balance > 0)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Text(
+                                  'Save €${appliedEurValue.toStringAsFixed(2)} with $coinsUsed coins',
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: AppColors.primaryGold,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      Transform.scale(
+                        scale: 0.7,
+                        child: Switch.adaptive(
+                          value: _useGoCoins && balance > 0,
+                          onChanged: balance > 0
+                              ? (val) {
+                                  HapticFeedback.selectionClick();
+                                  setState(() {
+                                    _useGoCoins = val;
+                                  });
+                                }
+                              : null,
+                          activeTrackColor: AppColors.primaryGold,
+                          inactiveTrackColor:
+                              Theme.of(context).dividerTheme.color,
+                        ),
                       ),
                     ],
                   ),
@@ -851,11 +1449,12 @@ class _AirportTransferReviewScreenState
                         label: 'Return transfer',
                         value: formatAmount(returnFare),
                       ),
-                      _ReviewRow(
-                        isDark: isDark,
-                        label: 'Round-trip discount',
-                        value: '-5% applied',
-                      ),
+                      if (vehicle.roundTripDiscount > 0 && roundTripDiscountAmount > 0)
+                        _ReviewRow(
+                          isDark: isDark,
+                          label: 'Round-trip discount',
+                          value: '-${formatAmount(roundTripDiscountAmount)} (${vehicle.roundTripDiscount.toStringAsFixed(0)}% off)',
+                        ),
                     ],
                     _ReviewRow(
                       isDark: isDark,
@@ -870,11 +1469,11 @@ class _AirportTransferReviewScreenState
                       label: 'Subtotal',
                       value: formatAmount(subtotal),
                     ),
-                    if (_useGoCoins && goCoinsDiscount > 0)
+                    if (_useGoCoins && discount > 0)
                       _ReviewRow(
                         isDark: isDark,
-                        label: 'GO Coins',
-                        value: '-${formatAmount(goCoinsDiscount)}',
+                        label: 'GoCoins Discount',
+                        value: '-${formatAmount(discount)}',
                       ),
                     const SizedBox(height: 3),
                     _ReviewDivider(isDark: isDark),
@@ -884,19 +1483,19 @@ class _AirportTransferReviewScreenState
                         Expanded(
                           child: Text(
                             'Final total',
-                            style: AppTextStyles.titleMedium.copyWith(
+                            style: AppTextStyles.bodyMedium.copyWith(
                               color: isDark
                                   ? AppColors.textPrimary
                                   : AppColors.textPrimaryLight,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
                         Text(
                           formatAmount(finalTotal),
-                          style: AppTextStyles.titleLarge.copyWith(
+                          style: AppTextStyles.titleMedium.copyWith(
                             color: AppColors.primaryGold,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
@@ -945,35 +1544,6 @@ class _AirportTransferReviewScreenState
                         _openLegalPage(_privacyUrl);
                       },
                     ),
-                    const SizedBox(height: 13),
-                    Container(
-                      padding: const EdgeInsets.all(11),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryGold.withValues(
-                          alpha: 0.10,
-                        ),
-                        borderRadius: BorderRadius.circular(11),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(
-                            Icons.info_outline_rounded,
-                            size: 18,
-                            color: AppColors.primaryGold,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Airport transfer is a dedicated chauffeur pick & drop transport service. Your driver will meet you at the pickup location and drop you off at your destination. No vehicle handover or return required.',
-                              style: AppTextStyles.bodySmall.copyWith(
-                                height: 1.4,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
               ],
@@ -1016,7 +1586,7 @@ class _AirportTransferReviewScreenState
                           setState(() {
                             _showAgreementError = false;
                           });
-                          _proceedToPayment();
+                          _proceedToPayment(finalTotal);
                         }),
               if (!_acceptTerms || !_acceptPrivacy) ...[
                 if (_showAgreementError) const SizedBox(height: 7),
@@ -1045,12 +1615,14 @@ class _ReviewCard extends StatelessWidget {
     required this.title,
     required this.icon,
     required this.children,
+    this.action,
   });
 
   final bool isDark;
   final String title;
   final IconData icon;
   final List<Widget> children;
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
@@ -1075,20 +1647,133 @@ class _ReviewCard extends StatelessWidget {
                 color: AppColors.primaryGold,
               ),
               const SizedBox(width: 7),
-              Text(
-                title,
-                style: AppTextStyles.labelLarge.copyWith(
-                  color: AppColors.primaryGold,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.7,
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: AppColors.primaryGold,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.7,
+                  ),
                 ),
               ),
+              if (action != null) action!,
             ],
           ),
           const SizedBox(height: 13),
           ...children,
         ],
       ),
+    );
+  }
+}
+
+class _CardEditButton extends StatelessWidget {
+  const _CardEditButton({
+    required this.onTap,
+  });
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.edit_outlined,
+              size: 13,
+              color: AppColors.primaryGold,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              'Edit',
+              style: AppTextStyles.labelSmall.copyWith(
+                color: AppColors.primaryGold,
+                fontWeight: FontWeight.w600,
+                fontSize: 11.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ContactDetailTile extends StatelessWidget {
+  const _ContactDetailTile({
+    required this.isDark,
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.badge,
+  });
+
+  final bool isDark;
+  final IconData icon;
+  final String label;
+  final String value;
+  final Widget? badge;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: isDark
+                ? AppColors.inputDark
+                : const Color(0xFFF1F3F5),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            icon,
+            size: 17,
+            color: AppColors.primaryGold,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: isDark
+                      ? AppColors.textSecondary
+                      : AppColors.textSecondaryLight,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: 0.4,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value.isEmpty ? 'Not provided' : value,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: isDark
+                      ? AppColors.textPrimary
+                      : AppColors.textPrimaryLight,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (badge != null) ...[
+          const SizedBox(width: 8),
+          badge!,
+        ],
+      ],
     );
   }
 }
@@ -1172,14 +1857,12 @@ class _ReviewRow extends StatelessWidget {
     required this.label,
     required this.value,
     this.showBottomSpacing = true,
-    this.compactValue = false,
   });
 
   final bool isDark;
   final String label;
   final String value;
   final bool showBottomSpacing;
-  final bool compactValue;
 
   @override
   Widget build(BuildContext context) {
@@ -1191,7 +1874,7 @@ class _ReviewRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            flex: 4,
+            flex: 5,
             child: Text(
               label,
               style: AppTextStyles.bodySmall.copyWith(
@@ -1205,19 +1888,16 @@ class _ReviewRow extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Expanded(
-            flex: 6,
+            flex: 5,
             child: Text(
               value.isEmpty ? 'Not provided' : value,
               textAlign: TextAlign.right,
-              maxLines: compactValue ? 2 : 2,
+              maxLines: 3,
               overflow: TextOverflow.ellipsis,
-              style: AppTextStyles.bodyMedium.copyWith(
+              style: AppTextStyles.bodySmall.copyWith(
                 color: isDark
                     ? AppColors.textPrimary
                     : AppColors.textPrimaryLight,
-                fontWeight: compactValue
-                    ? FontWeight.w400
-                    : FontWeight.w500,
                 height: 1.3,
               ),
             ),

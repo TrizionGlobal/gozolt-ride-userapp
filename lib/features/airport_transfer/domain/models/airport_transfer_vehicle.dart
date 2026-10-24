@@ -27,6 +27,7 @@ class AirportTransferVehicle {
     this.status = 'AVAILABLE',
     this.pricePerKm = 2.50,
     this.minPrice = 20.00,
+    this.roundTripDiscount = 0.0,
     this.oneWayFare,
     this.calculatedFare,
     this.distanceKm,
@@ -67,6 +68,7 @@ class AirportTransferVehicle {
 
   final double pricePerKm;
   final double minPrice;
+  final double roundTripDiscount;
   final double? oneWayFare;
   final double? calculatedFare;
   final double? distanceKm;
@@ -82,7 +84,8 @@ class AirportTransferVehicle {
 
   String get formattedOneWayPrice {
     final symbol = (currency == 'EUR' || currency.isEmpty) ? '€' : currency;
-    final fare = oneWayFare ?? (isRoundTrip ? (displayPrice / (2 * 0.95)) : displayPrice);
+    final discountMultiplier = roundTripDiscount > 0 ? (1.0 - roundTripDiscount / 100.0) : 1.0;
+    final fare = oneWayFare ?? (isRoundTrip ? (displayPrice / (2 * discountMultiplier)) : displayPrice);
     return '$symbol${fare.toStringAsFixed(2)}';
   }
 
@@ -193,6 +196,7 @@ class AirportTransferVehicle {
       isActive: json['isActive'] != false,
       pricePerKm: pricePerKm,
       minPrice: minPrice,
+      roundTripDiscount: _readDouble(json['roundTripDiscount'], 0.0),
       oneWayFare: oneWayFare,
       calculatedFare: calculatedFare,
       distanceKm: distanceKm,
