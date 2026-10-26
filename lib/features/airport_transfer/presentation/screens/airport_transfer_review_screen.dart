@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import '../../../../core/router/route_names.dart';
+import '../../../../core/utils/app_date_utils.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
@@ -39,13 +39,16 @@ class _AirportTransferReviewScreenState
   bool _isBooking = false;
   bool _useGoCoins = false;
 
-
-
   AirportPaymentOption _paymentOption = AirportPaymentOption.card;
   String? _selectedCardId;
   String? _pendingBookingId;
   String? _pendingBookingReference;
   double _pendingAmount = 0.0;
+  String? _pendingPickupDateTime;
+  String? _pendingReturnDateTime;
+  String? _pendingPickupLocation;
+  String? _pendingDropoffLocation;
+  String? _pendingServiceTitle;
   Timer? _pollingTimer;
 
   static final Uri _termsUrl = Uri.parse(
@@ -102,7 +105,11 @@ class _AirportTransferReviewScreenState
             'amount': amountPaid,
             'paymentMethod': 'Online Payment (Stripe)',
             'stripePaymentIntentId': res['stripePaymentIntentId']?.toString(),
-            'serviceTitle': 'Airport Transfer',
+            'serviceTitle': _pendingServiceTitle ?? 'Airport Transfer',
+            'pickupLocation': _pendingPickupLocation,
+            'dropoffLocation': _pendingDropoffLocation,
+            'pickupDateTime': _pendingPickupDateTime,
+            'returnDateTime': _pendingReturnDateTime,
           },
         );
       }
@@ -181,36 +188,17 @@ class _AirportTransferReviewScreenState
         throw Exception('Pickup date is required.');
       }
 
-      DateTime scheduledPickup = draft.pickupDate!;
-      if (draft.pickupTime != null && draft.pickupTime!.contains(':')) {
-        final parts = draft.pickupTime!.split(':');
-        final h = int.tryParse(parts[0]) ?? 12;
-        final m = int.tryParse(parts[1]) ?? 0;
-        scheduledPickup = DateTime(
-          scheduledPickup.year,
-          scheduledPickup.month,
-          scheduledPickup.day,
-          h,
-          m,
-        );
-      }
+      final scheduledPickup = AppDateUtils.createWallClockUtc(
+        draft.pickupDate!,
+        draft.pickupTime,
+      );
 
-      DateTime? scheduledReturn;
-      if (draft.isRoundTrip && draft.returnDate != null) {
-        scheduledReturn = draft.returnDate!;
-        if (draft.returnTime != null && draft.returnTime!.contains(':')) {
-          final parts = draft.returnTime!.split(':');
-          final h = int.tryParse(parts[0]) ?? 12;
-          final m = int.tryParse(parts[1]) ?? 0;
-          scheduledReturn = DateTime(
-            scheduledReturn.year,
-            scheduledReturn.month,
-            scheduledReturn.day,
-            h,
-            m,
-          );
-        }
-      }
+      final scheduledReturn = (draft.isRoundTrip && draft.returnDate != null)
+          ? AppDateUtils.createWallClockUtc(
+              draft.returnDate!,
+              draft.returnTime,
+            )
+          : null;
 
       final profileName =
           '${userProfile?.firstName ?? ''} ${userProfile?.lastName ?? ''}'.trim();
@@ -296,6 +284,8 @@ class _AirportTransferReviewScreenState
               'pickupLocation': draft.pickupLocation!.address,
               'dropoffLocation': draft.dropoffLocation!.address,
               'serviceTitle': '${vehicle.make} ${vehicle.model} Transfer',
+              'pickupDateTime': scheduledPickup.toIso8601String(),
+              'returnDateTime': scheduledReturn?.toIso8601String(),
             },
           );
         }
@@ -313,6 +303,11 @@ class _AirportTransferReviewScreenState
         _pendingBookingId = createdBookingId;
         _pendingBookingReference = createdBookingRef;
         _pendingAmount = totalAmount;
+        _pendingPickupDateTime = scheduledPickup.toIso8601String();
+        _pendingReturnDateTime = scheduledReturn?.toIso8601String();
+        _pendingPickupLocation = draft.pickupLocation?.address;
+        _pendingDropoffLocation = draft.dropoffLocation?.address;
+        _pendingServiceTitle = '${vehicle.make} ${vehicle.model} Transfer';
 
         // Start polling verification
         _pollingTimer?.cancel();
@@ -435,13 +430,10 @@ class _AirportTransferReviewScreenState
       return '$symbol${amount.toStringAsFixed(2)}';
     }
 
-    final pickupDate = draft.pickupDate == null
-        ? 'Date not selected'
-        : DateFormat('dd MMM yyyy').format(draft.pickupDate!);
-
-    final returnDate = draft.returnDate == null
-        ? 'Date not selected'
-        : DateFormat('dd MMM yyyy').format(draft.returnDate!);
+    final pickupDate = AppDateUtils.formatDate(draft.pickupDate);
+    final pickupTime = AppDateUtils.formatTimeString(draft.pickupTime);
+    final returnDate = AppDateUtils.formatDate(draft.returnDate);
+    final returnTime = AppDateUtils.formatTimeString(draft.returnTime);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -500,23 +492,23 @@ class _AirportTransferReviewScreenState
                     if (draft.isRoundTrip) ...[
                       _ReviewRow(
                         isDark: isDark,
-                        label: 'Pickup date',
+                        label: 'First trip date',
                         value: pickupDate,
                       ),
                       _ReviewRow(
                         isDark: isDark,
-                        label: 'Pickup time',
-                        value: draft.pickupTime ?? 'Not selected',
+                        label: 'First trip time',
+                        value: pickupTime,
                       ),
                       _ReviewRow(
                         isDark: isDark,
-                        label: 'Return date',
+                        label: 'Return trip date',
                         value: returnDate,
                       ),
                       _ReviewRow(
                         isDark: isDark,
-                        label: 'Return time',
-                        value: draft.returnTime ?? 'Not selected',
+                        label: 'Return trip time',
+                        value: returnTime,
                       ),
                     ] else ...[
                       _ReviewRow(
@@ -527,7 +519,7 @@ class _AirportTransferReviewScreenState
                       _ReviewRow(
                         isDark: isDark,
                         label: 'Pickup time',
-                        value: draft.pickupTime ?? 'Not selected',
+                        value: pickupTime,
                       ),
                     ],
                     _ReviewRow(

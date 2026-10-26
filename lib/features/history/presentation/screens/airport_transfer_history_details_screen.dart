@@ -1,16 +1,29 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/utils/app_date_utils.dart';
 import '../../../airport_transfer/data/datasources/airport_transfer_remote_datasource.dart';
+import '../../../../core/network/socket_service.dart';
 import 'airport_transfers_history_view.dart';
 
 final airportTransferBookingDetailsProvider = FutureProvider.autoDispose
     .family<Map<String, dynamic>, String>((ref, bookingId) async {
   final datasource = ref.read(airportTransferRemoteDatasourceProvider);
+
+  final socketService = ref.read(socketServiceProvider);
+  final sub = socketService.onAirportTransferStatusChanged.listen((event) {
+    if (event['bookingId'] == bookingId) {
+      ref.invalidateSelf();
+    }
+  });
+
+  ref.onDispose(() {
+    sub.cancel();
+  });
+
   return datasource.getBookingDetails(bookingId);
 });
 
@@ -30,15 +43,29 @@ class AirportTransferHistoryDetailsScreen extends ConsumerStatefulWidget {
 class _AirportTransferHistoryDetailsScreenState
     extends ConsumerState<AirportTransferHistoryDetailsScreen> {
   bool _isCancelling = false;
+  Timer? _pollingTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Poll every 3 seconds to catch real-time status transitions & verification PIN
+    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (mounted) {
+        ref.invalidate(airportTransferBookingDetailsProvider(widget.bookingId));
+        ref.invalidate(airportTransfersHistoryProvider);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    ref.invalidate(airportTransfersHistoryProvider);
+    super.dispose();
+  }
 
   String _formatDateTime(dynamic dateTimeStr) {
-    if (dateTimeStr == null) return 'N/A';
-    try {
-      final dt = DateTime.parse(dateTimeStr.toString().replaceAll('Z', ''));
-      return DateFormat('dd MMM yyyy, hh:mm a').format(dt);
-    } catch (_) {
-      return dateTimeStr.toString();
-    }
+    return AppDateUtils.formatDateTime(dateTimeStr);
   }
 
   Color _getStatusColor(String status) {
@@ -544,23 +571,26 @@ class _AirportTransferHistoryDetailsScreenState
       BuildContext context, Map<String, dynamic> booking, bool isDark) {
     final bookingRef =
         (booking['bookingReference'] ?? 'GZLT-TRF').toString();
-    final status = (booking['status'] ?? 'CONFIRMED').toString();
-    final isRound = (booking['transferType'] ?? '') == 'ROUND_TRIP';
+    final status =
+        (booking['status'] ?? 'CONFIRMED').toString().trim().toUpperCase();
+    final isRound =
+        (booking['transferType'] ?? '').toString().trim().toUpperCase() == 'ROUND_TRIP';
+    final returnStatus =
+        (booking['returnStatus'] ?? status).toString().trim().toUpperCase();
+    final returnStatusColor = _getStatusColor(returnStatus);
     final vehicle = booking['vehicle'] as Map<String, dynamic>?;
     final driver = booking['driver'] as Map<String, dynamic>?;
     final statusColor = _getStatusColor(status);
     final isCancelled = status == 'CANCELLED' || status == 'REFUNDED';
     final canCancel =
         status == 'PENDING_APPROVAL' || status == 'CONFIRMED';
-
-    final qrData = '''
-GOZOLT AIRPORT TRANSFER
-Ref: $bookingRef
-Passenger: ${booking['leadPassengerName'] ?? ''}
-Type: ${isRound ? 'Round Trip' : 'One Way'}
-Status: $status
-'''
-        .trim();
+    final isFullyCompleted = isRound
+        ? (status == 'COMPLETED' && returnStatus == 'COMPLETED')
+        : (status == 'COMPLETED');
+    final isFullyCancelled = isRound
+        ? ((status == 'CANCELLED' || status == 'REFUNDED') &&
+            (returnStatus == 'CANCELLED' || returnStatus == 'REFUNDED'))
+        : (status == 'CANCELLED' || status == 'REFUNDED');
 
     return RefreshIndicator(
       color: AppColors.primaryGold,
@@ -572,7 +602,7 @@ Status: $status
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Top Summary Card with QR Code
+            // Top Summary Card (Service ID & Status)
             Container(
               decoration: BoxDecoration(
                 color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
@@ -581,27 +611,29 @@ Status: $status
                   color: isDark ? AppColors.borderDark : AppColors.borderLight,
                 ),
               ),
-              padding: const EdgeInsets.all(14),
-              child: Column(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Service ID',
-                            style: AppTextStyles.labelSmall.copyWith(
-                              color: isDark
-                                  ? AppColors.textSecondary
-                                  : AppColors.textSecondaryLight,
-                              fontSize: 10,
-                              letterSpacing: 0.5,
-                            ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Service ID',
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: isDark
+                                ? AppColors.textSecondary
+                                : AppColors.textSecondaryLight,
+                            fontSize: 10,
+                            letterSpacing: 0.5,
                           ),
-                          const SizedBox(height: 2),
-                          Text(
+                        ),
+                        const SizedBox(height: 2),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
                             bookingRef,
                             style: AppTextStyles.titleMedium.copyWith(
                               fontWeight: FontWeight.bold,
@@ -609,71 +641,139 @@ Status: $status
                               color: AppColors.primaryGold,
                             ),
                           ),
-                        ],
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: statusColor.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                              color: statusColor.withValues(alpha: 0.4)),
                         ),
-                        child: Text(
-                          status.replaceAll('_', ' '),
-                          style: AppTextStyles.labelSmall.copyWith(
-                            color: statusColor,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 11,
-                            letterSpacing: 0.5,
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  if (isRound && !isFullyCompleted && !isFullyCancelled) ...[
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 2.5),
+                          decoration: BoxDecoration(
+                            color: statusColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                                color: statusColor.withValues(alpha: 0.4)),
+                          ),
+                          child: Text(
+                            '🛫 Out: ${status.replaceAll('_', ' ')}',
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: statusColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 9.5,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.all(12),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 2.5),
+                          decoration: BoxDecoration(
+                            color: returnStatusColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                                color: returnStatusColor.withValues(alpha: 0.4)),
+                          ),
+                          child: Text(
+                            '🛬 Ret: ${returnStatus.replaceAll('_', ' ')}',
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: returnStatusColor,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 9.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
+                        color: (isFullyCompleted
+                                ? AppColors.success
+                                : isFullyCancelled
+                                    ? AppColors.error
+                                    : statusColor)
+                            .withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
                         border: Border.all(
-                          color: isDark
-                              ? AppColors.borderDark
-                              : AppColors.borderLight,
+                            color: (isFullyCompleted
+                                    ? AppColors.success
+                                    : isFullyCancelled
+                                        ? AppColors.error
+                                        : statusColor)
+                                .withValues(alpha: 0.4)),
+                      ),
+                      child: Text(
+                        isFullyCompleted
+                            ? 'COMPLETED'
+                            : isFullyCancelled
+                                ? 'CANCELLED'
+                                : status.replaceAll('_', ' '),
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: isFullyCompleted
+                              ? AppColors.success
+                              : isFullyCancelled
+                                  ? AppColors.error
+                                  : statusColor,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 11,
+                          letterSpacing: 0.5,
                         ),
                       ),
-                      child: QrImageView(
-                        data: qrData,
-                        version: QrVersions.auto,
-                        size: 130.0,
-                        backgroundColor: Colors.white,
-                      ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Present this QR code to your driver upon pickup',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: isDark
-                          ? AppColors.textSecondary
-                          : AppColors.textSecondaryLight,
-                      fontSize: 11,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
+                  ],
                 ],
               ),
             ),
 
             const SizedBox(height: 14),
 
-            // Live Journey Status Stepper
-            if (!isCancelled) ...[
-              _buildJourneyProgressCard(status, isDark),
+            // Live Journey Status Stepper or Completed Card
+            if (isFullyCompleted) ...[
+              _buildRideCompletedCard(booking, isRound, isDark),
               const SizedBox(height: 14),
+            ] else if (!isCancelled) ...[
+              if (isRound) ...[
+                _buildJourneyProgressCard(status, isDark,
+                    title: 'FIRST TRIP PROGRESS'),
+                const SizedBox(height: 14),
+                _buildJourneyProgressCard(returnStatus, isDark,
+                    title: 'RETURN TRIP PROGRESS'),
+                const SizedBox(height: 14),
+              ] else ...[
+                _buildJourneyProgressCard(status, isDark),
+                const SizedBox(height: 14),
+              ],
+            ],
+
+            // 4-Digit Verification PIN Card (Shown only while leg is active, hidden when COMPLETED)
+            if (!isFullyCompleted) ...[
+              if (booking['verificationPin'] != null && status != 'COMPLETED') ...[
+                _buildVerificationPinCard(
+                  booking['verificationPin'].toString(),
+                  status,
+                  isDark,
+                  legPrefix: isRound ? 'First Trip' : null,
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (isRound &&
+                  booking['returnVerificationPin'] != null &&
+                  returnStatus != 'COMPLETED') ...[
+                _buildVerificationPinCard(
+                  booking['returnVerificationPin'].toString(),
+                  returnStatus,
+                  isDark,
+                  legPrefix: 'Return Trip',
+                ),
+                const SizedBox(height: 12),
+              ],
             ],
 
             // Route Details Card
@@ -742,7 +842,263 @@ Status: $status
     );
   }
 
-  Widget _buildJourneyProgressCard(String currentStatus, bool isDark) {
+  Widget _buildRideCompletedCard(
+      Map<String, dynamic> booking, bool isRound, bool isDark) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppColors.success.withValues(alpha: 0.35),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.success.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: AppColors.success.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Center(
+              child: Icon(
+                Icons.check_circle_rounded,
+                color: AppColors.success,
+                size: 28,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            isRound ? 'Round Trip Completed' : 'Ride Completed',
+            style: AppTextStyles.titleMedium.copyWith(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 5),
+          Text(
+            isRound
+                ? 'Both your first trip and return trip have been successfully completed. Safe travels and thank you for choosing GoZolt!'
+                : 'You have arrived safely at your destination. Thank you for choosing GoZolt!',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: isDark
+                  ? AppColors.textSecondary
+                  : AppColors.textSecondaryLight,
+              fontSize: 11.5,
+              height: 1.35,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          if (isRound) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF16161A)
+                    : const Color(0xFFF7F8FA),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.flight_takeoff_rounded,
+                          size: 15, color: AppColors.success),
+                      const SizedBox(width: 5),
+                      Text(
+                        'First Trip: Completed',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? AppColors.textPrimary
+                              : AppColors.textPrimaryLight,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    width: 1,
+                    height: 14,
+                    color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.flight_land_rounded,
+                          size: 15, color: AppColors.success),
+                      const SizedBox(width: 5),
+                      Text(
+                        'Return Trip: Completed',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? AppColors.textPrimary
+                              : AppColors.textPrimaryLight,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVerificationPinCard(
+      String pin, String currentStatus, bool isDark,
+      {String? legPrefix}) {
+    final normalized = currentStatus.trim().toUpperCase();
+    if (normalized == 'COMPLETED' ||
+        normalized == 'CANCELLED' ||
+        normalized == 'REFUNDED') {
+      return const SizedBox.shrink();
+    }
+
+    final isMet = normalized == 'PASSENGER_MET' || normalized == 'IN_TRANSIT';
+
+    final label = isMet
+        ? (legPrefix != null
+            ? '$legPrefix Ride Verified'
+            : 'Ride Verified & On Board')
+        : (legPrefix != null
+            ? '$legPrefix Verification PIN'
+            : 'Ride Verification PIN');
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: isMet
+            ? AppColors.success.withValues(alpha: 0.08)
+            : AppColors.primaryGold.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isMet
+              ? AppColors.success.withValues(alpha: 0.3)
+              : AppColors.primaryGold.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isMet ? Icons.verified_rounded : Icons.shield_rounded,
+                size: 15,
+                color: isMet ? AppColors.success : AppColors.primaryGold,
+              ),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: isMet ? AppColors.success : AppColors.primaryGold,
+                    fontSize: 12,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          if (!isMet) ...[
+            Text(
+              'Share this 4-digit PIN with your driver to begin:',
+              style: AppTextStyles.bodySmall.copyWith(
+                fontSize: 10.5,
+                color: isDark
+                    ? AppColors.textSecondary
+                    : AppColors.textSecondaryLight,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: pin.split('').map((digit) {
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 2.5),
+                  width: 30,
+                  height: 34,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E1E24) : Colors.white,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: AppColors.primaryGold,
+                      width: 1.2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryGold.withValues(alpha: 0.1),
+                        blurRadius: 3,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    digit,
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primaryGold,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ] else ...[
+            Text(
+              'PIN Verified. Safe travels to your destination!',
+              style: AppTextStyles.bodySmall.copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppColors.success,
+                fontSize: 11,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildJourneyProgressCard(String currentStatus, bool isDark,
+      {String? title}) {
     final stepIndex = _getStatusStepIndex(currentStatus);
 
     final steps = [
@@ -774,7 +1130,7 @@ Status: $status
               ),
               const SizedBox(width: 7),
               Text(
-                'TRANSFER PROGRESS',
+                title ?? 'TRANSFER PROGRESS',
                 style: AppTextStyles.labelLarge.copyWith(
                   color: AppColors.primaryGold,
                   fontWeight: FontWeight.w600,
@@ -901,7 +1257,7 @@ Status: $status
                   ),
                   const SizedBox(width: 7),
                   Text(
-                    isRound ? 'OUTBOUND TRANSFER' : 'JOURNEY ROUTE',
+                    isRound ? 'FIRST TRIP' : 'JOURNEY ROUTE',
                     style: AppTextStyles.labelLarge.copyWith(
                       color: AppColors.primaryGold,
                       fontWeight: FontWeight.w600,
@@ -1020,7 +1376,7 @@ Status: $status
                     ),
                     const SizedBox(width: 7),
                     Text(
-                      'RETURN TRANSFER',
+                      'RETURN TRIP',
                       style: AppTextStyles.labelLarge.copyWith(
                         color: AppColors.primaryGold,
                         fontWeight: FontWeight.w600,

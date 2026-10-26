@@ -1,18 +1,30 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
+import '../../../../core/network/socket_service.dart';
+import '../../../../core/utils/app_date_utils.dart';
 import '../../../airport_transfer/data/datasources/airport_transfer_remote_datasource.dart';
 
 final airportTransfersHistoryProvider =
     FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   final datasource = ref.read(airportTransferRemoteDatasourceProvider);
+
+  final socketService = ref.read(socketServiceProvider);
+  final sub = socketService.onAirportTransferStatusChanged.listen((_) {
+    ref.invalidateSelf();
+  });
+
+  ref.onDispose(() {
+    sub.cancel();
+  });
+
   return datasource.getMyBookings();
 });
 
@@ -27,6 +39,8 @@ class AirportTransfersHistoryView extends ConsumerStatefulWidget {
 class _AirportTransfersHistoryViewState
     extends ConsumerState<AirportTransfersHistoryView> {
   String _selectedFilter = 'All';
+  Timer? _pollingTimer;
+  StreamSubscription? _socketSub;
 
   final List<String> _filters = [
     'All',
@@ -37,14 +51,36 @@ class _AirportTransfersHistoryViewState
     'Cancelled'
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    // 1. Ensure user socket connection is active
+    ref.read(socketServiceProvider).connect();
+
+    // 2. Real-time WebSocket listener for immediate instant updates
+    _socketSub = ref.read(socketServiceProvider).onAirportTransferStatusChanged.listen((_) {
+      if (mounted) {
+        ref.invalidate(airportTransfersHistoryProvider);
+      }
+    });
+
+    // 3. Periodic polling every 3 seconds to keep history cards synchronized with live status
+    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (mounted) {
+        ref.invalidate(airportTransfersHistoryProvider);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _socketSub?.cancel();
+    _pollingTimer?.cancel();
+    super.dispose();
+  }
+
   String _formatDateTime(dynamic dateTimeStr) {
-    if (dateTimeStr == null) return 'N/A';
-    try {
-      final dt = DateTime.parse(dateTimeStr.toString().replaceAll('Z', ''));
-      return DateFormat('dd MMM yyyy, hh:mm a').format(dt);
-    } catch (_) {
-      return dateTimeStr.toString();
-    }
+    return AppDateUtils.formatDateTime(dateTimeStr);
   }
 
   Color _getStatusColor(String status) {
@@ -77,7 +113,7 @@ class _AirportTransfersHistoryViewState
       case 'CONFIRMED':
         return 'Confirmed';
       case 'DRIVER_ASSIGNED':
-        return 'Chauffeur Assigned';
+        return 'Driver Assigned';
       case 'EN_ROUTE_TO_PICKUP':
         return 'En Route to Pickup';
       case 'ARRIVED_AT_AIRPORT':
@@ -128,7 +164,7 @@ class _AirportTransfersHistoryViewState
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Your chauffeured airport rides will appear here',
+                  'Your booked airport rides will appear here',
                   style: AppTextStyles.bodySmall
                       .copyWith(color: AppColors.textSecondary),
                 ),
@@ -139,24 +175,45 @@ class _AirportTransfersHistoryViewState
 
         final filteredBookings = bookings.where((b) {
           final status = (b['status'] ?? '').toString();
+          final returnStatus = (b['returnStatus'] ?? '').toString();
+          final isRound = (b['transferType'] ?? '').toString().toUpperCase() == 'ROUND_TRIP';
+
           if (_selectedFilter == 'All') return true;
           if (_selectedFilter == 'Pending') {
-            return status == 'PENDING_APPROVAL' || status == 'PENDING_PAYMENT';
+            return status == 'PENDING_APPROVAL' ||
+                status == 'PENDING_PAYMENT' ||
+                (isRound &&
+                    (returnStatus == 'PENDING_APPROVAL' ||
+                        returnStatus == 'PENDING_PAYMENT'));
           }
           if (_selectedFilter == 'Confirmed') {
-            return status == 'CONFIRMED' || status == 'DRIVER_ASSIGNED';
+            return status == 'CONFIRMED' ||
+                status == 'DRIVER_ASSIGNED' ||
+                (isRound &&
+                    (returnStatus == 'CONFIRMED' ||
+                        returnStatus == 'DRIVER_ASSIGNED'));
           }
           if (_selectedFilter == 'In Progress') {
-            return status == 'EN_ROUTE_TO_PICKUP' ||
-                status == 'ARRIVED_AT_AIRPORT' ||
-                status == 'PASSENGER_MET' ||
-                status == 'IN_TRANSIT';
+            const inProgress = [
+              'EN_ROUTE_TO_PICKUP',
+              'ARRIVED_AT_AIRPORT',
+              'PASSENGER_MET',
+              'IN_TRANSIT'
+            ];
+            return inProgress.contains(status) ||
+                (isRound && inProgress.contains(returnStatus));
           }
           if (_selectedFilter == 'Completed') {
-            return status == 'COMPLETED';
+            return isRound
+                ? (status == 'COMPLETED' && returnStatus == 'COMPLETED')
+                : (status == 'COMPLETED');
           }
           if (_selectedFilter == 'Cancelled') {
-            return status == 'CANCELLED' || status == 'REFUNDED';
+            return status == 'CANCELLED' ||
+                status == 'REFUNDED' ||
+                (isRound &&
+                    (returnStatus == 'CANCELLED' ||
+                        returnStatus == 'REFUNDED'));
           }
           return true;
         }).toList();
@@ -319,15 +376,29 @@ class _AirportTransfersHistoryViewState
     final pickupLocation = (booking['pickupLocation'] ?? '').toString();
     final dropoffLocation = (booking['dropoffLocation'] ?? '').toString();
 
+    final isRound = (booking['transferType'] ?? '') == 'ROUND_TRIP';
+    final returnStatus = (booking['returnStatus'] ?? status).toString();
+    final returnStatusColor = _getStatusColor(returnStatus);
+    final returnStatusLabel = _getStatusLabel(returnStatus);
     final statusColor = _getStatusColor(status);
     final statusLabel = _getStatusLabel(status);
+    final isFullyCompleted = isRound
+        ? (status == 'COMPLETED' && returnStatus == 'COMPLETED')
+        : (status == 'COMPLETED');
+    final isFullyCancelled = isRound
+        ? ((status == 'CANCELLED' || status == 'REFUNDED') &&
+            (returnStatus == 'CANCELLED' || returnStatus == 'REFUNDED'))
+        : (status == 'CANCELLED' || status == 'REFUNDED');
 
     return InkWell(
-      onTap: () {
-        context.pushNamed(
+      onTap: () async {
+        await context.pushNamed(
           RouteNames.airportTransferHistoryDetails,
           extra: bookingId,
         );
+        if (context.mounted) {
+          ref.invalidate(airportTransfersHistoryProvider);
+        }
       },
       borderRadius: BorderRadius.circular(14),
       child: Container(
@@ -448,39 +519,108 @@ class _AirportTransfersHistoryViewState
                   ),
                 ),
                 const SizedBox(width: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: statusColor.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                if (isRound && !isFullyCompleted && !isFullyCancelled) ...[
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Container(
-                        width: 5.5,
-                        height: 5.5,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 2.5),
                         decoration: BoxDecoration(
-                          color: statusColor,
-                          shape: BoxShape.circle,
+                          color: statusColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: statusColor.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Text(
+                          '🛫 $statusLabel',
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: statusColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 4.5),
-                      Text(
-                        statusLabel,
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: statusColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 11,
+                      const SizedBox(height: 3),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 2.5),
+                        decoration: BoxDecoration(
+                          color: returnStatusColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: returnStatusColor.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Text(
+                          '🛬 $returnStatusLabel',
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: returnStatusColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10,
+                          ),
                         ),
                       ),
                     ],
                   ),
-                ),
+                ] else ...[
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: (isFullyCompleted
+                              ? AppColors.success
+                              : isFullyCancelled
+                                  ? AppColors.error
+                                  : statusColor)
+                          .withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: (isFullyCompleted
+                                ? AppColors.success
+                                : isFullyCancelled
+                                    ? AppColors.error
+                                    : statusColor)
+                            .withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 5.5,
+                          height: 5.5,
+                          decoration: BoxDecoration(
+                            color: isFullyCompleted
+                                ? AppColors.success
+                                : isFullyCancelled
+                                    ? AppColors.error
+                                    : statusColor,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 4.5),
+                        Text(
+                          isFullyCompleted
+                              ? 'Completed'
+                              : isFullyCancelled
+                                  ? 'Cancelled'
+                                  : statusLabel,
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: isFullyCompleted
+                                ? AppColors.success
+                                : isFullyCancelled
+                                    ? AppColors.error
+                                    : statusColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
 

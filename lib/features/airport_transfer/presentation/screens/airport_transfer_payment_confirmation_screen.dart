@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
+import '../../../../core/utils/app_date_utils.dart';
 import '../../data/datasources/airport_transfer_remote_datasource.dart';
 import '../../../history/presentation/providers/history_providers.dart';
 import '../../../home/presentation/providers/home_providers.dart';
@@ -16,6 +17,8 @@ class AirportTransferPaymentConfirmationScreen extends ConsumerStatefulWidget {
   final String? stripePaymentIntentId;
   final String? pickupLocation;
   final String? dropoffLocation;
+  final String? pickupDateTime;
+  final String? returnDateTime;
   final VoidCallback? onDone;
 
   const AirportTransferPaymentConfirmationScreen({
@@ -27,6 +30,8 @@ class AirportTransferPaymentConfirmationScreen extends ConsumerStatefulWidget {
     this.stripePaymentIntentId,
     this.pickupLocation,
     this.dropoffLocation,
+    this.pickupDateTime,
+    this.returnDateTime,
     this.onDone,
   });
 
@@ -43,6 +48,8 @@ class _AirportTransferPaymentConfirmationScreenState
   late String _paymentMethod;
   String? _pickupLocation;
   String? _dropoffLocation;
+  String? _pickupDateTime;
+  String? _returnDateTime;
 
   @override
   void initState() {
@@ -53,8 +60,10 @@ class _AirportTransferPaymentConfirmationScreenState
     _paymentMethod = widget.paymentMethod;
     _pickupLocation = widget.pickupLocation;
     _dropoffLocation = widget.dropoffLocation;
+    _pickupDateTime = widget.pickupDateTime;
+    _returnDateTime = widget.returnDateTime;
 
-    if (_bookingId.isNotEmpty && _amount <= 0) {
+    if (_bookingId.isNotEmpty && (_amount <= 0 || _pickupDateTime == null)) {
       _loadDynamicDetails();
     }
   }
@@ -70,6 +79,8 @@ class _AirportTransferPaymentConfirmationScreenState
             final b = res['booking'];
             if (b['pickupLocation'] != null) _pickupLocation = b['pickupLocation'].toString();
             if (b['dropoffLocation'] != null) _dropoffLocation = b['dropoffLocation'].toString();
+            if (b['pickupDateTime'] != null) _pickupDateTime = b['pickupDateTime'].toString();
+            if (b['returnDateTime'] != null) _returnDateTime = b['returnDateTime'].toString();
             if (b['vehicle'] != null && b['vehicle']['model'] != null) {
               _serviceTitle = '${b['vehicle']['make']} ${b['vehicle']['model']} Transfer';
             }
@@ -261,6 +272,28 @@ class _AirportTransferPaymentConfirmationScreenState
                           textColor: textColor,
                           secondaryColor: secondaryTextColor,
                           icon: Icons.flight_land_rounded,
+                        ),
+                      ],
+                      if (_pickupDateTime != null && _pickupDateTime!.isNotEmpty) ...[
+                        const Divider(height: 20),
+                        _buildDetailRow(
+                          label: (_returnDateTime != null && _returnDateTime!.isNotEmpty)
+                              ? 'First Trip Schedule'
+                              : 'Schedule',
+                          value: AppDateUtils.formatDateTime(_pickupDateTime),
+                          textColor: textColor,
+                          secondaryColor: secondaryTextColor,
+                          icon: Icons.calendar_today_rounded,
+                        ),
+                      ],
+                      if (_returnDateTime != null && _returnDateTime!.isNotEmpty) ...[
+                        const Divider(height: 20),
+                        _buildDetailRow(
+                          label: 'Return Trip Schedule',
+                          value: AppDateUtils.formatDateTime(_returnDateTime),
+                          textColor: textColor,
+                          secondaryColor: secondaryTextColor,
+                          icon: Icons.event_repeat_rounded,
                         ),
                       ],
                       const Divider(height: 20),

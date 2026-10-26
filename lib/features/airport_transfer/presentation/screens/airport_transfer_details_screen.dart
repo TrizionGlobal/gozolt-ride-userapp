@@ -288,7 +288,7 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
                         Padding(
                           padding: const EdgeInsets.only(bottom: 8),
                           child: Text(
-                            'LEG 1: DEPARTURE TRANSFER',
+                            'FIRST TRIP',
                             style: AppTextStyles.bodySmall.copyWith(
                               color: const Color(0xFF43A047),
                               fontWeight: FontWeight.w700,
@@ -358,7 +358,7 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
                         Padding(
                           padding: const EdgeInsets.only(bottom: 8),
                           child: Text(
-                            'LEG 2: RETURN TRANSFER',
+                            'RETURN TRIP',
                             style: AppTextStyles.bodySmall.copyWith(
                               color: const Color(0xFF43A047),
                               fontWeight: FontWeight.w700,

@@ -42,6 +42,8 @@ class UserSocketService {
       StreamController<Map<String, dynamic>>.broadcast();
   final _quickServiceEventController =
       StreamController<Map<String, dynamic>>.broadcast();
+  final _airportTransferStatusController =
+      StreamController<Map<String, dynamic>>.broadcast();
 
 
   Stream<Map<String, dynamic>> get onBikeRentalStatusChanged =>
@@ -50,6 +52,8 @@ class UserSocketService {
       _carRentalStatusController.stream;
   Stream<Map<String, dynamic>> get onQuickServiceEvent =>
       _quickServiceEventController.stream;
+  Stream<Map<String, dynamic>> get onAirportTransferStatusChanged =>
+      _airportTransferStatusController.stream;
 
 
   Stream<Map<String, dynamic>> get onRideAccepted =>
@@ -180,6 +184,14 @@ class UserSocketService {
       }
     });
 
+    _socket!.on('airport_transfer:status:changed', (data) {
+      _log('[Socket] Airport transfer status changed: $data');
+      final map = _toMap(data);
+      if (map != null) {
+        _airportTransferStatusController.add(map);
+      }
+    });
+
 
     final quickServiceEvents = [
       'quick-service:booked',
@@ -300,5 +312,6 @@ class UserSocketService {
     _destinationChangeResponseController.close();
     _rideMatchingProgressController.close();
     _quickServiceEventController.close();
+    _airportTransferStatusController.close();
   }
 }

@@ -1333,6 +1333,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           final paymentMethod = extra['paymentMethod'] as String? ?? 'Cash';
           final paymentStatus =
               extra['paymentStatus'] as String? ?? 'Pay after ride completion';
+          final pickupDateTime = extra['pickupDateTime']?.toString();
+          final returnDateTime = extra['returnDateTime']?.toString();
 
           return CustomTransitionPage(
             key: state.pageKey,
@@ -1340,6 +1342,8 @@ final routerProvider = Provider<GoRouter>((ref) {
               bookingId: bookingId,
               paymentMethod: paymentMethod,
               paymentStatus: paymentStatus,
+              pickupDateTime: pickupDateTime,
+              returnDateTime: returnDateTime,
             ),
             transitionsBuilder: (
               context,
@@ -1373,6 +1377,8 @@ final routerProvider = Provider<GoRouter>((ref) {
             stripePaymentIntentId: extra['stripePaymentIntentId']?.toString() ?? q['paymentIntentId'],
             pickupLocation: extra['pickupLocation']?.toString() ?? q['pickupLocation'],
             dropoffLocation: extra['dropoffLocation']?.toString() ?? q['dropoffLocation'],
+            pickupDateTime: extra['pickupDateTime']?.toString() ?? q['pickupDateTime'],
+            returnDateTime: extra['returnDateTime']?.toString() ?? q['returnDateTime'],
             onDone: extra['onDone'] as VoidCallback?,
           );
         },

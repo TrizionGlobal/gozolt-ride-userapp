@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
+import '../../../../core/utils/app_date_utils.dart';
 import '../../../history/presentation/providers/history_providers.dart';
 import '../../../home/presentation/providers/home_providers.dart';
 
@@ -13,26 +13,21 @@ class AirportTransferConfirmationScreen extends ConsumerWidget {
   final String bookingId;
   final String paymentMethod;
   final String paymentStatus;
+  final String? pickupDateTime;
+  final String? returnDateTime;
 
   const AirportTransferConfirmationScreen({
     super.key,
     required this.bookingId,
     required this.paymentMethod,
     required this.paymentStatus,
+    this.pickupDateTime,
+    this.returnDateTime,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final qrData = '''
-GOZOLT AIRPORT TRANSFER
-Service ID: $bookingId
-Payment Method: $paymentMethod
-Payment Status: $paymentStatus
-Status: Booking Confirmed
-'''
-        .trim();
 
     return PopScope(
       canPop: false,
@@ -80,7 +75,7 @@ Status: Booking Confirmed
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Your airport transfer has been booked! Your chauffeur will meet you at your pickup location and drop you off at your chosen destination.',
+                        'Your airport transfer has been booked! Your driver will meet you at your pickup location and drop you off at your chosen destination.',
                         textAlign: TextAlign.center,
                         style: AppTextStyles.bodySmall.copyWith(
                           color: isDark
@@ -122,41 +117,6 @@ Status: Booking Confirmed
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-                            const SizedBox(height: 14),
-                            Divider(
-                              color: isDark
-                                  ? AppColors.borderDark
-                                  : Colors.grey.shade300,
-                            ),
-                            const SizedBox(height: 14),
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              color: Colors.white,
-                              child: QrImageView(
-                                data: qrData,
-                                version: QrVersions.auto,
-                                size: 165,
-                                backgroundColor: Colors.white,
-                                eyeStyle: const QrEyeStyle(
-                                  eyeShape: QrEyeShape.square,
-                                  color: AppColors.primaryGold,
-                                ),
-                                dataModuleStyle: const QrDataModuleStyle(
-                                  dataModuleShape: QrDataModuleShape.square,
-                                  color: AppColors.primaryGold,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 9),
-                            Text(
-                              'Keep this QR code for your transfer',
-                              textAlign: TextAlign.center,
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: isDark
-                                    ? AppColors.textSecondary
-                                    : AppColors.textSecondaryLight,
-                              ),
-                            ),
                           ],
                         ),
                       ),
@@ -192,6 +152,26 @@ Status: Booking Confirmed
                               value: paymentStatus,
                               isDark: isDark,
                             ),
+                            if (pickupDateTime != null && pickupDateTime!.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              _ConfirmationRow(
+                                icon: Icons.calendar_today_rounded,
+                                label: (returnDateTime != null && returnDateTime!.isNotEmpty)
+                                    ? 'First Trip Schedule'
+                                    : 'Schedule',
+                                value: AppDateUtils.formatDateTime(pickupDateTime),
+                                isDark: isDark,
+                              ),
+                            ],
+                            if (returnDateTime != null && returnDateTime!.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              _ConfirmationRow(
+                                icon: Icons.event_repeat_rounded,
+                                label: 'Return Trip Schedule',
+                                value: AppDateUtils.formatDateTime(returnDateTime),
+                                isDark: isDark,
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -216,7 +196,7 @@ Status: Booking Confirmed
                             const SizedBox(width: 9),
                             Expanded(
                               child: Text(
-                                'Your chauffeur will meet you at the pickup location with your welcome sign (if requested) and assist with luggage. Direct drop-off at your destination with no vehicle handover or return required.',
+                                'Your driver will meet you at the pickup location with your welcome sign (if requested) and assist with luggage. Direct drop-off at your destination with no vehicle handover or return required.',
                                 style: AppTextStyles.bodySmall.copyWith(
                                   height: 1.4,
                                 ),
