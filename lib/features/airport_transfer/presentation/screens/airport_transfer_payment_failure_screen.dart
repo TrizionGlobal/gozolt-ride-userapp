@@ -45,6 +45,29 @@ class _AirportTransferPaymentFailureScreenState
   bool _isProcessing = false;
   Timer? _pollingTimer;
 
+  String _formatServiceId(String? ref, String id) {
+    if (ref != null && ref.trim().isNotEmpty) {
+      final trimmed = ref.trim();
+      if (trimmed.startsWith('GZLT-TRF-')) return trimmed;
+      if (trimmed.startsWith('TRF-')) return 'GZLT-$trimmed';
+      if (!trimmed.contains('-') && trimmed.length >= 6) {
+        return 'GZLT-TRF-$trimmed';
+      }
+      return trimmed;
+    }
+    if (id.trim().isNotEmpty) {
+      final trimmed = id.trim();
+      if (trimmed.startsWith('GZLT-TRF-')) return trimmed;
+      if (trimmed.startsWith('TRF-')) return 'GZLT-$trimmed';
+      final clean = trimmed.replaceAll('-', '').toUpperCase();
+      if (clean.length >= 7) {
+        return 'GZLT-TRF-${clean.substring(0, 7)}';
+      }
+      return 'GZLT-TRF-$trimmed';
+    }
+    return 'GZLT-TRF';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -372,18 +395,21 @@ class _AirportTransferPaymentFailureScreenState
                     children: [
                       _buildDetailRow(
                         label: 'Service',
-                        value: _serviceTitle,
+                        value: 'Airport Transfer',
                         textColor: textColor,
                         secondaryColor: secondaryTextColor,
-                        icon: Icons.local_taxi_rounded,
+                        icon: Icons.airport_shuttle_rounded,
                       ),
                       const Divider(height: 20),
                       _buildDetailRow(
                         label: 'Service ID',
-                        value: _bookingReference,
+                        value: _formatServiceId(_bookingReference, _bookingId),
                         textColor: textColor,
                         secondaryColor: secondaryTextColor,
                         icon: Icons.tag_rounded,
+                        isMonospace: true,
+                        isBold: true,
+                        customValueColor: AppColors.primaryGold,
                       ),
                       if (_errorMessage != null && _errorMessage!.isNotEmpty) ...[
                         const Divider(height: 20),
@@ -515,6 +541,9 @@ class _AirportTransferPaymentFailureScreenState
     required Color textColor,
     required Color secondaryColor,
     required IconData icon,
+    bool isMonospace = false,
+    bool isBold = false,
+    Color? customValueColor,
   }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -538,8 +567,10 @@ class _AirportTransferPaymentFailureScreenState
             value,
             textAlign: TextAlign.end,
             style: AppTextStyles.bodySmall.copyWith(
-              fontWeight: FontWeight.w500,
-              color: textColor,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+              fontFamily: isMonospace ? 'monospace' : null,
+              color: customValueColor ?? textColor,
+              letterSpacing: isMonospace ? 0.5 : null,
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,

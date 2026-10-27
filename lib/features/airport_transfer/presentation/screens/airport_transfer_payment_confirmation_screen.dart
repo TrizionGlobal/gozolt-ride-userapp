@@ -6,11 +6,15 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/app_date_utils.dart';
 import '../../data/datasources/airport_transfer_remote_datasource.dart';
+import '../providers/airport_transfer_provider.dart';
+import '../providers/airport_transfer_passenger_provider.dart';
+import '../providers/airport_transfer_vehicle_provider.dart';
 import '../../../history/presentation/providers/history_providers.dart';
 import '../../../home/presentation/providers/home_providers.dart';
 
 class AirportTransferPaymentConfirmationScreen extends ConsumerStatefulWidget {
   final String bookingId;
+  final String? bookingReference;
   final String? serviceTitle;
   final double amount;
   final String paymentMethod;
@@ -24,6 +28,7 @@ class AirportTransferPaymentConfirmationScreen extends ConsumerStatefulWidget {
   const AirportTransferPaymentConfirmationScreen({
     super.key,
     required this.bookingId,
+    this.bookingReference,
     this.serviceTitle = 'Airport Transfer',
     required this.amount,
     this.paymentMethod = 'Online Payment (Stripe)',
@@ -43,6 +48,7 @@ class AirportTransferPaymentConfirmationScreen extends ConsumerStatefulWidget {
 class _AirportTransferPaymentConfirmationScreenState
     extends ConsumerState<AirportTransferPaymentConfirmationScreen> {
   late String _bookingId;
+  String? _bookingReference;
   late String _serviceTitle;
   late double _amount;
   late String _paymentMethod;
@@ -51,11 +57,52 @@ class _AirportTransferPaymentConfirmationScreenState
   String? _pickupDateTime;
   String? _returnDateTime;
 
+  String _formatServiceId(String? ref, String id) {
+    if (ref != null && ref.trim().isNotEmpty) {
+      final trimmed = ref.trim();
+      if (trimmed.startsWith('GZLT-TRF-')) return trimmed;
+      if (trimmed.startsWith('TRF-')) return 'GZLT-$trimmed';
+      if (!trimmed.contains('-') && trimmed.length >= 6) {
+        return 'GZLT-TRF-$trimmed';
+      }
+      return trimmed;
+    }
+    if (id.trim().isNotEmpty) {
+      final trimmed = id.trim();
+      if (trimmed.startsWith('GZLT-TRF-')) return trimmed;
+      if (trimmed.startsWith('TRF-')) return 'GZLT-$trimmed';
+      final clean = trimmed.replaceAll('-', '').toUpperCase();
+      if (clean.length >= 7) {
+        return 'GZLT-TRF-${clean.substring(0, 7)}';
+      }
+      return 'GZLT-TRF-$trimmed';
+    }
+    return 'GZLT-TRF';
+  }
+
   @override
   void initState() {
     super.initState();
     _bookingId = widget.bookingId;
-    _serviceTitle = widget.serviceTitle ?? 'Airport Transfer';
+    _bookingReference = widget.bookingReference;
+
+    // Check if bookingId itself is in GZLT-TRF- format
+    if (_bookingReference == null || _bookingReference!.isEmpty) {
+      if (widget.bookingId.startsWith('GZLT-') || widget.bookingId.startsWith('TRF-')) {
+        _bookingReference = widget.bookingId;
+      }
+    }
+
+    // If serviceTitle contains reference like (GZLT-TRF-994230...), extract it
+    if (_bookingReference == null || _bookingReference!.isEmpty) {
+      final match = RegExp(r'GZLT-TRF-[A-Za-z0-9_-]+').firstMatch(widget.serviceTitle ?? '');
+      if (match != null) {
+        _bookingReference = match.group(0);
+      }
+    }
+
+    // Always display clean "Airport Transfer" as requested
+    _serviceTitle = 'Airport Transfer';
     _amount = widget.amount;
     _paymentMethod = widget.paymentMethod;
     _pickupLocation = widget.pickupLocation;
@@ -63,7 +110,13 @@ class _AirportTransferPaymentConfirmationScreenState
     _pickupDateTime = widget.pickupDateTime;
     _returnDateTime = widget.returnDateTime;
 
-    if (_bookingId.isNotEmpty && (_amount <= 0 || _pickupDateTime == null)) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(airportTransferDraftProvider.notifier).reset();
+      ref.read(airportTransferPassengerDetailsProvider.notifier).reset();
+      ref.read(selectedAirportTransferVehicleProvider.notifier).clear();
+    });
+
+    if (_bookingId.isNotEmpty) {
       _loadDynamicDetails();
     }
   }
@@ -77,13 +130,16 @@ class _AirportTransferPaymentConfirmationScreenState
         setState(() {
           if (res['booking'] != null) {
             final b = res['booking'];
+            if (b['bookingReference'] != null && b['bookingReference'].toString().isNotEmpty) {
+              _bookingReference = b['bookingReference'].toString();
+            }
             if (b['pickupLocation'] != null) _pickupLocation = b['pickupLocation'].toString();
             if (b['dropoffLocation'] != null) _dropoffLocation = b['dropoffLocation'].toString();
             if (b['pickupDateTime'] != null) _pickupDateTime = b['pickupDateTime'].toString();
             if (b['returnDateTime'] != null) _returnDateTime = b['returnDateTime'].toString();
-            if (b['vehicle'] != null && b['vehicle']['model'] != null) {
-              _serviceTitle = '${b['vehicle']['make']} ${b['vehicle']['model']} Transfer';
-            }
+          }
+          if (res['bookingReference'] != null && res['bookingReference'].toString().isNotEmpty) {
+            _bookingReference = res['bookingReference'].toString();
           }
           if (res['amount'] is num) {
             _amount = (res['amount'] as num).toDouble();
@@ -117,6 +173,8 @@ class _AirportTransferPaymentConfirmationScreenState
     final borderColor =
         isDark ? AppColors.borderDark : const Color(0xFFE2E8F0);
 
+    final displayBookingRef = _formatServiceId(_bookingReference, _bookingId);
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -126,11 +184,11 @@ class _AirportTransferPaymentConfirmationScreenState
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: SafeArea(
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
             child: Column(
               children: [
-                const Spacer(),
+                const SizedBox(height: 12),
 
                 // Animated/Styled Success Icon
                 Container(
@@ -166,14 +224,14 @@ class _AirportTransferPaymentConfirmationScreenState
                 const SizedBox(height: 8),
 
                 Text(
-                  'Your airport transfer payment has been successfully processed & confirmed.',
+                  'Your airport transfer payment has been received successfully! Your booking is pending supplier confirmation.',
                   style: AppTextStyles.bodySmall.copyWith(
                     color: secondaryTextColor,
                     height: 1.4,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
                 // Amount Card
                 Container(
@@ -244,15 +302,18 @@ class _AirportTransferPaymentConfirmationScreenState
                         value: _serviceTitle,
                         textColor: textColor,
                         secondaryColor: secondaryTextColor,
-                        icon: Icons.local_taxi_rounded,
+                        icon: Icons.airport_shuttle_rounded,
                       ),
                       const Divider(height: 20),
                       _buildDetailRow(
                         label: 'Service ID',
-                        value: _bookingId,
+                        value: displayBookingRef,
                         textColor: textColor,
                         secondaryColor: secondaryTextColor,
                         icon: Icons.tag_rounded,
+                        isMonospace: true,
+                        isBold: true,
+                        customValueColor: AppColors.primaryGold,
                       ),
                       if (_pickupLocation != null && _pickupLocation!.isNotEmpty) ...[
                         const Divider(height: 20),
@@ -320,7 +381,7 @@ class _AirportTransferPaymentConfirmationScreenState
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                'Status',
+                                'Payment Status',
                                 style: AppTextStyles.bodySmall.copyWith(
                                   color: secondaryTextColor,
                                   fontWeight: FontWeight.w400,
@@ -338,7 +399,7 @@ class _AirportTransferPaymentConfirmationScreenState
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              'Paid & Confirmed',
+                              'Successful',
                               style: AppTextStyles.labelSmall.copyWith(
                                 fontWeight: FontWeight.w700,
                                 color: Colors.green[700],
@@ -351,7 +412,7 @@ class _AirportTransferPaymentConfirmationScreenState
                   ),
                 ),
 
-                const Spacer(),
+                const SizedBox(height: 24),
 
                 // Action Buttons
                 SizedBox(
@@ -397,6 +458,7 @@ class _AirportTransferPaymentConfirmationScreenState
                     ),
                   ),
                 ),
+                const SizedBox(height: 12),
               ],
             ),
           ),
@@ -411,6 +473,9 @@ class _AirportTransferPaymentConfirmationScreenState
     required Color textColor,
     required Color secondaryColor,
     required IconData icon,
+    bool isMonospace = false,
+    bool isBold = false,
+    Color? customValueColor,
   }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -434,8 +499,10 @@ class _AirportTransferPaymentConfirmationScreenState
             value,
             textAlign: TextAlign.end,
             style: AppTextStyles.bodySmall.copyWith(
-              fontWeight: FontWeight.w500,
-              color: textColor,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+              fontFamily: isMonospace ? 'monospace' : null,
+              color: customValueColor ?? textColor,
+              letterSpacing: isMonospace ? 0.5 : null,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

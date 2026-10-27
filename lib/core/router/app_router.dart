@@ -195,6 +195,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (state.uri.host == 'quick-service-payment-failure') {
         return '/quick-service-payment-failure?${state.uri.query}';
       }
+      if (state.uri.host == 'airport-transfer-payment-confirmation') {
+        return '/airport-transfer-payment-confirmation?${state.uri.query}';
+      }
+      if (state.uri.host == 'airport-transfer-payment-failure') {
+        return '/airport-transfer-payment-failure?${state.uri.query}';
+      }
 
       if (state.matchedLocation == '/force-update') {
         return null;
@@ -1336,10 +1342,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           final pickupDateTime = extra['pickupDateTime']?.toString();
           final returnDateTime = extra['returnDateTime']?.toString();
 
+          final bookingReference = extra['bookingReference']?.toString() ?? state.uri.queryParameters['bookingReference'];
+
           return CustomTransitionPage(
             key: state.pageKey,
             child: AirportTransferConfirmationScreen(
               bookingId: bookingId,
+              bookingReference: bookingReference,
               paymentMethod: paymentMethod,
               paymentStatus: paymentStatus,
               pickupDateTime: pickupDateTime,
@@ -1369,6 +1378,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           final amountVal = extra['amount'] ?? q['amount'];
           return AirportTransferPaymentConfirmationScreen(
             bookingId: extra['bookingId']?.toString() ?? q['bookingId'] ?? '',
+            bookingReference: extra['bookingReference']?.toString() ?? q['bookingReference'],
             serviceTitle: extra['serviceTitle']?.toString() ?? q['serviceTitle'] ?? 'Airport Transfer',
             amount: (amountVal is num)
                 ? amountVal.toDouble()

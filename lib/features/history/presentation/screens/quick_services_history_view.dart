@@ -22,7 +22,6 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
   final List<String> _filters = ['All', 'Completed', 'Cancelled', 'Scheduled'];
   String _selectedFilter = 'All';
   StreamSubscription? _socketSub;
-  Timer? _pollingTimer;
 
   @override
   void initState() {
@@ -34,12 +33,6 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
       socketService.connect();
     }
     _socketSub = socketService.onQuickServiceEvent.listen((_) {
-      if (mounted) {
-        ref.invalidate(quickServicesHistoryProvider);
-      }
-    });
-
-    _pollingTimer = Timer.periodic(const Duration(seconds: 4), (_) {
       if (mounted) {
         ref.invalidate(quickServicesHistoryProvider);
       }
@@ -56,7 +49,6 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _pollingTimer?.cancel();
     _socketSub?.cancel();
     super.dispose();
   }

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/utils/app_date_utils.dart';
 import '../../../../core/widgets/gozolt_button.dart';
 import '../providers/airport_transfer_provider.dart';
 import '../providers/airport_transfer_vehicle_provider.dart';
@@ -252,38 +253,6 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Notice about chauffeur pick & drop
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 14),
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryGold.withValues(alpha: 0.10),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Icon(
-                              Icons.airport_shuttle_rounded,
-                              size: 18,
-                              color: AppColors.primaryGold,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Chauffeured Service: The driver meets you at your pickup location and drops you off at your destination. No vehicle handover or return required.',
-                                style: AppTextStyles.bodySmall.copyWith(
-                                  color: isDark
-                                      ? AppColors.textSecondary
-                                      : AppColors.textSecondaryLight,
-                                  fontSize: 11,
-                                  height: 1.35,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                       if (draft.isRoundTrip)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 8),
@@ -341,7 +310,7 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
                               draft.pickupTime!.isNotEmpty)
                             _JourneyInfo(
                               icon: Icons.schedule_outlined,
-                              text: draft.pickupTime!,
+                              text: AppDateUtils.formatTimeString(draft.pickupTime),
                               isDark: isDark,
                             ),
                         ],
@@ -411,7 +380,7 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
                                 draft.returnTime!.isNotEmpty)
                               _JourneyInfo(
                                 icon: Icons.schedule_outlined,
-                                text: draft.returnTime!,
+                                text: AppDateUtils.formatTimeString(draft.returnTime),
                                 isDark: isDark,
                               ),
                           ],
@@ -467,42 +436,14 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
                       if (vehicle.distanceKm != null) ...[
                         _PriceRow(
                           isDark: isDark,
-                          label: 'Estimated Route',
-                          value: '${vehicle.distanceKm!.toStringAsFixed(1)} km (${vehicle.durationMinutes ?? vehicle.estimatedDurationMinutes} min)',
+                          label: 'Distance',
+                          value: '${vehicle.distanceKm!.toStringAsFixed(1)} km',
                         ),
                         const SizedBox(height: 10),
-                      ],
-                      if (vehicle.isRoundTrip) ...[
-                        _PriceRow(
-                          isDark: isDark,
-                          label: 'One-way Transfer',
-                          value: vehicle.formattedOneWayPrice,
-                        ),
-                        const SizedBox(height: 10),
-                        if (vehicle.roundTripDiscount > 0) ...[
-                          Builder(
-                            builder: (context) {
-                              final discountMultiplier = (1.0 - vehicle.roundTripDiscount / 100.0);
-                              final oneWay = vehicle.oneWayFare ?? (vehicle.displayPrice / (2 * discountMultiplier));
-                              final discountAmount = ((oneWay * 2) - vehicle.displayPrice).clamp(0.0, double.infinity);
-                              final symbol = (vehicle.currency == 'EUR' || vehicle.currency.isEmpty) ? '€' : vehicle.currency;
-                              return Column(
-                                children: [
-                                  _PriceRow(
-                                    isDark: isDark,
-                                    label: 'Round-trip Discount',
-                                    value: '-$symbol${discountAmount.toStringAsFixed(2)} (${vehicle.roundTripDiscount.toStringAsFixed(0)}% off)',
-                                  ),
-                                  const SizedBox(height: 10),
-                                ],
-                              );
-                            },
-                          ),
-                        ],
                       ],
                       _PriceRow(
                         isDark: isDark,
-                        label: vehicle.isRoundTrip ? 'Round-trip Total' : 'Transfer Fare',
+                        label: vehicle.isRoundTrip ? 'Round-trip Total' : 'One-way Transfer',
                         value: vehicle.formattedPrice,
                       ),
                       const SizedBox(height: 10),

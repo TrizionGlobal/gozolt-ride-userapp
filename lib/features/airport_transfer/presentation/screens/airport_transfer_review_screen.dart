@@ -48,7 +48,6 @@ class _AirportTransferReviewScreenState
   String? _pendingReturnDateTime;
   String? _pendingPickupLocation;
   String? _pendingDropoffLocation;
-  String? _pendingServiceTitle;
   Timer? _pollingTimer;
 
   static final Uri _termsUrl = Uri.parse(
@@ -85,9 +84,15 @@ class _AirportTransferReviewScreenState
       final res = await ref
           .read(airportTransferRemoteDatasourceProvider)
           .verifyPayment(_pendingBookingId!);
-      if (res['isPaid'] == true && mounted) {
+      final isPaid = res['isPaid'] == true ||
+          res['paymentStatus'] == 'PAID' ||
+          res['booking']?['paymentStatus'] == 'PAID';
+      if (isPaid && mounted) {
         _pollingTimer?.cancel();
-        final bookingRef = _pendingBookingReference ?? _pendingBookingId!;
+        final bookingRef = _pendingBookingReference ??
+            res['bookingReference']?.toString() ??
+            res['booking']?['bookingReference']?.toString() ??
+            _pendingBookingId!;
         final amountPaid = (res['amount'] is num)
             ? (res['amount'] as num).toDouble()
             : _pendingAmount;
@@ -102,10 +107,11 @@ class _AirportTransferReviewScreenState
           RouteNames.airportTransferPaymentConfirmation,
           extra: <String, dynamic>{
             'bookingId': bookingRef,
+            'bookingReference': bookingRef,
             'amount': amountPaid,
             'paymentMethod': 'Online Payment (Stripe)',
             'stripePaymentIntentId': res['stripePaymentIntentId']?.toString(),
-            'serviceTitle': _pendingServiceTitle ?? 'Airport Transfer',
+            'serviceTitle': 'Airport Transfer',
             'pickupLocation': _pendingPickupLocation,
             'dropoffLocation': _pendingDropoffLocation,
             'pickupDateTime': _pendingPickupDateTime,
@@ -278,12 +284,13 @@ class _AirportTransferReviewScreenState
             RouteNames.airportTransferPaymentConfirmation,
             extra: <String, dynamic>{
               'bookingId': createdBookingRef,
+              'bookingReference': createdBookingRef,
               'amount': totalAmount,
               'paymentMethod': 'Saved Card',
               'stripePaymentIntentId': res['stripePaymentIntentId']?.toString(),
               'pickupLocation': draft.pickupLocation!.address,
               'dropoffLocation': draft.dropoffLocation!.address,
-              'serviceTitle': '${vehicle.make} ${vehicle.model} Transfer',
+              'serviceTitle': 'Airport Transfer',
               'pickupDateTime': scheduledPickup.toIso8601String(),
               'returnDateTime': scheduledReturn?.toIso8601String(),
             },
@@ -307,12 +314,11 @@ class _AirportTransferReviewScreenState
         _pendingReturnDateTime = scheduledReturn?.toIso8601String();
         _pendingPickupLocation = draft.pickupLocation?.address;
         _pendingDropoffLocation = draft.dropoffLocation?.address;
-        _pendingServiceTitle = '${vehicle.make} ${vehicle.model} Transfer';
 
         // Start polling verification
         _pollingTimer?.cancel();
-        _pollingTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
-          if (timer.tick > 50) {
+        _pollingTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+          if (timer.tick > 90) {
             timer.cancel();
           } else {
             _verifyPendingOnlinePayment();
@@ -396,18 +402,7 @@ class _AirportTransferReviewScreenState
     }
 
     // Distance-based dynamic airport transfer fare calculation.
-    final double discountMultiplier = vehicle.roundTripDiscount > 0
-        ? (1.0 - vehicle.roundTripDiscount / 100.0)
-        : 1.0;
-    final double oneWayFare = vehicle.oneWayFare ??
-        (draft.isRoundTrip
-            ? (vehicle.displayPrice / (2 * discountMultiplier))
-            : vehicle.displayPrice);
     final double subtotal = vehicle.displayPrice;
-    final double returnFare = draft.isRoundTrip ? oneWayFare : 0.0;
-    final double roundTripDiscountAmount = draft.isRoundTrip && vehicle.roundTripDiscount > 0
-        ? ((oneWayFare * 2) - subtotal).clamp(0.0, double.infinity)
-        : 0.0;
 
     // GoCoins logic (standardized with Car Rental and Quick Services)
     final rewardSummary = ref.watch(rewardSummaryProvider).value;
@@ -1426,28 +1421,15 @@ class _AirportTransferReviewScreenState
                     if (vehicle.distanceKm != null) ...[
                       _ReviewRow(
                         isDark: isDark,
-                        label: 'Estimated Route',
-                        value: '${vehicle.distanceKm!.toStringAsFixed(1)} km · ${vehicle.durationMinutes ?? vehicle.estimatedDurationMinutes} mins',
+                        label: 'Distance',
+                        value: '${vehicle.distanceKm!.toStringAsFixed(1)} km',
                       ),
                     ],
                     _ReviewRow(
                       isDark: isDark,
-                      label: draft.isRoundTrip ? 'One-way portion' : 'Transfer fare',
-                      value: formatAmount(oneWayFare),
+                      label: draft.isRoundTrip ? 'Round-trip Total' : 'One-way Transfer',
+                      value: formatAmount(subtotal),
                     ),
-                    if (draft.isRoundTrip) ...[
-                      _ReviewRow(
-                        isDark: isDark,
-                        label: 'Return transfer',
-                        value: formatAmount(returnFare),
-                      ),
-                      if (vehicle.roundTripDiscount > 0 && roundTripDiscountAmount > 0)
-                        _ReviewRow(
-                          isDark: isDark,
-                          label: 'Round-trip discount',
-                          value: '-${formatAmount(roundTripDiscountAmount)} (${vehicle.roundTripDiscount.toStringAsFixed(0)}% off)',
-                        ),
-                    ],
                     _ReviewRow(
                       isDark: isDark,
                       label: 'Taxes & VAT',

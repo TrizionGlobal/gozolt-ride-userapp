@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
@@ -8,6 +10,7 @@ import '../../../../core/utils/app_date_utils.dart';
 import '../../../airport_transfer/data/datasources/airport_transfer_remote_datasource.dart';
 import '../../../../core/network/socket_service.dart';
 import 'airport_transfers_history_view.dart';
+import 'airport_transfer_cancellation_success_screen.dart';
 
 final airportTransferBookingDetailsProvider = FutureProvider.autoDispose
     .family<Map<String, dynamic>, String>((ref, bookingId) async {
@@ -43,26 +46,6 @@ class AirportTransferHistoryDetailsScreen extends ConsumerStatefulWidget {
 class _AirportTransferHistoryDetailsScreenState
     extends ConsumerState<AirportTransferHistoryDetailsScreen> {
   bool _isCancelling = false;
-  Timer? _pollingTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    // Poll every 3 seconds to catch real-time status transitions & verification PIN
-    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-      if (mounted) {
-        ref.invalidate(airportTransferBookingDetailsProvider(widget.bookingId));
-        ref.invalidate(airportTransfersHistoryProvider);
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _pollingTimer?.cancel();
-    ref.invalidate(airportTransfersHistoryProvider);
-    super.dispose();
-  }
 
   String _formatDateTime(dynamic dateTimeStr) {
     return AppDateUtils.formatDateTime(dateTimeStr);
@@ -113,7 +96,7 @@ class _AirportTransferHistoryDetailsScreenState
     }
   }
 
-  Future<void> _handleCancelBooking() async {
+  Future<void> _handleCancelBooking([Map<String, dynamic>? booking]) async {
     final reasonController = TextEditingController();
     bool isCancellingInsideDialog = false;
 
@@ -127,7 +110,7 @@ class _AirportTransferHistoryDetailsScreenState
             backgroundColor: Theme.of(context).cardTheme.color,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: Text(
-              'Cancel Airport Transfer',
+              'Cancel Booking',
               style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
             ),
             content: Column(
@@ -135,7 +118,7 @@ class _AirportTransferHistoryDetailsScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Are you sure you want to cancel this transfer booking?',
+                  'Are you sure you want to cancel this transfer booking? Any eligible paid amount will be refunded to your original payment method within 3-5 business days.',
                   style: AppTextStyles.bodyMedium
                       .copyWith(color: AppColors.textSecondary),
                 ),
@@ -196,10 +179,11 @@ class _AirportTransferHistoryDetailsScreenState
                               setDialogState(() => isCancellingInsideDialog = true);
                               setState(() => _isCancelling = true);
 
+                              Map<String, dynamic>? cancelResponse;
                               String? failureError;
                               try {
                                 final datasource = ref.read(airportTransferRemoteDatasourceProvider);
-                                await datasource.cancelBooking(
+                                cancelResponse = await datasource.cancelBooking(
                                   widget.bookingId,
                                   reason: reasonController.text.trim().isNotEmpty
                                       ? reasonController.text.trim()
@@ -227,9 +211,25 @@ class _AirportTransferHistoryDetailsScreenState
                               if (!mounted) return;
 
                               if (failureError != null) {
-                                await _showCancellationFailedModal(context, failureError);
+                                await _showCancellationFailedModal(context, failureError, booking);
                               } else {
-                                await _showCancellationSuccessModal(context);
+                                final double finalRefund = (cancelResponse?['refundAmount'] is num)
+                                    ? (cancelResponse!['refundAmount'] as num).toDouble()
+                                    : (booking?['grandTotal'] != null
+                                        ? (double.tryParse(booking!['grandTotal'].toString()) ?? 0.0)
+                                        : 0.0);
+                                final String refundDays = cancelResponse?['refundDays']?.toString() ?? '3-5 business days';
+                                final String refundStatus = cancelResponse?['refundStatus']?.toString() ?? 'REFUNDED';
+
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => AirportTransferCancellationSuccessScreen(
+                                      refundAmount: finalRefund,
+                                      refundDays: refundDays,
+                                      refundStatus: refundStatus,
+                                    ),
+                                  ),
+                                );
                               }
                             },
                       style: ElevatedButton.styleFrom(
@@ -251,7 +251,7 @@ class _AirportTransferHistoryDetailsScreenState
                               ),
                             )
                           : const Text(
-                              'Cancel Transfer',
+                              'Cancel Booking',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
@@ -268,95 +268,8 @@ class _AirportTransferHistoryDetailsScreenState
     );
   }
 
-  Future<void> _showCancellationSuccessModal(BuildContext context) async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => Dialog(
-        backgroundColor: isDark ? AppColors.cardDark : AppColors.cardLight,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.check_circle_rounded,
-                    color: Color(0xFF10B981),
-                    size: 44,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Booking Cancelled',
-                style: AppTextStyles.titleMedium.copyWith(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Your airport transfer booking has been cancelled successfully.',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
-                  height: 1.4,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'If payment was completed, any eligible refund will be credited to your original payment method.',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: (isDark ? AppColors.textSecondary : AppColors.textSecondaryLight).withValues(alpha: 0.8),
-                  fontSize: 12,
-                  height: 1.35,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGold,
-                    foregroundColor: Colors.black,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  child: const Text(
-                    'OK',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _showCancellationFailedModal(BuildContext context, String rawError) async {
+  Future<void> _showCancellationFailedModal(
+      BuildContext context, String rawError, [Map<String, dynamic>? booking]) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     String cleanMessage = rawError
         .replaceAll('Exception:', '')
@@ -443,7 +356,7 @@ class _AirportTransferHistoryDetailsScreenState
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.of(ctx).pop();
-                        _handleCancelBooking();
+                        _handleCancelBooking(booking);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.error,
@@ -455,7 +368,7 @@ class _AirportTransferHistoryDetailsScreenState
                         ),
                       ),
                       child: const Text(
-                        'Try Again',
+                        'Retry',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
@@ -578,8 +491,6 @@ class _AirportTransferHistoryDetailsScreenState
     final returnStatus =
         (booking['returnStatus'] ?? status).toString().trim().toUpperCase();
     final returnStatusColor = _getStatusColor(returnStatus);
-    final vehicle = booking['vehicle'] as Map<String, dynamic>?;
-    final driver = booking['driver'] as Map<String, dynamic>?;
     final statusColor = _getStatusColor(status);
     final isCancelled = status == 'CANCELLED' || status == 'REFUNDED';
     final canCancel =
@@ -591,6 +502,23 @@ class _AirportTransferHistoryDetailsScreenState
         ? ((status == 'CANCELLED' || status == 'REFUNDED') &&
             (returnStatus == 'CANCELLED' || returnStatus == 'REFUNDED'))
         : (status == 'CANCELLED' || status == 'REFUNDED');
+
+    final outboundDriver = _extractDriver(booking, leg: 'OUTBOUND');
+    final returnDriver = isRound ? _extractDriver(booking, leg: 'RETURN') : null;
+
+    final hasOutboundDriver = outboundDriver != null ||
+        status == 'DRIVER_ASSIGNED' ||
+        status == 'EN_ROUTE_TO_PICKUP' ||
+        status == 'ARRIVED_AT_AIRPORT' ||
+        status == 'PASSENGER_MET' ||
+        status == 'IN_TRANSIT';
+
+    final hasReturnDriver = returnDriver != null ||
+        returnStatus == 'DRIVER_ASSIGNED' ||
+        returnStatus == 'EN_ROUTE_TO_PICKUP' ||
+        returnStatus == 'ARRIVED_AT_AIRPORT' ||
+        returnStatus == 'PASSENGER_MET' ||
+        returnStatus == 'IN_TRANSIT';
 
     return RefreshIndicator(
       color: AppColors.primaryGold,
@@ -752,9 +680,11 @@ class _AirportTransferHistoryDetailsScreenState
               ],
             ],
 
-            // 4-Digit Verification PIN Card (Shown only while leg is active, hidden when COMPLETED)
-            if (!isFullyCompleted) ...[
-              if (booking['verificationPin'] != null && status != 'COMPLETED') ...[
+            // 4-Digit Verification PIN Card (Shown only AFTER supplier assigned self or driver, and while leg is active)
+            if (!isFullyCompleted && !isCancelled) ...[
+              if (hasOutboundDriver &&
+                  booking['verificationPin'] != null &&
+                  status != 'COMPLETED') ...[
                 _buildVerificationPinCard(
                   booking['verificationPin'].toString(),
                   status,
@@ -764,8 +694,11 @@ class _AirportTransferHistoryDetailsScreenState
                 const SizedBox(height: 12),
               ],
               if (isRound &&
+                  hasReturnDriver &&
                   booking['returnVerificationPin'] != null &&
-                  returnStatus != 'COMPLETED') ...[
+                  returnStatus != 'COMPLETED' &&
+                  returnStatus != 'CANCELLED' &&
+                  returnStatus != 'REFUNDED') ...[
                 _buildVerificationPinCard(
                   booking['returnVerificationPin'].toString(),
                   returnStatus,
@@ -791,9 +724,8 @@ class _AirportTransferHistoryDetailsScreenState
 
             const SizedBox(height: 14),
 
-            // Vehicle & Supplier Details Card
-            _buildVehicleAndDriverCard(
-                vehicle, driver, booking['supplier'] as Map<String, dynamic>?, isDark),
+            // Vehicle & Driver Details Card
+            _buildVehicleAndDriverCard(booking, isDark),
 
             const SizedBox(height: 14),
 
@@ -808,7 +740,7 @@ class _AirportTransferHistoryDetailsScreenState
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: _isCancelling ? null : _handleCancelBooking,
+                  onPressed: _isCancelling ? null : () => _handleCancelBooking(booking),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.error,
                     foregroundColor: Colors.white,
@@ -827,7 +759,7 @@ class _AirportTransferHistoryDetailsScreenState
                           ),
                         )
                       : Text(
-                          'Cancel Transfer Booking',
+                          'Cancel Booking',
                           style: AppTextStyles.labelLarge.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -2204,11 +2136,511 @@ class _AirportTransferHistoryDetailsScreenState
     );
   }
 
+  Map<String, String>? _extractDriver(Map<String, dynamic> booking, {String leg = 'OUTBOUND'}) {
+    final tasks = booking['tasks'] as List<dynamic>?;
+    if (tasks != null && tasks.isNotEmpty) {
+      final targetLeg = leg.toUpperCase();
+      dynamic matchedTask;
+      for (final t in tasks) {
+        if (t is Map) {
+          final tLeg = (t['tripLeg'] ?? 'OUTBOUND').toString().toUpperCase();
+          if (tLeg == targetLeg) {
+            matchedTask = t;
+            break;
+          }
+        }
+      }
+
+      // If OUTBOUND and no explicit leg was set on single task, fallback to first task
+      if (matchedTask == null && targetLeg == 'OUTBOUND') {
+        matchedTask = tasks.firstWhere(
+          (t) => t is Map && ((t['tripLeg'] ?? '').toString().toUpperCase() != 'RETURN'),
+          orElse: () => null,
+        );
+      }
+
+      if (matchedTask is Map) {
+        final task = Map<String, dynamic>.from(matchedTask);
+        final worker = task['worker'] as Map<String, dynamic>?;
+        final isSelf = task['selfAssigned'] == true;
+        final supplier = booking['supplier'] as Map<String, dynamic>?;
+
+        String? name;
+        if (worker != null && worker['name'] != null && worker['name'].toString().trim().isNotEmpty) {
+          name = worker['name'].toString().trim();
+        } else if (task['assignedToName'] != null && task['assignedToName'].toString().trim().isNotEmpty) {
+          name = task['assignedToName'].toString().trim();
+        } else if (isSelf && supplier != null) {
+          name = (supplier['ownerName'] ?? supplier['companyName'])?.toString().trim();
+        } else if (isSelf) {
+          name = 'Supplier Chauffeur';
+        }
+
+        if (name == null || name.isEmpty) {
+          if (isSelf) {
+            name = (supplier?['companyName'] ?? supplier?['ownerName'] ?? 'Supplier Chauffeur').toString().trim();
+            if (name.isEmpty) name = 'Supplier Chauffeur';
+          } else if (worker != null) {
+            name = 'Assigned Driver';
+          }
+        }
+
+        String? phone;
+        if (worker != null && worker['phone'] != null && worker['phone'].toString().trim().isNotEmpty) {
+          phone = worker['phone'].toString().trim();
+        } else if (supplier != null && supplier['contactPhone'] != null && supplier['contactPhone'].toString().trim().isNotEmpty) {
+          phone = supplier['contactPhone'].toString().trim();
+        }
+
+        String? email;
+        if (worker != null && worker['email'] != null && worker['email'].toString().trim().isNotEmpty) {
+          email = worker['email'].toString().trim();
+        } else if (task['assignedToEmail'] != null && task['assignedToEmail'].toString().trim().isNotEmpty) {
+          email = task['assignedToEmail'].toString().trim();
+        } else if (supplier != null && supplier['email'] != null && supplier['email'].toString().trim().isNotEmpty) {
+          email = supplier['email'].toString().trim();
+        }
+
+        if (name != null && name.isNotEmpty) {
+          final result = <String, String>{
+            'name': name,
+            'role': isSelf ? 'Supplier Chauffeur' : 'Assigned Driver',
+          };
+          if (phone != null && phone.isNotEmpty) {
+            result['phone'] = phone;
+          }
+          if (email != null && email.isNotEmpty) {
+            result['email'] = email;
+          }
+          return result;
+        }
+      }
+    }
+
+    final driver = booking['driver'] as Map<String, dynamic>?;
+    if (driver != null) {
+      final first = (driver['firstName'] ?? '').toString().trim();
+      final last = (driver['lastName'] ?? '').toString().trim();
+      final name = '$first $last'.trim();
+      final phone = (driver['phone'] ?? '').toString().trim();
+      final email = (driver['email'] ?? '').toString().trim();
+
+      if (name.isNotEmpty) {
+        final result = <String, String>{
+          'name': name,
+          'role': 'Assigned Driver',
+        };
+        if (phone.isNotEmpty) {
+          result['phone'] = phone;
+        }
+        if (email.isNotEmpty) {
+          result['email'] = email;
+        }
+        return result;
+      }
+    }
+
+    return null;
+  }
+
+  Future<void> _makePhoneCall(String phone) async {
+    final cleanPhone = phone.replaceAll(RegExp(r'[^\d+]'), '');
+    final uri = Uri(scheme: 'tel', path: cleanPhone);
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        await launchUrl(uri);
+      }
+    } catch (_) {
+      try {
+        await launchUrl(uri);
+      } catch (_) {
+        await Clipboard.setData(ClipboardData(text: phone));
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Phone number copied to clipboard: $phone'),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _sendEmail(String email) async {
+    final cleanEmail = email.trim();
+    final uri = Uri(scheme: 'mailto', path: cleanEmail);
+    try {
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        await launchUrl(uri);
+      }
+    } catch (_) {
+      try {
+        await launchUrl(uri);
+      } catch (_) {
+        await Clipboard.setData(ClipboardData(text: cleanEmail));
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Email copied to clipboard: $cleanEmail'),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
+  Widget _buildDriverBox({
+    required String title,
+    required Map<String, String> driverInfo,
+    required bool isDark,
+  }) {
+    final name = driverInfo['name'] ?? 'Driver';
+    final phone = driverInfo['phone'];
+    final email = driverInfo['email'];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.inputDark.withValues(alpha: 0.5)
+            : const Color(0xFFF8F9FA),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.person_rounded,
+                  size: 22,
+                  color: AppColors.success,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: isDark
+                            ? AppColors.textSecondary
+                            : AppColors.textSecondaryLight,
+                        fontSize: 10,
+                        letterSpacing: 0.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      name,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: isDark
+                            ? AppColors.textPrimary
+                            : AppColors.textPrimaryLight,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(
+                    color: AppColors.success.withValues(alpha: 0.35),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.check_circle_rounded,
+                        size: 11, color: AppColors.success),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Assigned',
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: AppColors.success,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          if ((phone != null && phone.isNotEmpty) ||
+              (email != null && email.isNotEmpty)) ...[
+            const SizedBox(height: 10),
+            Divider(
+              height: 1,
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            ),
+            const SizedBox(height: 8),
+          ],
+
+          // Phone / Mobile Row
+          if (phone != null && phone.isNotEmpty) ...[
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => _makePhoneCall(phone),
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Icon(
+                          Icons.phone_rounded,
+                          size: 15,
+                          color: Colors.blue.shade400,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Mobile Number',
+                              style: AppTextStyles.labelSmall.copyWith(
+                                color: isDark
+                                    ? AppColors.textSecondary
+                                    : AppColors.textSecondaryLight,
+                                fontSize: 9.5,
+                              ),
+                            ),
+                            Text(
+                              phone,
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: isDark
+                                    ? AppColors.textPrimary
+                                    : AppColors.textPrimaryLight,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.call, size: 12, color: Colors.blue.shade400),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Call',
+                              style: AppTextStyles.labelSmall.copyWith(
+                                color: Colors.blue.shade400,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+
+          // Email Row
+          if (email != null && email.isNotEmpty) ...[
+            if (phone != null && phone.isNotEmpty) const SizedBox(height: 6),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => _sendEmail(email),
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.purple.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(
+                          Icons.mail_outline_rounded,
+                          size: 15,
+                          color: Colors.purpleAccent,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Email Address',
+                              style: AppTextStyles.labelSmall.copyWith(
+                                color: isDark
+                                    ? AppColors.textSecondary
+                                    : AppColors.textSecondaryLight,
+                                fontSize: 9.5,
+                              ),
+                            ),
+                            Text(
+                              email,
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: isDark
+                                    ? AppColors.textPrimary
+                                    : AppColors.textPrimaryLight,
+                                fontWeight: FontWeight.w500,
+                                fontSize: 11.5,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.purple.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.send_rounded,
+                                size: 11, color: Colors.purpleAccent),
+                            SizedBox(width: 4),
+                            Text(
+                              'Email',
+                              style: TextStyle(
+                                color: Colors.purpleAccent,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAwaitingDriverBox(bool isDark) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark
+            ? AppColors.inputDark.withValues(alpha: 0.5)
+            : const Color(0xFFF8F9FA),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: Colors.amber.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.schedule_rounded,
+              size: 20,
+              color: Colors.amber,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'ASSIGNED DRIVER',
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: isDark
+                        ? AppColors.textSecondary
+                        : AppColors.textSecondaryLight,
+                    fontSize: 10,
+                    letterSpacing: 0.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Driver details will appear once assigned by the supplier.',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: isDark
+                        ? AppColors.textSecondary
+                        : AppColors.textSecondaryLight,
+                    fontSize: 12,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildVehicleAndDriverCard(
-      Map<String, dynamic>? vehicle,
-      Map<String, dynamic>? driver,
-      Map<String, dynamic>? supplier,
-      bool isDark) {
+      Map<String, dynamic> booking, bool isDark) {
+    final vehicle = booking['vehicle'] as Map<String, dynamic>?;
+    final isRound =
+        (booking['transferType'] ?? '').toString().toUpperCase() == 'ROUND_TRIP';
+
     final vehicleName = vehicle != null && vehicle['make'] != null
         ? '${vehicle['make']} ${vehicle['model'] ?? ''}'.trim()
         : 'Airport Transfer Vehicle';
@@ -2216,14 +2648,10 @@ class _AirportTransferHistoryDetailsScreenState
         vehicle?['vehicleType']?.toString() ??
         'N/A';
 
-    final supplierName = supplier?['companyName']?.toString() ??
-        vehicle?['supplier']?['companyName']?.toString() ??
-        'Supplier Partner';
-    final driverName = driver != null
-        ? '${driver['firstName'] ?? ''} ${driver['lastName'] ?? ''}'.trim()
-        : null;
+    final outboundDriver = _extractDriver(booking, leg: 'OUTBOUND');
+    final returnDriver = isRound ? _extractDriver(booking, leg: 'RETURN') : null;
 
-    final hasDriver = driverName != null && driverName.isNotEmpty;
+    final hasDriver = outboundDriver != null || returnDriver != null;
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -2246,7 +2674,7 @@ class _AirportTransferHistoryDetailsScreenState
               ),
               const SizedBox(width: 7),
               Text(
-                'VEHICLE & SUPPLIER DETAILS',
+                'VEHICLE & DRIVER DETAILS',
                 style: AppTextStyles.labelLarge.copyWith(
                   color: AppColors.primaryGold,
                   fontWeight: FontWeight.w600,
@@ -2347,70 +2775,31 @@ class _AirportTransferHistoryDetailsScreenState
             ),
           ),
 
-          const SizedBox(height: 10),
-
-          // Box 2: Supplier Partner / Assigned Driver
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? AppColors.inputDark.withValues(alpha: 0.5)
-                  : const Color(0xFFF8F9FA),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                width: 1,
+          // Box 2: Driver Details (Supplier Partner Card removed)
+          if (hasDriver) ...[
+            const SizedBox(height: 10),
+            if (outboundDriver != null) ...[
+              _buildDriverBox(
+                title: isRound ? 'FIRST TRIP DRIVER' : 'ASSIGNED DRIVER',
+                driverInfo: outboundDriver,
+                isDark: isDark,
               ),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    hasDriver ? Icons.person_rounded : Icons.business_rounded,
-                    size: 20,
-                    color: Colors.blue.shade600,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        hasDriver ? 'ASSIGNED DRIVER' : 'SUPPLIER PARTNER',
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: isDark
-                              ? AppColors.textSecondary
-                              : AppColors.textSecondaryLight,
-                          fontSize: 10,
-                          letterSpacing: 0.5,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        hasDriver ? driverName : supplierName,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: isDark
-                              ? AppColors.textPrimary
-                              : AppColors.textPrimaryLight,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+            ],
+            if (isRound &&
+                returnDriver != null &&
+                (returnDriver['name'] != outboundDriver?['name'] ||
+                    returnDriver['phone'] != outboundDriver?['phone'])) ...[
+              const SizedBox(height: 10),
+              _buildDriverBox(
+                title: 'RETURN TRIP DRIVER',
+                driverInfo: returnDriver,
+                isDark: isDark,
+              ),
+            ],
+          ] else ...[
+            const SizedBox(height: 10),
+            _buildAwaitingDriverBox(isDark),
+          ],
         ],
       ),
     );

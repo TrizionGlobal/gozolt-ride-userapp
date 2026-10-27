@@ -11,6 +11,7 @@ import '../../../home/presentation/providers/home_providers.dart';
 
 class AirportTransferConfirmationScreen extends ConsumerWidget {
   final String bookingId;
+  final String? bookingReference;
   final String paymentMethod;
   final String paymentStatus;
   final String? pickupDateTime;
@@ -19,15 +20,40 @@ class AirportTransferConfirmationScreen extends ConsumerWidget {
   const AirportTransferConfirmationScreen({
     super.key,
     required this.bookingId,
+    this.bookingReference,
     required this.paymentMethod,
     required this.paymentStatus,
     this.pickupDateTime,
     this.returnDateTime,
   });
 
+  String _formatServiceId(String? ref, String id) {
+    if (ref != null && ref.trim().isNotEmpty) {
+      final trimmed = ref.trim();
+      if (trimmed.startsWith('GZLT-TRF-')) return trimmed;
+      if (trimmed.startsWith('TRF-')) return 'GZLT-$trimmed';
+      if (!trimmed.contains('-') && trimmed.length >= 6) {
+        return 'GZLT-TRF-$trimmed';
+      }
+      return trimmed;
+    }
+    if (id.trim().isNotEmpty) {
+      final trimmed = id.trim();
+      if (trimmed.startsWith('GZLT-TRF-')) return trimmed;
+      if (trimmed.startsWith('TRF-')) return 'GZLT-$trimmed';
+      final clean = trimmed.replaceAll('-', '').toUpperCase();
+      if (clean.length >= 7) {
+        return 'GZLT-TRF-${clean.substring(0, 7)}';
+      }
+      return 'GZLT-TRF-$trimmed';
+    }
+    return 'GZLT-TRF';
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final displayBookingId = _formatServiceId(bookingReference, bookingId);
 
     return PopScope(
       canPop: false,
@@ -87,34 +113,69 @@ class AirportTransferConfirmationScreen extends ConsumerWidget {
                       const SizedBox(height: 22),
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(18),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                         decoration: BoxDecoration(
                           color: isDark
                               ? AppColors.surfaceDark
                               : AppColors.surfaceLight,
-                          borderRadius: BorderRadius.circular(18),
+                          borderRadius: BorderRadius.circular(14),
                           border: Border.all(
                             color: isDark
                                 ? AppColors.borderDark
-                                : Colors.grey.shade300,
+                                : AppColors.borderLight,
                           ),
                         ),
-                        child: Column(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'SERVICE ID',
-                              style: AppTextStyles.labelSmall.copyWith(
-                                color: AppColors.primaryGold,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.7,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Service ID',
+                                    style: AppTextStyles.labelSmall.copyWith(
+                                      color: isDark
+                                          ? AppColors.textSecondary
+                                          : AppColors.textSecondaryLight,
+                                      fontSize: 10,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      displayBookingId,
+                                      style: AppTextStyles.titleMedium.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'monospace',
+                                        color: AppColors.primaryGold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 5),
-                            Text(
-                              bookingId,
-                              textAlign: TextAlign.center,
-                              style: AppTextStyles.titleMedium.copyWith(
-                                fontWeight: FontWeight.w700,
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGold.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: AppColors.primaryGold.withValues(alpha: 0.4),
+                                ),
+                              ),
+                              child: Text(
+                                'CONFIRMED',
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  color: AppColors.primaryGold,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 11,
+                                  letterSpacing: 0.5,
+                                ),
                               ),
                             ),
                           ],
@@ -137,6 +198,23 @@ class AirportTransferConfirmationScreen extends ConsumerWidget {
                         ),
                         child: Column(
                           children: [
+                            _ConfirmationRow(
+                              icon: Icons.airport_shuttle_rounded,
+                              label: 'Service',
+                              value: 'Airport Transfer',
+                              isDark: isDark,
+                            ),
+                            const SizedBox(height: 12),
+                            _ConfirmationRow(
+                              icon: Icons.tag_rounded,
+                              label: 'Service ID',
+                              value: displayBookingId,
+                              isDark: isDark,
+                              isMonospace: true,
+                              isBold: true,
+                              customValueColor: AppColors.primaryGold,
+                            ),
+                            const SizedBox(height: 12),
                             _ConfirmationRow(
                               icon: paymentMethod == 'Cash'
                                   ? Icons.payments_outlined
@@ -272,12 +350,18 @@ class _ConfirmationRow extends StatelessWidget {
   final String label;
   final String value;
   final bool isDark;
+  final bool isMonospace;
+  final bool isBold;
+  final Color? customValueColor;
 
   const _ConfirmationRow({
     required this.icon,
     required this.label,
     required this.value,
     required this.isDark,
+    this.isMonospace = false,
+    this.isBold = false,
+    this.customValueColor,
   });
 
   @override
@@ -318,10 +402,13 @@ class _ConfirmationRow extends StatelessWidget {
               Text(
                 value,
                 style: AppTextStyles.bodySmall.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: isDark
-                      ? AppColors.textPrimary
-                      : AppColors.textPrimaryLight,
+                  fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+                  fontFamily: isMonospace ? 'monospace' : null,
+                  letterSpacing: isMonospace ? 0.5 : null,
+                  color: customValueColor ??
+                      (isDark
+                          ? AppColors.textPrimary
+                          : AppColors.textPrimaryLight),
                 ),
               ),
             ],

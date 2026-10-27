@@ -39,7 +39,6 @@ class AirportTransfersHistoryView extends ConsumerStatefulWidget {
 class _AirportTransfersHistoryViewState
     extends ConsumerState<AirportTransfersHistoryView> {
   String _selectedFilter = 'All';
-  Timer? _pollingTimer;
   StreamSubscription? _socketSub;
 
   final List<String> _filters = [
@@ -63,19 +62,11 @@ class _AirportTransfersHistoryViewState
         ref.invalidate(airportTransfersHistoryProvider);
       }
     });
-
-    // 3. Periodic polling every 3 seconds to keep history cards synchronized with live status
-    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-      if (mounted) {
-        ref.invalidate(airportTransfersHistoryProvider);
-      }
-    });
   }
 
   @override
   void dispose() {
     _socketSub?.cancel();
-    _pollingTimer?.cancel();
     super.dispose();
   }
 
@@ -224,58 +215,54 @@ class _AirportTransfersHistoryViewState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Filter Chips
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  children: _filters.map((filter) {
-                    final isSelected = _selectedFilter == filter;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: GestureDetector(
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          setState(() {
-                            _selectedFilter = filter;
-                          });
-                        },
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 150),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppColors.primaryGold
-                                : Theme.of(context).cardTheme.color,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
+              // Filter Tabs
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: _filters.map((filter) {
+                      final isSelected = _selectedFilter == filter;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: GestureDetector(
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            setState(() {
+                              _selectedFilter = filter;
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 5),
+                            decoration: BoxDecoration(
                               color: isSelected
                                   ? AppColors.primaryGold
-                                  : (Theme.of(context).dividerTheme.color ??
-                                      AppColors.borderDark),
+                                  : Theme.of(context).cardTheme.color,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppColors.primaryGold
+                                    : (Theme.of(context).dividerTheme.color ??
+                                        AppColors.borderDark),
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            filter,
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: isSelected
-                                  ? Colors.white
-                                  : Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.color ??
-                                      AppColors.textPrimary,
-                              fontWeight: isSelected
-                                  ? FontWeight.bold
-                                  : FontWeight.w500,
+                            child: Text(
+                              filter,
+                              style: AppTextStyles.labelLarge.copyWith(
+                                color: isSelected
+                                    ? Theme.of(context).scaffoldBackgroundColor
+                                    : (Theme.of(context).brightness == Brightness.dark
+                                        ? AppColors.textSecondary
+                                        : AppColors.textSecondaryLight),
+                                fontSize: 12,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  }).toList(),
+                      );
+                    }).toList(),
+                  ),
                 ),
               ),
 
@@ -290,7 +277,7 @@ class _AirportTransfersHistoryViewState
                         ),
                       )
                     : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
                         itemCount: filteredBookings.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 12),
                         itemBuilder: (context, index) {
