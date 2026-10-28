@@ -35,7 +35,7 @@ class _GardeningReviewScreenState extends ConsumerState<GardeningReviewScreen> {
   @override
   void initState() {
     super.initState();
-    _bookingData = widget.bookingData;
+    _bookingData = widget.bookingData.applyDraft();
   }
 
   bool _useGoCoins = false;

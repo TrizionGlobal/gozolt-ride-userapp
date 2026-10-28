@@ -264,7 +264,7 @@ class _SecurityPersonnelDetailsScreenState extends ConsumerState<SecurityPersonn
     // Estimated price: ~€18 per personnel per hour
     final subtotal = _personnelCount * durationHours * 18.0;
 
-    final updatedData = widget.bookingData.copyWith(
+    final updatedData = widget.bookingData.applyDraft().copyWith(
       selectedServiceTitle: 'Security Personnel',
       securityService: _selectedSecurityService,
       venueType: _selectedVenueType,

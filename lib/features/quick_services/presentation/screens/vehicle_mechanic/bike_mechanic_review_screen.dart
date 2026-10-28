@@ -36,7 +36,7 @@ class _BikeMechanicReviewScreenState extends ConsumerState<BikeMechanicReviewScr
   @override
   void initState() {
     super.initState();
-    _bookingData = widget.bookingData;
+    _bookingData = widget.bookingData.applyDraft();
   }
 
   bool useCoins = false;

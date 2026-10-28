@@ -48,6 +48,7 @@ class QuickServicesRepository {
 
   Future<String> bookQuickService(QuickServiceBookingData data) async {
     try {
+      data = data.applyDraft();
       final List<String> imageUrls = await uploadImages(data.uploadedImages ?? []);
 
       // Build the options JSON mapping all category-specific fields

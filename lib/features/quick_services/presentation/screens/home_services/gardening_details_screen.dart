@@ -353,7 +353,7 @@ class _GardeningDetailsScreenState extends ConsumerState<GardeningDetailsScreen>
 
                       double newSubtotal = selectedKeys.length * 25.00;
 
-                      final updatedData = widget.bookingData.copyWith(
+                      final updatedData = widget.bookingData.applyDraft().copyWith(
                         selectedServiceTitle: 'Gardening',
                         selectedAddons: [], // Clear addons so it doesn't show in price summary
                         gardeningServices: selectedKeys.isNotEmpty ? selectedKeys.join(', ') : null,

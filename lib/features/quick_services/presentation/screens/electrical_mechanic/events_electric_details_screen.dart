@@ -125,7 +125,7 @@ class _EventsElectricDetailsScreenState extends ConsumerState<EventsElectricDeta
       calculatedSubtotal = 15.0; // Base visit fee
     }
 
-    final updatedData = widget.bookingData.copyWith(
+    final updatedData = widget.bookingData.applyDraft().copyWith(
       selectedServiceTitle: 'Events Electric',
       selectedAddons: selectedAddons,
       whatYouNeed: _whatYouNeedController.text.trim(),

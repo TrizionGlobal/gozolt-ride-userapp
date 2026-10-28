@@ -317,7 +317,7 @@ class _ApplianceRepairDetailsScreenState extends ConsumerState<ApplianceRepairDe
                           }
                         });
 
-                        final updatedData = widget.bookingData.copyWith(
+                        final updatedData = widget.bookingData.applyDraft().copyWith(
                           selectedAddons: selectedAddons,
                           whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty ? _whatYouNeedController.text.trim() : null,
                           describeIssue: _describeIssueController.text.trim().isNotEmpty ? _describeIssueController.text.trim() : null,

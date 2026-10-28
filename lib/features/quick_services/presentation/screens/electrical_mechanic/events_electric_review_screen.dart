@@ -40,7 +40,7 @@ class _EventsElectricReviewScreenState extends ConsumerState<EventsElectricRevie
   @override
   void initState() {
     super.initState();
-    _bookingData = widget.bookingData;
+    _bookingData = widget.bookingData.applyDraft();
   }
 
   @override

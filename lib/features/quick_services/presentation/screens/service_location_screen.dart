@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
@@ -50,8 +51,7 @@ class _ServiceLocationScreenState extends ConsumerState<ServiceLocationScreen> {
 
   void _updateDateText() {
     if (_selectedDate == null) return;
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    _dateController.text = '${_selectedDate!.day} ${months[_selectedDate!.month - 1]} ${_selectedDate!.year}';
+    _dateController.text = DateFormat('dd MMM yyyy').format(_selectedDate!);
   }
 
   void _updateTimeText() {

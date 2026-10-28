@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/utils/app_date_utils.dart';
 import '../../domain/models/airport_transfer_vehicle.dart';
 import '../providers/airport_transfer_provider.dart';
 import '../providers/airport_transfer_vehicle_provider.dart';
 import '../widgets/airport_transfer_header.dart';
 import '../../../../core/widgets/gozolt_button.dart';
 import '../../../../core/widgets/app_filled_text_field.dart';
+import '../../../../core/utils/input_validators.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 
@@ -63,29 +65,50 @@ class _AirportTransferChooseScreenState
   String _selectedCategory = 'All';
   AirportTransferFilterState _filterState = AirportTransferFilterState();
 
-Future<void> _showFilterModal() async {
-  final newFilterState =
-      await showModalBottomSheet<AirportTransferFilterState>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Theme.of(context).cardTheme.color,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(
-        top: Radius.circular(20),
-      ),
-    ),
-    builder: (context) {
-      return _AirportTransferFilterModal(
-        initialState: _filterState,
-      );
-    },
-  );
-  if (newFilterState != null && mounted) {
-    setState(() {
-      _filterState = newFilterState;
-    });
+  bool get _hasActiveFilters {
+    return _filterState.sortBy != 'Recommended' ||
+        _filterState.vehicleTypes.isNotEmpty ||
+        _filterState.minPrice != null ||
+        _filterState.maxPrice != null ||
+        _filterState.passengerOptions.isNotEmpty ||
+        _filterState.luggageOptions.isNotEmpty;
   }
-}
+
+  Future<void> _showFilterModal() async {
+    final modalInitialState = _filterState.clone();
+    if (_selectedCategory != 'All' && modalInitialState.vehicleTypes.isEmpty) {
+      modalInitialState.vehicleTypes.add(_selectedCategory);
+    }
+
+    final newFilterState =
+        await showModalBottomSheet<AirportTransferFilterState>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).cardTheme.color,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(20),
+        ),
+      ),
+      builder: (context) {
+        return _AirportTransferFilterModal(
+          initialState: modalInitialState,
+        );
+      },
+    );
+    if (newFilterState != null && mounted) {
+      setState(() {
+        _filterState = newFilterState;
+        if (newFilterState.vehicleTypes.length == 1) {
+          _selectedCategory = newFilterState.vehicleTypes.first;
+        } else if (newFilterState.vehicleTypes.isEmpty) {
+          _selectedCategory = 'All';
+        } else {
+          _selectedCategory = 'All';
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,14 +121,32 @@ Future<void> _showFilterModal() async {
         children: [
           AirportTransferHeader(
             title: 'Choose Transfer',
-            trailing: IconButton(
-              onPressed: _showFilterModal,
-              tooltip: 'Filters',
-              icon: const Icon(
-                Icons.filter_list_rounded,
-                color: AppColors.backgroundDark,
-                size: 22,
-              ),
+            trailing: Stack(
+              alignment: Alignment.center,
+              children: [
+                IconButton(
+                  onPressed: _showFilterModal,
+                  tooltip: 'Filters',
+                  icon: const Icon(
+                    Icons.filter_list_rounded,
+                    color: AppColors.backgroundDark,
+                    size: 22,
+                  ),
+                ),
+                if (_hasActiveFilters)
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: AppColors.error,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
           _JourneySummaryCard(
@@ -119,6 +160,12 @@ Future<void> _showFilterModal() async {
             luggageCount: draft.totalLuggage,
             isRoundTrip: draft.isRoundTrip,
             returnDate: draft.returnDate,
+            distanceKm: vehiclesAsync.value?.isNotEmpty == true
+                ? vehiclesAsync.value!.first.distanceKm
+                : null,
+            durationMinutes: vehiclesAsync.value?.isNotEmpty == true
+                ? vehiclesAsync.value!.first.durationMinutes
+                : null,
             onEdit: () => Navigator.of(context).pop(),
           ),
           _buildCategoryTabs(isDark),
@@ -163,33 +210,23 @@ Future<void> _showFilterModal() async {
     );
   }
 
-  double _priceValue(AirportTransferVehicle vehicle) {
-    return double.tryParse(
-          vehicle.formattedPrice.replaceAll(RegExp(r'[^0-9.]'), ''),
-        ) ??
-        0;
-  }
-
-  int _capacityValue(String text) {
-    final match = RegExp(r'\d+').firstMatch(text);
-    return match == null ? 0 : int.tryParse(match.group(0)!) ?? 0;
-  }
 
   List<AirportTransferVehicle> _filterVehicles(
     List<AirportTransferVehicle> vehicles,
   ) {
     final filtered = vehicles.where((vehicle) {
-      if (_selectedCategory != 'All' &&
+      // 1. Vehicle Type / Category
+      if (_filterState.vehicleTypes.isNotEmpty) {
+        if (!_filterState.vehicleTypes.contains(vehicle.type)) {
+          return false;
+        }
+      } else if (_selectedCategory != 'All' &&
           vehicle.type != _selectedCategory) {
         return false;
       }
 
-      if (_filterState.vehicleTypes.isNotEmpty &&
-          !_filterState.vehicleTypes.contains(vehicle.type)) {
-        return false;
-      }
-
-      final price = _priceValue(vehicle);
+      // 2. Price Range
+      final price = vehicle.displayPrice;
       if (_filterState.minPrice != null &&
           price < _filterState.minPrice!) {
         return false;
@@ -199,42 +236,56 @@ Future<void> _showFilterModal() async {
         return false;
       }
 
-      final passengers = _capacityValue(vehicle.passengerText);
+      // 3. Passenger Capacity
+      final passengers = vehicle.passengerCapacity;
       if (_filterState.passengerOptions.isNotEmpty) {
-        final matches =
-            (_filterState.passengerOptions.contains('Up to 5') &&
-                passengers <= 5) ||
-            (_filterState.passengerOptions.contains('Up to 7') &&
-                passengers >= 6 &&
-                passengers <= 7) ||
-            (_filterState.passengerOptions.contains('8+ Passengers') &&
-                passengers >= 8);
+        bool matches = false;
+        if (_filterState.passengerOptions.contains('Up to 5') &&
+            passengers <= 5) {
+          matches = true;
+        }
+        if (_filterState.passengerOptions.contains('Up to 7') &&
+            passengers >= 5 &&
+            passengers <= 7) {
+          matches = true;
+        }
+        if (_filterState.passengerOptions.contains('8+ Passengers') &&
+            passengers >= 8) {
+          matches = true;
+        }
         if (!matches) return false;
       }
 
-      final luggage = _capacityValue(vehicle.luggageText);
+      // 4. Luggage Capacity
+      final luggage = vehicle.luggageCapacity;
       if (_filterState.luggageOptions.isNotEmpty) {
-        final matches =
-            (_filterState.luggageOptions.contains('1-2 Bags') &&
-                luggage >= 1 &&
-                luggage <= 2) ||
-            (_filterState.luggageOptions.contains('3-4 Bags') &&
-                luggage >= 3 &&
-                luggage <= 4) ||
-            (_filterState.luggageOptions.contains('5+ Bags') &&
-                luggage >= 5);
+        bool matches = false;
+        if (_filterState.luggageOptions.contains('1-2 Bags') &&
+            luggage <= 2) {
+          matches = true;
+        }
+        if (_filterState.luggageOptions.contains('3-4 Bags') &&
+            luggage >= 3 &&
+            luggage <= 4) {
+          matches = true;
+        }
+        if (_filterState.luggageOptions.contains('5+ Bags') &&
+            luggage >= 5) {
+          matches = true;
+        }
         if (!matches) return false;
       }
 
       return true;
     }).toList();
 
+    // 5. Sorting
     switch (_filterState.sortBy) {
       case 'Lowest Price':
-        filtered.sort((a, b) => _priceValue(a).compareTo(_priceValue(b)));
+        filtered.sort((a, b) => a.displayPrice.compareTo(b.displayPrice));
         break;
       case 'Highest Price':
-        filtered.sort((a, b) => _priceValue(b).compareTo(_priceValue(a)));
+        filtered.sort((a, b) => b.displayPrice.compareTo(a.displayPrice));
         break;
       case 'Highest Rated':
         filtered.sort(
@@ -246,7 +297,10 @@ Future<void> _showFilterModal() async {
         filtered.sort((a, b) {
           final aPriority = a.isRecommended || a.isBestValue ? 1 : 0;
           final bPriority = b.isRecommended || b.isBestValue ? 1 : 0;
-          return bPriority.compareTo(aPriority);
+          if (aPriority != bPriority) {
+            return bPriority.compareTo(aPriority);
+          }
+          return a.displayPrice.compareTo(b.displayPrice);
         });
     }
     return filtered;
@@ -261,7 +315,6 @@ Future<void> _showFilterModal() async {
         itemCount: _categories.length,
         separatorBuilder: (context, index) {
           return const SizedBox(width: 8);
-
         },
         itemBuilder: (context, index) {
           final category = _categories[index];
@@ -297,6 +350,11 @@ Future<void> _showFilterModal() async {
             onSelected: (_) {
               setState(() {
                 _selectedCategory = category;
+                if (category == 'All') {
+                  _filterState.vehicleTypes.clear();
+                } else {
+                  _filterState.vehicleTypes = {category};
+                }
               });
             },
           );
@@ -453,11 +511,15 @@ class _AirportTransferFilterModalState
     super.initState();
     _state = widget.initialState.clone();
     if (_state.minPrice != null) {
-      _minPriceController.text = _state.minPrice.toString();
+      _minPriceController.text = _state.minPrice! % 1 == 0
+          ? _state.minPrice!.toInt().toString()
+          : _state.minPrice!.toString();
     }
 
     if (_state.maxPrice != null) {
-      _maxPriceController.text = _state.maxPrice.toString();
+      _maxPriceController.text = _state.maxPrice! % 1 == 0
+          ? _state.maxPrice!.toInt().toString()
+          : _state.maxPrice!.toString();
     }
   }
 
@@ -661,6 +723,8 @@ class _AirportTransferFilterModalState
                         controller: _minPriceController,
                         hint: 'Min €',
                         icon: Icons.euro_rounded,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [InputValidators.decimalNumberFormatter],
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -669,6 +733,8 @@ class _AirportTransferFilterModalState
                         controller: _maxPriceController,
                         hint: 'Max €',
                         icon: Icons.euro_rounded,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        inputFormatters: [InputValidators.decimalNumberFormatter],
                       ),
                     ),
                   ],
@@ -793,6 +859,8 @@ class _JourneySummaryCard extends StatelessWidget {
     required this.isRoundTrip,
     required this.returnDate,
     required this.onEdit,
+    this.distanceKm,
+    this.durationMinutes,
   });
   final bool isDark;
   final String pickupAddress;
@@ -804,14 +872,18 @@ class _JourneySummaryCard extends StatelessWidget {
   final bool isRoundTrip;
   final DateTime? returnDate;
   final VoidCallback onEdit;
+  final double? distanceKm;
+  final int? durationMinutes;
+
   @override
   Widget build(BuildContext context) {
     final dateText = pickupDate == null
         ? 'Date not selected'
         : DateFormat('dd MMM').format(pickupDate!);
     final journeyDetails = <String>[
+      if (distanceKm != null) '${distanceKm!.toStringAsFixed(1)} km (${durationMinutes ?? 20} min)',
       dateText,
-      if (pickupTime != null && pickupTime!.isNotEmpty) pickupTime!,
+      if (pickupTime != null && pickupTime!.isNotEmpty) AppDateUtils.formatTimeString(pickupTime),
       '$passengerCount ${passengerCount == 1 ? 'passenger' : 'passengers'}',
       '$luggageCount ${luggageCount == 1 ? 'bag' : 'bags'}',
     ];
@@ -969,7 +1041,7 @@ class _TransferVehicleCard extends ConsumerWidget {
                       ),
                       _VehicleSpecification(
                         icon: Icons.schedule_rounded,
-                        text: vehicle.estimatedDurationText,
+                        text: vehicle.routeInfoText,
                         isDark: isDark,
                       ),
                     ],
@@ -986,9 +1058,16 @@ class _TransferVehicleCard extends ConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Fixed transfer price',
+                              vehicle.isRoundTrip
+                                  ? (vehicle.roundTripDiscount > 0
+                                      ? 'Round-trip (${vehicle.roundTripDiscount.toStringAsFixed(0)}% off)'
+                                      : 'Round-trip')
+                                  : (vehicle.distanceKm != null
+                                      ? '${vehicle.distanceKm!.toStringAsFixed(1)} km · €${vehicle.pricePerKm.toStringAsFixed(2)}/km'
+                                      : 'All-inclusive fare'),
                               style: AppTextStyles.labelSmall.copyWith(
                                 color: AppColors.success,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                             const SizedBox(height: 2),
@@ -1072,14 +1151,11 @@ class _TransferVehicleCard extends ConsumerWidget {
   }
 
   Widget _buildBadges() {
-    if (!vehicle.isRecommended && !vehicle.isBestValue) {
-      return const SizedBox.shrink();
-    }
-
     return Padding(
       padding: const EdgeInsets.only(bottom: 7),
       child: Wrap(
         spacing: 6,
+        runSpacing: 4,
         children: [
           if (vehicle.isBestValue)
             const _VehicleBadge(
@@ -1090,6 +1166,16 @@ class _TransferVehicleCard extends ConsumerWidget {
             const _VehicleBadge(
               text: 'RECOMMENDED',
               color: AppColors.primaryGold,
+            ),
+          if (vehicle.isMeetAndGreetIncluded)
+            const _VehicleBadge(
+              text: 'MEET & GREET',
+              color: Color(0xFF3B82F6),
+            ),
+          if (vehicle.freeWaitingMinutes > 0)
+            _VehicleBadge(
+              text: '${vehicle.freeWaitingMinutes}M WAITING',
+              color: const Color(0xFF8B5CF6),
             ),
         ],
       ),

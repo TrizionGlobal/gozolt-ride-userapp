@@ -20,6 +20,7 @@ class QuickServicesBookingSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bookingData = this.bookingData.applyDraft();
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(

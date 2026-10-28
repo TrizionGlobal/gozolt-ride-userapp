@@ -637,7 +637,7 @@ class _TruckWashDetailsScreenState extends ConsumerState<TruckWashDetailsScreen>
 
                       double pickupFee = _serviceMode == 'Pickup & Return' ? QuickServicesPricingConfig.getPickupFee('truck_wash') * _savedVehicles.length : 0.0;
 
-                      final updatedData = widget.bookingData.copyWith(
+                      final updatedData = widget.bookingData.applyDraft().copyWith(
                         selectedServiceTitle: fullServiceName,
                         carWashVehicles: _savedVehicles,
                         waterAccess: _waterAccess,

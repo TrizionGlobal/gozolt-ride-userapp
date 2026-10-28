@@ -340,7 +340,7 @@ class _SuppliersDetailsScreenState extends ConsumerState<SuppliersDetailsScreen>
                       }
                       if (!QuickServicesBookingDraft.validate(context)) return;
                       
-                      final updatedData = widget.bookingData.copyWith(
+                      final updatedData = widget.bookingData.applyDraft().copyWith(
                         selectedServiceTitle: 'Suppliers',
                         supplyCategory: _supplyCategory,
                         itemRequired: _itemRequiredController.text.trim(),

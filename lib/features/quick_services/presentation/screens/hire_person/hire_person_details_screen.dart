@@ -122,7 +122,7 @@ class _HirePersonDetailsScreenState extends ConsumerState<HirePersonDetailsScree
     }
     final double estimatedHours = (durationHours * _helperCount).toDouble();
 
-    final updatedData = widget.bookingData.copyWith(
+    final updatedData = widget.bookingData.applyDraft().copyWith(
       selectedServiceTitle: 'Hire a Person',
       expectedDuration: _selectedDuration,
       helperCount: _helperCount,

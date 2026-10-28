@@ -2,6 +2,7 @@ import '../../../../core/config/quick_services_pricing_config.dart';
 import 'package:flutter/material.dart';
 import '../../../ride/data/models/location_data.dart';
 import '../../../ride/data/models/saved_payment_method.dart';
+import 'quick_services_booking_draft.dart';
 
 class ServiceAddon {
   final String name;
@@ -911,6 +912,23 @@ class QuickServiceBookingData {
       requirementDescription:
           requirementDescription ?? this.requirementDescription,
       bookingId: bookingId ?? this.bookingId,
+    );
+  }
+
+  QuickServiceBookingData applyDraft() {
+    return copyWith(
+      scheduleDate: QuickServicesBookingDraft.selectedDate ?? scheduleDate,
+      scheduleTime: QuickServicesBookingDraft.selectedTime ?? scheduleTime,
+      location: QuickServicesBookingDraft.selectedLocation ?? location,
+      userName: (QuickServicesBookingDraft.userName != null && QuickServicesBookingDraft.userName!.trim().isNotEmpty)
+          ? QuickServicesBookingDraft.userName
+          : userName,
+      userPhone: (QuickServicesBookingDraft.userPhone != null && QuickServicesBookingDraft.userPhone!.trim().isNotEmpty)
+          ? QuickServicesBookingDraft.userPhone
+          : userPhone,
+      userEmail: (QuickServicesBookingDraft.userEmail != null && QuickServicesBookingDraft.userEmail!.trim().isNotEmpty)
+          ? QuickServicesBookingDraft.userEmail
+          : userEmail,
     );
   }
 }

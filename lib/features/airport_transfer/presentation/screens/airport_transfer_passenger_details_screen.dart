@@ -10,6 +10,9 @@ import '../../../../core/widgets/gozolt_button.dart';
 import '../../data/models/airport_transfer_passenger_details.dart';
 import '../providers/airport_transfer_passenger_provider.dart';
 import '../providers/airport_transfer_provider.dart';
+import '../../../home/presentation/providers/home_providers.dart';
+import 'package:flutter/services.dart';
+import '../../../../core/utils/input_validators.dart';
 import '../widgets/airport_transfer_header.dart';
 
 class AirportTransferPassengerDetailsScreen extends ConsumerStatefulWidget {
@@ -47,16 +50,34 @@ class _AirportTransferPassengerDetailsScreenState
 
     final saved = ref.read(airportTransferPassengerDetailsProvider);
     final draft = ref.read(airportTransferDraftProvider);
+    final profile = ref.read(userProfileProvider).valueOrNull;
 
-    _fullNameController = TextEditingController(text: saved.fullName);
+    final profileName = '${profile?.firstName ?? ''} ${profile?.lastName ?? ''}'.trim();
+    final initialName = saved.fullName.isNotEmpty
+        ? saved.fullName
+        : profileName;
 
-    _phoneController = TextEditingController(text: saved.phoneNumber);
+    final initialPhone = saved.phoneNumber.isNotEmpty
+        ? saved.phoneNumber
+        : (profile?.phone?.trim().isNotEmpty == true ? profile!.phone!.trim() : '');
 
-    _emailController = TextEditingController(text: saved.email);
+    final initialEmail = saved.email.isNotEmpty
+        ? saved.email
+        : (profile?.email?.trim().isNotEmpty == true ? profile!.email!.trim() : '');
 
-    _whatsAppController = TextEditingController(text: saved.whatsAppNumber);
+    final initialWhatsApp = saved.whatsAppNumber;
 
-    _nationalityController = TextEditingController(text: saved.nationality);
+    _fullNameController = TextEditingController(text: initialName);
+
+    _phoneController = TextEditingController(text: initialPhone);
+
+    _emailController = TextEditingController(text: initialEmail);
+
+    _whatsAppController = TextEditingController(text: initialWhatsApp);
+
+    _nationalityController = TextEditingController(
+      text: saved.nationality.isNotEmpty ? saved.nationality : 'Maltese',
+    );
 
     _flightNumberController = TextEditingController(
       text: saved.flightNumber.isNotEmpty
@@ -68,7 +89,9 @@ class _AirportTransferPassengerDetailsScreenState
 
     _terminalController = TextEditingController(text: saved.arrivalTerminal);
 
-    _welcomeSignController = TextEditingController(text: saved.welcomeSignName);
+    _welcomeSignController = TextEditingController(
+      text: saved.welcomeSignName,
+    );
 
     _meetInstructionsController = TextEditingController(
       text: saved.meetAndGreetInstructions,
@@ -79,6 +102,8 @@ class _AirportTransferPassengerDetailsScreenState
     );
 
     _meetAndGreetRequired = saved.meetAndGreetRequired;
+    _sameAsPhone = saved.whatsAppNumber.isNotEmpty &&
+        saved.whatsAppNumber == (saved.phoneNumber.isNotEmpty ? saved.phoneNumber : initialPhone);
   }
 
   @override
@@ -108,7 +133,9 @@ class _AirportTransferPassengerDetailsScreenState
       fullName: _fullNameController.text.trim(),
       phoneNumber: _phoneController.text.trim(),
       email: _emailController.text.trim(),
-      whatsAppNumber: _whatsAppController.text.trim(),
+      whatsAppNumber: _sameAsPhone
+          ? _phoneController.text.trim()
+          : _whatsAppController.text.trim(),
       nationality: _nationalityController.text.trim(),
       flightNumber: _flightNumberController.text.trim(),
       airline: _airlineController.text.trim(),
@@ -175,6 +202,11 @@ class _AirportTransferPassengerDetailsScreenState
                         label: 'Full name',
                         hint: 'Enter passenger full name',
                         icon: Icons.person_outline,
+                        textCapitalization: TextCapitalization.words,
+                        inputFormatters: [
+                          InputValidators.nameInputFormatter,
+                          CapitalizeWordsFormatter(),
+                        ],
                         textInputAction: TextInputAction.next,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
@@ -195,6 +227,8 @@ class _AirportTransferPassengerDetailsScreenState
                         label: 'Nationality',
                         hint: 'Enter nationality',
                         icon: Icons.public_rounded,
+                        textCapitalization: TextCapitalization.words,
+                        inputFormatters: [CapitalizeWordsFormatter()],
                         textInputAction: TextInputAction.next,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
@@ -219,6 +253,7 @@ class _AirportTransferPassengerDetailsScreenState
                         hint: 'Example: +356 7712 3456',
                         icon: Icons.phone_outlined,
                         keyboardType: TextInputType.phone,
+                        inputFormatters: [InputValidators.phoneInputFormatter],
                         textInputAction: TextInputAction.next,
                         onChanged: (value) {
                           if (_sameAsPhone) {
@@ -247,6 +282,7 @@ class _AirportTransferPassengerDetailsScreenState
                         hint: 'Enter email address',
                         icon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
+                        textCapitalization: TextCapitalization.none,
                         textInputAction: TextInputAction.next,
                         validator: (value) {
                           final email = value?.trim() ?? '';
@@ -270,29 +306,35 @@ class _AirportTransferPassengerDetailsScreenState
                         hint: 'Enter WhatsApp number',
                         icon: Icons.chat_outlined,
                         keyboardType: TextInputType.phone,
+                        inputFormatters: [InputValidators.phoneInputFormatter],
                         textInputAction: TextInputAction.next,
                         readOnly: _sameAsPhone,
                       ),
                       const SizedBox(height: 6),
-                      CheckboxListTile(
-                        value: _sameAsPhone,
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        controlAffinity: ListTileControlAffinity.leading,
-                        activeColor: AppColors.primaryGold,
-                        title: Text(
-                          'Same as phone number',
-                          style: AppTextStyles.bodySmall,
-                        ),
-                        onChanged: (selected) {
-                          setState(() {
-                            _sameAsPhone = selected ?? false;
+                      Material(
+                        color: Colors.transparent,
+                        child: CheckboxListTile(
+                          value: _sameAsPhone,
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          controlAffinity: ListTileControlAffinity.leading,
+                          activeColor: AppColors.primaryGold,
+                          title: Text(
+                            'Same as phone number',
+                            style: AppTextStyles.bodySmall,
+                          ),
+                          onChanged: (selected) {
+                            setState(() {
+                              _sameAsPhone = selected ?? false;
 
-                            if (_sameAsPhone) {
-                              _whatsAppController.text = _phoneController.text;
-                            }
-                          });
-                        },
+                              if (_sameAsPhone) {
+                                _whatsAppController.text = _phoneController.text.trim();
+                              } else {
+                                _whatsAppController.clear();
+                              }
+                            });
+                          },
+                        ),
                       ),
                     ],
                   ),
@@ -309,6 +351,7 @@ class _AirportTransferPassengerDetailsScreenState
                         hint: 'Example: KM 100',
                         icon: Icons.flight_takeoff_rounded,
                         textCapitalization: TextCapitalization.characters,
+                        inputFormatters: [UpperCaseTextFormatter()],
                         textInputAction: TextInputAction.next,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
@@ -325,6 +368,8 @@ class _AirportTransferPassengerDetailsScreenState
                         label: 'Airline',
                         hint: 'Enter airline name',
                         icon: Icons.airlines_outlined,
+                        textCapitalization: TextCapitalization.words,
+                        inputFormatters: [CapitalizeWordsFormatter()],
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 12),
@@ -334,6 +379,8 @@ class _AirportTransferPassengerDetailsScreenState
                         label: 'Arrival terminal',
                         hint: 'Optional',
                         icon: Icons.location_city_outlined,
+                        textCapitalization: TextCapitalization.words,
+                        inputFormatters: [CapitalizeWordsFormatter()],
                         textInputAction: TextInputAction.next,
                       ),
                       const SizedBox(height: 10),
@@ -370,29 +417,46 @@ class _AirportTransferPassengerDetailsScreenState
                     title: 'MEET & GREET',
                     icon: Icons.waving_hand_outlined,
                     children: [
-                      SwitchListTile(
-                        value: _meetAndGreetRequired,
-                        contentPadding: EdgeInsets.zero,
-                        activeThumbColor: AppColors.primaryGold,
-                        title: Text(
-                          'Use Meet & Greet',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            fontWeight: FontWeight.w600,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Use Meet & Greet',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Included with this transfer',
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: isDark
+                                        ? AppColors.textSecondary
+                                        : AppColors.textSecondaryLight,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        subtitle: Text(
-                          'Included with this transfer',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: isDark
-                                ? AppColors.textSecondary
-                                : AppColors.textSecondaryLight,
+                          Transform.scale(
+                            scale: 0.7,
+                            child: Switch.adaptive(
+                              value: _meetAndGreetRequired,
+                              onChanged: (value) {
+                                HapticFeedback.selectionClick();
+                                setState(() {
+                                  _meetAndGreetRequired = value;
+                                });
+                              },
+                              activeTrackColor: AppColors.primaryGold,
+                              inactiveTrackColor:
+                                  Theme.of(context).dividerTheme.color,
+                            ),
                           ),
-                        ),
-                        onChanged: (value) {
-                          setState(() {
-                            _meetAndGreetRequired = value;
-                          });
-                        },
+                        ],
                       ),
                       if (_meetAndGreetRequired) ...[
                         const SizedBox(height: 10),
@@ -402,15 +466,13 @@ class _AirportTransferPassengerDetailsScreenState
                           label: 'Name on welcome sign',
                           hint: 'Enter the name to display',
                           icon: Icons.badge_outlined,
+                          textCapitalization: TextCapitalization.words,
+                          inputFormatters: [
+                            InputValidators.nameInputFormatter,
+                            CapitalizeWordsFormatter(),
+                          ],
                           textInputAction: TextInputAction.next,
-                          validator: (value) {
-                            if (_meetAndGreetRequired &&
-                                (value == null || value.trim().isEmpty)) {
-                              return 'Enter the name for the welcome sign';
-                            }
-
-                            return null;
-                          },
+                          validator: null,
                         ),
                         const SizedBox(height: 12),
                         _buildField(
@@ -420,6 +482,8 @@ class _AirportTransferPassengerDetailsScreenState
                           hint: 'Example: Meet near the arrivals gate',
                           icon: Icons.notes_rounded,
                           maxLines: 3,
+                          textCapitalization: TextCapitalization.sentences,
+                          inputFormatters: [CapitalizeSentencesFormatter()],
                           textInputAction: TextInputAction.newline,
                         ),
                       ],
@@ -439,6 +503,8 @@ class _AirportTransferPassengerDetailsScreenState
                             'Child seat, wheelchair assistance or other request',
                         icon: Icons.support_agent_outlined,
                         maxLines: 3,
+                        textCapitalization: TextCapitalization.sentences,
+                        inputFormatters: [CapitalizeSentencesFormatter()],
                         textInputAction: TextInputAction.newline,
                       ),
                     ],
@@ -511,6 +577,7 @@ class _AirportTransferPassengerDetailsScreenState
     TextInputType? keyboardType,
     TextInputAction? textInputAction,
     TextCapitalization textCapitalization = TextCapitalization.none,
+    List<TextInputFormatter>? inputFormatters,
     String? Function(String?)? validator,
     ValueChanged<String>? onChanged,
     int maxLines = 1,
@@ -521,6 +588,7 @@ class _AirportTransferPassengerDetailsScreenState
       keyboardType: keyboardType,
       textInputAction: textInputAction,
       textCapitalization: textCapitalization,
+      inputFormatters: inputFormatters,
       validator: validator,
       onChanged: onChanged,
       maxLines: maxLines,

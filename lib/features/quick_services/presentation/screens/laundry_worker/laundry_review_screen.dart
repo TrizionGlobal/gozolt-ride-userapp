@@ -35,7 +35,7 @@ class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
   @override
   void initState() {
     super.initState();
-    _bookingData = widget.bookingData;
+    _bookingData = widget.bookingData.applyDraft();
   }
 
   bool _useGoCoins = false;

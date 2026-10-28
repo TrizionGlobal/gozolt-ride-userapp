@@ -9,8 +9,11 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../ride/data/models/location_data.dart';
+import '../../../../core/utils/input_validators.dart';
 
-class CarRentalLocationField extends StatelessWidget {
+typedef CarRentalLocationField = AirportTransferLocationField;
+
+class AirportTransferLocationField extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final Color dotColor;
@@ -18,7 +21,7 @@ class CarRentalLocationField extends StatelessWidget {
   final VoidCallback? onTap;
   final String labelOverride;
 
-  const CarRentalLocationField({
+  const AirportTransferLocationField({
     super.key,
     required this.controller,
     required this.hint,
@@ -41,7 +44,7 @@ class CarRentalLocationField extends StatelessWidget {
     final hasValue = controller.text.isNotEmpty;
     final fieldBg = isDark ? const Color(0xFF1A1F2B) : const Color(0xFFF0F2F5);
     final fieldBorder = isDark ? AppColors.borderDark : AppColors.borderLight;
-    final labelColor = dotColor.withOpacity(0.85);
+    final labelColor = dotColor.withValues(alpha: 0.85);
 
     return Row(
       children: [
@@ -54,7 +57,7 @@ class CarRentalLocationField extends StatelessWidget {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: dotColor.withOpacity(0.4),
+                color: dotColor.withValues(alpha: 0.4),
                 blurRadius: 6,
                 spreadRadius: 1,
               ),
@@ -72,7 +75,7 @@ class CarRentalLocationField extends StatelessWidget {
                 color: fieldBg,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: hasValue ? dotColor.withOpacity(0.35) : fieldBorder,
+                  color: hasValue ? dotColor.withValues(alpha: 0.35) : fieldBorder,
                   width: hasValue ? 1.2 : 0.8,
                 ),
               ),
@@ -409,6 +412,8 @@ class _AirportTransferLocationSearchSheetState
               child: TextField(
                 controller: _searchController,
                 autofocus: true,
+                textCapitalization: TextCapitalization.words,
+                inputFormatters: [CapitalizeWordsFormatter()],
                 onChanged: _onSearchChanged,
                 style: AppTextStyles.bodyMedium,
                 decoration: InputDecoration(
@@ -459,9 +464,9 @@ class _AirportTransferLocationSearchSheetState
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryGold.withOpacity(0.1),
+                      color: AppColors.primaryGold.withValues(alpha: 0.1),
                       border: Border.all(
-                          color: AppColors.primaryGold.withOpacity(0.3)),
+                          color: AppColors.primaryGold.withValues(alpha: 0.3)),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -470,7 +475,7 @@ class _AirportTransferLocationSearchSheetState
                           width: 36,
                           height: 36,
                           decoration: BoxDecoration(
-                            color: AppColors.primaryGold.withOpacity(0.2),
+                            color: AppColors.primaryGold.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.my_location,
@@ -592,8 +597,8 @@ class _AirportTransferLocationSearchSheetState
                           // Immediately call onSelect — no delay
                           widget.onSelect(loc);
                         },
-                        splashColor: AppColors.primaryGold.withOpacity(0.15),
-                        highlightColor: AppColors.primaryGold.withOpacity(0.08),
+                        splashColor: AppColors.primaryGold.withValues(alpha: 0.15),
+                        highlightColor: AppColors.primaryGold.withValues(alpha: 0.08),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 12),
@@ -607,7 +612,7 @@ class _AirportTransferLocationSearchSheetState
                                       ? (isDark
                                           ? const Color(0xFF1C2333)
                                           : const Color(0xFFF0F2F5))
-                                      : AppColors.primaryGold.withOpacity(0.12),
+                                      : AppColors.primaryGold.withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Icon(

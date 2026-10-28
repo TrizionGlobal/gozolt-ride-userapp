@@ -132,7 +132,7 @@ class _LaundryDetailsScreenState extends ConsumerState<LaundryDetailsScreen> {
                         Expanded(
                           child: _buildMethodCard(
                             title: 'Pickup & Return',
-                            subtitle: '+€${QuickServicesPricingConfig.getPickupFee('laundry').toStringAsFixed(0)} pickup fee. Return date & time confirmed after collection.',
+                            subtitle: '+€${QuickServicesPricingConfig.getPickupFee('laundry').toStringAsFixed(0)} pickup fee.',
                             icon: Icons.local_shipping_outlined,
                             isSelected: _selectedMethod == 'Pickup & Return',
                             onTap: () => setState(() => _selectedMethod = 'Pickup & Return'),
@@ -455,7 +455,7 @@ class _LaundryDetailsScreenState extends ConsumerState<LaundryDetailsScreen> {
                         return sum + ((svc['unitPrice'] as double?) ?? 0.0);
                       });
 
-                      final updatedData = widget.bookingData.copyWith(
+                      final updatedData = widget.bookingData.applyDraft().copyWith(
                         selectedServiceTitle: 'Home Laundry',
                         laundryServiceMethod: _selectedMethod,
                         requestedReturnDate: _selectedMethod == 'Pickup & Return' ? _requestedDate : null,

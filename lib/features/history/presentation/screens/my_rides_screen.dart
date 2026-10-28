@@ -13,6 +13,7 @@ import '../widgets/ride_history_card.dart';
 import 'car_rentals_history_view.dart';
 import 'bike_rentals_history_view.dart';
 import 'quick_services_history_view.dart';
+import 'airport_transfers_history_view.dart';
 
 class MyRidesScreen extends ConsumerWidget {
   const MyRidesScreen({super.key});
@@ -77,7 +78,7 @@ class MyRidesScreen extends ConsumerWidget {
                                 elevation: 4,
                                 borderRadius: BorderRadius.circular(12),
                                 selectedItemBuilder: (BuildContext context) {
-                                  return ['My Rides', 'Car Rentals', 'Bike Rentals', 'Quick Services'].map((String name) {
+                                  return ['My Rides', 'Car Rentals', 'Bike Rentals', 'Quick Services', 'Airport Transfers'].map((String name) {
                                     return Align(
                                       alignment: Alignment.centerLeft,
                                       child: Text(
@@ -98,6 +99,7 @@ class MyRidesScreen extends ConsumerWidget {
                                   DropdownMenuItem(value: 1, child: Text('Car Rentals')),
                                   DropdownMenuItem(value: 2, child: Text('Bike Rentals')),
                                   DropdownMenuItem(value: 3, child: Text('Quick Services')),
+                                  DropdownMenuItem(value: 4, child: Text('Airport Transfers')),
                                 ],
                               ),
                             ),
@@ -316,7 +318,7 @@ class MyRidesScreen extends ConsumerWidget {
     ), // closes Expanded
   ], // closes Column children
 ) // closes Column
-: selectedTab == 1 ? const CarRentalsHistoryView() : selectedTab == 2 ? const BikeRentalsHistoryView() : const QuickServicesHistoryView(),
+: selectedTab == 1 ? const CarRentalsHistoryView() : selectedTab == 2 ? const BikeRentalsHistoryView() : selectedTab == 3 ? const QuickServicesHistoryView() : const AirportTransfersHistoryView(),
             ), // closes Expanded
           ], // closes Column children
         ), // closes Column

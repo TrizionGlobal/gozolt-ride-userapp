@@ -732,7 +732,7 @@ class _MobileRepairDetailsScreenState extends ConsumerState<MobileRepairDetailsS
                       }
                       if (!QuickServicesBookingDraft.validate(context)) return;
 
-                      final updatedData = widget.bookingData.copyWith(
+                      final updatedData = widget.bookingData.applyDraft().copyWith(
                         selectedServiceTitle: 'Mobile Repair',
                         mobileDevices: _savedDevices,
                         whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty

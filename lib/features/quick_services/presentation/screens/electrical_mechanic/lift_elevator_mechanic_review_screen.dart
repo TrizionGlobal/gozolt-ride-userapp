@@ -29,7 +29,7 @@ class _LiftElevatorMechanicReviewScreenState extends ConsumerState<LiftElevatorM
   @override
   void initState() {
     super.initState();
-    _bookingData = widget.bookingData;
+    _bookingData = widget.bookingData.applyDraft();
   }
 
   @override

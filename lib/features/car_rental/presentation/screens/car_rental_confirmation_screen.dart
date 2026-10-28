@@ -47,7 +47,7 @@ class _CarRentalConfirmationScreenState extends ConsumerState<CarRentalConfirmat
     qrDataJson = '''
 Booking Reference: $displayBookingId
 Vehicle: ${widget.car?.name ?? "Premium Vehicle"}
-Date: ${DateFormat('MMM dd, yyyy').format(pickupDate)}
+Date: ${DateFormat('dd MMM yyyy').format(pickupDate)}
 Time: ${DateFormat('h:mm a').format(pickupDate)}
 
 (ID: $fullBookingId)

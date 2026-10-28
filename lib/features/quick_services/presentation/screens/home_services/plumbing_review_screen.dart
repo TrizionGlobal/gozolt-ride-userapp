@@ -35,7 +35,7 @@ class _PlumbingReviewScreenState extends ConsumerState<PlumbingReviewScreen> {
   @override
   void initState() {
     super.initState();
-    _bookingData = widget.bookingData;
+    _bookingData = widget.bookingData.applyDraft();
   }
 
   bool useCoins = false;

@@ -164,7 +164,7 @@ class _EventOrganisersDetailsScreenState extends ConsumerState<EventOrganisersDe
                           return;
                         }
                         if (!QuickServicesBookingDraft.validate(context)) return;
-                        final updatedData = widget.bookingData.copyWith(
+                        final updatedData = widget.bookingData.applyDraft().copyWith(
                           selectedServiceTitle: 'Event Organisers',
                           eventType: _eventType,
                           guestCount: int.tryParse(_guestCountController.text.trim()),

@@ -102,7 +102,7 @@ class _PestControlDetailsScreenState extends ConsumerState<PestControlDetailsScr
 
     final pestType = _selectedPestTypes.join(', ');
 
-    final updatedData = widget.bookingData.copyWith(
+    final updatedData = widget.bookingData.applyDraft().copyWith(
       selectedServiceTitle: 'Pest Control',
       pestType: pestType,
       propertyType: _selectedPropertyTypes.join(', '),

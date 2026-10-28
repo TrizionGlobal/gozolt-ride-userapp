@@ -40,7 +40,7 @@ class _HomeElectricReviewScreenState extends ConsumerState<HomeElectricReviewScr
   @override
   void initState() {
     super.initState();
-    _bookingData = widget.bookingData;
+    _bookingData = widget.bookingData.applyDraft();
   }
 
   @override

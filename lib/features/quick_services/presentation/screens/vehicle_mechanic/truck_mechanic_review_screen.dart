@@ -36,7 +36,7 @@ class _TruckMechanicReviewScreenState extends ConsumerState<TruckMechanicReviewS
   @override
   void initState() {
     super.initState();
-    _bookingData = widget.bookingData;
+    _bookingData = widget.bookingData.applyDraft();
   }
 
   bool useCoins = false;

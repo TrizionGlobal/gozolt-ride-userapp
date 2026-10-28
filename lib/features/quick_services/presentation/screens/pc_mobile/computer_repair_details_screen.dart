@@ -790,7 +790,7 @@ class _ComputerRepairDetailsScreenState extends ConsumerState<ComputerRepairDeta
                       }
                       if (!QuickServicesBookingDraft.validate(context)) return;
 
-                      final updatedData = widget.bookingData.copyWith(
+                      final updatedData = widget.bookingData.applyDraft().copyWith(
                         selectedServiceTitle: 'Computer & Laptop Repair',
                         computerDevices: _savedComputers,
                         whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty

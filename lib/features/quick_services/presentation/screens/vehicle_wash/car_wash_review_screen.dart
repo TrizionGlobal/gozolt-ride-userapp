@@ -33,7 +33,7 @@ class _CarWashReviewScreenState extends ConsumerState<CarWashReviewScreen> {
   @override
   void initState() {
     super.initState();
-    _bookingData = widget.bookingData;
+    _bookingData = widget.bookingData.applyDraft();
   }
 
   @override

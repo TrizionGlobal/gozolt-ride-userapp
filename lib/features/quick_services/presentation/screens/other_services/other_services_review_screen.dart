@@ -37,7 +37,7 @@ class _OtherServicesReviewScreenState extends ConsumerState<OtherServicesReviewS
   @override
   void initState() {
     super.initState();
-    _bookingData = widget.bookingData;
+    _bookingData = widget.bookingData.applyDraft();
   }
 
   bool useCoins = false;
