@@ -417,7 +417,7 @@ class _BikeRentalDetailsScreenState extends ConsumerState<BikeRentalDetailsScree
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
           boxShadow: [
-            BoxShadow(color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4)),
+            BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05), blurRadius: 10, offset: const Offset(0, -4)),
           ],
         ),
         child: SafeArea(
@@ -744,28 +744,6 @@ class _BikeRentalDetailsScreenState extends ConsumerState<BikeRentalDetailsScree
             ],
           ),
         ),
-        
-        if (b.fuelType.toLowerCase() == 'electric') ...[
-          const SizedBox(height: 32),
-          Text('Electric Specifications', style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.primaryGold.withOpacity(0.5)),
-            ),
-            child: Column(
-              children: [
-                _buildSpecRow('Battery Capacity', b.batteryCapacity ?? 'N/A', isDark),
-                _buildSpecRow('Estimated Range', b.estimatedRange ?? 'N/A', isDark),
-                _buildSpecRow('Charging Type', b.chargingType ?? 'N/A', isDark),
-                _buildSpecRow('Charging Time', b.chargingTime ?? 'N/A', isDark, isLast: true),
-              ],
-            ),
-          ),
-        ],
       ],
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -13,6 +14,7 @@ import '../widgets/airport_transfer_location_search.dart';
 import '../widgets/airport_transfer_header.dart';
 import '../../../../core/widgets/app_filled_text_field.dart';
 import '../../../../core/utils/input_validators.dart';
+import '../../../../core/utils/snackbar_utils.dart';
 
 class AirportTransferSearchScreen extends ConsumerStatefulWidget {
   const AirportTransferSearchScreen({super.key});
@@ -425,11 +427,7 @@ class _AirportTransferSearchScreenState
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+    SnackbarUtils.showError(context, message);
   }
 
   String get _passengerSummary {
@@ -583,7 +581,10 @@ class _AirportTransferSearchScreenState
                     TextFormField(
                       controller: _flightNumberController,
                       textCapitalization: TextCapitalization.characters,
-                      inputFormatters: [UpperCaseTextFormatter()],
+                      inputFormatters: [
+                        UpperCaseTextFormatter(),
+                        LengthLimitingTextInputFormatter(10),
+                      ],
                       style: AppTextStyles.bodyMedium.copyWith(
                         fontWeight: FontWeight.w500,
                         height: 1.25,
@@ -606,11 +607,9 @@ class _AirportTransferSearchScreenState
                             color: AppColors.textSecondaryLight),
                       ),
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Flight number is required';
-                        }
-
-                        if (value.trim().length < 3) {
+                        if (value != null &&
+                            value.trim().isNotEmpty &&
+                            value.trim().length < 3) {
                           return 'Enter a valid flight number';
                         }
 
@@ -671,7 +670,10 @@ class _AirportTransferSearchScreenState
                       TextFormField(
                         controller: _returnFlightNumberController,
                         textCapitalization: TextCapitalization.characters,
-                        inputFormatters: [UpperCaseTextFormatter()],
+                        inputFormatters: [
+                          UpperCaseTextFormatter(),
+                          LengthLimitingTextInputFormatter(10),
+                        ],
                         style: AppTextStyles.bodyMedium.copyWith(
                           fontWeight: FontWeight.w500,
                           height: 1.25,
@@ -684,22 +686,21 @@ class _AirportTransferSearchScreenState
                             horizontal: 13,
                             vertical: 11,
                           ),
-                          hintText: 'Return Flight number',
+                          hintText: 'Return flight number',
                           hintStyle: AppTextStyles.bodyMedium.copyWith(
-                            fontWeight: FontWeight.w500,
-                            height: 1.25,
+                            fontWeight: FontWeight.w400,
                             color: isDark
-                                ? AppColors.textPrimary
+                                ? AppColors.textSecondary
                                 : AppColors.textMutedLight,
                           ),
                           prefixIcon: const Icon(Icons.flight_rounded,
-                              color: AppColors.textPrimaryLight),
+                              color: AppColors.textSecondaryLight),
                         ),
                         validator: (value) {
-                          if (!_isRoundTrip) return null;
-
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Return flight number is required';
+                          if (value != null &&
+                              value.trim().isNotEmpty &&
+                              value.trim().length < 3) {
+                            return 'Enter a valid flight number';
                           }
 
                           return null;

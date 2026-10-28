@@ -13,6 +13,8 @@ import '../providers/airport_transfer_provider.dart';
 import '../../../home/presentation/providers/home_providers.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/utils/input_validators.dart';
+import '../../../../core/widgets/app_phone_input_field.dart';
+import '../../../auth/data/models/country_code.dart';
 import '../widgets/airport_transfer_header.dart';
 
 class AirportTransferPassengerDetailsScreen extends ConsumerStatefulWidget {
@@ -28,6 +30,10 @@ class AirportTransferPassengerDetailsScreen extends ConsumerStatefulWidget {
 class _AirportTransferPassengerDetailsScreenState
     extends ConsumerState<AirportTransferPassengerDetailsScreen> {
   final _formKey = GlobalKey<FormState>();
+  late CountryCode _phoneCountry;
+  late CountryCode _whatsAppCountry;
+  String? _previousManualWhatsApp;
+  CountryCode? _previousManualWhatsAppCountry;
 
   late final TextEditingController _fullNameController;
   late final TextEditingController _phoneController;
@@ -69,11 +75,20 @@ class _AirportTransferPassengerDetailsScreenState
 
     _fullNameController = TextEditingController(text: initialName);
 
-    _phoneController = TextEditingController(text: initialPhone);
+    final rawPhone = saved.phoneNumber.isNotEmpty ? saved.phoneNumber : initialPhone;
+    final parsedPhone = CountryCode.parsePhoneNumber(rawPhone);
+    _phoneCountry = parsedPhone.country;
+    _phoneController = TextEditingController(text: parsedPhone.nationalNumber);
 
     _emailController = TextEditingController(text: initialEmail);
 
-    _whatsAppController = TextEditingController(text: initialWhatsApp);
+    final rawWhatsApp = saved.whatsAppNumber.isNotEmpty ? saved.whatsAppNumber : initialWhatsApp;
+    final parsedWhatsApp = CountryCode.parsePhoneNumber(rawWhatsApp);
+    _whatsAppCountry = parsedWhatsApp.country;
+    _whatsAppController = TextEditingController(text: parsedWhatsApp.nationalNumber);
+
+    _previousManualWhatsApp = parsedWhatsApp.nationalNumber;
+    _previousManualWhatsAppCountry = parsedWhatsApp.country;
 
     _nationalityController = TextEditingController(
       text: saved.nationality.isNotEmpty ? saved.nationality : 'Maltese',
@@ -129,13 +144,18 @@ class _AirportTransferPassengerDetailsScreenState
       return;
     }
 
+    final fullPhone = '${_phoneCountry.dialCode}${_phoneController.text.trim()}';
+    final fullWhatsApp = _sameAsPhone
+        ? fullPhone
+        : (_whatsAppController.text.trim().isNotEmpty
+            ? '${_whatsAppCountry.dialCode}${_whatsAppController.text.trim()}'
+            : '');
+
     final details = AirportTransferPassengerDetails(
       fullName: _fullNameController.text.trim(),
-      phoneNumber: _phoneController.text.trim(),
+      phoneNumber: fullPhone,
       email: _emailController.text.trim(),
-      whatsAppNumber: _sameAsPhone
-          ? _phoneController.text.trim()
-          : _whatsAppController.text.trim(),
+      whatsAppNumber: fullWhatsApp,
       nationality: _nationalityController.text.trim(),
       flightNumber: _flightNumberController.text.trim(),
       airline: _airlineController.text.trim(),
@@ -246,32 +266,22 @@ class _AirportTransferPassengerDetailsScreenState
                     title: 'CONTACT INFORMATION',
                     icon: Icons.contact_phone_outlined,
                     children: [
-                      _buildField(
-                        isDark: isDark,
+                      AppPhoneInputField(
                         controller: _phoneController,
+                        initialCountry: _phoneCountry,
                         label: 'Phone number',
-                        hint: 'Example: +356 7712 3456',
-                        icon: Icons.phone_outlined,
-                        keyboardType: TextInputType.phone,
-                        inputFormatters: [InputValidators.phoneInputFormatter],
-                        textInputAction: TextInputAction.next,
+                        onCountryChanged: (c) {
+                          setState(() {
+                            _phoneCountry = c;
+                            if (_sameAsPhone) {
+                              _whatsAppCountry = c;
+                            }
+                          });
+                        },
                         onChanged: (value) {
                           if (_sameAsPhone) {
                             _whatsAppController.text = value;
                           }
-                        },
-                        validator: (value) {
-                          final phone = value?.replaceAll(' ', '') ?? '';
-
-                          if (phone.isEmpty) {
-                            return 'Please enter a phone number';
-                          }
-
-                          if (phone.length < 7) {
-                            return 'Enter a valid phone number';
-                          }
-
-                          return null;
                         },
                       ),
                       const SizedBox(height: 12),
@@ -284,31 +294,36 @@ class _AirportTransferPassengerDetailsScreenState
                         keyboardType: TextInputType.emailAddress,
                         textCapitalization: TextCapitalization.none,
                         textInputAction: TextInputAction.next,
-                        validator: (value) {
-                          final email = value?.trim() ?? '';
-
-                          if (email.isEmpty) {
-                            return 'Please enter an email address';
-                          }
-
-                          if (!email.contains('@') || !email.contains('.')) {
-                            return 'Enter a valid email address';
-                          }
-
-                          return null;
-                        },
+                        validator: (value) => InputValidators.validateEmail(value, required: true),
                       ),
                       const SizedBox(height: 12),
-                      _buildField(
-                        isDark: isDark,
+                      AppPhoneInputField(
                         controller: _whatsAppController,
+                        initialCountry: _whatsAppCountry,
                         label: 'WhatsApp number',
-                        hint: 'Enter WhatsApp number',
-                        icon: Icons.chat_outlined,
-                        keyboardType: TextInputType.phone,
-                        inputFormatters: [InputValidators.phoneInputFormatter],
-                        textInputAction: TextInputAction.next,
                         readOnly: _sameAsPhone,
+                        onCountryChanged: (c) {
+                          setState(() {
+                            _whatsAppCountry = c;
+                            if (!_sameAsPhone) {
+                              _previousManualWhatsAppCountry = c;
+                            }
+                          });
+                        },
+                        onChanged: (val) {
+                          if (!_sameAsPhone) {
+                            _previousManualWhatsApp = val;
+                          }
+                        },
+                        validator: (value) {
+                          if (_sameAsPhone) return null;
+                          final raw = _whatsAppController.text.trim();
+                          if (raw.isEmpty) return null; // WhatsApp is optional if not same
+                          if (raw.length < _whatsAppCountry.minLength) {
+                            return 'Enter a valid ${_whatsAppCountry.maxLength}-digit number';
+                          }
+                          return null;
+                        },
                       ),
                       const SizedBox(height: 6),
                       Material(
@@ -328,9 +343,23 @@ class _AirportTransferPassengerDetailsScreenState
                               _sameAsPhone = selected ?? false;
 
                               if (_sameAsPhone) {
+                                // Save what was previously typed manually before copying phone number
+                                if (_whatsAppController.text.trim().isNotEmpty) {
+                                  _previousManualWhatsApp = _whatsAppController.text.trim();
+                                  _previousManualWhatsAppCountry = _whatsAppCountry;
+                                }
+
+                                // Copy phone values
+                                _whatsAppCountry = _phoneCountry;
                                 _whatsAppController.text = _phoneController.text.trim();
                               } else {
-                                _whatsAppController.clear();
+                                // Restore previously typed manual WhatsApp values
+                                if (_previousManualWhatsApp != null && _previousManualWhatsApp!.isNotEmpty) {
+                                  _whatsAppCountry = _previousManualWhatsAppCountry ?? _phoneCountry;
+                                  _whatsAppController.text = _previousManualWhatsApp!;
+                                } else {
+                                  _whatsAppController.clear();
+                                }
                               }
                             });
                           },
@@ -348,14 +377,23 @@ class _AirportTransferPassengerDetailsScreenState
                         isDark: isDark,
                         controller: _flightNumberController,
                         label: 'Flight number',
-                        hint: 'Example: KM 100',
+                        hint: 'Example: KM 100 (Optional)',
                         icon: Icons.flight_takeoff_rounded,
                         textCapitalization: TextCapitalization.characters,
-                        inputFormatters: [UpperCaseTextFormatter()],
+                        inputFormatters: [
+                          UpperCaseTextFormatter(),
+                          LengthLimitingTextInputFormatter(10),
+                        ],
                         textInputAction: TextInputAction.next,
                         validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter the flight number';
+                          if (value != null &&
+                              value.trim().isNotEmpty &&
+                              value.trim().length < 3) {
+                            return 'Enter a valid flight number';
+                          }
+
+                          if (value != null && value.trim().length > 10) {
+                            return 'Flight number must be 10 characters or less';
                           }
 
                           return null;
@@ -369,8 +407,17 @@ class _AirportTransferPassengerDetailsScreenState
                         hint: 'Enter airline name',
                         icon: Icons.airlines_outlined,
                         textCapitalization: TextCapitalization.words,
-                        inputFormatters: [CapitalizeWordsFormatter()],
+                        inputFormatters: [
+                          CapitalizeWordsFormatter(),
+                          LengthLimitingTextInputFormatter(20),
+                        ],
                         textInputAction: TextInputAction.next,
+                        validator: (value) {
+                          if (value != null && value.trim().length > 20) {
+                            return 'Airline must be 20 characters or less';
+                          }
+                          return null;
+                        },
                       ),
                       const SizedBox(height: 12),
                       _buildField(
@@ -380,8 +427,17 @@ class _AirportTransferPassengerDetailsScreenState
                         hint: 'Optional',
                         icon: Icons.location_city_outlined,
                         textCapitalization: TextCapitalization.words,
-                        inputFormatters: [CapitalizeWordsFormatter()],
+                        inputFormatters: [
+                          CapitalizeWordsFormatter(),
+                          LengthLimitingTextInputFormatter(20),
+                        ],
                         textInputAction: TextInputAction.next,
+                        validator: (value) {
+                          if (value != null && value.trim().length > 20) {
+                            return 'Arrival terminal must be 20 characters or less';
+                          }
+                          return null;
+                        },
                       ),
                       const SizedBox(height: 10),
                       Container(
@@ -585,6 +641,7 @@ class _AirportTransferPassengerDetailsScreenState
   }) {
     return TextFormField(
       controller: controller,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       keyboardType: keyboardType,
       textInputAction: textInputAction,
       textCapitalization: textCapitalization,

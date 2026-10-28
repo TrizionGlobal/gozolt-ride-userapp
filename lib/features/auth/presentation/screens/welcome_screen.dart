@@ -135,7 +135,7 @@ class WelcomeScreen extends ConsumerWidget {
                         const SizedBox(height: 4),
 
                         Text(
-                          'v1.0.1',
+                          'v1.0.2',
                           style: AppTextStyles.bodySmall.copyWith(
                             color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.5) ?? Colors.grey,
                             fontSize: 10,

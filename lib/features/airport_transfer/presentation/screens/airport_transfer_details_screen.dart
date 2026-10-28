@@ -29,7 +29,7 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
         body: Column(
           children: [
             const AirportTransferHeader(
-              title: 'Transfer Details',
+              title: 'Booking Details',
             ),
             Expanded(
               child: Center(
@@ -80,7 +80,7 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
       body: Column(
         children: [
           const AirportTransferHeader(
-            title: 'Transfer Details',
+            title: 'Booking Details',
           ),
           Expanded(
             child: ListView(
@@ -205,35 +205,35 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
                                 letterSpacing: 0.8,
                               ),
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 12),
                             _VehicleDetailRow(
                               isDark: isDark,
                               icon: Icons.category_outlined,
                               label: 'Vehicle type',
                               value: vehicle.type,
                             ),
-                            const SizedBox(height: 9),
+                            const SizedBox(height: 12),
                             _VehicleDetailRow(
                               isDark: isDark,
                               icon: Icons.people_alt_outlined,
                               label: 'Capacity',
                               value: vehicle.passengerText,
                             ),
-                            const SizedBox(height: 9),
+                            const SizedBox(height: 12),
                             _VehicleDetailRow(
                               isDark: isDark,
                               icon: Icons.luggage_outlined,
                               label: 'Luggage',
                               value: vehicle.luggageText,
                             ),
-                            const SizedBox(height: 9),
+                            const SizedBox(height: 12),
                             _VehicleDetailRow(
                               isDark: isDark,
                               icon: Icons.ac_unit_rounded,
                               label: 'Comfort',
                               value: airConditioningText,
                             ),
-                            const SizedBox(height: 9),
+                            const SizedBox(height: 12),
                             _VehicleDetailRow(
                               isDark: isDark,
                               icon: Icons.settings_outlined,
@@ -404,13 +404,6 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
                       _TransferBenefitDivider(isDark: isDark),
                       _TransferBenefitRow(
                         isDark: isDark,
-                        icon: Icons.flight_rounded,
-                        title: 'Flight delay',
-                        value: 'Monitored automatically',
-                      ),
-                      _TransferBenefitDivider(isDark: isDark),
-                      _TransferBenefitRow(
-                        isDark: isDark,
                         icon: Icons.shield_outlined,
                         title: 'Cancellation',
                         value: 'Free up to 24 hours',
@@ -478,36 +471,6 @@ class AirportTransferDetailsScreen extends ConsumerWidget {
                             ),
                           ),
                         ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryGold.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.verified_user_outlined,
-                        size: 19,
-                        color: AppColors.primaryGold,
-                      ),
-                      const SizedBox(width: 9),
-                      Expanded(
-                        child: Text(
-                          'Your fixed price includes the selected vehicle and journey. Subject to supplier and driver availability.',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            height: 1.4,
-                            color: isDark
-                                ? AppColors.textSecondary
-                                : AppColors.textSecondaryLight,
-                          ),
-                        ),
                       ),
                     ],
                   ),
@@ -637,37 +600,38 @@ class _VehicleDetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
-          width: 34,
-          height: 34,
+          width: 32,
+          height: 32,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: AppColors.primaryGold.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
             icon,
-            size: 18,
+            size: 16,
             color: AppColors.primaryGold,
           ),
         ),
         const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            label,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: isDark
-                  ? AppColors.textSecondary
-                  : AppColors.textSecondaryLight,
-            ),
+        Text(
+          label,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: isDark
+                ? AppColors.textSecondary
+                : AppColors.textSecondaryLight,
           ),
         ),
-        const SizedBox(width: 10),
-        Flexible(
+        const SizedBox(width: 12),
+        Expanded(
           child: Text(
             value,
             textAlign: TextAlign.right,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: AppTextStyles.bodyMedium.copyWith(
               fontWeight: FontWeight.w600,
               color:

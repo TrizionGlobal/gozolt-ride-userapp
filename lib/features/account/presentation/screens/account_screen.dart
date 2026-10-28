@@ -370,7 +370,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 const SizedBox(height: 16),
                 Center(
                   child: Text(
-                    'Gozolt v1.0.1',
+                    'Gozolt v1.0.2',
                     style: AppTextStyles.labelSmall.copyWith(
                       color: AppColors.textMuted,
                       fontSize: 10,

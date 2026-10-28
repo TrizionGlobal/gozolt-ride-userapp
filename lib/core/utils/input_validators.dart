@@ -31,6 +31,19 @@ class InputValidators {
     return RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(trimmed);
   }
 
+  /// Form field email validator
+  static String? validateEmail(String? value, {bool required = true}) {
+    final email = value?.trim() ?? '';
+    if (email.isEmpty) {
+      return required ? 'Please enter an email address' : null;
+    }
+    final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+    if (!emailRegex.hasMatch(email)) {
+      return 'Enter a valid email address';
+    }
+    return null;
+  }
+
   /// Allows only valid decimal amounts (up to 2 decimal places)
   static final currencyInputFormatter =
       FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}'));

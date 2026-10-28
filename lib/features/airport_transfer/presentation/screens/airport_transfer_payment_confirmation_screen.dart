@@ -422,16 +422,16 @@ class _AirportTransferPaymentConfirmationScreenState
                     onPressed: _goToMyTransfers,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,
-                      foregroundColor: Colors.black,
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
                       elevation: 0,
                     ),
                     child: Text(
-                      'View My Transfers',
+                      'View My Bookings',
                       style: AppTextStyles.labelLarge.copyWith(
-                        color: Colors.black,
+                        color: Colors.white,
                         fontWeight: FontWeight.w700,
                       ),
                     ),

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/constants/asset_paths.dart';
@@ -31,8 +32,8 @@ class CarRentalReviewScreen extends ConsumerStatefulWidget {
 }
 
 class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
-  bool _agreeRentalAgreement = false;
-  bool _agreeTerms = false;
+  bool _acceptTerms = false;
+  bool _acceptPrivacy = false;
   bool _isBooking = false;
   bool _useCoins = false;
 
@@ -97,7 +98,34 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
     }
   }
 
-  Widget _buildSummarySection(BuildContext context, {required String title, required List<Widget> children}) {
+  static final Uri _termsUrl = Uri.parse(
+    'https://sites.google.com/view/gozoltlegal-supplier/terms-of-service',
+  );
+
+  static final Uri _privacyUrl = Uri.parse(
+    'https://sites.google.com/view/gozoltlegal-supplier/privacy-policy',
+  );
+
+  Future<void> _openLegalPage(Uri url) async {
+    final opened = await launchUrl(
+      url,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!opened && mounted) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Unable to open this page. Please try again.',
+            ),
+          ),
+        );
+    }
+  }
+
+  Widget _buildSummarySection(BuildContext context, {required String title, required List<Widget> children, IconData? icon}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
@@ -111,7 +139,15 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold, color: AppColors.primaryGold)),
+          Row(
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 20, color: AppColors.primaryGold),
+                const SizedBox(width: 8),
+              ],
+              Text(title, style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold, color: AppColors.primaryGold)),
+            ],
+          ),
           const SizedBox(height: 16),
           ...children,
         ],
@@ -140,25 +176,64 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
     );
   }
 
-  Widget _buildCheckboxRow(String title, bool value, ValueChanged<bool?> onChanged) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 24,
-            height: 24,
-            child: Checkbox(
-              value: value,
-              onChanged: onChanged,
-              activeColor: AppColors.primaryGold,
-            ),
+  Widget _buildLegalRow({
+    required bool isDark,
+    required bool value,
+    required String leadingText,
+    required String linkText,
+    required ValueChanged<bool?> onChanged,
+    required VoidCallback onLinkPressed,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 24,
+          height: 24,
+          child: Checkbox(
+            value: value,
+            activeColor: AppColors.primaryGold,
+            checkColor: AppColors.backgroundDark,
+            onChanged: onChanged,
           ),
-          const SizedBox(width: 12),
-          Expanded(child: Text(title, style: AppTextStyles.bodyMedium)),
-        ],
-      ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Text(
+                leadingText,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  height: 1.4,
+                  color: isDark
+                      ? AppColors.textPrimary
+                      : AppColors.textPrimaryLight,
+                ),
+              ),
+              InkWell(
+                borderRadius: BorderRadius.circular(4),
+                onTap: onLinkPressed,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 2,
+                  ),
+                  child: Text(
+                    linkText,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      height: 1.4,
+                      color: AppColors.primaryGold,
+                      fontWeight: FontWeight.w700,
+                      decoration: TextDecoration.underline,
+                      decorationColor: AppColors.primaryGold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -259,7 +334,7 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
     final double totalPayable = subtotal - discount;
     final int earnedCoins = (subtotal * 10).floor();
 
-    final isFormValid = _agreeRentalAgreement && _agreeTerms && _documentsUploaded;
+    final isFormValid = _acceptTerms && _acceptPrivacy && _documentsUploaded;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -539,10 +614,26 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
 
                   _buildSummarySection(
                     context,
-                    title: 'Booking Terms',
+                    title: 'BOOKING TERMS',
+                    icon: Icons.verified_user_outlined,
                     children: [
-                      _buildCheckboxRow('I agree to the Rental Agreement', _agreeRentalAgreement, (val) => setState(() => _agreeRentalAgreement = val ?? false)),
-                      _buildCheckboxRow('I accept Terms & Conditions', _agreeTerms, (val) => setState(() => _agreeTerms = val ?? false)),
+                      _buildLegalRow(
+                        isDark: isDark,
+                        value: _acceptTerms,
+                        leadingText: 'I accept the ',
+                        linkText: 'Terms & Conditions',
+                        onChanged: (val) => setState(() => _acceptTerms = val ?? false),
+                        onLinkPressed: () => _openLegalPage(_termsUrl),
+                      ),
+                      const SizedBox(height: 10),
+                      _buildLegalRow(
+                        isDark: isDark,
+                        value: _acceptPrivacy,
+                        leadingText: 'I accept the ',
+                        linkText: 'Privacy Policy',
+                        onChanged: (val) => setState(() => _acceptPrivacy = val ?? false),
+                        onLinkPressed: () => _openLegalPage(_privacyUrl),
+                      ),
                     ],
                   ),
 
@@ -558,7 +649,7 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
         decoration: BoxDecoration(
           color: Theme.of(context).cardTheme.color,
           boxShadow: [
-            BoxShadow(color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4)),
+            BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05), blurRadius: 10, offset: const Offset(0, -4)),
           ],
         ),
         child: SafeArea(
@@ -584,20 +675,20 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen> {
                 return;
               }
 
-              if (!_agreeRentalAgreement) {
+              if (!_acceptTerms) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Please agree to the Rental Agreement.'),
+                    content: Text('Please accept the Terms & Conditions.'),
                     backgroundColor: Colors.redAccent,
                   ),
                 );
                 return;
               }
 
-              if (!_agreeTerms) {
+              if (!_acceptPrivacy) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Please accept the Terms & Conditions.'),
+                    content: Text('Please accept the Privacy Policy.'),
                     backgroundColor: Colors.redAccent,
                   ),
                 );

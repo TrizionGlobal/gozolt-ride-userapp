@@ -430,7 +430,7 @@ class _AirportTransferHistoryDetailsScreenState
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      'Transfer Details',
+                      'Booking Details',
                       style: AppTextStyles.headlineSmall.copyWith(
                         color: AppColors.backgroundDark,
                       ),
@@ -455,7 +455,7 @@ class _AirportTransferHistoryDetailsScreenState
                     const Icon(Icons.error_outline,
                         color: AppColors.error, size: 48),
                     const SizedBox(height: 12),
-                    Text('Failed to load transfer details',
+                    Text('Failed to load booking details',
                         style: AppTextStyles.titleSmall),
                     const SizedBox(height: 12),
                     ElevatedButton(

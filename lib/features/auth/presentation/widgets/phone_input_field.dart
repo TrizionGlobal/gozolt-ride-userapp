@@ -87,10 +87,10 @@ class PhoneInputField extends StatelessWidget {
                   ),
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(12),
+                    LengthLimitingTextInputFormatter(selectedCountry.maxLength),
                   ],
                   decoration: InputDecoration(
-                    hintText: 'Enter Mobile Number',
+                    hintText: 'Enter Mobile Number (${selectedCountry.maxLength} digits)',
                     hintStyle: AppTextStyles.bodyMedium.copyWith(
                       color: AppColors.textMuted,
                     ),
