@@ -1062,7 +1062,9 @@ class _TransferVehicleCard extends ConsumerWidget {
                                   ? (vehicle.roundTripDiscount > 0
                                       ? 'Round-trip (${vehicle.roundTripDiscount.toStringAsFixed(0)}% off)'
                                       : 'Round-trip')
-                                  : 'All-inclusive fare',
+                                  : (vehicle.distanceKm != null
+                                      ? '${vehicle.distanceKm!.toStringAsFixed(1)} km · €${vehicle.pricePerKm.toStringAsFixed(2)}/km'
+                                      : 'All-inclusive fare'),
                               style: AppTextStyles.labelSmall.copyWith(
                                 color: AppColors.success,
                                 fontWeight: FontWeight.w600,

@@ -26,7 +26,7 @@ class AirportTransferVehicle {
     this.freeWaitingMinutes = 60,
     this.status = 'AVAILABLE',
     this.pricePerKm = 2.50,
-    this.minPrice = 20.00,
+    this.minPrice = 0.0,
     this.roundTripDiscount = 0.0,
     this.oneWayFare,
     this.calculatedFare,
@@ -91,7 +91,7 @@ class AirportTransferVehicle {
 
   String get ratePerKmText => '€${pricePerKm.toStringAsFixed(2)}/km';
 
-  String get minFareText => '€${minPrice.toStringAsFixed(2)} min';
+  String get minFareText => ratePerKmText;
 
   String get passengerText {
     return '$passengerCapacity '
@@ -149,10 +149,11 @@ class AirportTransferVehicle {
     }
 
     final double pricePerKm = _readDouble(json['pricePerKm'], 2.50);
-    final double minPrice = _readDouble(json['minPrice'], 20.00);
-    final double? oneWayFare = json['oneWayFare'] != null ? _readDouble(json['oneWayFare'], minPrice) : null;
-    final double? calculatedFare = json['calculatedFare'] != null ? _readDouble(json['calculatedFare'], minPrice) : null;
+    final double minPrice = _readDouble(json['minPrice'], 0.0);
     final double? distanceKm = json['distanceKm'] != null ? _readDouble(json['distanceKm'], 0.0) : null;
+    final double defaultFare = distanceKm != null ? (distanceKm * pricePerKm) : 0.0;
+    final double oneWayFare = json['oneWayFare'] != null ? _readDouble(json['oneWayFare'], defaultFare) : defaultFare;
+    final double calculatedFare = json['calculatedFare'] != null ? _readDouble(json['calculatedFare'], defaultFare) : defaultFare;
     final int? durationMinutes = json['durationMinutes'] != null ? _readInt(json['durationMinutes'], 25) : null;
     final bool isRoundTrip = json['isRoundTrip'] == true;
 
@@ -174,10 +175,7 @@ class AirportTransferVehicle {
         json['luggageCapacity'] ?? json['bags'],
         2,
       ),
-      fixedPrice: calculatedFare ?? _readDouble(
-        json['fixedPrice'] ?? json['price'],
-        minPrice,
-      ),
+      fixedPrice: calculatedFare,
       currency: (json['currency'] ?? 'EUR').toString(),
       imageUrl: primaryImageUrl,
       images: images,

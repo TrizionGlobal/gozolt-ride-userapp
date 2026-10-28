@@ -216,9 +216,7 @@ class AirportTransferConfirmationScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: 12),
                             _ConfirmationRow(
-                              icon: paymentMethod == 'Cash'
-                                  ? Icons.payments_outlined
-                                  : Icons.credit_card_rounded,
+                              icon: Icons.credit_card_rounded,
                               label: 'Payment Method',
                               value: paymentMethod,
                               isDark: isDark,
