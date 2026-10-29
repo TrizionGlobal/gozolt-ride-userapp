@@ -98,6 +98,7 @@ class _OtherServicesReviewScreenState extends ConsumerState<OtherServicesReviewS
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _isBooking ? null : () async {
+                    if (!QuickServicesBookingTerms.validate(context)) return;
                     final payment = QuickServicesCoinsHelper.getPaymentDetails(
                       ref: ref,
                       upfrontRaw: _bookingData.upfrontBookingFee + _bookingData.materialCost,

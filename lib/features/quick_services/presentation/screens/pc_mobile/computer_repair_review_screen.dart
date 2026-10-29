@@ -354,6 +354,7 @@ class _ComputerRepairReviewScreenState extends ConsumerState<ComputerRepairRevie
                   // Confirm Booking Button
                   ElevatedButton(
                     onPressed: _isBooking ? null : () async {
+                      if (!QuickServicesBookingTerms.validate(context)) return;
 
                   final payment = QuickServicesCoinsHelper.getPaymentDetails(
                       ref: ref,

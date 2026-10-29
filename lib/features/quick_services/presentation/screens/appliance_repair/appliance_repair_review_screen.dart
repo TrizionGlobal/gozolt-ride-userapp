@@ -79,6 +79,7 @@ class _ApplianceRepairReviewScreenState extends ConsumerState<ApplianceRepairRev
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
               child: ElevatedButton(
                 onPressed: _isBooking ? null : () async {
+                  if (!QuickServicesBookingTerms.validate(context)) return;
 
                   final payment = QuickServicesCoinsHelper.getPaymentDetails(
                       ref: ref,

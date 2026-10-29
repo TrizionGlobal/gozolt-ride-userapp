@@ -7,6 +7,7 @@ import '../../features/ride/data/models/saved_payment_method.dart';
 import '../../features/ride/data/datasources/payment_remote_datasource.dart';
 import '../../features/ride/presentation/providers/ride_providers.dart';
 import '../../features/ride/presentation/widgets/stripe_add_card_sheet.dart';
+import '../../features/quick_services/data/models/quick_services_booking_draft.dart';
 
 class BookingPaymentSheet extends ConsumerStatefulWidget {
   final PaymentMethodType currentType;
@@ -57,6 +58,12 @@ class _BookingPaymentSheetState extends ConsumerState<BookingPaymentSheet> {
   }
 
   Future<void> _confirm() async {
+    if (widget.isQuickService && !widget.isQuickServicePostPayment) {
+      if (!QuickServicesBookingDraft.validateTerms(context)) {
+        return;
+      }
+    }
+
     if (_selectedType == PaymentMethodType.card && _selectedCardId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

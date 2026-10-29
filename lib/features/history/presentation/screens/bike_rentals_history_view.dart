@@ -211,7 +211,7 @@ class _BikeRentalsHistoryViewState extends ConsumerState<BikeRentalsHistoryView>
                     border: Border.all(color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                     boxShadow: [
                       BoxShadow(
-                        color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight.withValues(alpha: 0.04),
+                        color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -226,12 +226,12 @@ class _BikeRentalsHistoryViewState extends ConsumerState<BikeRentalsHistoryView>
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Car Image
+                            // Bike Image
                             Container(
                               width: 80,
                               height: 60,
                               decoration: BoxDecoration(
-                                color: AppColors.backgroundLight,
+                                color: isDark ? AppColors.surfaceDark : AppColors.backgroundLight,
                                 borderRadius: BorderRadius.circular(8),
                                 image: imageUrl != null
                                     ? DecorationImage(

@@ -8,6 +8,9 @@ import '../../../../core/config/quick_services_pricing_config.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/asset_paths.dart';
+import 'quick_services_booking_terms.dart';
+export 'quick_services_booking_terms.dart';
+export '../../data/models/quick_services_booking_draft.dart';
 
 class QuickServicesPriceSummary extends ConsumerWidget {
   final QuickServiceBookingData bookingData;
@@ -15,6 +18,7 @@ class QuickServicesPriceSummary extends ConsumerWidget {
   final bool useGoCoins;
   final ValueChanged<bool>? onGoCoinsChanged;
   final bool showAdditionalDetails;
+  final bool showBookingTerms;
 
   const QuickServicesPriceSummary({
     super.key,
@@ -23,6 +27,7 @@ class QuickServicesPriceSummary extends ConsumerWidget {
     this.useGoCoins = false,
     this.onGoCoinsChanged,
     this.showAdditionalDetails = true,
+    this.showBookingTerms = true,
   });
 
   @override
@@ -523,6 +528,10 @@ class QuickServicesPriceSummary extends ConsumerWidget {
             ],
           ),
         ),
+        if (showBookingTerms) ...[
+          const SizedBox(height: 16),
+          const QuickServicesBookingTerms(),
+        ],
       ],
     );
   },

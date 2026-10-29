@@ -150,26 +150,48 @@ Pickup Time: ${DateFormat('h:mm a').format(startDate)}
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
-                      color: Colors.white, // QR code needs white background for contrast
+                      color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.04),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Column(
                       children: [
                         Text(
                           'Present this to supplier',
-                          style: AppTextStyles.titleMedium.copyWith(color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight),
+                          style: AppTextStyles.titleMedium.copyWith(
+                            color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                          ),
                         ),
                         const SizedBox(height: 16),
-                        QrImageView(
-                          data: qrDataJson,
-                          version: QrVersions.auto,
-                          size: 200.0,
-                          backgroundColor: Colors.white,
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: QrImageView(
+                            data: qrDataJson,
+                            version: QrVersions.auto,
+                            size: 190.0,
+                            backgroundColor: Colors.white,
+                            padding: EdgeInsets.zero,
+                          ),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           'Booking ID: $displayBookingId',
-                          style: AppTextStyles.labelLarge.copyWith(color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
+                          style: AppTextStyles.labelLarge.copyWith(
+                            color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                          ),
                         ),
                       ],
                     ),
@@ -845,6 +867,7 @@ Pickup Time: ${DateFormat('h:mm a').format(startDate)}
   void _handleExtend(BuildContext context, WidgetRef ref, Map<String, dynamic> booking) async {
     try {
       final DateTime currentEndDate = _parseRentalDate(booking['endDate']);
+      final isDark = Theme.of(context).brightness == Brightness.dark;
       
       // Pick new date
       final DateTime? newDate = await showDatePicker(
@@ -855,11 +878,22 @@ Pickup Time: ${DateFormat('h:mm a').format(startDate)}
         builder: (context, child) {
           return Theme(
             data: Theme.of(context).copyWith(
-              colorScheme: const ColorScheme.light(
-                primary: AppColors.primaryGold,
-                onPrimary: AppColors.backgroundDark,
-                surface: AppColors.backgroundLight,
-                onSurface: AppColors.textPrimaryLight,
+              colorScheme: isDark
+                  ? const ColorScheme.dark(
+                      primary: AppColors.primaryGold,
+                      onPrimary: Colors.black,
+                      surface: AppColors.surfaceDark,
+                      onSurface: AppColors.textPrimary,
+                    )
+                  : const ColorScheme.light(
+                      primary: AppColors.primaryGold,
+                      onPrimary: Colors.white,
+                      surface: AppColors.surfaceLight,
+                      onSurface: AppColors.textPrimaryLight,
+                    ),
+              dialogTheme: DialogThemeData(
+                backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
             ),
             child: child!,

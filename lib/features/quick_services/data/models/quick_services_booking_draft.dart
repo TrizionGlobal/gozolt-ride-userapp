@@ -10,6 +10,9 @@ class QuickServicesBookingDraft {
   static String? userPhone;
   static String? userEmail;
 
+  static final ValueNotifier<bool> acceptTerms = ValueNotifier<bool>(false);
+  static final ValueNotifier<bool> acceptPrivacy = ValueNotifier<bool>(false);
+
   static void reset() {
     selectedDate = null;
     selectedTime = null;
@@ -17,6 +20,34 @@ class QuickServicesBookingDraft {
     userName = null;
     userPhone = null;
     userEmail = null;
+    acceptTerms.value = false;
+    acceptPrivacy.value = false;
+  }
+
+  static bool validateTerms(BuildContext context) {
+    if (!acceptTerms.value) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Please accept the Terms & Conditions.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      return false;
+    }
+    if (!acceptPrivacy.value) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Please accept the Privacy Policy.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      return false;
+    }
+    return true;
   }
 
   static bool validate(BuildContext context) {

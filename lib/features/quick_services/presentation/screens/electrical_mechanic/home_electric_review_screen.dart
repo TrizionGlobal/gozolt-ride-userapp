@@ -86,6 +86,7 @@ class _HomeElectricReviewScreenState extends ConsumerState<HomeElectricReviewScr
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: _isBooking ? null : () async {
+                      if (!QuickServicesBookingTerms.validate(context)) return;
 
                   final payment = QuickServicesCoinsHelper.getPaymentDetails(
                       ref: ref,

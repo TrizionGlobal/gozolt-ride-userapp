@@ -168,6 +168,7 @@ class _RescheduleBottomSheetState extends State<RescheduleBottomSheet> {
 
   Future<void> _pickDate(BuildContext context) async {
     final now = DateTime.now();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate.isBefore(now) ? now : _selectedDate,
@@ -176,9 +177,22 @@ class _RescheduleBottomSheetState extends State<RescheduleBottomSheet> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: AppColors.primaryGold,
-              surface: AppColors.surfaceDark,
+            colorScheme: isDark
+                ? const ColorScheme.dark(
+                    primary: AppColors.primaryGold,
+                    onPrimary: Colors.black,
+                    surface: AppColors.surfaceDark,
+                    onSurface: AppColors.textPrimary,
+                  )
+                : const ColorScheme.light(
+                    primary: AppColors.primaryGold,
+                    onPrimary: Colors.white,
+                    surface: AppColors.surfaceLight,
+                    onSurface: AppColors.textPrimaryLight,
+                  ),
+            dialogTheme: DialogThemeData(
+              backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
           ),
           child: child!,
@@ -191,15 +205,29 @@ class _RescheduleBottomSheetState extends State<RescheduleBottomSheet> {
   }
 
   Future<void> _pickTime(BuildContext context) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final picked = await showTimePicker(
       context: context,
       initialTime: _selectedTime,
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: AppColors.primaryGold,
-              surface: AppColors.surfaceDark,
+            colorScheme: isDark
+                ? const ColorScheme.dark(
+                    primary: AppColors.primaryGold,
+                    onPrimary: Colors.black,
+                    surface: AppColors.surfaceDark,
+                    onSurface: AppColors.textPrimary,
+                  )
+                : const ColorScheme.light(
+                    primary: AppColors.primaryGold,
+                    onPrimary: Colors.white,
+                    surface: AppColors.surfaceLight,
+                    onSurface: AppColors.textPrimaryLight,
+                  ),
+            dialogTheme: DialogThemeData(
+              backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
             timePickerTheme: const TimePickerThemeData(
               hourMinuteTextStyle: TextStyle(
