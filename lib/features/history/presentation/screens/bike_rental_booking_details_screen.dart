@@ -116,10 +116,17 @@ class BikeRentalBookingDetailsScreen extends ConsumerWidget {
           final mileage = vehicle['mileage']?.toString() ?? '-';
           final seats = vehicle['seats']?.toString() ?? '-';
           final color = vehicle['color'] ?? '-';
+          final handoverTasks = booking['handoverTasks'] as List<dynamic>?;
+          final isAssigned = booking['isAssigned'] == true ||
+              (handoverTasks != null && handoverTasks.isNotEmpty) ||
+              booking['handover'] != null ||
+              status == 'ACTIVE' ||
+              status == 'COMPLETED';
+          final validationPin = isAssigned ? (booking['validationPin']?.toString() ?? '') : '';
 
           final qrDataJson = '''
 Booking Reference: $displayBookingId
-Brand: $brand
+${validationPin.isNotEmpty ? 'Validation PIN: $validationPin\n' : ''}Brand: $brand
 Model: $model
 Year: $year
 Category: $type
@@ -172,27 +179,81 @@ Pickup Time: ${DateFormat('h:mm a').format(startDate)}
                           ),
                         ),
                         const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
+                        QrImageView(
+                          data: qrDataJson,
+                          version: QrVersions.auto,
+                          size: 150.0,
+                          backgroundColor: Colors.transparent,
+                          eyeStyle: QrEyeStyle(
+                            eyeShape: QrEyeShape.square,
+                            color: isDark ? AppColors.primaryGold : Colors.black,
                           ),
-                          child: QrImageView(
-                            data: qrDataJson,
-                            version: QrVersions.auto,
-                            size: 190.0,
-                            backgroundColor: Colors.white,
-                            padding: EdgeInsets.zero,
+                          dataModuleStyle: QrDataModuleStyle(
+                            dataModuleShape: QrDataModuleShape.square,
+                            color: isDark ? AppColors.primaryGold : Colors.black,
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         Text(
-                          'Booking ID: $displayBookingId',
-                          style: AppTextStyles.labelLarge.copyWith(
-                            color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+                          'Booking ID',
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: isDark ? AppColors.textSecondary : Colors.grey,
+                            fontSize: 10,
                           ),
                         ),
+                        Text(
+                          displayBookingId,
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.0,
+                          ),
+                        ),
+                        if (isAssigned && validationPin.isNotEmpty) ...[
+                          const SizedBox(height: 14),
+                          Container(
+                            width: 150.0,
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryGold.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.5)),
+                            ),
+                            child: Column(
+                              children: [
+                                Text(
+                                  'VALIDATION PIN',
+                                  style: AppTextStyles.labelSmall.copyWith(
+                                    color: AppColors.primaryGold,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 10,
+                                    letterSpacing: 1.0,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  validationPin,
+                                  style: AppTextStyles.titleMedium.copyWith(
+                                    color: isDark ? Colors.white : AppColors.backgroundDark,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 2.0,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Share this PIN with the supplier or worker for verification',
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -205,6 +266,15 @@ Pickup Time: ${DateFormat('h:mm a').format(startDate)}
                 const SizedBox(height: 8),
                 _buildInfoCard(context, [
                   _buildStatusRow(context, status),
+                  if (isAssigned && (booking['assignedWorker'] != null || (handoverTasks != null && handoverTasks.isNotEmpty)))
+                    _buildInfoRow(
+                      context,
+                      'Assigned Staff',
+                      booking['assignedWorker']?.toString() ??
+                          (handoverTasks != null && handoverTasks.isNotEmpty && handoverTasks[0]['worker'] != null
+                              ? handoverTasks[0]['worker']['name']?.toString() ?? 'Assigned Staff'
+                              : 'Assigned Staff'),
+                    ),
                   _buildInfoRow(context, 'Pickup', DateFormat('MMM d, yyyy - h:mm a').format(startDate)),
                   _buildInfoRow(context, 'Return', DateFormat('MMM d, yyyy - h:mm a').format(endDate)),
                   ...(() {
