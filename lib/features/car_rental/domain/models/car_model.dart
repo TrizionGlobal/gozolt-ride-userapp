@@ -206,11 +206,23 @@ class CarModel {
     );
   }
 
+  static String _formatCategory(dynamic raw) {
+    if (raw == null) return '';
+    final str = raw.toString().trim();
+    final upper = str.toUpperCase().replaceAll('-', '_').replaceAll(' ', '_');
+    if (upper == 'GO_5P') return 'GO - 5P';
+    if (upper == 'PREMIUM_5P') return 'PREMIUM - 5P';
+    if (upper == 'SUV_7P') return 'SUV - 7P';
+    if (upper.contains('VAN_8P') || upper.contains('MINI_VAN')) return 'VAN - 8P & ABOVE';
+    if (upper == 'ELECTRIC_5P') return 'ELECTRIC - 5P';
+    return str.toUpperCase();
+  }
+
   factory CarModel.fromJson(Map<String, dynamic> json) {
     return CarModel(
       id: json['id'],
       name: json['name'] ?? '',
-      type: (json['type'] ?? '').toString().split(RegExp(r'[ _]')).map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1).toLowerCase()}' : '').join(' ').trim(),
+      type: _formatCategory(json['type'] ?? json['category']),
       supplier: json['supplier'] ?? '',
       supplierLatitude: json['supplierLatitude'] != null ? (json['supplierLatitude'] as num).toDouble() : null,
       supplierLongitude: json['supplierLongitude'] != null ? (json['supplierLongitude'] as num).toDouble() : null,

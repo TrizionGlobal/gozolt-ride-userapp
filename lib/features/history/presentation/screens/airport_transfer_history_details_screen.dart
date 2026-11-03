@@ -1452,6 +1452,11 @@ class _AirportTransferHistoryDetailsScreenState
         'WhatsApp Phone',
         'Phone'
       ]),
+      'meetAndGreet': findVal([
+        'Meet & Greet',
+        'Meet and Greet',
+        'Meet & Greet Service',
+      ]),
       'welcomeSign': findVal([
         'Meet & Greet Sign',
         'Welcome Sign',
@@ -1661,50 +1666,51 @@ class _AirportTransferHistoryDetailsScreenState
 
           // Guests & Luggage summary row
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.inputDark.withValues(alpha: 0.5)
-                        : const Color(0xFFF8F9FA),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
                       color: isDark
-                          ? AppColors.borderDark
-                          : AppColors.borderLight,
+                          ? AppColors.inputDark.withValues(alpha: 0.5)
+                          : const Color(0xFFF8F9FA),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isDark
+                            ? AppColors.borderDark
+                            : AppColors.borderLight,
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.person_rounded,
-                        size: 16,
-                        color: AppColors.primaryGold,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          passengerSummary,
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: isDark
-                                ? AppColors.textPrimary
-                                : AppColors.textPrimaryLight,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.person_rounded,
+                          size: 16,
+                          color: AppColors.primaryGold,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            passengerSummary,
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: isDark
+                                  ? AppColors.textPrimary
+                                  : AppColors.textPrimaryLight,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Container(
+                const SizedBox(width: 8),
+                Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
@@ -1719,29 +1725,27 @@ class _AirportTransferHistoryDetailsScreenState
                     ),
                   ),
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(
                         Icons.luggage_rounded,
                         size: 16,
                         color: AppColors.primaryGold,
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '$totalBags Bag${totalBags == 1 ? '' : 's'}',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: isDark
-                                ? AppColors.textPrimary
-                                : AppColors.textPrimaryLight,
-                          ),
-                          overflow: TextOverflow.ellipsis,
+                      const SizedBox(width: 6),
+                      Text(
+                        '$totalBags Bag${totalBags == 1 ? '' : 's'}',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isDark
+                              ? AppColors.textPrimary
+                              : AppColors.textPrimaryLight,
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -1755,26 +1759,53 @@ class _AirportTransferHistoryDetailsScreenState
     final special = _parseSpecialRequests(booking['specialRequests']?.toString());
     final airline = special['airline'] as String?;
     final terminal = special['terminal'] as String?;
+    final meetAndGreetRaw = special['meetAndGreet'] as String?;
     final welcomeSign = special['welcomeSign'] as String?;
     final meetInstructions = special['meetInstructions'] as String?;
     final specialAssistance = special['specialAssistance'] as String?;
     final extraNotes = (special['extraNotes'] as List<String>?) ?? [];
 
     final leadName = (booking['leadPassengerName'] ?? 'Passenger').toString();
+
+    // Determine dynamically if Meet & Greet was requested
+    final bool hasMeetAndGreet;
+    if (meetAndGreetRaw != null && meetAndGreetRaw.trim().isNotEmpty) {
+      final lower = meetAndGreetRaw.trim().toLowerCase();
+      hasMeetAndGreet = !lower.contains('not') &&
+          !lower.contains('no') &&
+          !lower.contains('none') &&
+          !lower.contains('false');
+    } else {
+      // If a welcome sign is stored in specialRequests, Meet & Greet was selected
+      hasMeetAndGreet = welcomeSign != null && welcomeSign.trim().isNotEmpty;
+    }
+
     final rawSign = (welcomeSign != null && welcomeSign.trim().isNotEmpty)
         ? welcomeSign.trim().replaceAll('"', '')
         : leadName;
     final displaySign = '"$rawSign"';
 
-    final displayMeetInstructions =
-        (meetInstructions != null && meetInstructions.trim().isNotEmpty)
-            ? meetInstructions.trim()
-            : 'Meet driver at the arrivals hall with your welcome sign';
+    final bool hasInstructions;
+    if (meetInstructions != null && meetInstructions.trim().isNotEmpty) {
+      final lower = meetInstructions.trim().toLowerCase();
+      hasInstructions = lower != 'none' &&
+          lower != 'none requested' &&
+          lower != 'no' &&
+          lower != 'n/a';
+    } else {
+      hasInstructions = false;
+    }
 
-    final displaySpecialAssistance =
-        (specialAssistance != null && specialAssistance.trim().isNotEmpty)
-            ? specialAssistance.trim()
-            : '1 Child seat, chair assistance';
+    final bool hasSpecialAssistance;
+    if (specialAssistance != null && specialAssistance.trim().isNotEmpty) {
+      final lower = specialAssistance.trim().toLowerCase();
+      hasSpecialAssistance = lower != 'none' &&
+          lower != 'none requested' &&
+          lower != 'no' &&
+          lower != 'n/a';
+    } else {
+      hasSpecialAssistance = false;
+    }
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -1907,26 +1938,44 @@ class _AirportTransferHistoryDetailsScreenState
             trailing: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                color: hasMeetAndGreet
+                    ? const Color(0xFF10B981).withValues(alpha: 0.12)
+                    : (isDark
+                        ? AppColors.inputDark.withValues(alpha: 0.6)
+                        : Colors.grey.withValues(alpha: 0.12)),
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
-                  color: const Color(0xFF10B981).withValues(alpha: 0.35),
+                  color: hasMeetAndGreet
+                      ? const Color(0xFF10B981).withValues(alpha: 0.35)
+                      : (isDark
+                          ? AppColors.borderDark
+                          : Colors.grey.withValues(alpha: 0.3)),
                   width: 1,
                 ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
-                    Icons.check_circle_rounded,
+                  Icon(
+                    hasMeetAndGreet
+                        ? Icons.check_circle_rounded
+                        : Icons.info_outline_rounded,
                     size: 12,
-                    color: Color(0xFF10B981),
+                    color: hasMeetAndGreet
+                        ? const Color(0xFF10B981)
+                        : (isDark
+                            ? AppColors.textSecondary
+                            : AppColors.textSecondaryLight),
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Included',
+                    hasMeetAndGreet ? 'Included' : 'Not requested',
                     style: AppTextStyles.labelSmall.copyWith(
-                      color: const Color(0xFF10B981),
+                      color: hasMeetAndGreet
+                          ? const Color(0xFF10B981)
+                          : (isDark
+                              ? AppColors.textSecondary
+                              : AppColors.textSecondaryLight),
                       fontWeight: FontWeight.w600,
                       fontSize: 11,
                     ),
@@ -1937,184 +1986,191 @@ class _AirportTransferHistoryDetailsScreenState
             isDark: isDark,
           ),
 
-          // 1. DRIVER WELCOME SIGN Box
-          const SizedBox(height: 12),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.primaryGold.withValues(alpha: isDark ? 0.08 : 0.06),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: AppColors.primaryGold.withValues(alpha: 0.35),
-                width: 1,
+          // 1. DRIVER WELCOME SIGN Box (only if Meet & Greet was selected)
+          if (hasMeetAndGreet) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGold
+                    .withValues(alpha: isDark ? 0.08 : 0.06),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: AppColors.primaryGold.withValues(alpha: 0.35),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGold.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.badge_outlined,
+                      size: 18,
+                      color: AppColors.primaryGold,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'DRIVER WELCOME SIGN',
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: isDark
+                                ? AppColors.textSecondary
+                                : AppColors.textSecondaryLight,
+                            fontSize: 10,
+                            letterSpacing: 0.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          displaySign,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? AppColors.textPrimary
+                                : AppColors.textPrimaryLight,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryGold.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.badge_outlined,
+          ],
+
+          // 2. Meeting Instructions Box (only if provided by user and Meet & Greet requested)
+          if (hasMeetAndGreet && hasInstructions) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? AppColors.backgroundDark.withValues(alpha: 0.5)
+                    : const Color(0xFFF9FAFB),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.directions_walk_rounded,
                     size: 18,
                     color: AppColors.primaryGold,
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'DRIVER WELCOME SIGN',
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: isDark
-                              ? AppColors.textSecondary
-                              : AppColors.textSecondaryLight,
-                          fontSize: 10,
-                          letterSpacing: 0.5,
-                          fontWeight: FontWeight.w500,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Meeting Instructions',
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: isDark
+                                ? AppColors.textSecondary
+                                : AppColors.textSecondaryLight,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 11,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        displaySign,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: isDark
-                              ? AppColors.textPrimary
-                              : AppColors.textPrimaryLight,
+                        const SizedBox(height: 4),
+                        Text(
+                          meetInstructions!.trim(),
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: isDark
+                                ? AppColors.textPrimary
+                                : AppColors.textPrimaryLight,
+                            height: 1.35,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-
-          // 2. Meeting Instructions Box
-          const SizedBox(height: 10),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? AppColors.backgroundDark.withValues(alpha: 0.5)
-                  : const Color(0xFFF9FAFB),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                width: 1,
+                ],
               ),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(
-                  Icons.directions_walk_rounded,
-                  size: 18,
-                  color: AppColors.primaryGold,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Meeting Instructions',
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: isDark
-                              ? AppColors.textSecondary
-                              : AppColors.textSecondaryLight,
-                          fontWeight: FontWeight.w500,
-                          fontSize: 11,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        displayMeetInstructions,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: isDark
-                              ? AppColors.textPrimary
-                              : AppColors.textPrimaryLight,
-                          height: 1.35,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+          ],
 
-          // 3. Special Assistance Box
-          const SizedBox(height: 10),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? AppColors.surfaceDark
-                  : const Color(0xFFF9FAFB),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                width: 1,
+          // 3. Special Assistance Box (only if provided by user)
+          if (hasSpecialAssistance) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? AppColors.surfaceDark
+                    : const Color(0xFFF9FAFB),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2196F3).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Icon(
+                      Icons.accessible_rounded,
+                      size: 16,
+                      color: Color(0xFF2196F3),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'SPECIAL ASSISTANCE & REQUIREMENTS',
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: isDark
+                                ? AppColors.textSecondary
+                                : AppColors.textSecondaryLight,
+                            fontSize: 10,
+                            letterSpacing: 0.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          specialAssistance!.trim(),
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: isDark
+                                ? AppColors.textPrimary
+                                : AppColors.textPrimaryLight,
+                            height: 1.35,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2196F3).withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Icon(
-                    Icons.accessible_rounded,
-                    size: 16,
-                    color: Color(0xFF2196F3),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'SPECIAL ASSISTANCE & REQUIREMENTS',
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: isDark
-                              ? AppColors.textSecondary
-                              : AppColors.textSecondaryLight,
-                          fontSize: 10,
-                          letterSpacing: 0.5,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        displaySpecialAssistance,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: isDark
-                              ? AppColors.textPrimary
-                              : AppColors.textPrimaryLight,
-                          height: 1.35,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+          ],
 
           // Any extra unparsed notes
           for (final note in extraNotes) ...[

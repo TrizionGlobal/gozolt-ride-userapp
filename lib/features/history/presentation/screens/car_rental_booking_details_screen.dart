@@ -278,7 +278,7 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                   if (vehicle['brand'] != null) _buildInfoRow(context, 'Brand', vehicle['brand']),
                   _buildInfoRow(context, 'Model', vehicle['name'] ?? 'N/A'),
                   if (vehicle['year'] != null) _buildInfoRow(context, 'Year', vehicle['year'].toString()),
-                  if (vehicle['category'] != null) _buildInfoRow(context, 'Category', _formatEnumString(vehicle['category'])),
+                  if (vehicle['category'] != null) _buildInfoRow(context, 'Category', _formatCategoryString(vehicle['category'])),
                   if (vehicle['registrationNo'] != null) _buildInfoRow(context, 'Registration', vehicle['registrationNo']),
                   if (vehicle['fuelType'] != null) _buildInfoRow(context, 'Fuel Type', _formatEnumString(vehicle['fuelType'])),
                   if (vehicle['transmission'] != null) _buildInfoRow(context, 'Transmission', _formatEnumString(vehicle['transmission'])),
@@ -774,6 +774,18 @@ Time: ${DateFormat('h:mm a').format(startDate)}
         ],
       ),
     );
+  }
+
+  String _formatCategoryString(dynamic val) {
+    if (val == null) return 'N/A';
+    final str = val.toString().trim();
+    final upper = str.toUpperCase().replaceAll('-', '_').replaceAll(' ', '_');
+    if (upper == 'GO_5P') return 'GO - 5P';
+    if (upper == 'PREMIUM_5P') return 'PREMIUM - 5P';
+    if (upper == 'SUV_7P') return 'SUV - 7P';
+    if (upper.contains('VAN_8P') || upper.contains('MINI_VAN')) return 'VAN - 8P & ABOVE';
+    if (upper == 'ELECTRIC_5P') return 'ELECTRIC - 5P';
+    return str.toUpperCase();
   }
 
   String _formatEnumString(String? val) {

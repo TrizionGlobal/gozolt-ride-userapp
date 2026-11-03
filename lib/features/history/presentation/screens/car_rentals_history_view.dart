@@ -155,9 +155,16 @@ class _CarRentalsHistoryViewState extends ConsumerState<CarRentalsHistoryView> {
               
               final vehicleName = vehicle['name'] ?? 'Rental Car';
               final rawCategory = vehicle['category'] as String?;
-              final formattedCategory = rawCategory != null 
-                  ? rawCategory.split('_').map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}' : '').join(' ')
-                  : '';
+              String formattedCategory = '';
+              if (rawCategory != null) {
+                final upper = rawCategory.toUpperCase().replaceAll('-', '_').replaceAll(' ', '_');
+                if (upper == 'GO_5P') formattedCategory = 'GO - 5P';
+                else if (upper == 'PREMIUM_5P') formattedCategory = 'PREMIUM - 5P';
+                else if (upper == 'SUV_7P') formattedCategory = 'SUV - 7P';
+                else if (upper.contains('VAN_8P') || upper.contains('MINI_VAN')) formattedCategory = 'VAN - 8P & ABOVE';
+                else if (upper == 'ELECTRIC_5P') formattedCategory = 'ELECTRIC - 5P';
+                else formattedCategory = rawCategory.toUpperCase();
+              }
               final title = formattedCategory.isNotEmpty ? '$vehicleName ($formattedCategory)' : vehicleName;
               
               final images = vehicle['images'] as List<dynamic>?;

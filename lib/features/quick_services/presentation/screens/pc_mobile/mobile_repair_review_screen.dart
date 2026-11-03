@@ -72,7 +72,7 @@ class _MobileRepairReviewScreenState extends ConsumerState<MobileRepairReviewScr
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final dateStr = DateFormat('dd MMM yyyy').format(_bookingData.scheduleDate);
+    final dateStr = DateFormat('dd MMM yyyy • EEEE').format(_bookingData.scheduleDate);
     final timeStr = _bookingData.scheduleTime.format(context);
 
     final devices = _bookingData.mobileDevices ?? [];
@@ -94,7 +94,7 @@ class _MobileRepairReviewScreenState extends ConsumerState<MobileRepairReviewScr
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
 
-                  // ── Booking Details Card ──────────────────────────────────
+                  // ── Booking Summary Card ──────────────────────────────────
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
@@ -121,7 +121,7 @@ class _MobileRepairReviewScreenState extends ConsumerState<MobileRepairReviewScr
                             ),
                             const SizedBox(width: 12),
                             Text(
-                              'Booking Details',
+                              'Booking Summary',
                               style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -158,15 +158,66 @@ class _MobileRepairReviewScreenState extends ConsumerState<MobileRepairReviewScr
                         const SizedBox(height: 10),
                         // Customer
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Icon(Icons.person, size: 18, color: Colors.grey),
                             const SizedBox(width: 10),
-                            Text(
-                              'Customer: ${_bookingData.userName}',
-                              style: AppTextStyles.bodySmall,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Customer: ${_bookingData.userName}', style: AppTextStyles.bodySmall),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Email: ${_bookingData.userEmail}',
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Phone: ${_bookingData.userPhone}',
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
+
+                        // Materials or Tools (if present)
+                        if (_bookingData.materialPreference != null && _bookingData.materialPreference!.isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                _bookingData.materialPreference!.toLowerCase().contains('tool')
+                                    ? Icons.handyman_outlined
+                                    : (_bookingData.materialPreference!.toLowerCase().contains('product')
+                                        ? Icons.clean_hands
+                                        : Icons.inventory_2_outlined),
+                                size: 18,
+                                color: Colors.grey,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  _bookingData.materialPreference!.toLowerCase().contains('tool')
+                                      ? 'Tools: ${_bookingData.materialPreference}'
+                                      : (_bookingData.materialPreference!.toLowerCase().contains('product')
+                                          ? 'Products: ${_bookingData.materialPreference}'
+                                          : 'Materials: ${_bookingData.materialPreference}'),
+                                  style: AppTextStyles.bodySmall,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),

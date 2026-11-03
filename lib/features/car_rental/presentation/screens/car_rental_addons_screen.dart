@@ -215,11 +215,11 @@ class _CarRentalAddonsScreenState extends ConsumerState<CarRentalAddonsScreen> {
                               ),
                             ),
                           ),
-                          if (addon.name.toLowerCase().contains('additional driver') && isSelected)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 12),
-                              child: _buildAdditionalDriverForm(isDark),
-                            ),
+                          // if (addon.name.toLowerCase().contains('additional driver') && isSelected)
+                          //   Padding(
+                          //     padding: const EdgeInsets.only(top: 12),
+                          //     child: _buildAdditionalDriverForm(isDark),
+                          //   ),
                         ],
                       );
               },
@@ -278,66 +278,66 @@ class _CarRentalAddonsScreenState extends ConsumerState<CarRentalAddonsScreen> {
     );
   }
 
-  Widget _buildAdditionalDriverForm(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primaryGold.withOpacity(0.5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Additional Driver Details', style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _driverNameController,
-            style: AppTextStyles.bodyMedium,
-            decoration: InputDecoration(
-              hintText: 'Full Name',
-              hintStyle: TextStyle(fontSize: 13, color: isDark ? Colors.white38 : Colors.black38),
-              filled: true,
-              fillColor: isDark ? AppColors.inputDark : Colors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8), 
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: GozoltButton(
-                  label: _dlFileName ?? 'Upload DL',
-                  isOutlined: true,
-                  onPressed: () {
-                    setState(() {
-                      _dlFileName = 'driver_license.pdf';
-                    });
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: GozoltButton(
-                  label: _idFileName ?? 'Upload ID',
-                  isOutlined: true,
-                  onPressed: () {
-                    setState(() {
-                      _idFileName = 'national_id.pdf';
-                    });
-                  },
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildAdditionalDriverForm(bool isDark) {
+  //   return Container(
+  //     padding: const EdgeInsets.all(16),
+  //     decoration: BoxDecoration(
+  //       color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+  //       borderRadius: BorderRadius.circular(12),
+  //       border: Border.all(color: AppColors.primaryGold.withOpacity(0.5)),
+  //     ),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Text('Additional Driver Details', style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold)),
+  //         const SizedBox(height: 12),
+  //         TextField(
+  //           controller: _driverNameController,
+  //           style: AppTextStyles.bodyMedium,
+  //           decoration: InputDecoration(
+  //             hintText: 'Full Name',
+  //             hintStyle: TextStyle(fontSize: 13, color: isDark ? Colors.white38 : Colors.black38),
+  //             filled: true,
+  //             fillColor: isDark ? AppColors.inputDark : Colors.white,
+  //             border: OutlineInputBorder(
+  //               borderRadius: BorderRadius.circular(8), 
+  //               borderSide: BorderSide.none,
+  //             ),
+  //             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+  //           ),
+  //         ),
+  //         const SizedBox(height: 12),
+  //         Row(
+  //           children: [
+  //             Expanded(
+  //               child: GozoltButton(
+  //                 label: _dlFileName ?? 'Upload DL',
+  //                 isOutlined: true,
+  //                 onPressed: () {
+  //                   setState(() {
+  //                     _dlFileName = 'driver_license.pdf';
+  //                   });
+  //                 },
+  //               ),
+  //             ),
+  //             const SizedBox(width: 12),
+  //             Expanded(
+  //               child: GozoltButton(
+  //                 label: _idFileName ?? 'Upload ID',
+  //                 isOutlined: true,
+  //                 onPressed: () {
+  //                   setState(() {
+  //                     _idFileName = 'national_id.pdf';
+  //                   });
+  //                 },
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   void _showPriceBreakdown(BuildContext context, double basePrice, double flexiblePrice, double packagePrice, String packageName, int days, double addonsPrice, double pickupFee, double pickupDistance, double dropoffFee, double dropoffDistance, double totalPrice) {
     final isDark = Theme.of(context).brightness == Brightness.dark;

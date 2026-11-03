@@ -74,7 +74,26 @@ class _CarRentalListScreenState extends ConsumerState<CarRentalListScreen> {
   int? _selectedVehicleIndex;
   FilterState _filterState = FilterState();
   
-  final List<String> _categories = ['All', 'Go - 5P', 'Premium - 5P', 'SUV - 7P', 'Van - 8P & Above', 'Electric - 5P'];
+  static const List<String> _defaultCategories = [
+    'ALL',
+    'GO - 5P',
+    'PREMIUM - 5P',
+    'SUV - 7P',
+    'VAN - 8P & ABOVE',
+    'ELECTRIC - 5P',
+  ];
+
+  List<String> get _categories {
+    final activeTypes = _allCars
+        .map((c) => c.type.trim())
+        .where((t) => t.isNotEmpty)
+        .toSet()
+        .toList();
+    if (activeTypes.isEmpty) {
+      return _defaultCategories;
+    }
+    return ['ALL', ...activeTypes];
+  }
   
   List<CarModel> _allCars = [];
   bool _isLoading = true;
@@ -108,10 +127,14 @@ class _CarRentalListScreenState extends ConsumerState<CarRentalListScreen> {
   }
   
   List<CarModel> get _filteredCars {
+    final categories = _categories;
+    final selectedCategory = _selectedCategoryIndex < categories.length
+        ? categories[_selectedCategoryIndex]
+        : 'ALL';
+
     var cars = _allCars.where((car) {
       // Apply category tab filter
-      final selectedCategory = _categories[_selectedCategoryIndex];
-      if (selectedCategory != 'All' && car.type != selectedCategory) return false;
+      if (selectedCategory != 'ALL' && car.type.toUpperCase() != selectedCategory.toUpperCase()) return false;
 
       // Apply delivery type filter
       final searchState = ref.watch(carRentalSearchProvider);
@@ -120,7 +143,7 @@ class _CarRentalListScreenState extends ConsumerState<CarRentalListScreen> {
       if (searchState.deliveryType == 'DOORSTEP_DELIVERY' && !car.isDoorstepDeliveryAllowed) return false;
 
       // Apply modal filters
-      if (_filterState.vehicleTypes.isNotEmpty && !_filterState.vehicleTypes.contains(car.type)) return false;
+      if (_filterState.vehicleTypes.isNotEmpty && !_filterState.vehicleTypes.any((vt) => vt.toUpperCase() == car.type.toUpperCase())) return false;
       if (_filterState.minPrice != null && car.pricePerDay < _filterState.minPrice!) return false;
       if (_filterState.maxPrice != null && car.pricePerDay > _filterState.maxPrice!) return false;
       if (_filterState.transmissions.isNotEmpty && !_filterState.transmissions.contains(car.transmission)) return false;
@@ -208,19 +231,22 @@ class _CarRentalListScreenState extends ConsumerState<CarRentalListScreen> {
   }
 
   Widget _buildCategoryTabs(bool isDark) {
+    final categories = _categories;
+    final safeIndex = _selectedCategoryIndex < categories.length ? _selectedCategoryIndex : 0;
+
     return Container(
       height: 50,
       margin: const EdgeInsets.only(bottom: 10),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: _categories.length,
+        itemCount: categories.length,
         itemBuilder: (context, index) {
-          final isSelected = _selectedCategoryIndex == index;
+          final isSelected = safeIndex == index;
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: ChoiceChip(
-              label: Text(_categories[index]),
+              label: Text(categories[index]),
               selected: isSelected,
               onSelected: (selected) {
                 if (selected) {
@@ -650,11 +676,11 @@ class _FilterModalContentState extends State<_FilterModalContent> {
                   spacing: 16,
                   runSpacing: 12,
                   children: [
-                    _buildCheckbox('Go - 5P', _state.vehicleTypes),
-                    _buildCheckbox('Premium - 5P', _state.vehicleTypes),
+                    _buildCheckbox('GO - 5P', _state.vehicleTypes),
+                    _buildCheckbox('PREMIUM - 5P', _state.vehicleTypes),
                     _buildCheckbox('SUV - 7P', _state.vehicleTypes),
-                    _buildCheckbox('Van - 8P & Above', _state.vehicleTypes),
-                          _buildCheckbox('Electric - 5P', _state.vehicleTypes),
+                    _buildCheckbox('VAN - 8P & ABOVE', _state.vehicleTypes),
+                    _buildCheckbox('ELECTRIC - 5P', _state.vehicleTypes),
                   ],
                 ),
                 

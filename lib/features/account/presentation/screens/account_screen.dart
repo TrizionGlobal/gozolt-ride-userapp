@@ -614,7 +614,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     } else {
       if (mounted) {
         _showPremiumSnackBar(
-          'WhatsApp is not installed. Please install it or email us at support@gozolt.com',
+          'WhatsApp is not installed. Please install it or email us at support@gozolt.com.mt',
           icon: Icons.chat_outlined,
         );
       }

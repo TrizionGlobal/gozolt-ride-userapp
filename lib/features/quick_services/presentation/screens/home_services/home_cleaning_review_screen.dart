@@ -140,10 +140,25 @@ class _HomeCleaningReviewScreenState extends ConsumerState<HomeCleaningReviewScr
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.inventory_2_outlined, size: 18, color: Colors.grey),
+                          Icon(
+                            _bookingData.materialPreference!.toLowerCase().contains('tool')
+                                ? Icons.handyman_outlined
+                                : (_bookingData.materialPreference!.toLowerCase().contains('product')
+                                    ? Icons.clean_hands
+                                    : Icons.inventory_2_outlined),
+                            size: 18,
+                            color: Colors.grey,
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: Text('Materials: ${_bookingData.materialPreference}', style: AppTextStyles.bodySmall),
+                            child: Text(
+                              _bookingData.materialPreference!.toLowerCase().contains('tool')
+                                  ? 'Tools: ${_bookingData.materialPreference}'
+                                  : (_bookingData.materialPreference!.toLowerCase().contains('product')
+                                      ? 'Products: ${_bookingData.materialPreference}'
+                                      : 'Materials: ${_bookingData.materialPreference}'),
+                              style: AppTextStyles.bodySmall,
+                            ),
                           ),
                         ],
                       ),

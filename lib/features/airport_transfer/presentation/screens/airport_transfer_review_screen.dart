@@ -230,10 +230,14 @@ class _AirportTransferReviewScreenState
         if (passenger.whatsAppNumber.isNotEmpty) 'WhatsApp: ${passenger.whatsAppNumber}',
         if (passenger.airline.isNotEmpty) 'Airline: ${passenger.airline}',
         if (passenger.arrivalTerminal.isNotEmpty) 'Terminal: ${passenger.arrivalTerminal}',
-        if (passenger.meetAndGreetRequired)
+        if (passenger.meetAndGreetRequired) ...[
+          'Meet & Greet: Included',
           'Meet & Greet Sign: "${passenger.welcomeSignName.isNotEmpty ? passenger.welcomeSignName : leadName}"',
-        if (passenger.meetAndGreetInstructions.isNotEmpty)
-          'Meet Instructions: ${passenger.meetAndGreetInstructions}',
+          if (passenger.meetAndGreetInstructions.isNotEmpty)
+            'Meet Instructions: ${passenger.meetAndGreetInstructions}',
+        ] else ...[
+          'Meet & Greet: Not requested',
+        ],
         if (passenger.specialAssistance.isNotEmpty)
           'Special Assistance: ${passenger.specialAssistance}',
       ].join(' | ');

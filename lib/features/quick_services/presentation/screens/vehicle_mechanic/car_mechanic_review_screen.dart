@@ -52,7 +52,7 @@ class _CarMechanicReviewScreenState extends ConsumerState<CarMechanicReviewScree
       return 'Car';
     }
     final vName = getVehicleName();
-    final dateStr = DateFormat('dd MMM yyyy').format(_bookingData.scheduleDate);
+    final dateStr = DateFormat('dd MMM yyyy • EEEE').format(_bookingData.scheduleDate);
     final timeStr = _bookingData.scheduleTime.format(context);
 
     final vehicles = _bookingData.mechanicVehicles ?? [];
@@ -104,7 +104,7 @@ class _CarMechanicReviewScreenState extends ConsumerState<CarMechanicReviewScree
                             ),
                             const SizedBox(width: 12),
                             Text(
-                              'Booking details',
+                              'Booking Summary',
                               style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
                             ),
                           ],
@@ -150,14 +150,44 @@ class _CarMechanicReviewScreenState extends ConsumerState<CarMechanicReviewScree
                             children: [
                               Text('Customer: ${_bookingData.userName}', style: AppTextStyles.bodyMedium),
                               const SizedBox(height: 2),
-                              Text('Email: ${_bookingData.userEmail}', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[600], fontSize: 12)),
+                              Text('Email: ${_bookingData.userEmail}', style: AppTextStyles.bodyMedium.copyWith(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 12)),
                               const SizedBox(height: 2),
-                              Text('Phone: ${_bookingData.userPhone}', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey[600], fontSize: 12)),
+                              Text('Phone: ${_bookingData.userPhone}', style: AppTextStyles.bodyMedium.copyWith(color: isDark ? Colors.grey[400] : Colors.grey[600], fontSize: 12)),
                             ],
                           ),
                         ),
                       ],
                     ),
+
+                    // Materials or Tools (if present)
+                    if (_bookingData.materialPreference != null && _bookingData.materialPreference!.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            _bookingData.materialPreference!.toLowerCase().contains('tool')
+                                ? Icons.handyman_outlined
+                                : (_bookingData.materialPreference!.toLowerCase().contains('product')
+                                    ? Icons.clean_hands
+                                    : Icons.inventory_2_outlined),
+                            size: 18,
+                            color: Colors.grey,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              _bookingData.materialPreference!.toLowerCase().contains('tool')
+                                  ? 'Tools: ${_bookingData.materialPreference}'
+                                  : (_bookingData.materialPreference!.toLowerCase().contains('product')
+                                      ? 'Products: ${_bookingData.materialPreference}'
+                                      : 'Materials: ${_bookingData.materialPreference}'),
+                              style: AppTextStyles.bodyMedium,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                         const SizedBox(height: 10),
 
                         // Service Mode
