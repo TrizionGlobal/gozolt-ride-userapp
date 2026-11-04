@@ -258,7 +258,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 ),
                 _menuItem(
                   icon: Icons.history,
-                  label: 'Your Latest Ride',
+                  label: 'Your Latest Service',
                   onTap: () {
                     // Switch to My Rides tab
                     ref.read(homeTabIndexProvider.notifier).state = 1;

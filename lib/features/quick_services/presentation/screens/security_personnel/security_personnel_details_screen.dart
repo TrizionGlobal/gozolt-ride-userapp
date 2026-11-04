@@ -382,6 +382,7 @@ class _SecurityPersonnelDetailsScreenState extends ConsumerState<SecurityPersonn
                   // Select Security Service
                   _buildSectionHeader('Select Security Service'),
                   Wrap(
+                    alignment: WrapAlignment.center,
                     spacing: 8,
                     runSpacing: 8,
                     children: _securityServices.map((service) {
@@ -398,6 +399,7 @@ class _SecurityPersonnelDetailsScreenState extends ConsumerState<SecurityPersonn
                   // Venue Type
                   _buildSectionHeader('Venue Type'),
                   Wrap(
+                    alignment: WrapAlignment.center,
                     spacing: 8,
                     runSpacing: 8,
                     children: _venueTypes.map((venue) {

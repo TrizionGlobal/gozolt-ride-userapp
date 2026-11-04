@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/quick_services_booking_provider.dart';
@@ -114,6 +115,10 @@ class _EventOrganisersDetailsScreenState extends ConsumerState<EventOrganisersDe
                     TextFormField(
                       controller: _guestCountController,
                       keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(6),
+                      ],
                       style: AppTextStyles.bodyMedium,
                       decoration: InputDecoration(
                         labelText: 'Estimated Number of Guests',
@@ -159,6 +164,11 @@ class _EventOrganisersDetailsScreenState extends ConsumerState<EventOrganisersDe
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter estimated number of guests')));
                           return;
                         }
+                        final guests = int.tryParse(_guestCountController.text.trim());
+                        if (guests == null || guests <= 0) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a valid number of guests')));
+                          return;
+                        }
                         if (_eventDuration == null) {
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select event duration')));
                           return;
@@ -167,7 +177,7 @@ class _EventOrganisersDetailsScreenState extends ConsumerState<EventOrganisersDe
                         final updatedData = widget.bookingData.applyDraft().copyWith(
                           selectedServiceTitle: 'Event Organisers',
                           eventType: _eventType,
-                          guestCount: int.tryParse(_guestCountController.text.trim()),
+                          guestCount: guests,
                           eventDuration: _eventDuration,
                           whatYouNeed: _whatYouNeedController.text.trim().isNotEmpty ? _whatYouNeedController.text.trim() : null,
                           describeIssue: _describeIssueController.text.trim().isNotEmpty ? _describeIssueController.text.trim() : null,

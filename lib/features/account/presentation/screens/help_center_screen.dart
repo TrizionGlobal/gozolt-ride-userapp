@@ -15,29 +15,178 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
   String _searchQuery = '';
 
   static const _faqItems = [
+    // ── General ──────────────────────────────
     _FaqItem(
-      category: 'Rides',
-      question: 'How do I book a ride?',
+      category: 'General',
+      question: 'What services can I book through GOZOLT?',
       answer:
-          'Tap the "Ride" button on the home screen, enter your pickup and drop-off locations, select your preferred vehicle type, and confirm your booking.',
+          'GOZOLT lets you book cabs, rent cars and bikes, arrange airport transfers, and request trusted Quick Services. Availability may vary by location and time.',
     ),
     _FaqItem(
-      category: 'Rides',
-      question: 'Can I schedule a ride in advance?',
+      category: 'General',
+      question: 'How can I check whether a service is available in my area?',
+      answer:
+          'Select the required service and enter your location. The app will display the available options for your area.',
+    ),
+    _FaqItem(
+      category: 'General',
+      question: 'Where can I view my bookings?',
+      answer:
+          'Open "History" to view upcoming, active, completed, or cancelled bookings across all GOZOLT services.',
+    ),
+
+    // ── Cab Booking ───────────────────────────
+    _FaqItem(
+      category: 'Cab Booking',
+      question: 'How do I book a cab?',
+      answer:
+          'Select "Cab Booking", enter your pickup and destination, choose an available vehicle, and confirm your booking.',
+    ),
+    _FaqItem(
+      category: 'Cab Booking',
+      question: 'Can I schedule a cab in advance?',
       answer:
           'Yes! After entering your destination, tap "Schedule Ride" to pick a date and time for your upcoming trip.',
     ),
     _FaqItem(
-      category: 'Rides',
-      question: 'How do I cancel a ride?',
+      category: 'Cab Booking',
+      question: 'How can I contact my driver?',
       answer:
-          'You can cancel an active ride by tapping the "Cancel" button on the active ride screen. Please note that cancellation fees may apply depending on when you cancel.',
+          'Once a driver accepts your booking, use the Call or Message option on the active booking screen.',
     ),
     _FaqItem(
-      category: 'Rides',
-      question: 'What vehicle types are available?',
+      category: 'Cab Booking',
+      question: 'Can I cancel my cab booking?',
       answer:
-          'We offer Standard, Comfort, XL, Luxury, and Accessible vehicles. Each type has different pricing and features to suit your needs.',
+          'You can cancel from the active booking screen. Any applicable cancellation charge will be shown according to the booking conditions.',
+    ),
+
+    // ── Car Rental ────────────────────────────
+    _FaqItem(
+      category: 'Car Rental',
+      question: 'How do I rent a car?',
+      answer:
+          'Select "Car Rental", enter the location, rental dates, times and delivery preference, then choose a vehicle and complete the booking details.',
+    ),
+    _FaqItem(
+      category: 'Car Rental',
+      question: 'What documents are required to rent a car?',
+      answer:
+          'You will need to provide your personal details and a valid driving licence. Additional documents may be requested by the rental supplier.',
+    ),
+    _FaqItem(
+      category: 'Car Rental',
+      question: 'Can the rental car be delivered to me?',
+      answer:
+          'Yes! Based on your selection self-pickup, supplier delivery or doorstep delivery. The available choices will be shown during your search.',
+    ),
+    _FaqItem(
+      category: 'Car Rental',
+      question: 'Can I add optional services to my car rental?',
+      answer:
+          'Available add-ons may include Wi-Fi, prepaid fuel, roadside assistance and premium cleaning. Options depend on the vehicle and supplier.',
+    ),
+    _FaqItem(
+      category: 'Car Rental',
+      question: 'What happens if I return the car late?',
+      answer:
+          'Late-return charges may apply according to the supplier\'s rental terms. Contact the supplier or support@gozolt.com.mt as early as possible if you expect a delay.',
+    ),
+
+    // ── Bike Rental ───────────────────────────
+    _FaqItem(
+      category: 'Bike Rental',
+      question: 'How do I rent a bike or scooter?',
+      answer:
+          'Select "Bike Rental", enter the pickup and return details, choose a bike or scooter, provide the rider information, and confirm your booking.',
+    ),
+    _FaqItem(
+      category: 'Bike Rental',
+      question: 'What types of bikes can I rent?',
+      answer:
+          'Available options include standard bikes, electric bikes and scooters. The selection depends on your location and supplier availability.',
+    ),
+    _FaqItem(
+      category: 'Bike Rental',
+      question: 'Do I need a driving licence?',
+      answer:
+          'Yes! A valid licence is required depending on the selected bike or scooter and applicable local regulations. The requirement will be displayed before booking.',
+    ),
+    _FaqItem(
+      category: 'Bike Rental',
+      question: 'Can a rental bike be delivered to my location?',
+      answer:
+          'Yes! Delivery options may be available depending on the supplier and service area. Check the options displayed during your search.',
+    ),
+
+    // ── Airport Transfer ──────────────────────
+    _FaqItem(
+      category: 'Airport Transfer',
+      question: 'How do I book an airport transfer?',
+      answer:
+          'Select "Airport Transfer", choose one-way or round-trip, enter your pickup, destination, travel time, flight and passenger details, then select a vehicle.',
+    ),
+    _FaqItem(
+      category: 'Airport Transfer',
+      question: 'Can I schedule an airport transfer in advance?',
+      answer:
+          'Yes. You can pre-schedule your transfer by selecting your travel date and pickup time. Same-day availability depends on available suppliers and drivers.',
+    ),
+    _FaqItem(
+      category: 'Airport Transfer',
+      question: 'Can I book a return airport transfer?',
+      answer:
+          'Yes. Select "Return" as the journey type and enter the details for both your outbound and return transfers.',
+    ),
+    _FaqItem(
+      category: 'Airport Transfer',
+      question: 'Why is my flight number required?',
+      answer:
+          'Your flight number helps the transfer provider identify your journey and prepare for possible flight timing changes.',
+    ),
+    _FaqItem(
+      category: 'Airport Transfer',
+      question: 'Can I include children, infants and luggage?',
+      answer:
+          'Yes. Enter the number of adults, children, infants and luggage while booking so that a suitable vehicle can be displayed.',
+    ),
+
+    // ── Quick Services ────────────────────────
+    _FaqItem(
+      category: 'Quick Services',
+      question: 'How do I book a Quick Service?',
+      answer:
+          'Select "Quick Services", choose the required category, enter your location and schedule, provide the service details, and review your request before confirming.',
+    ),
+    _FaqItem(
+      category: 'Quick Services',
+      question: 'Can I add photos or describe the problem?',
+      answer:
+          'Yes. Where available, you can add a description and upload relevant photos to help the service professional understand your request.',
+    ),
+    _FaqItem(
+      category: 'Quick Services',
+      question: 'How is a service professional assigned?',
+      answer:
+          'GOZOLT assigns an eligible professional based on the selected service, location, availability and booking requirements.',
+    ),
+    _FaqItem(
+      category: 'Quick Services',
+      question: 'Can I reschedule or cancel a Quick Service?',
+      answer:
+          'Open the booking details to view the available rescheduling or cancellation options. Applicable charges or refund conditions will be displayed before confirmation.',
+    ),
+    _FaqItem(
+      category: 'Quick Services',
+      question: 'How do I contact the assigned professional?',
+      answer:
+          'Once a professional is assigned, the available contact options will appear in your booking details.',
+    ),
+    _FaqItem(
+      category: 'Quick Services',
+      question: 'What should I do if the service is incomplete or unsatisfactory?',
+      answer:
+          'Click on "Account" in Homepage, select "Contact Support" or mail to support@gozolt.com.mt and provide the details. GOZOLT support will review your request.',
     ),
     _FaqItem(
       category: 'Payments',

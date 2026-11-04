@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/quick_services_booking_provider.dart';
@@ -176,75 +177,6 @@ class _TruckWashDetailsScreenState extends ConsumerState<TruckWashDetailsScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // --- SERVICE MODE ---
-                  Text(
-                    'Service Mode',
-                    style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _serviceMode = 'On-Site';
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              color: _serviceMode == 'On-Site' ? AppColors.primaryGold.withValues(alpha: 0.1) : Theme.of(context).cardTheme.color,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: _serviceMode == 'On-Site' ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                'On-Site',
-                                style: AppTextStyles.bodyMedium.copyWith(
-                                  fontWeight: _serviceMode == 'On-Site' ? FontWeight.bold : FontWeight.normal,
-                                  color: _serviceMode == 'On-Site' ? AppColors.primaryGold : null,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _serviceMode = 'Pickup & Return';
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              color: _serviceMode == 'Pickup & Return' ? AppColors.primaryGold.withValues(alpha: 0.1) : Theme.of(context).cardTheme.color,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: _serviceMode == 'Pickup & Return' ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                'Pickup & Return (+€${QuickServicesPricingConfig.getPickupFee('truck_wash').toStringAsFixed(0)})',
-                                style: AppTextStyles.bodyMedium.copyWith(
-                                  fontWeight: _serviceMode == 'Pickup & Return' ? FontWeight.bold : FontWeight.normal,
-                                  color: _serviceMode == 'Pickup & Return' ? AppColors.primaryGold : null,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
                   // --- VEHICLE FORM ---
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -271,6 +203,9 @@ class _TruckWashDetailsScreenState extends ConsumerState<TruckWashDetailsScreen>
                         TextFormField(
                           controller: _vehicleTypeController,
                           textCapitalization: TextCapitalization.words,
+                          inputFormatters: [
+                            LengthLimitingTextInputFormatter(15),
+                          ],
                           style: AppTextStyles.bodyMedium,
                           decoration: _inputDecoration(hintText: getTypePlaceholder()),
                         ),
@@ -292,6 +227,9 @@ class _TruckWashDetailsScreenState extends ConsumerState<TruckWashDetailsScreen>
                                   TextFormField(
                                     controller: _vehicleMakeController,
                                     textCapitalization: TextCapitalization.words,
+                                    inputFormatters: [
+                                      LengthLimitingTextInputFormatter(10),
+                                    ],
                                     style: AppTextStyles.bodyMedium,
                                     decoration: _inputDecoration(hintText: getMakePlaceholder()),
                                   ),
@@ -311,6 +249,9 @@ class _TruckWashDetailsScreenState extends ConsumerState<TruckWashDetailsScreen>
                                   TextFormField(
                                     controller: _vehicleModelController,
                                     textCapitalization: TextCapitalization.words,
+                                    inputFormatters: [
+                                      LengthLimitingTextInputFormatter(10),
+                                    ],
                                     style: AppTextStyles.bodyMedium,
                                     decoration: _inputDecoration(hintText: getModelPlaceholder()),
                                   ),

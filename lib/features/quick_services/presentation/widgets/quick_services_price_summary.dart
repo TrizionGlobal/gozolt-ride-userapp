@@ -26,7 +26,7 @@ class QuickServicesPriceSummary extends ConsumerWidget {
     this.note,
     this.useGoCoins = false,
     this.onGoCoinsChanged,
-    this.showAdditionalDetails = true,
+    this.showAdditionalDetails = false,
     this.showBookingTerms = true,
   });
 
@@ -45,7 +45,7 @@ class QuickServicesPriceSummary extends ConsumerWidget {
       builder: (context, _, __) {
         return Column(
       children: [
-        if (bookingData.selectedAddons.isNotEmpty || (showAdditionalDetails && (bookingData.describeIssue?.trim().isNotEmpty == true || bookingData.uploadedImages?.isNotEmpty == true || bookingData.whatYouNeed?.trim().isNotEmpty == true || bookingData.requirementDescription?.trim().isNotEmpty == true))) ...[
+        if (showAdditionalDetails && (bookingData.selectedAddons.isNotEmpty || bookingData.describeIssue?.trim().isNotEmpty == true || bookingData.uploadedImages?.isNotEmpty == true || bookingData.whatYouNeed?.trim().isNotEmpty == true || bookingData.requirementDescription?.trim().isNotEmpty == true)) ...[
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(

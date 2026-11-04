@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/quick_services_booking_provider.dart';
@@ -190,6 +191,9 @@ class _SuppliersDetailsScreenState extends ConsumerState<SuppliersDetailsScreen>
                   _buildLabel('Item Required'),
                   TextField(
                     controller: _itemRequiredController,
+                    inputFormatters: [
+                      LengthLimitingTextInputFormatter(20),
+                    ],
                     decoration: InputDecoration(
                       hintText: 'Enter item or product name',
                       hintStyle: AppTextStyles.bodyMedium.copyWith(color: Colors.grey),

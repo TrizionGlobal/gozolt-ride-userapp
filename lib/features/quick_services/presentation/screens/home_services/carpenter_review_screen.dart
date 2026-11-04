@@ -16,6 +16,7 @@ import '../../../data/models/quick_service_booking_data.dart';
 import '../../../data/models/quick_services_coins_helper.dart';
 import '../../widgets/quick_services_price_summary.dart';
 import '../../widgets/quick_services_booking_summary.dart';
+import '../../widgets/quick_services_service_summary.dart';
 import '../../../../ride/data/models/saved_payment_method.dart';
 
 class CarpenterReviewScreen extends ConsumerStatefulWidget {
@@ -59,7 +60,12 @@ class _CarpenterReviewScreenState extends ConsumerState<CarpenterReviewScreen> {
                 icon: Icons.carpenter,
               ),
               const SizedBox(height: 12),
-                            QuickServicesPriceSummary(bookingData: _bookingData, useGoCoins: _useGoCoins, onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),),
+              QuickServicesServiceSummary(
+                bookingData: _bookingData,
+                icon: Icons.carpenter,
+              ),
+              const SizedBox(height: 12),
+              QuickServicesPriceSummary(bookingData: _bookingData, useGoCoins: _useGoCoins, onGoCoinsChanged: (val) => setState(() => _useGoCoins = val), showAdditionalDetails: false,),
               const SizedBox(height: 20),
               
                             

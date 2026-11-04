@@ -16,6 +16,7 @@ import '../../../data/models/quick_services_coins_helper.dart';
 import '../../widgets/quick_services_price_summary.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_booking_summary.dart';
+import '../../widgets/quick_services_service_summary.dart';
 import '../../../../ride/data/models/saved_payment_method.dart';
 
 
@@ -66,7 +67,7 @@ class _OtherServicesReviewScreenState extends ConsumerState<OtherServicesReviewS
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Service Summary Card
+                  // Booking Summary Card
                   QuickServicesBookingSummary(
                     bookingData: _bookingData,
                     icon: _bookingData.category.toLowerCase() == 'home services' 
@@ -75,10 +76,26 @@ class _OtherServicesReviewScreenState extends ConsumerState<OtherServicesReviewS
                             ? Icons.event 
                             : Icons.build,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
+
+                  // Service Summary Card
+                  QuickServicesServiceSummary(
+                    bookingData: _bookingData,
+                    icon: _bookingData.category.toLowerCase() == 'home services' 
+                        ? Icons.home_repair_service 
+                        : _bookingData.category.toLowerCase() == 'events' 
+                            ? Icons.event 
+                            : Icons.build,
+                  ),
+                  const SizedBox(height: 12),
 
                   // Pricing Details Card
-                  QuickServicesPriceSummary(bookingData: _bookingData, useGoCoins: _useGoCoins, onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),),
+                  QuickServicesPriceSummary(
+                    bookingData: _bookingData, 
+                    useGoCoins: _useGoCoins, 
+                    onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),
+                    showAdditionalDetails: false,
+                  ),
                 ],
               ),
             ),

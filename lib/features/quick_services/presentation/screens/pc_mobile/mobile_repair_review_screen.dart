@@ -236,8 +236,13 @@ class _MobileRepairReviewScreenState extends ConsumerState<MobileRepairReviewScr
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Mobile Devices (${devices.length})',
+                          'Service Summary',
                           style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Mobile Devices (${devices.length})',
+                          style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 12),
                         ...devices.map((device) => Padding(
@@ -260,7 +265,7 @@ class _MobileRepairReviewScreenState extends ConsumerState<MobileRepairReviewScr
                                 _buildDetailRow('Type:', device.deviceType),
                                 if (device.operatingSystem != null && device.operatingSystem!.isNotEmpty)
                                   _buildDetailRow('OS:', device.operatingSystem!),
-                                _buildDetailRow('Issues:', device.issue),
+                                _buildMultiOptionRow('Issues:', device.issue),
                               ],
                             ),
                           ),
@@ -453,18 +458,73 @@ class _MobileRepairReviewScreenState extends ConsumerState<MobileRepairReviewScr
   }
 
   Widget _buildDetailRow(String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 100,
-            child: Text(label, style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600])),
-          ),
+          Text(label, style: AppTextStyles.bodySmall),
+          const SizedBox(width: 6),
           Expanded(
-            child: Text(value, style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w500)),
+            child: Text(value, style: AppTextStyles.bodySmall.copyWith(color: isDark ? Colors.grey[400] : Colors.grey[600])),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMultiOptionRow(String label, dynamic rawValue) {
+    if (rawValue == null) return const SizedBox.shrink();
+
+    List<String> items = [];
+    if (rawValue is List<String>) {
+      items = rawValue.where((e) => e.trim().isNotEmpty).toList();
+    } else if (rawValue is List) {
+      items = rawValue.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+    } else if (rawValue is String) {
+      if (rawValue.trim().isEmpty) return const SizedBox.shrink();
+      items = rawValue.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    } else {
+      return _buildDetailRow(label, rawValue.toString());
+    }
+
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    if (items.length <= 2) {
+      return _buildDetailRow(label, items.join(', '));
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: AppTextStyles.bodySmall),
+          const SizedBox(height: 4),
+          ...items.map((item) => Padding(
+            padding: const EdgeInsets.only(left: 8.0, bottom: 2.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '• ',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    item,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )),
         ],
       ),
     );

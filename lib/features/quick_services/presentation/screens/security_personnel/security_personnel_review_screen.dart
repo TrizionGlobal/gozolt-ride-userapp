@@ -69,10 +69,10 @@ class _SecurityPersonnelReviewScreenState extends ConsumerState<SecurityPersonne
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Security Personnel Summary',
+                          'Service Summary',
                           style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 16),
                         _buildDetailRow('Service:', _bookingData.securityService ?? 'Event Security'),
                         _buildDetailRow('Venue:', _bookingData.venueType ?? 'Corporate Event'),
                         _buildDetailRow('Personnel:', '${_bookingData.personnelCount ?? 2}'),
@@ -180,6 +180,7 @@ class _SecurityPersonnelReviewScreenState extends ConsumerState<SecurityPersonne
   }
 
   Widget _buildDetailRow(String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
@@ -189,13 +190,15 @@ class _SecurityPersonnelReviewScreenState extends ConsumerState<SecurityPersonne
             width: 130,
             child: Text(
               label,
-              style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey),
+              style: AppTextStyles.bodySmall,
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
             ),
           ),
         ],

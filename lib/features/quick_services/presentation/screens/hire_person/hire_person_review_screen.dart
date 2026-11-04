@@ -46,6 +46,7 @@ class _HirePersonReviewScreenState extends ConsumerState<HirePersonReviewScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final hours = _getDurationHours(_bookingData.expectedDuration);
     final helpers = _bookingData.helperCount ?? 1;
     final hourlyRate = 14.00;
@@ -83,57 +84,40 @@ class _HirePersonReviewScreenState extends ConsumerState<HirePersonReviewScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryGold.withOpacity(0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.assignment_outlined,
-                                color: AppColors.primaryGold,
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Service Summary',
-                              style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                          ],
+                        Text(
+                          'Service Summary',
+                          style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 16),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Service', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade700)),
-                            Text('Hire a Person', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
+                            Text('Service', style: AppTextStyles.bodySmall),
+                            Text('Hire a Person', style: AppTextStyles.bodySmall.copyWith(color: isDark ? Colors.grey[400] : Colors.grey[600])),
                           ],
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Helper', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade700)),
-                            Text('$helpers ${helpers == 1 ? "Helper" : "Helpers"}', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
+                            Text('Helper', style: AppTextStyles.bodySmall),
+                            Text('$helpers ${helpers == 1 ? "Helper" : "Helpers"}', style: AppTextStyles.bodySmall.copyWith(color: isDark ? Colors.grey[400] : Colors.grey[600])),
                           ],
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Gender Preference', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade700)),
-                            Text(_bookingData.genderPreference ?? 'Any', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
+                            Text('Gender Preference', style: AppTextStyles.bodySmall),
+                            Text(_bookingData.genderPreference ?? 'Any', style: AppTextStyles.bodySmall.copyWith(color: isDark ? Colors.grey[400] : Colors.grey[600])),
                           ],
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Duration', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade700)),
-                            Text(_bookingData.expectedDuration ?? '2 Hours', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
+                            Text('Duration', style: AppTextStyles.bodySmall),
+                            Text(_bookingData.expectedDuration ?? '2 Hours', style: AppTextStyles.bodySmall.copyWith(color: isDark ? Colors.grey[400] : Colors.grey[600])),
                           ],
                         ),
                         if ((_bookingData.describeIssue != null && _bookingData.describeIssue!.isNotEmpty) ||
@@ -145,14 +129,14 @@ class _HirePersonReviewScreenState extends ConsumerState<HirePersonReviewScreen>
                             Text(
                               'Issue Description',
                               style: AppTextStyles.bodySmall.copyWith(
-                                color: Colors.grey,
+                                color: isDark ? Colors.grey[400] : Colors.grey[600],
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               _bookingData.describeIssue!,
-                              style: AppTextStyles.bodyMedium,
+                              style: AppTextStyles.bodySmall,
                             ),
                             const SizedBox(height: 12),
                           ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/quick_services_booking_provider.dart';
@@ -670,6 +671,10 @@ class _PrinterScannerDetailsScreenState extends ConsumerState<PrinterScannerDeta
       child: TextFormField(
         controller: controller,
         style: AppTextStyles.bodyMedium.copyWith(fontSize: 12),
+        keyboardType: TextInputType.text,
+        inputFormatters: [
+          LengthLimitingTextInputFormatter(15),
+        ],
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: AppTextStyles.bodySmall.copyWith(color: Colors.grey, fontSize: 11),

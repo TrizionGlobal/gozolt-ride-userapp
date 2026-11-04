@@ -16,6 +16,8 @@ import '../../widgets/quick_services_header.dart';
 import '../../../data/models/quick_service_booking_data.dart';
 import '../../../data/models/quick_services_coins_helper.dart';
 import '../../widgets/quick_services_price_summary.dart';
+import '../../widgets/quick_services_booking_summary.dart';
+import '../../widgets/quick_services_service_summary.dart';
 import '../../../../ride/data/models/saved_payment_method.dart';
 
 
@@ -55,119 +57,22 @@ class _HomeCleaningReviewScreenState extends ConsumerState<HomeCleaningReviewScr
               child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardTheme.color,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryGold.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.cleaning_services,
-                            color: AppColors.primaryGold,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Booking Summary',
-                          style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    // Date & Time
-                    Row(
-                      children: [
-                        const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
-                        const SizedBox(width: 10),
-                        Text('${_formatDate(_bookingData.scheduleDate)} • ${_bookingData.scheduleTime.format(context)}', style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-
-                    // Location
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(Icons.location_on, size: 18, color: Colors.grey),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            _bookingData.location.address,
-                            style: AppTextStyles.bodySmall,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-
-                    // Customer
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(Icons.person, size: 18, color: Colors.grey),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Customer: ${_bookingData.userName}', style: AppTextStyles.bodySmall),
-                              const SizedBox(height: 2),
-                              Text('Email: ${_bookingData.userEmail}', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600], fontSize: 12)),
-                              const SizedBox(height: 2),
-                              Text('Phone: ${_bookingData.userPhone}', style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600], fontSize: 12)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (_bookingData.materialPreference != null && _bookingData.materialPreference!.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            _bookingData.materialPreference!.toLowerCase().contains('tool')
-                                ? Icons.handyman_outlined
-                                : (_bookingData.materialPreference!.toLowerCase().contains('product')
-                                    ? Icons.clean_hands
-                                    : Icons.inventory_2_outlined),
-                            size: 18,
-                            color: Colors.grey,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              _bookingData.materialPreference!.toLowerCase().contains('tool')
-                                  ? 'Tools: ${_bookingData.materialPreference}'
-                                  : (_bookingData.materialPreference!.toLowerCase().contains('product')
-                                      ? 'Products: ${_bookingData.materialPreference}'
-                                      : 'Materials: ${_bookingData.materialPreference}'),
-                              style: AppTextStyles.bodySmall,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
+              QuickServicesBookingSummary(
+                bookingData: _bookingData,
+                icon: Icons.cleaning_services,
               ),
               const SizedBox(height: 12),
-              QuickServicesPriceSummary(bookingData: _bookingData, useGoCoins: _useGoCoins, onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),),
+              QuickServicesServiceSummary(
+                bookingData: _bookingData,
+                icon: Icons.cleaning_services,
+              ),
+              const SizedBox(height: 12),
+              QuickServicesPriceSummary(
+                bookingData: _bookingData,
+                useGoCoins: _useGoCoins,
+                onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),
+                showAdditionalDetails: false,
+              ),
               const SizedBox(height: 20),
               
                             

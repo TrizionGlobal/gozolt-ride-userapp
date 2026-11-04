@@ -103,26 +103,9 @@ class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryGold.withOpacity(0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.assignment_outlined,
-                                color: AppColors.primaryGold,
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Service Summary',
-                              style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                          ],
+                        Text(
+                          'Service Summary',
+                          style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 16),
                         if (data.selectedServiceTitle == 'Hospital Laundry' || data.selectedServiceTitle == 'Hotel Laundry' || data.selectedServiceTitle == 'Commercial Laundry' || data.selectedServiceTitle == 'Commercials Laundry' || data.selectedServiceTitle?.contains('Commercial') == true || data.selectedServiceTitle?.contains('Hotel') == true || data.selectedServiceTitle?.contains('Hospital') == true) ...[
@@ -132,9 +115,9 @@ class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
                           if (data.facilityContactPerson != null) _buildDetailRow('Contact Person', data.facilityContactPerson!),
                           if (data.facilityContactNumber != null) _buildDetailRow('Contact Number', data.facilityContactNumber!),
                           if (data.commercialLaundryTypes != null && data.commercialLaundryTypes!.isNotEmpty)
-                            _buildDetailRow(data.commercialLaundryTypes!.length > 1 ? 'Laundry Types' : 'Laundry Type', data.commercialLaundryTypes!.join(', '))
+                            _buildMultiOptionRow(data.commercialLaundryTypes!.length > 1 ? 'Laundry Types' : 'Laundry Type', data.commercialLaundryTypes!)
                           else if (data.laundryServiceType != null && data.laundryServiceType!.isNotEmpty)
-                            _buildDetailRow(data.laundryServiceType!.contains(',') ? 'Laundry Types' : 'Laundry Type', data.laundryServiceType!),
+                            _buildMultiOptionRow(data.laundryServiceType!.contains(',') ? 'Laundry Types' : 'Laundry Type', data.laundryServiceType!),
                           if (data.serviceFrequency != null) _buildDetailRow('Frequency', data.serviceFrequency!),
                           if (data.requestedReturnDate != null) _buildDetailRow('Return Date', DateFormat('dd MMM yyyy').format(data.requestedReturnDate!)),
                           if (data.requestedReturnTime != null) _buildDetailRow('Return Time', data.requestedReturnTime!.format(context)),
@@ -144,9 +127,9 @@ class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
                           if (data.requestedReturnDate != null) _buildDetailRow('Return Date', DateFormat('dd MMM yyyy').format(data.requestedReturnDate!)),
                           if (data.requestedReturnTime != null) _buildDetailRow('Return Time', data.requestedReturnTime!.format(context)),
                           if (data.commercialLaundryTypes != null && data.commercialLaundryTypes!.isNotEmpty)
-                            _buildDetailRow(data.commercialLaundryTypes!.length > 1 ? 'Services' : 'Service', data.commercialLaundryTypes!.join(', '))
+                            _buildMultiOptionRow(data.commercialLaundryTypes!.length > 1 ? 'Services' : 'Service', data.commercialLaundryTypes!)
                           else if (data.laundryServiceType != null)
-                            _buildDetailRow(data.laundryServiceType!.contains(',') ? 'Services' : 'Service', data.laundryServiceType!),
+                            _buildMultiOptionRow(data.laundryServiceType!.contains(',') ? 'Services' : 'Service', data.laundryServiceType!),
                           _buildDetailRow('Estimated Quantity', '${data.laundryQuantityKg ?? 1} kg'),
                           if (specialCareList.isNotEmpty) ...[
                             const SizedBox(height: 4),
@@ -154,7 +137,7 @@ class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('Special-Care Items', style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade700)),
+                                Text('Special-Care Items', style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[600])),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Wrap(
@@ -199,14 +182,14 @@ class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
                             Text(
                               'Requirements',
                               style: AppTextStyles.bodySmall.copyWith(
-                                color: Colors.grey,
+                                color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[600],
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               data.whatYouNeed!,
-                              style: AppTextStyles.bodyMedium,
+                              style: AppTextStyles.bodySmall,
                             ),
                             const SizedBox(height: 12),
                           ],
@@ -214,14 +197,14 @@ class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
                             Text(
                               'Issue Description',
                               style: AppTextStyles.bodySmall.copyWith(
-                                color: Colors.grey,
+                                color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[600],
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               data.describeIssue!,
-                              style: AppTextStyles.bodyMedium,
+                              style: AppTextStyles.bodySmall,
                             ),
                             const SizedBox(height: 12),
                           ],
@@ -229,7 +212,7 @@ class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
                             Text(
                               'Uploaded Photos',
                               style: AppTextStyles.bodySmall.copyWith(
-                                color: Colors.grey,
+                                color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[600],
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -354,21 +337,88 @@ class _LaundryReviewScreenState extends ConsumerState<LaundryReviewScreen> {
   }
 
   Widget _buildDetailRow(String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6.0),
+      padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: AppTextStyles.bodyMedium.copyWith(color: Colors.grey.shade700)),
+          Text(
+            label,
+            style: AppTextStyles.bodySmall,
+          ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMultiOptionRow(String label, dynamic rawValue) {
+    if (rawValue == null) return const SizedBox.shrink();
+
+    List<String> items = [];
+    if (rawValue is List<String>) {
+      items = rawValue.where((e) => e.trim().isNotEmpty).toList();
+    } else if (rawValue is List) {
+      items = rawValue.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+    } else if (rawValue is String) {
+      if (rawValue.trim().isEmpty) return const SizedBox.shrink();
+      items = rawValue.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    } else {
+      return _buildDetailRow(label, rawValue.toString());
+    }
+
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    // If 1 or 2 items: keep existing row format
+    if (items.length <= 2) {
+      return _buildDetailRow(label, items.join(', '));
+    }
+
+    // If more than 2 items: display as list type
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: AppTextStyles.bodySmall,
+          ),
+          const SizedBox(height: 6),
+          ...items.map((item) => Padding(
+            padding: const EdgeInsets.only(left: 8.0, bottom: 4.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '• ',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    item,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )),
         ],
       ),
     );

@@ -159,7 +159,11 @@ class QuickServicesRepository {
       
       if (data.printerDevices != null && data.printerDevices!.isNotEmpty) {
         options['Printer Devices'] = data.printerDevices!.map((d) => {
-          'Type': d.deviceType, 'Brand': d.brand, 'Model': d.model, 'Issues': d.issues
+          'Type': d.deviceType,
+          'Brand': d.brand,
+          'Model': d.model,
+          if (d.serialNumber != null && d.serialNumber!.isNotEmpty) 'Serial Number': d.serialNumber,
+          'Issues': d.issues,
         }).toList();
       }
       if (data.printerDeviceType != null) options['Printer Type'] = data.printerDeviceType;

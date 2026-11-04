@@ -93,7 +93,7 @@ class QuickServicesBookingTerms extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'BOOKING TERMS',
-                style: AppTextStyles.titleMedium.copyWith(
+                style: AppTextStyles.titleSmall.copyWith(
                   fontWeight: FontWeight.bold,
                   color: AppColors.primaryGold,
                 ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/quick_services_booking_provider.dart';
@@ -39,6 +40,21 @@ class _CarMechanicDetailsScreenState extends ConsumerState<CarMechanicDetailsScr
         ),
       );
       return;
+    }
+
+    final yearText = _yearController.text.trim();
+    if (yearText.isNotEmpty) {
+      final yearNum = int.tryParse(yearText);
+      final currentYear = DateTime.now().year;
+      if (yearText.length != 4 || yearNum == null || yearNum < 1900 || yearNum > currentYear + 1) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Please enter a valid 4-digit year (1900 - ${currentYear + 1}).'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
     }
 
     setState(() {
@@ -162,7 +178,7 @@ class _CarMechanicDetailsScreenState extends ConsumerState<CarMechanicDetailsScr
 
                   _buildLabel('Car Type'),
                   const SizedBox(height: 8),
-                  _buildTextField(_typeController, 'e.g. Sedan, SUV', false),
+                  _buildTextField(_typeController, 'e.g. Sedan, SUV', false, maxLength: 15),
                   const SizedBox(height: 16),
                   
                   Row(
@@ -173,7 +189,7 @@ class _CarMechanicDetailsScreenState extends ConsumerState<CarMechanicDetailsScr
                           children: [
                             _buildLabel('Car Make'),
                             const SizedBox(height: 8),
-                            _buildTextField(_makeController, 'e.g. Toyota', false),
+                            _buildTextField(_makeController, 'e.g. Toyota', false, maxLength: 10),
                           ],
                         ),
                       ),
@@ -184,7 +200,7 @@ class _CarMechanicDetailsScreenState extends ConsumerState<CarMechanicDetailsScr
                           children: [
                             _buildLabel('Car Model'),
                             const SizedBox(height: 8),
-                            _buildTextField(_modelController, 'e.g. Corolla', false),
+                            _buildTextField(_modelController, 'e.g. Corolla', false, maxLength: 10),
                           ],
                         ),
                       ),
@@ -200,7 +216,7 @@ class _CarMechanicDetailsScreenState extends ConsumerState<CarMechanicDetailsScr
                           children: [
                             _buildLabel('Year — Optional'),
                             const SizedBox(height: 8),
-                            _buildTextField(_yearController, 'e.g. 2018', false),
+                            _buildTextField(_yearController, 'e.g. 2026', true, maxLength: 4, isDigitsOnly: true),
                           ],
                         ),
                       ),
@@ -211,7 +227,7 @@ class _CarMechanicDetailsScreenState extends ConsumerState<CarMechanicDetailsScr
                           children: [
                             _buildLabel('Registration Number'),
                             const SizedBox(height: 8),
-                            _buildTextField(_registrationController, 'e.g. AB12 CDE', false),
+                            _buildTextField(_registrationController, 'e.g. AB12 CDE', false, maxLength: 12, textCapitalization: TextCapitalization.characters),
                           ],
                         ),
                       ),
@@ -221,7 +237,7 @@ class _CarMechanicDetailsScreenState extends ConsumerState<CarMechanicDetailsScr
                   
                   _buildLabel('Mileage — Optional'),
                   const SizedBox(height: 8),
-                  _buildTextField(_mileageController, 'e.g. 50,000 km', false),
+                  _buildTextField(_mileageController, 'e.g. 50000', true, maxLength: 6, isDigitsOnly: true),
                   const SizedBox(height: 24),
 
                   Row(
@@ -649,11 +665,23 @@ Text(
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint, bool isNumber) {
+  Widget _buildTextField(
+    TextEditingController controller,
+    String hint,
+    bool isNumber, {
+    int maxLength = 10,
+    bool isDigitsOnly = false,
+    TextCapitalization? textCapitalization,
+  }) {
     return TextField(
       controller: controller,
-      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-      textCapitalization: isNumber ? TextCapitalization.none : TextCapitalization.words,
+      keyboardType: isNumber || isDigitsOnly ? TextInputType.number : TextInputType.text,
+      textCapitalization: textCapitalization ??
+          (isNumber || isDigitsOnly ? TextCapitalization.none : TextCapitalization.words),
+      inputFormatters: [
+        if (isDigitsOnly) FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(maxLength),
+      ],
       decoration: InputDecoration(
         hintText: hint,
         filled: true,
@@ -666,9 +694,9 @@ Text(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.grey.withOpacity(0.3)),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primaryGold),
+        focusedBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          borderSide: BorderSide(color: AppColors.primaryGold),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),

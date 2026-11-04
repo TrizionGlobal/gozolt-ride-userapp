@@ -11,6 +11,7 @@ import '../../../data/models/quick_services_coins_helper.dart';
 import '../../widgets/quick_services_price_summary.dart';
 import '../../widgets/quick_services_header.dart';
 import '../../widgets/quick_services_booking_summary.dart';
+import '../../widgets/quick_services_service_summary.dart';
 import '../../../../ride/data/models/saved_payment_method.dart';
 
 class LiftElevatorMechanicReviewScreen extends ConsumerStatefulWidget {
@@ -54,10 +55,16 @@ class _LiftElevatorMechanicReviewScreenState extends ConsumerState<LiftElevatorM
                     icon: Icons.bolt,
                   ),
                   const SizedBox(height: 12),
+                  QuickServicesServiceSummary(
+                    bookingData: _bookingData,
+                    icon: Icons.bolt,
+                  ),
+                  const SizedBox(height: 12),
                   QuickServicesPriceSummary(
                     bookingData: _bookingData,
                     useGoCoins: _useGoCoins,
                     onGoCoinsChanged: (val) => setState(() => _useGoCoins = val),
+                    showAdditionalDetails: false,
                   ),
                   const SizedBox(height: 20),
                   const SizedBox(height: 8),

@@ -186,16 +186,6 @@ class _CarWashReviewScreenState extends ConsumerState<CarWashReviewScreen> {
                         ],
                       ),
                     ],
-                        const SizedBox(height: 10),
-
-                        // Service Mode
-                        Row(
-                          children: [
-                            const Icon(Icons.local_shipping, size: 18, color: Colors.grey),
-                            const SizedBox(width: 10),
-                            Text('Service Mode: ${_bookingData.vehicleServiceMode ?? 'On-Site'}', style: AppTextStyles.bodyMedium),
-                          ],
-                        ),
                       ],
                     ),
                   ),
@@ -214,8 +204,13 @@ class _CarWashReviewScreenState extends ConsumerState<CarWashReviewScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '${vName}s (${vehicles.length})',
+                          'Service Summary',
                           style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          '${vName}s (${vehicles.length})',
+                          style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 12),
                         ...vehicles.map((v) => Padding(
@@ -236,7 +231,7 @@ class _CarWashReviewScreenState extends ConsumerState<CarWashReviewScreen> {
                                     Expanded(
                                       child: Text(
                                         '${v.make} ${v.model}',
-                                        style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+                                        style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
                                       ),
                                     ),
                                   ],
@@ -425,6 +420,7 @@ class _CarWashReviewScreenState extends ConsumerState<CarWashReviewScreen> {
   }
 
   Widget _buildDetailRow(String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.0),
       child: Row(
@@ -432,10 +428,10 @@ class _CarWashReviewScreenState extends ConsumerState<CarWashReviewScreen> {
         children: [
           SizedBox(
             width: 100,
-            child: Text(label, style: AppTextStyles.bodySmall.copyWith(color: Colors.grey[600])),
+            child: Text(label, style: AppTextStyles.bodySmall),
           ),
           Expanded(
-            child: Text(value, style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w500)),
+            child: Text(value, style: AppTextStyles.bodySmall.copyWith(color: isDark ? Colors.grey[400] : Colors.grey[600])),
           ),
         ],
       ),
