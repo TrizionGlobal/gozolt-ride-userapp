@@ -293,122 +293,10 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
       'subtotal',
       'tax',
       'total',
+      'servicemode',
+      'vehicleservicemode',
     };
     return internalKeys.contains(key);
-  }
-
-  String _getCardSubtitle(QuickServiceHistoryModel booking) {
-    final validAddOns = booking.addOns.whereType<Map>().toList();
-    if (validAddOns.isNotEmpty) {
-      final names = validAddOns
-          .map((a) => a['name']?.toString() ?? 'Add-on')
-          .where((n) => n.trim().isNotEmpty)
-          .toList();
-      if (names.isNotEmpty) {
-        if (names.length <= 2) {
-          return names.join(', ');
-        } else {
-          return '${names.take(2).join(', ')} +${names.length - 2} more';
-        }
-      }
-    }
-
-    final opts = booking.options;
-    if (opts.isNotEmpty) {
-      if (opts['Selected Treatments'] != null) {
-        final val = opts['Selected Treatments'];
-        if (val is List && val.isNotEmpty) {
-          return val.length <= 2 ? val.join(', ') : '${val.take(2).join(', ')} +${val.length - 2} more';
-        }
-        return val.toString();
-      }
-
-      if (opts['Pest Type'] != null && opts['Pest Type'].toString().trim().isNotEmpty) {
-        return opts['Pest Type'].toString();
-      }
-
-      if (opts['Vehicles'] is List && (opts['Vehicles'] as List).isNotEmpty) {
-        final vehicles = opts['Vehicles'] as List;
-        if (vehicles.first is Map) {
-          final firstItem = vehicles.first as Map;
-          final parts = [firstItem['Make'], firstItem['Model'], firstItem['Type']]
-              .where((e) => e != null && e.toString().trim().isNotEmpty)
-              .toList();
-          final vStr = parts.isNotEmpty ? parts.join(' ') : 'Vehicle';
-          return vehicles.length > 1 ? '$vStr +${vehicles.length - 1} more' : vStr;
-        }
-      }
-
-      if (opts['Car Type'] != null && opts['Car Type'].toString().trim().isNotEmpty) {
-        return opts['Car Type'].toString();
-      }
-      if (opts['Bike Type'] != null && opts['Bike Type'].toString().trim().isNotEmpty) {
-        return opts['Bike Type'].toString();
-      }
-      if (opts['Truck Type'] != null && opts['Truck Type'].toString().trim().isNotEmpty) {
-        return opts['Truck Type'].toString();
-      }
-
-      if (opts['Helper Count'] != null) {
-        final helpers = '${opts['Helper Count']} ${opts['Helper Count'].toString() == '1' ? 'Helper' : 'Helpers'}';
-        final duration = opts['Expected Duration']?.toString();
-        if (duration != null && duration.trim().isNotEmpty) {
-          return '$helpers • $duration';
-        }
-        return helpers;
-      }
-
-      if (opts['Personnel Count'] != null) {
-        final count = '${opts['Personnel Count']} Staff';
-        final duration = opts['Expected Attendance'] ?? opts['Duty Start Time'];
-        return duration != null ? '$count • $duration' : count;
-      }
-
-      if (opts['Painting Type'] != null && opts['Painting Type'].toString().trim().isNotEmpty) {
-        final rooms = opts['Room Count'] != null ? ' • ${opts['Room Count']} Rooms' : '';
-        return '${opts['Painting Type']}$rooms';
-      }
-
-      if (opts['Device Type'] != null && opts['Device Type'].toString().trim().isNotEmpty) {
-        return opts['Device Type'].toString();
-      }
-
-      if (opts['Affected Areas'] is List && (opts['Affected Areas'] as List).isNotEmpty) {
-        final areas = opts['Affected Areas'] as List;
-        return areas.length <= 2 ? areas.join(', ') : '${areas.take(2).join(', ')} +${areas.length - 2} more';
-      }
-
-      if (opts['Property Type'] != null && opts['Property Type'].toString().trim().isNotEmpty) {
-        return opts['Property Type'].toString();
-      }
-
-      if (opts['Task Category'] != null && opts['Task Category'].toString().trim().isNotEmpty) {
-        return opts['Task Category'].toString();
-      }
-
-      for (final entry in opts.entries) {
-        if (_isInternalOptionKey(entry.key)) continue;
-        final val = entry.value;
-        if (val == null) continue;
-        final valStr = val.toString().trim();
-        if (valStr.isEmpty) continue;
-        if (RegExp(r'^\d{4}-\d{2}-\d{2}T').hasMatch(valStr)) continue;
-
-        if (val is List && val.isNotEmpty) {
-          return val.length <= 2 ? val.join(', ') : '${val.take(2).join(', ')} +${val.length - 2} more';
-        }
-        if (val is! Map) {
-          return valStr;
-        }
-      }
-    }
-
-    if (booking.serviceCategory.trim().isNotEmpty &&
-        booking.serviceCategory.trim().toLowerCase() != booking.displayTitle.trim().toLowerCase()) {
-      return booking.serviceCategory.trim();
-    }
-
-    return '';
   }
 
   Widget _buildHistoryCard(QuickServiceHistoryModel booking) {
@@ -478,7 +366,6 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
     final double totalAmount = initialPaid + serviceAmount;
 
     final String title = booking.displayTitle;
-    final String subtitle = _getCardSubtitle(booking);
 
     return GestureDetector(
       onTap: () async {
@@ -502,7 +389,7 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
             children: [
               // ── Top Header Row ──────────────────────────
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Container(
                     padding: const EdgeInsets.all(8),
@@ -518,31 +405,14 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: AppTextStyles.titleMedium.copyWith(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (subtitle.isNotEmpty && subtitle.trim().toLowerCase() != title.trim().toLowerCase()) ...[
-                          const SizedBox(height: 3),
-                          Text(
-                            subtitle,
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
-                              fontSize: 12,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
+                    child: Text(
+                      title,
+                      style: AppTextStyles.titleMedium.copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -564,13 +434,7 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
                 ],
               ),
 
-              const SizedBox(height: 12),
-              Divider(
-                height: 1,
-                thickness: 1,
-                color: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
-              ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
 
               // ── Date & Price Row ────────────────────────
               Row(

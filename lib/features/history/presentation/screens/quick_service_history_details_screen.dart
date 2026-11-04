@@ -443,8 +443,865 @@ class _QuickServiceHistoryDetailsScreenState extends ConsumerState<QuickServiceH
       'subtotal',
       'tax',
       'total',
+      'servicemode',
+      'vehicleservicemode',
+      'servicelocation',
+      'materialpreference',
+      'tools',
+      'materials',
+      'products',
+      'vehicles',
+      'carwashvehicles',
+      'mobiledevices',
+      'computerdevices',
+      'printerdevices',
+      'whatyouneed',
+      'description',
+      'coinsused',
     };
     return internalKeys.contains(key);
+  }
+
+  Widget _buildDetailRow(BuildContext context, String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: AppTextStyles.bodySmall,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMultiOptionRow(BuildContext context, String label, dynamic rawValue) {
+    if (rawValue == null) return const SizedBox.shrink();
+
+    List<String> items = [];
+    if (rawValue is List<String>) {
+      items = rawValue.where((e) => e.trim().isNotEmpty).toList();
+    } else if (rawValue is List) {
+      items = rawValue.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+    } else if (rawValue is String) {
+      if (rawValue.trim().isEmpty) return const SizedBox.shrink();
+      items = rawValue.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    } else {
+      return _buildDetailRow(context, label, rawValue.toString());
+    }
+
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    if (items.length <= 2) {
+      return _buildDetailRow(context, label, items.join(', '));
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: AppTextStyles.bodySmall,
+          ),
+          const SizedBox(height: 6),
+          ...items.map((item) => Padding(
+            padding: const EdgeInsets.only(left: 8.0, bottom: 4.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '• ',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    item,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          )),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVehicleDetailRow(String label, String value, BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.only(top: 4.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 90,
+            child: Text(
+              label,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: AppTextStyles.bodySmall,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVehicleIssuesRow(dynamic issuesVal, BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    List<String> issuesList = [];
+    if (issuesVal is List) {
+      issuesList = issuesVal.map((e) => e.toString().trim()).where((e) => e.isNotEmpty).toList();
+    } else if (issuesVal is String) {
+      issuesList = issuesVal.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    }
+
+    if (issuesList.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 4.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 90,
+            child: Text(
+              issuesList.length > 1 ? 'Issues:' : 'Issue:',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+            ),
+          ),
+          Expanded(
+            child: Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: issuesList.map((issue) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryGold.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: AppColors.primaryGold.withOpacity(0.4),
+                    ),
+                  ),
+                  child: Text(
+                    issue,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBookingSummaryCard(BuildContext context) {
+    final booking = _booking;
+    final status = booking.status.toUpperCase();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final String? rawMaterial = booking.options['Material Preference']?.toString() ??
+        booking.options['materialPreference']?.toString() ??
+        booking.options['Tools']?.toString() ??
+        booking.options['tools']?.toString() ??
+        (booking.materialCost > 0
+            ? (booking.serviceCategory.toLowerCase().contains('wash')
+                ? 'Cleaning Materials'
+                : 'Bring tools')
+            : null);
+
+    String? toolsOrMaterialText;
+    if (rawMaterial != null && rawMaterial.trim().isNotEmpty) {
+      final mat = rawMaterial.trim();
+      final bool isTool = mat.toLowerCase().contains('tool');
+      final bool isProduct = mat.toLowerCase().contains('product');
+      final String prefix = isTool ? 'Tools: ' : (isProduct ? 'Products: ' : 'Materials: ');
+      toolsOrMaterialText = (mat.toLowerCase().startsWith('tool') || mat.toLowerCase().startsWith('product') || mat.toLowerCase().startsWith('material'))
+          ? mat
+          : '$prefix$mat';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGold.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      _getServiceIcon(booking.serviceCategory, booking.displayTitle),
+                      color: AppColors.primaryGold,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Booking Summary',
+                    style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              _buildStatusBadge(status),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Date & Time
+          Row(
+            children: [
+              const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
+              const SizedBox(width: 10),
+              Text(
+                '${DateFormat('dd MMM yyyy • EEEE').format(booking.bookingDate)} • ${DateFormat('h:mm a').format(booking.bookingDate)}',
+                style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+
+          // Location
+          if (booking.location != null && booking.location!.trim().isNotEmpty) ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.location_on, size: 18, color: Colors.grey),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    booking.location!,
+                    style: AppTextStyles.bodySmall,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+          ],
+
+          // Customer
+          if (booking.userName != null && booking.userName!.trim().isNotEmpty) ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.person, size: 18, color: Colors.grey),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Customer: ${booking.userName}', style: AppTextStyles.bodySmall),
+                      if (booking.userEmail != null && booking.userEmail!.trim().isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          'Email: ${booking.userEmail}',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                      if (booking.userPhone != null && booking.userPhone!.trim().isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          'Phone: ${booking.userPhone}',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+
+          // Materials or Tools (if present)
+          if (toolsOrMaterialText != null && toolsOrMaterialText.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  toolsOrMaterialText.toLowerCase().contains('tool')
+                      ? Icons.handyman_outlined
+                      : (toolsOrMaterialText.toLowerCase().contains('product')
+                          ? Icons.clean_hands
+                          : Icons.inventory_2_outlined),
+                  size: 18,
+                  color: Colors.grey,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    toolsOrMaterialText,
+                    style: AppTextStyles.bodySmall,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServiceSummaryCard(BuildContext context) {
+    final booking = _booking;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Check for vehicle list
+    final rawVehicles = booking.options['Vehicles'] ?? booking.options['Car Wash Vehicles'];
+    List<Map<String, dynamic>> vehicleList = [];
+    if (rawVehicles is List) {
+      vehicleList = rawVehicles.whereType<Map>().map((m) => Map<String, dynamic>.from(m)).toList();
+    }
+
+    // Check for mobile/computer/printer devices list
+    final rawDevices = booking.options['Mobile Devices'] ??
+        booking.options['Computer Devices'] ??
+        booking.options['Printer Devices'];
+    List<Map<String, dynamic>> deviceList = [];
+    if (rawDevices is List) {
+      deviceList = rawDevices.whereType<Map>().map((m) => Map<String, dynamic>.from(m)).toList();
+    }
+
+    final bool hasVehicles = vehicleList.isNotEmpty;
+    final bool hasDevices = deviceList.isNotEmpty;
+
+    // Additional Details info
+    final String issueDescriptionText = (booking.requirements != null && booking.requirements!.trim().isNotEmpty)
+        ? booking.requirements!.trim()
+        : (booking.options['Issue Description']?.toString().trim().isNotEmpty == true
+            ? booking.options['Issue Description'].toString().trim()
+            : (booking.options['Comments']?.toString().trim().isNotEmpty == true
+                ? booking.options['Comments'].toString().trim()
+                : ''));
+
+    final String whatYouNeedText = (booking.options['What You Need']?.toString().trim().isNotEmpty == true
+        ? booking.options['What You Need'].toString().trim()
+        : (booking.options['whatYouNeed']?.toString().trim().isNotEmpty == true
+            ? booking.options['whatYouNeed'].toString().trim()
+            : (booking.options['Description']?.toString().trim().isNotEmpty == true
+                ? booking.options['Description'].toString().trim()
+                : '')));
+
+    final bool hasWhatYouNeed = whatYouNeedText.isNotEmpty;
+    final bool hasIssue = issueDescriptionText.isNotEmpty;
+    final bool hasPhotos = booking.images != null && booking.images!.isNotEmpty;
+    final bool hasAddOns = booking.addOns.where((a) => a is Map).isNotEmpty;
+
+    final String vName = booking.displayTitle.toLowerCase().contains('bike')
+        ? 'Bike'
+        : (booking.displayTitle.toLowerCase().contains('truck') ? 'Truck' : 'Car');
+
+    final String dName = booking.displayTitle.toLowerCase().contains('computer') || booking.displayTitle.toLowerCase().contains('laptop')
+        ? 'Computer'
+        : (booking.displayTitle.toLowerCase().contains('printer') ? 'Printer' : 'Device');
+
+    final Set<String> renderedNormalizedKeys = {};
+
+    void markRendered(List<String> keys) {
+      for (final k in keys) {
+        renderedNormalizedKeys.add(k.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), ''));
+      }
+    }
+
+    dynamic findOption(List<String> possibleKeys) {
+      for (final key in possibleKeys) {
+        if (booking.options.containsKey(key) && booking.options[key] != null) {
+          final val = booking.options[key];
+          if (val is String && val.trim().isEmpty) continue;
+          if (val is List && val.isEmpty) continue;
+          markRendered(possibleKeys);
+          return val;
+        }
+      }
+      return null;
+    }
+
+    final profPref = findOption(['Professional Preference', 'professionalPreference']);
+    final people = findOption(['People Count', 'peopleCount', 'People']);
+    final treatments = findOption(['Selected Treatments', 'beautySelectedTreatments', 'Treatments', 'Custom Beauty Service']);
+    final helper = findOption(['Helper Count', 'helperCount', 'Helper']);
+    final genderPref = findOption(['Gender Preference', 'genderPreference']);
+    final duration = findOption(['Expected Duration', 'expectedDuration', 'Event Duration', 'eventDuration', 'Duration']);
+    final vehicleType = !hasVehicles ? findOption(['Car Type', 'carType', 'Bike Type', 'bikeType', 'Truck Type', 'truckType', 'Vehicle Type']) : null;
+    final observedLevel = findOption(['Observed Level', 'pestObservedLevel']);
+    final pestType = findOption(['Pest Type', 'pestType']);
+    final propertyType = findOption(['Property Type', 'propertyType']);
+    final affectedAreas = findOption(['Affected Areas', 'pestAffectedAreas', 'Affected Rooms', 'pestAffectedRooms']);
+    final childrenPets = findOption(['Children or Pets', 'childrenOrPets', 'Children / Pets']);
+    final gardeningServices = findOption(['Gardening Services', 'gardeningServices']);
+    final serviceArea = findOption(['Service Area', 'gardeningServiceArea']);
+    final approxArea = findOption(['Approximate Area', 'gardeningApproximateArea']);
+    final greenWaste = findOption(['Green Waste Removal', 'greenWasteRemoval']);
+    final liftType = findOption(['Lift Type', 'liftType']);
+    final floorsServed = findOption(['Floors Served', 'floorsServed']);
+    final paintingType = findOption(['Painting Type', 'paintingType']);
+    final roomCount = findOption(['Room Count', 'roomCount']);
+    final paintingAreas = findOption(['Painting Areas', 'paintingAreas']);
+    final paintProvided = findOption(['Paint Provided', 'paintProvided']);
+    final eventType = findOption(['Event Type', 'eventType']);
+    final guestCount = findOption(['Guest Count', 'guestCount']);
+    final supplyCat = findOption(['Supply Category', 'supplyCategory']);
+    final itemReq = findOption(['Item Required', 'itemRequired']);
+    final quantity = findOption(['Quantity']);
+    final requestType = findOption(['Request Type', 'requestType']);
+    final taskCategory = findOption(['Task Category', 'taskCategory']);
+    final projectScope = findOption(['Project Scope', 'projectScope']);
+    final laundryTypes = findOption(['Laundry Types', 'commercialLaundryTypes']);
+    final serviceMethod = findOption(['Service Method', 'laundryServiceMethod']);
+    final serviceType = findOption(['Service Type', 'laundryServiceType']);
+    final laundryKg = findOption(['Quantity (Kg)', 'laundryQuantityKg']);
+    final detergent = findOption(['Detergent Arrangement', 'detergentArrangement']);
+    final secService = findOption(['Security Service', 'securityService']);
+    final venueType = findOption(['Venue Type', 'venueType']);
+    final dutyStart = findOption(['Duty Start Time']);
+    final dutyEnd = findOption(['Duty End Time']);
+    final dutyTime = findOption(['Duty Time']);
+    final personnelCount = findOption(['Personnel Count', 'personnelCount']);
+
+    // Ensure any internal service mode keys are marked rendered and never displayed
+    findOption(['Service Mode', 'serviceMode', 'vehicleServiceMode', 'Service Location', 'serviceLocation']);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Service Summary',
+            style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+
+          // If Vehicles present (Mechanic / Wash)
+          if (hasVehicles) ...[
+            Text(
+              '${vName}s (${vehicleList.length})',
+              style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            ...vehicleList.map((v) {
+              final yearVal = (v['Year'] ?? v['year'])?.toString().trim();
+              final mileageVal = (v['Mileage'] ?? v['mileage'])?.toString().trim();
+              final List<String> detailsParts = [
+                if (yearVal != null && yearVal.isNotEmpty) 'Year: $yearVal',
+                if (mileageVal != null && mileageVal.isNotEmpty) 'Mileage: $mileageVal',
+              ];
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12.0),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey[850] : Colors.grey[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${v['Make'] ?? v['make'] ?? ''} ${v['Model'] ?? v['model'] ?? ''}'.trim().isNotEmpty
+                                ? '${v['Make'] ?? v['make'] ?? ''} ${v['Model'] ?? v['model'] ?? ''}'.trim()
+                                : vName,
+                            style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    if (v['Type'] != null || v['type'] != null)
+                      _buildVehicleDetailRow('Type:', (v['Type'] ?? v['type']).toString(), context),
+                    
+                    if (v['Issues'] != null || v['issues'] != null || v['Issue'] != null || v['issue'] != null)
+                      _buildVehicleIssuesRow((v['Issues'] ?? v['issues'] ?? v['Issue'] ?? v['issue']), context),
+
+                    if (v['Package'] != null || v['package'] != null || v['washPackage'] != null)
+                      _buildVehicleDetailRow('Package:', (v['Package'] ?? v['package'] ?? v['washPackage']).toString(), context),
+                    if (v['Condition'] != null || v['condition'] != null)
+                      _buildVehicleDetailRow('Condition:', (v['Condition'] ?? v['condition']).toString(), context),
+
+                    if ((v['Registration'] ?? v['registration'])?.toString().trim().isNotEmpty == true)
+                      _buildVehicleDetailRow('Registration:', (v['Registration'] ?? v['registration']).toString(), context),
+
+                    if (detailsParts.isNotEmpty)
+                      _buildVehicleDetailRow('Details:', detailsParts.join(', '), context),
+                  ],
+                ),
+              );
+            }),
+          ],
+
+          // If Devices present (Mobile / Computer / Printer)
+          if (hasDevices) ...[
+            Text(
+              '${dName}s (${deviceList.length})',
+              style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            ...deviceList.map((d) => Container(
+              margin: const EdgeInsets.only(bottom: 12.0),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey[850] : Colors.grey[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.withOpacity(0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${d['Brand'] ?? d['brand'] ?? ''} ${d['Model'] ?? d['model'] ?? ''}'.trim().isNotEmpty
+                              ? '${d['Brand'] ?? d['brand'] ?? ''} ${d['Model'] ?? d['model'] ?? ''}'.trim()
+                              : dName,
+                          style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  if (d['Type'] != null || d['type'] != null)
+                    _buildVehicleDetailRow('Type:', (d['Type'] ?? d['type']).toString(), context),
+                  if (d['OS'] != null || d['os'] != null)
+                    _buildVehicleDetailRow('OS:', (d['OS'] ?? d['os']).toString(), context),
+                  if (d['Serial Number'] != null || d['serialNumber'] != null)
+                    _buildVehicleDetailRow('Serial:', (d['Serial Number'] ?? d['serialNumber']).toString(), context),
+                  if (d['Issues'] != null || d['issues'] != null || d['Issue'] != null || d['issue'] != null)
+                    _buildVehicleIssuesRow((d['Issues'] ?? d['issues'] ?? d['Issue'] ?? d['issue']), context),
+                ],
+              ),
+            )),
+          ],
+
+          // Primary Service Title (when not vehicle/device list)
+          if (!hasVehicles && !hasDevices) ...[
+            _buildDetailRow(context, 'Service', booking.displayTitle),
+          ],
+
+          // Specific service options in proper review page order:
+          // Beauty & Wellness: Professional Preference, People, Treatments
+          if (profPref != null)
+            _buildDetailRow(context, 'Professional Preference', profPref.toString()),
+
+          if (people != null)
+            _buildDetailRow(context, 'People', people.toString()),
+
+          if (treatments != null)
+            _buildMultiOptionRow(context, 'Treatments', treatments),
+
+          // Hire Person
+          if (helper != null)
+            _buildDetailRow(context, 'Helper', '$helper ${helper == 1 ? "Helper" : "Helpers"}'),
+
+          if (genderPref != null)
+            _buildDetailRow(context, 'Gender Preference', genderPref.toString()),
+
+          if (duration != null)
+            _buildDetailRow(context, 'Duration', duration.toString()),
+
+          if (vehicleType != null)
+            _buildDetailRow(context, 'Vehicle Type', vehicleType.toString()),
+
+          // Pest Control
+          if (observedLevel != null)
+            _buildDetailRow(context, 'Observed Level', observedLevel.toString()),
+          if (pestType != null)
+            _buildMultiOptionRow(context, 'Pest Type', pestType),
+          if (propertyType != null)
+            _buildMultiOptionRow(context, 'Property Type', propertyType),
+          if (affectedAreas != null)
+            _buildMultiOptionRow(context, 'Affected Areas', affectedAreas),
+          if (childrenPets != null)
+            _buildDetailRow(context, 'Children / Pets', childrenPets.toString()),
+
+          // Gardening
+          if (gardeningServices != null)
+            _buildMultiOptionRow(context, 'Gardening Services', gardeningServices),
+          if (serviceArea != null)
+            _buildMultiOptionRow(context, 'Service Area', serviceArea),
+          if (approxArea != null)
+            _buildDetailRow(context, 'Approximate Area', approxArea.toString()),
+          if (greenWaste != null)
+            _buildDetailRow(context, 'Green Waste Removal', greenWaste.toString()),
+
+          // Electrical / Lift
+          if (liftType != null)
+            _buildDetailRow(context, 'Lift Type', liftType.toString()),
+          if (floorsServed != null)
+            _buildDetailRow(context, 'Floors Served', floorsServed.toString()),
+
+          // Painting
+          if (paintingType != null)
+            _buildDetailRow(context, 'Painting Type', paintingType.toString()),
+          if (roomCount != null)
+            _buildDetailRow(context, 'Rooms / Areas', roomCount.toString()),
+          if (paintingAreas != null)
+            _buildMultiOptionRow(context, 'Painting Areas', paintingAreas),
+          if (paintProvided != null)
+            _buildDetailRow(context, 'Paint Provided', paintProvided.toString()),
+
+          // Events
+          if (eventType != null)
+            _buildDetailRow(context, 'Event Type', eventType.toString()),
+          if (guestCount != null)
+            _buildDetailRow(context, 'Estimated Guests', guestCount.toString()),
+
+          // Suppliers
+          if (supplyCat != null)
+            _buildDetailRow(context, 'Category', supplyCat.toString()),
+          if (itemReq != null)
+            _buildDetailRow(context, 'Item', itemReq.toString()),
+          if (quantity != null)
+            _buildDetailRow(context, 'Quantity', '$quantity ${booking.options['Unit'] ?? ''}'.trim()),
+          if (requestType != null)
+            _buildDetailRow(context, 'Request Type', requestType.toString()),
+
+          // Task / Scope
+          if (taskCategory != null)
+            _buildDetailRow(context, 'Task Category', taskCategory.toString()),
+          if (projectScope != null)
+            _buildDetailRow(context, 'Project Scope', projectScope.toString()),
+
+          // Laundry
+          if (laundryTypes != null)
+            _buildMultiOptionRow(context, 'Laundry Types', laundryTypes),
+          if (serviceMethod != null &&
+              !serviceMethod.toString().toLowerCase().contains('on-site') &&
+              !serviceMethod.toString().toLowerCase().contains('onsite'))
+            _buildDetailRow(context, 'Service Method', serviceMethod.toString()),
+          if (serviceType != null)
+            _buildDetailRow(context, 'Service Type', serviceType.toString()),
+          if (laundryKg != null)
+            _buildDetailRow(context, 'Quantity', '$laundryKg Kg'),
+          if (detergent != null)
+            _buildDetailRow(context, 'Detergent', detergent.toString()),
+
+          // Security
+          if (secService != null)
+            _buildMultiOptionRow(context, 'Security Services', secService),
+          if (venueType != null)
+            _buildDetailRow(context, 'Venue Type', venueType.toString()),
+          if (dutyStart != null && dutyEnd != null)
+            _buildDetailRow(context, 'Duty Time', '$dutyStart - $dutyEnd')
+          else if (dutyTime != null)
+            _buildDetailRow(context, 'Duty Time', dutyTime.toString()),
+          if (personnelCount != null)
+            _buildDetailRow(context, 'Personnel', personnelCount.toString()),
+
+          // Dynamic Fallback: ANY option in booking.options not rendered above and not internal
+          ...booking.options.entries.where((e) {
+            final normKey = e.key.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+            final valStr = e.value?.toString().trim().toLowerCase() ?? '';
+            return !_isInternalOptionKey(e.key) &&
+                !renderedNormalizedKeys.contains(normKey) &&
+                e.value != null &&
+                valStr.isNotEmpty &&
+                !valStr.contains('on-site') &&
+                !valStr.contains('onsite');
+          }).map((e) {
+            final label = _formatOptionKey(e.key);
+            if (e.value is List || (e.value is String && e.value.toString().contains(','))) {
+              return _buildMultiOptionRow(context, label, e.value);
+            } else {
+              return _buildDetailRow(context, label, _formatOptionValue(e.value));
+            }
+          }),
+
+          // Addons
+          if (hasAddOns) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Add-ons',
+              style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 6),
+            ...booking.addOns.where((a) => a is Map).map((addon) {
+              String name = addon['name']?.toString() ?? 'Add-on';
+              String countOrPrice = '';
+              if (addon.containsKey('count') && addon['count'] != null) {
+                countOrPrice = '${addon['count']}';
+              } else if (addon.containsKey('price') && addon['price'] != null) {
+                countOrPrice = '€${addon['price']}';
+              }
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        name,
+                        style: AppTextStyles.bodySmall,
+                      ),
+                    ),
+                    Text(
+                      countOrPrice,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+
+          // Additional Details
+          if (hasWhatYouNeed || hasIssue || hasPhotos) ...[
+            const SizedBox(height: 12),
+            const Divider(),
+            const SizedBox(height: 12),
+            Text(
+              'Additional Details',
+              style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            if (hasWhatYouNeed) ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.help_outline, size: 18, color: Colors.grey),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'What you need: $whatYouNeedText',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+            if (hasIssue) ...[
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.note_alt_outlined, size: 18, color: Colors.grey),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Issue description: $issueDescriptionText',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+            ],
+            if (hasPhotos) ...[
+              Row(
+                children: [
+                  const Icon(Icons.image_outlined, size: 18, color: Colors.grey),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Attached Photos (${booking.images!.length})',
+                    style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 48,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: booking.images!.length,
+                  itemBuilder: (context, index) {
+                    final path = booking.images![index];
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 6.0),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: Image.network(
+                          path,
+                          width: 48,
+                          height: 48,
+                          fit: BoxFit.cover,
+                          errorBuilder: (ctx, err, stack) => Container(
+                            width: 48,
+                            height: 48,
+                            color: Colors.grey[200],
+                            child: const Icon(Icons.broken_image, size: 16, color: Colors.grey),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
   }
 
   String _formatOptionKey(String key) {
@@ -770,278 +1627,11 @@ Time: $displayTime
 
 
                   // Booking Summary Card
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardTheme.color,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primaryGold.withOpacity(0.1),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.receipt_long,
-                                    color: AppColors.primaryGold,
-                                    size: 24,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  'Booking Summary',
-                                  style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                            _buildStatusBadge(status),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        
-                        // Service Title
-                        Row(
-                          children: [
-                            Icon(
-                              _getServiceIcon(booking.serviceCategory, booking.displayTitle), 
-                              size: 18, 
-                              color: AppColors.primaryGold,
-                            ),
-                            const SizedBox(width: 10),
-                            Text(booking.displayTitle, style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        
-                        // Date & Time
-                        Row(
-                          children: [
-                            const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
-                            const SizedBox(width: 10),
-                            Text('$displayDate • $displayTime', style: AppTextStyles.bodySmall),
-                          ],
-                        ),
-                        
-                        if (booking.location != null) ...[
-                          const SizedBox(height: 10),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.location_on, size: 18, color: Colors.grey),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  booking.location!,
-                                  style: AppTextStyles.bodySmall,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                  _buildBookingSummaryCard(context),
+                  const SizedBox(height: 12),
 
-                        if (booking.userName != null) ...[
-                          const SizedBox(height: 10),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.person, size: 18, color: Colors.grey),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('Customer: ${booking.userName}', style: AppTextStyles.bodySmall),
-                                    if (booking.userEmail != null) ...[
-                                      const SizedBox(height: 2),
-                                      Text('Email: ${booking.userEmail}', style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[600], fontSize: 12)),
-                                    ],
-                                    if (booking.userPhone != null) ...[
-                                      const SizedBox(height: 2),
-                                      Text('Phone: ${booking.userPhone}', style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[600], fontSize: 12)),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                        
-                        if (booking.options.entries.where((e) => !_isInternalOptionKey(e.key) && e.value != null && e.value.toString().trim().isNotEmpty).isNotEmpty) ...[
-                          const SizedBox(height: 16),
-                          const Divider(),
-                          const SizedBox(height: 12),
-                          ...booking.options.entries
-                              .where((e) => !_isInternalOptionKey(e.key) && e.value != null && e.value.toString().trim().isNotEmpty)
-                              .map((e) {
-                            final label = _formatOptionKey(e.key);
-                            if (e.value is List) {
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 12.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(label, style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey.shade700, fontWeight: FontWeight.w600)),
-                                    const SizedBox(height: 8),
-                                    ...(e.value as List).map((item) {
-                                      if (item is Map) {
-                                        return Container(
-                                          margin: const EdgeInsets.only(bottom: 8.0),
-                                          padding: const EdgeInsets.all(12.0),
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey.withOpacity(0.05),
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(color: Colors.grey.withOpacity(0.2)),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: item.entries
-                                                .where((entry) => entry.value != null && entry.value.toString().isNotEmpty)
-                                                .map<Widget>((entry) {
-                                              final keyStr = entry.key.toString();
-                                              final isIssueKey = keyStr.toLowerCase().contains('issue');
-
-                                              if (isIssueKey) {
-                                                List<String> issuesList = [];
-                                                if (entry.value is List) {
-                                                  issuesList = (entry.value as List)
-                                                      .map((x) => x.toString().trim())
-                                                      .where((x) => x.isNotEmpty)
-                                                      .toList();
-                                                } else {
-                                                  issuesList = entry.value
-                                                      .toString()
-                                                      .split(',')
-                                                      .map((x) => x.trim())
-                                                      .where((x) => x.isNotEmpty)
-                                                      .toList();
-                                                }
-
-                                                return Padding(
-                                                  padding: const EdgeInsets.only(bottom: 6.0),
-                                                  child: Row(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      SizedBox(
-                                                        width: 95,
-                                                        child: Text(
-                                                          issuesList.length > 1 ? 'Issues:' : 'Issue:',
-                                                          style: AppTextStyles.bodySmall.copyWith(
-                                                            color: Theme.of(context).brightness == Brightness.dark
-                                                                ? Colors.grey[400]
-                                                                : Colors.grey.shade700,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                      Expanded(
-                                                        child: Wrap(
-                                                          spacing: 6,
-                                                          runSpacing: 4,
-                                                          children: issuesList.map((issue) {
-                                                            return Container(
-                                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                                              decoration: BoxDecoration(
-                                                                color: AppColors.primaryGold.withValues(alpha: 0.15),
-                                                                borderRadius: BorderRadius.circular(6),
-                                                                border: Border.all(
-                                                                  color: AppColors.primaryGold.withValues(alpha: 0.4),
-                                                                ),
-                                                              ),
-                                                              child: Text(
-                                                                issue,
-                                                                style: AppTextStyles.bodySmall.copyWith(
-                                                                  fontWeight: FontWeight.w600,
-                                                                  fontSize: 11,
-                                                                ),
-                                                              ),
-                                                            );
-                                                          }).toList(),
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                );
-                                              }
-
-                                              return Padding(
-                                                padding: const EdgeInsets.only(bottom: 6.0),
-                                                child: Row(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    SizedBox(
-                                                      width: 95,
-                                                      child: Text(
-                                                        '${_formatOptionKey(keyStr)}:',
-                                                        style: AppTextStyles.bodySmall.copyWith(
-                                                          color: Theme.of(context).brightness == Brightness.dark
-                                                              ? Colors.grey[400]
-                                                              : Colors.grey.shade700,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    Expanded(
-                                                      child: Text(
-                                                        _formatOptionValue(entry.value),
-                                                        style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              );
-                                            }).toList(),
-                                          ),
-                                        );
-                                      }
-                                      return Padding(
-                                        padding: const EdgeInsets.only(bottom: 6.0),
-                                        child: Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text('• ', style: AppTextStyles.bodyMedium),
-                                            Expanded(child: Text(_formatOptionValue(item), style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold))),
-                                          ],
-                                        ),
-                                      );
-                                    }).toList(),
-                                  ],
-                                ),
-                              );
-                            } else {
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 8.0),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(label, style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey.shade700)),
-                                    const SizedBox(width: 16),
-                                    Expanded(
-                                      child: Text(
-                                        _formatOptionValue(e.value),
-                                        textAlign: TextAlign.end,
-                                        style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
-                          }).toList(),
-                        ],
-                      ],
-                    ),
-                  ),
+                  // Service Summary Card
+                  _buildServiceSummaryCard(context),
                   const SizedBox(height: 12),
 
                   // Work Duration & Timing Card
@@ -1148,121 +1738,6 @@ Time: $displayTime
                     const SizedBox(height: 12),
                   ],
 
-                  // Selected Add-ons Card (Matching Price Summary style)
-                  if (booking.addOns.where((a) => a is Map).isNotEmpty || issueDescriptionText.isNotEmpty || (booking.images != null && booking.images!.isNotEmpty)) ...[
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardTheme.color,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Service Summary',
-                            style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 12),
-                          if (booking.addOns.where((a) => a is Map).isNotEmpty)
-                            ...booking.addOns.where((a) => a is Map).map((addon) {
-                              String name = 'Unknown Add-on';
-                              String countOrPrice = '';
-                              if (addon is Map) {
-                                name = addon['name']?.toString() ?? 'Unknown Add-on';
-                                if (addon.containsKey('count') && addon['count'] != null) {
-                                  countOrPrice = '${addon['count']}';
-                                } else if (addon.containsKey('price') && addon['price'] != null) {
-                                  countOrPrice = '€${addon['price']}';
-                                }
-                              }
-
-                              return Padding(
-                                padding: const EdgeInsets.only(bottom: 8.0),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        name,
-                                        style: AppTextStyles.bodyMedium,
-                                      ),
-                                    ),
-                                    Text(
-                                      countOrPrice,
-                                      style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }),
-                          
-                          if (booking.addOns.where((a) => a is Map).isNotEmpty && (issueDescriptionText.isNotEmpty || (booking.images != null && booking.images!.isNotEmpty)))
-                            const Divider(height: 24),
-                          
-                          if (issueDescriptionText.isNotEmpty) ...[
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Icon(Icons.note_alt_outlined, size: 18, color: Colors.grey),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    'Issue description: $issueDescriptionText',
-                                    style: AppTextStyles.bodySmall.copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[400] : Colors.grey[700]),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            if (booking.images != null && booking.images!.isNotEmpty) const SizedBox(height: 10),
-                          ],
-
-                          if (booking.images != null && booking.images!.isNotEmpty) ...[
-                            Row(
-                              children: [
-                                const Icon(Icons.image_outlined, size: 18, color: Colors.grey),
-                                const SizedBox(width: 10),
-                                Text('Attached Photo (${booking.images!.length})', style: AppTextStyles.bodySmall),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: SizedBox(
-                                    height: 40,
-                                    child: ListView.builder(
-                                      scrollDirection: Axis.horizontal,
-                                      itemCount: booking.images!.length,
-                                      itemBuilder: (context, index) {
-                                        final path = booking.images![index];
-                                        return Padding(
-                                          padding: const EdgeInsets.only(left: 4.0),
-                                          child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(4),
-                                            child: Image.network(
-                                              path,
-                                              width: 40,
-                                              height: 40,
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (ctx, err, stack) => Container(
-                                                width: 40,
-                                                height: 40,
-                                                color: Colors.grey[200],
-                                                child: const Icon(Icons.broken_image, size: 16, color: Colors.grey),
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
 
                   // Supplier Details
                   if (booking.supplier != null) ...[
