@@ -97,7 +97,7 @@ class GroceryProductDetailsScreen extends ConsumerWidget {
                 Navigator.pop(dialogContext, false);
               },
               child: Text(
-                'KEEP CURRENT CART',
+                'Keep Current Cart',
                 style: AppTextStyles.labelLarge.copyWith(
                   color: isDark
                       ? AppColors.textSecondary
@@ -118,7 +118,7 @@ class GroceryProductDetailsScreen extends ConsumerWidget {
                 ),
               ),
               child: Text(
-                'START NEW CART',
+                'Start New Cart',
                 style: AppTextStyles.labelLarge.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -243,7 +243,8 @@ class GroceryProductDetailsScreen extends ConsumerWidget {
     final canAdd = store.isOrderable &&
         product.isActive &&
         product.stockStatus != GroceryProductStockStatus.outOfStock &&
-        state.selectionComplete;
+        state.selectionComplete &&
+        state.quantity > 0;
 
     return Scaffold(
       backgroundColor:
@@ -344,12 +345,6 @@ class GroceryProductDetailsScreen extends ConsumerWidget {
                   state: state,
                   isDark: isDark,
                 ),
-                if (state.selectedOption?.isEstimatedWeight ?? false) ...[
-                  const SizedBox(height: 10),
-                  _EstimatedWeightNotice(
-                    isDark: isDark,
-                  ),
-                ],
                 const SizedBox(height: 16),
                 _DetailsExpansionCard(
                   title: 'Product Information',
@@ -375,7 +370,7 @@ class GroceryProductDetailsScreen extends ConsumerWidget {
                     ),
                     _InformationRow(
                       label: 'Country of origin',
-                      value: 'Supplier-provided information',
+                      value: 'Store-provided information',
                       isDark: isDark,
                     ),
                     _InformationRow(
@@ -393,7 +388,7 @@ class GroceryProductDetailsScreen extends ConsumerWidget {
                   isDark: isDark,
                   children: [
                     Text(
-                      'Ingredient information will be provided by the supplier and loaded from the product catalogue.',
+                      'Ingredient information will be provided by the store and loaded from the product catalogue.',
                       style: AppTextStyles.bodySmall.copyWith(
                         color: isDark
                             ? AppColors.textSecondary
@@ -411,22 +406,22 @@ class GroceryProductDetailsScreen extends ConsumerWidget {
                   children: [
                     _InformationRow(
                       label: 'Calories',
-                      value: 'Supplier provided',
+                      value: 'Provided by the store',
                       isDark: isDark,
                     ),
                     _InformationRow(
                       label: 'Protein',
-                      value: 'Supplier provided',
+                      value: 'Provided by the store',
                       isDark: isDark,
                     ),
                     _InformationRow(
                       label: 'Carbohydrates',
-                      value: 'Supplier provided',
+                      value: 'Provided by the store',
                       isDark: isDark,
                     ),
                     _InformationRow(
                       label: 'Fat',
-                      value: 'Supplier provided',
+                      value: 'Provided by the store',
                       isDark: isDark,
                       showBottomSpacing: false,
                     ),
@@ -442,7 +437,7 @@ class GroceryProductDetailsScreen extends ConsumerWidget {
                     _InformationRow(
                       label: 'Allergens',
                       value:
-                          'Check supplier-provided allergen information before purchasing.',
+                          'Check store-provided allergen information before purchasing.',
                       isDark: isDark,
                     ),
                     _InformationRow(
@@ -555,7 +550,7 @@ class GroceryProductDetailsScreen extends ConsumerWidget {
                 ),
               ),
               child: Text(
-                'ADD TO CART — €${state.totalPrice.toStringAsFixed(2)}',
+                'Add to Cart — €${state.totalPrice.toStringAsFixed(2)}',
                 style: AppTextStyles.labelLarge.copyWith(
                   color: canAdd
                       ? AppColors.backgroundDark
@@ -840,6 +835,10 @@ class _SelectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isWeight = state.product.unitType == GroceryProductUnitType.weight;
+    final selectionCompleted = state.selectionComplete;
+
+    final statusColor =
+        selectionCompleted ? AppColors.success : AppColors.error;
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -847,32 +846,57 @@ class _SelectionCard extends StatelessWidget {
         color: isDark ? AppColors.cardDark : AppColors.cardLight,
         borderRadius: BorderRadius.circular(15),
         border: Border.all(
-          color: state.selectionComplete
-              ? isDark
-                  ? AppColors.borderDark
-                  : AppColors.borderLight
-              : AppColors.primaryGold,
+          color: selectionCompleted ? AppColors.success : AppColors.primaryGold,
+          width: 1.2,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            isWeight ? 'Select Approximate Weight' : 'Select Size / Pack',
-            style: AppTextStyles.titleSmall.copyWith(
-              color:
-                  isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            'Required • Select 1',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: isDark
-                  ? AppColors.textSecondary
-                  : AppColors.textSecondaryLight,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  isWeight ? 'Select Approximate Weight' : 'Select Size / Pack',
+                  style: AppTextStyles.titleSmall.copyWith(
+                    color: isDark
+                        ? AppColors.textPrimary
+                        : AppColors.textPrimaryLight,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 7,
+                  vertical: 3,
+                ),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      selectionCompleted
+                          ? Icons.check_circle_rounded
+                          : Icons.error_outline_rounded,
+                      size: 13,
+                      color: statusColor,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      selectionCompleted ? 'SELECTED' : 'REQUIRED',
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: statusColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 10),
           ...state.selectionOptions.map(
@@ -1069,7 +1093,7 @@ class _QuantityCard extends StatelessWidget {
             child: Row(
               children: [
                 IconButton(
-                  onPressed: enabled && quantity > 1 ? onDecrease : null,
+                  onPressed: enabled && quantity > 0 ? onDecrease : null,
                   constraints: const BoxConstraints.tightFor(
                     width: 38,
                     height: 38,
@@ -1308,47 +1332,6 @@ class _InformationRow extends StatelessWidget {
   }
 }
 
-class _EstimatedWeightNotice extends StatelessWidget {
-  const _EstimatedWeightNotice({
-    required this.isDark,
-  });
-
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.info.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(13),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            Icons.scale_outlined,
-            size: 20,
-            color: AppColors.info,
-          ),
-          const SizedBox(width: 9),
-          Expanded(
-            child: Text(
-              'The final picked weight and amount may differ slightly from this estimate.',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: isDark
-                    ? AppColors.textSecondary
-                    : AppColors.textSecondaryLight,
-                height: 1.4,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _RelatedProductCard extends StatelessWidget {
   const _RelatedProductCard({
     required this.name,
@@ -1377,6 +1360,7 @@ class _RelatedProductCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isDark ? AppColors.borderDark : AppColors.borderLight,
+              width: 1.2,
             ),
           ),
           child: Row(

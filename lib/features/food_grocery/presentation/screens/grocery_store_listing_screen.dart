@@ -481,7 +481,7 @@ class _GroceryStoreListingScreenState
                             ),
                           ),
                           child: Text(
-                            'APPLY FILTERS',
+                            'Apply filters',
                             style: AppTextStyles.labelLarge.copyWith(
                               color: AppColors.backgroundDark,
                               fontWeight: FontWeight.w700,
@@ -924,16 +924,6 @@ class _GroceryStoreCard extends StatelessWidget {
                         color: AppColors.primaryGoldDark,
                       ),
                     ),
-                    if (store.promotionalTag != null)
-                      Positioned(
-                        left: 10,
-                        top: 10,
-                        child: _StoreBadge(
-                          text: store.promotionalTag!,
-                          color: AppColors.backgroundDark,
-                          textColor: Colors.white,
-                        ),
-                      ),
                     Positioned(
                       left: 10,
                       bottom: 10,

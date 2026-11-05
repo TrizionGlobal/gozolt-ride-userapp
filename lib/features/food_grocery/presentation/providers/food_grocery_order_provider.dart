@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../ride/data/models/saved_payment_method.dart';
+import '../../data/models/food_grocery_cart.dart';
 
 enum FoodGroceryOrderStatus {
   idle,
@@ -24,18 +25,45 @@ class FoodGroceryOrderState {
     this.status = FoodGroceryOrderStatus.idle,
     this.orderId,
     this.paymentMethodType = PaymentMethodType.cash,
+    this.orderType,
     this.total = 0,
-    this.trackingStage =
-        FoodGroceryTrackingStage.supplierAccepted,
+    this.trackingStage = FoodGroceryTrackingStage.supplierAccepted,
+    this.deliveryPartnerId,
+    this.deliveryPartnerName,
+    this.deliveryPartnerPhone,
     this.errorMessage,
   });
 
   final FoodGroceryOrderStatus status;
   final String? orderId;
   final PaymentMethodType paymentMethodType;
+  final FoodGroceryCartType? orderType;
   final double total;
   final FoodGroceryTrackingStage trackingStage;
+  final String? deliveryPartnerId;
+  final String? deliveryPartnerName;
+  final String? deliveryPartnerPhone;
   final String? errorMessage;
+
+  bool get isFoodOrder {
+    return orderType == FoodGroceryCartType.food;
+  }
+
+  bool get isGroceryOrder {
+    return orderType == FoodGroceryCartType.grocery;
+  }
+
+  String get businessType {
+    return isGroceryOrder ? 'store' : 'restaurant';
+  }
+
+  String get businessTypeCapitalized {
+    return isGroceryOrder ? 'Store' : 'Restaurant';
+  }
+
+  bool get hasDeliveryPartner {
+    return deliveryPartnerId != null && deliveryPartnerId!.trim().isNotEmpty;
+  }
 
   bool get isProcessing => status == FoodGroceryOrderStatus.processing;
   bool get isPlaced =>
@@ -62,34 +90,34 @@ class FoodGroceryOrderState {
   }
 
   String get trackingTitle {
-  switch (trackingStage) {
-    case FoodGroceryTrackingStage.supplierAccepted:
-      return 'Order accepted';
+    switch (trackingStage) {
+      case FoodGroceryTrackingStage.supplierAccepted:
+        return 'Order accepted';
 
-    case FoodGroceryTrackingStage.preparing:
-      return 'Preparing your order';
+      case FoodGroceryTrackingStage.preparing:
+        return 'Preparing your order';
 
-    case FoodGroceryTrackingStage.readyForPickup:
-      return 'Ready for pickup';
+      case FoodGroceryTrackingStage.readyForPickup:
+        return 'Ready for pickup';
 
-    case FoodGroceryTrackingStage.pickedUp:
-      return 'Order collected';
+      case FoodGroceryTrackingStage.pickedUp:
+        return 'Order collected';
 
-    case FoodGroceryTrackingStage.onTheWay:
-      return 'Your order is on the way';
+      case FoodGroceryTrackingStage.onTheWay:
+        return 'Your order is on the way';
 
-    case FoodGroceryTrackingStage.arrivingSoon:
-      return 'Arriving soon';
+      case FoodGroceryTrackingStage.arrivingSoon:
+        return 'Arriving soon';
+    }
   }
-}
 
   String get trackingDescription {
     switch (trackingStage) {
       case FoodGroceryTrackingStage.supplierAccepted:
-        return 'The supplier accepted your order.';
+        return 'The $businessType accepted your order.';
 
       case FoodGroceryTrackingStage.preparing:
-        return 'The supplier is preparing your items.';
+        return 'The $businessType is preparing your items.';
 
       case FoodGroceryTrackingStage.readyForPickup:
         return 'Your order is packed and ready for collection.';
@@ -105,21 +133,24 @@ class FoodGroceryOrderState {
     }
   }
 
-int get trackingStep {
-  return trackingStage.index + 1;
-}
+  int get trackingStep {
+    return trackingStage.index + 1;
+  }
 
-bool get isArrivingSoon {
-  return trackingStage ==
-      FoodGroceryTrackingStage.arrivingSoon;
-}
+  bool get isArrivingSoon {
+    return trackingStage == FoodGroceryTrackingStage.arrivingSoon;
+  }
 
   FoodGroceryOrderState copyWith({
     FoodGroceryOrderStatus? status,
     String? orderId,
     PaymentMethodType? paymentMethodType,
+    FoodGroceryCartType? orderType,
     double? total,
     FoodGroceryTrackingStage? trackingStage,
+    String? deliveryPartnerId,
+    String? deliveryPartnerName,
+    String? deliveryPartnerPhone,
     String? errorMessage,
     bool clearError = false,
   }) {
@@ -127,8 +158,12 @@ bool get isArrivingSoon {
       status: status ?? this.status,
       orderId: orderId ?? this.orderId,
       paymentMethodType: paymentMethodType ?? this.paymentMethodType,
+      orderType: orderType ?? this.orderType,
       total: total ?? this.total,
       trackingStage: trackingStage ?? this.trackingStage,
+      deliveryPartnerId: deliveryPartnerId ?? this.deliveryPartnerId,
+      deliveryPartnerName: deliveryPartnerName ?? this.deliveryPartnerName,
+      deliveryPartnerPhone: deliveryPartnerPhone ?? this.deliveryPartnerPhone,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
     );
   }
@@ -139,6 +174,7 @@ class FoodGroceryOrderNotifier extends StateNotifier<FoodGroceryOrderState> {
 
   Future<void> placeTemporaryOrder({
     required PaymentMethodType paymentMethodType,
+    required FoodGroceryCartType orderType,
     required double total,
   }) async {
     if (state.isProcessing) {
@@ -148,6 +184,7 @@ class FoodGroceryOrderNotifier extends StateNotifier<FoodGroceryOrderState> {
     state = FoodGroceryOrderState(
       status: FoodGroceryOrderStatus.processing,
       paymentMethodType: paymentMethodType,
+      orderType: orderType,
       total: total,
     );
 
@@ -175,12 +212,14 @@ class FoodGroceryOrderNotifier extends StateNotifier<FoodGroceryOrderState> {
         orderId: temporaryOrderId,
         paymentMethodType: paymentMethodType,
         total: total,
+        orderType: orderType,
       );
     } catch (_) {
       state = FoodGroceryOrderState(
         status: FoodGroceryOrderStatus.failed,
         paymentMethodType: paymentMethodType,
         total: total,
+        orderType: orderType,
         errorMessage: 'Unable to place your order. Please try again.',
       );
     }
@@ -189,9 +228,15 @@ class FoodGroceryOrderNotifier extends StateNotifier<FoodGroceryOrderState> {
   Future<void> retry() async {
     final currentPaymentMethod = state.paymentMethodType;
     final currentTotal = state.total;
+    final currentOrderType = state.orderType;
+
+    if (currentOrderType == null) {
+      return;
+    }
 
     await placeTemporaryOrder(
       paymentMethodType: currentPaymentMethod,
+      orderType: currentOrderType,
       total: currentTotal,
     );
   }
@@ -210,40 +255,63 @@ class FoodGroceryOrderNotifier extends StateNotifier<FoodGroceryOrderState> {
 
     state = state.copyWith(
       status: FoodGroceryOrderStatus.supplierAccepted,
-      trackingStage:
-      FoodGroceryTrackingStage.supplierAccepted,
+      trackingStage: FoodGroceryTrackingStage.supplierAccepted,
       clearError: true,
     );
   }
 
-Future<void> advanceTemporaryTracking() async {
-  if (!state.isSupplierAccepted ||
-      state.isArrivingSoon) {
-    return;
+  Future<void> advanceTemporaryTracking() async {
+    if (!state.isSupplierAccepted || state.isArrivingSoon) {
+      return;
+    }
+
+    // TODO(FOOD_GROCERY_REALTIME):
+    // Replace this temporary progression with live order
+    // status updates from the backend/WebSocket service.
+    await Future<void>.delayed(
+      const Duration(milliseconds: 700),
+    );
+
+    final nextIndex = state.trackingStage.index + 1;
+
+    const stages = FoodGroceryTrackingStage.values;
+
+    if (nextIndex >= stages.length) {
+      return;
+    }
+
+    final nextStage = stages[nextIndex];
+
+    final shouldAssignDeliveryPartner =
+        nextStage.index >= FoodGroceryTrackingStage.readyForPickup.index;
+
+    state = state.copyWith(
+      trackingStage: nextStage,
+      deliveryPartnerId: shouldAssignDeliveryPartner
+          ? state.deliveryPartnerId ?? 'demo-delivery-partner-1'
+          : state.deliveryPartnerId,
+      deliveryPartnerName: shouldAssignDeliveryPartner
+          ? state.deliveryPartnerName ?? 'GOZOLT Delivery Partner'
+          : state.deliveryPartnerName,
+      deliveryPartnerPhone: shouldAssignDeliveryPartner
+          ? state.deliveryPartnerPhone ?? '+35699000002'
+          : state.deliveryPartnerPhone,
+      clearError: true,
+    );
   }
 
-  // TODO(FOOD_GROCERY_REALTIME):
-  // Replace this temporary progression with live order
-  // status updates from the backend/WebSocket service.
-  await Future<void>.delayed(
-    const Duration(milliseconds: 700),
-  );
+  void applySubstitutionAdjustment({
+    required double updatedTotal,
+  }) {
+    if (updatedTotal < 0) {
+      return;
+    }
 
-  final nextIndex = state.trackingStage.index + 1;
-
-  final stages =
-      FoodGroceryTrackingStage.values;
-
-  if (nextIndex >= stages.length) {
-    return;
+    state = state.copyWith(
+      total: updatedTotal,
+      clearError: true,
+    );
   }
-
-  state = state.copyWith(
-    trackingStage: stages[nextIndex],
-    clearError: true,
-  );
-}
-
 
   void reset() {
     state = const FoodGroceryOrderState();

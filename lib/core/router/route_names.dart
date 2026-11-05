@@ -115,6 +115,7 @@ abstract final class RouteNames {
   static const String foodGroceryOrderCompleted =
       'food-grocery-order-completed';
   static const String foodGroceryRatingReview = 'food-grocery-rating-review';
+  static const String foodGroceryDeliveryChat = 'food-grocery-delivery-chat';
 
   // Quick Services
   static const String quickServicesLocation = 'quick-services-location';

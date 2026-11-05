@@ -394,7 +394,7 @@ class _RestaurantListingScreenState
                             ),
                           ),
                           child: Text(
-                            'APPLY FILTERS',
+                            'Apply filters',
                             style: AppTextStyles.labelLarge.copyWith(
                               color: AppColors.backgroundDark,
                               fontWeight: FontWeight.w700,
@@ -926,16 +926,6 @@ class _RestaurantCard extends StatelessWidget {
                         color: AppColors.primaryGoldDark,
                       ),
                     ),
-                    if (restaurant.promotionalTag != null)
-                      Positioned(
-                        left: 10,
-                        top: 10,
-                        child: _CardBadge(
-                          text: restaurant.promotionalTag!,
-                          backgroundColor: AppColors.backgroundDark,
-                          textColor: Colors.white,
-                        ),
-                      ),
                     Positioned(
                       right: 10,
                       top: 10,

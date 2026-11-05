@@ -22,15 +22,23 @@ class FoodGroceryDeliveryArrivalScreen extends ConsumerStatefulWidget {
 class _FoodGroceryDeliveryArrivalScreenState
     extends ConsumerState<FoodGroceryDeliveryArrivalScreen> {
   Future<void> _confirmOrderReceived() async {
-    final state = ref.read(
+    final currentState = ref.read(
       foodGroceryDeliveryVerificationProvider,
     );
 
-    if (state.paymentStatus == FoodGroceryDeliveryPaymentStatus.cashDue) {
-      context.pushReplacementNamed(
-        RouteNames.foodGroceryOrderCompleted,
+    if (!currentState.isPinVerified) {
+      _showVerificationMessage(
+        'Wait until the delivery partner verifies your PIN.',
+        isError: true,
       );
+      return;
+    }
 
+    if (!currentState.isPaid) {
+      _showVerificationMessage(
+        'Cash must be collected before completing this order.',
+        isError: true,
+      );
       return;
     }
 
@@ -44,31 +52,79 @@ class _FoodGroceryDeliveryArrivalScreenState
       return;
     }
 
+    final updatedState = ref.read(
+      foodGroceryDeliveryVerificationProvider,
+    );
+
+    if (!updatedState.isOrderReceived) {
+      return;
+    }
+
     context.pushReplacementNamed(
       RouteNames.foodGroceryOrderCompleted,
     );
   }
 
+  void _showVerificationMessage(
+    String message, {
+    bool isError = false,
+  }) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            message,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Colors.white,
+            ),
+          ),
+          backgroundColor: isError ? AppColors.error : AppColors.success,
+        ),
+      );
+  }
+
+  void _markTemporaryPinVerified() {
+    ref
+        .read(
+          foodGroceryDeliveryVerificationProvider.notifier,
+        )
+        .markPinVerified();
+
+    _showVerificationMessage(
+      'Delivery PIN verified for UI testing.',
+    );
+  }
+
   void _markTemporaryCashCollected() {
+    final currentState = ref.read(
+      foodGroceryDeliveryVerificationProvider,
+    );
+
+    if (!currentState.isPinVerified) {
+      _showVerificationMessage(
+        'Verify the delivery PIN before collecting cash.',
+        isError: true,
+      );
+      return;
+    }
+
     ref
         .read(
           foodGroceryDeliveryVerificationProvider.notifier,
         )
         .markCashCollected();
 
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            'Cash payment marked as collected for UI testing.',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: Colors.white,
-            ),
-          ),
-          backgroundColor: AppColors.success,
-        ),
+    final updatedState = ref.read(
+      foodGroceryDeliveryVerificationProvider,
+    );
+
+    if (updatedState.paymentStatus ==
+        FoodGroceryDeliveryPaymentStatus.cashCollected) {
+      _showVerificationMessage(
+        'Cash marked as collected for UI testing.',
       );
+    }
   }
 
   @override
@@ -82,6 +138,18 @@ class _FoodGroceryDeliveryArrivalScreenState
     final orderReference = verificationState.orderId.trim().isEmpty
         ? 'Pending'
         : verificationState.orderId;
+
+    final String confirmationButtonText;
+
+    if (!verificationState.isPinVerified) {
+      confirmationButtonText = 'Wait for PIN verification';
+    } else if (!verificationState.isPaid) {
+      confirmationButtonText = 'Waiting for cash collection';
+    } else if (verificationState.isOrderReceived) {
+      confirmationButtonText = 'Order received';
+    } else {
+      confirmationButtonText = 'Confirm order received';
+    }
 
     final qrData = '''
 GOZOLT FOOD & GROCERY
@@ -116,6 +184,8 @@ Delivery Status: Partner Arrived
                   orderReference: orderReference,
                   verificationCode: verificationState.verificationCode,
                   qrData: qrData,
+                  isPinVerified: verificationState.isPinVerified,
+                  onTemporaryPinVerified: _markTemporaryPinVerified,
                 ),
                 const SizedBox(height: 14),
                 _PaymentStatusCard(
@@ -152,10 +222,9 @@ Delivery Status: Partner Arrived
           child: SizedBox(
             height: 50,
             child: ElevatedButton(
-              onPressed: verificationState.isConfirming ||
-                      verificationState.isOrderReceived
-                  ? null
-                  : _confirmOrderReceived,
+              onPressed: verificationState.canConfirmOrderReceived
+                  ? _confirmOrderReceived
+                  : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGold,
                 foregroundColor: AppColors.backgroundDark,
@@ -186,9 +255,7 @@ Delivery Status: Partner Arrived
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          verificationState.isOrderReceived
-                              ? 'ORDER RECEIVED'
-                              : 'CONFIRM ORDER RECEIVED',
+                          confirmationButtonText,
                           style: AppTextStyles.labelLarge.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -276,12 +343,16 @@ class _VerificationCard extends StatelessWidget {
     required this.orderReference,
     required this.verificationCode,
     required this.qrData,
+    required this.isPinVerified,
+    required this.onTemporaryPinVerified,
   });
 
   final bool isDark;
   final String orderReference;
   final String verificationCode;
   final String qrData;
+  final bool isPinVerified;
+  final VoidCallback onTemporaryPinVerified;
 
   @override
   Widget build(BuildContext context) {
@@ -397,6 +468,37 @@ class _VerificationCard extends StatelessWidget {
               height: 1.4,
             ),
           ),
+          const SizedBox(height: 13),
+          SizedBox(
+            width: double.infinity,
+            height: 42,
+            child: OutlinedButton.icon(
+              onPressed: isPinVerified ? null : onTemporaryPinVerified,
+              icon: Icon(
+                isPinVerified ? Icons.verified_rounded : Icons.pin_outlined,
+                size: 19,
+              ),
+              label: Text(
+                isPinVerified ? 'PIN VERIFIED' : 'TEST: DRIVER VERIFIED PIN',
+                style: AppTextStyles.labelLarge.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: isPinVerified
+                    ? AppColors.success
+                    : AppColors.primaryGoldDark,
+                disabledForegroundColor: AppColors.success,
+                side: BorderSide(
+                  color:
+                      isPinVerified ? AppColors.success : AppColors.primaryGold,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -424,7 +526,7 @@ class _PaymentStatusCard extends StatelessWidget {
     switch (state.paymentStatus) {
       case FoodGroceryDeliveryPaymentStatus.paidOnline:
         paymentMethod = 'Card';
-        paymentStatus = 'Paid online';
+        paymentStatus = 'Payment successful';
         paymentIcon = Icons.credit_card_rounded;
         statusColor = AppColors.success;
 
@@ -436,7 +538,7 @@ class _PaymentStatusCard extends StatelessWidget {
 
       case FoodGroceryDeliveryPaymentStatus.cashCollected:
         paymentMethod = 'Cash';
-        paymentStatus = 'Cash payment completed';
+        paymentStatus = 'Cash collected';
         paymentIcon = Icons.check_circle_outline_rounded;
         statusColor = AppColors.success;
     }

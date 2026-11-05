@@ -153,12 +153,6 @@ class FoodGroceryHeader extends StatelessWidget {
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          const SizedBox(width: 3),
-                          const Icon(
-                            Icons.chevron_right_rounded,
-                            size: 18,
-                            color: AppColors.primaryGoldDark,
-                          ),
                         ],
                       ],
                     ),

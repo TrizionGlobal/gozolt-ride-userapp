@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
@@ -12,6 +13,8 @@ import '../providers/food_grocery_order_provider.dart';
 import '../widgets/food_grocery_header.dart';
 import '../providers/food_grocery_delivery_verification_provider.dart';
 import '../providers/food_grocery_payment_provider.dart';
+import '../providers/food_grocery_substitution_provider.dart';
+import 'food_grocery_delivery_chat_screen.dart';
 
 class FoodGroceryLiveTrackingScreen extends ConsumerStatefulWidget {
   const FoodGroceryLiveTrackingScreen({
@@ -27,8 +30,97 @@ class _FoodGroceryLiveTrackingScreenState
     extends ConsumerState<FoodGroceryLiveTrackingScreen> {
   bool _isRefreshing = false;
 
+  Future<void> _callDeliveryPartner() async {
+    final order = ref.read(foodGroceryOrderProvider);
+
+    final phone = order.deliveryPartnerPhone?.trim();
+
+    if (phone == null || phone.isEmpty) {
+      _showContactError(
+        'The delivery partner’s phone number is not available yet.',
+      );
+      return;
+    }
+
+    final uri = Uri(
+      scheme: 'tel',
+      path: phone,
+    );
+
+    try {
+      final launched = await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+
+      if (!launched && mounted) {
+        _showContactError(
+          'Unable to open the phone app.',
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        _showContactError(
+          'Unable to open the phone app.',
+        );
+      }
+    }
+  }
+
+  void _showContactError(String message) {
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            message,
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Colors.white,
+            ),
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
+  }
+
   Future<void> _advanceTracking() async {
     if (_isRefreshing) {
+      return;
+    }
+
+    final order = ref.read(
+      foodGroceryOrderProvider,
+    );
+
+    final substitution = ref.read(
+      foodGrocerySubstitutionProvider,
+    );
+
+    final substitutionBlocksTracking = order.isGroceryOrder &&
+        order.trackingStage == FoodGroceryTrackingStage.preparing &&
+        substitution.hasUnavailableItems &&
+        !substitution.canContinueFulfilment;
+
+    if (substitutionBlocksTracking) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              'Resolve the unavailable item before the order can continue.',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Colors.white,
+              ),
+            ),
+            backgroundColor: AppColors.error,
+          ),
+        );
+
+      _openSubstitutionScreen();
       return;
     }
 
@@ -39,6 +131,27 @@ class _FoodGroceryLiveTrackingScreenState
     await ref
         .read(foodGroceryOrderProvider.notifier)
         .advanceTemporaryTracking();
+
+    final updatedOrder = ref.read(
+      foodGroceryOrderProvider,
+    );
+
+    final updatedSubstitution = ref.read(
+      foodGrocerySubstitutionProvider,
+    );
+
+    if (updatedOrder.isGroceryOrder &&
+        updatedOrder.trackingStage == FoodGroceryTrackingStage.preparing &&
+        !updatedSubstitution.hasUnavailableItems) {
+      // TODO(FOOD_GROCERY_REALTIME):
+      // Remove this temporary demo trigger when the supplier/backend
+      // sends unavailable-item events.
+      ref
+          .read(foodGrocerySubstitutionProvider.notifier)
+          .loadTemporaryUnavailableItem(
+            originalOrderTotal: updatedOrder.total,
+          );
+    }
 
     if (!mounted) {
       return;
@@ -73,21 +186,31 @@ class _FoodGroceryLiveTrackingScreenState
     );
   }
 
-  void _showContactMessage(String action) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            '$action will be connected to the '
-            'assigned delivery partner.',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: Colors.white,
-            ),
-          ),
-          backgroundColor: AppColors.primaryGoldDark,
-        ),
+  void _openSubstitutionScreen() {
+    final order = ref.read(
+      foodGroceryOrderProvider,
+    );
+    if (!order.isGroceryOrder) {
+      _showContactError(
+        'Substitutions apply only to grocery orders',
       );
+      return;
+    }
+
+    // TODO(FOOD_GROCERY_API):
+    // Remove this temporary data loader when unavailable items
+    // are received from the supplier/order API.
+    ref
+        .read(
+          foodGrocerySubstitutionProvider.notifier,
+        )
+        .loadTemporaryUnavailableItem(
+          originalOrderTotal: order.total,
+        );
+
+    context.pushNamed(
+      RouteNames.foodGrocerySubstitution,
+    );
   }
 
   String _estimatedArrival(
@@ -95,24 +218,18 @@ class _FoodGroceryLiveTrackingScreenState
   ) {
     switch (stage) {
       case FoodGroceryTrackingStage.supplierAccepted:
-        return '35–45 min';
+        return '35-45 min';
       case FoodGroceryTrackingStage.preparing:
-        return '30–40 min';
+        return '30-40 min';
       case FoodGroceryTrackingStage.readyForPickup:
-        return '25–35 min';
+        return '25-35 min';
       case FoodGroceryTrackingStage.pickedUp:
-        return '20–30 min';
+        return '20-30 min';
       case FoodGroceryTrackingStage.onTheWay:
-        return '10–20 min';
+        return '10-20 min';
       case FoodGroceryTrackingStage.arrivingSoon:
-        return '2–5 min';
+        return '2-5 min';
     }
-  }
-
-  bool _partnerAssigned(
-    FoodGroceryTrackingStage stage,
-  ) {
-    return stage.index >= FoodGroceryTrackingStage.pickedUp.index;
   }
 
   @override
@@ -123,6 +240,15 @@ class _FoodGroceryLiveTrackingScreenState
       foodGroceryOrderProvider,
     );
 
+    final substitution = ref.watch(
+      foodGrocerySubstitutionProvider,
+    );
+
+    final substitutionNeedsAction = order.isGroceryOrder &&
+        order.trackingStage == FoodGroceryTrackingStage.preparing &&
+        substitution.hasUnavailableItems &&
+        !substitution.canContinueFulfilment;
+
     final cart = ref.watch(
       foodGroceryCartProvider,
     );
@@ -131,7 +257,7 @@ class _FoodGroceryLiveTrackingScreenState
       foodGroceryDeliveryProvider,
     );
 
-    final supplierName = cart.supplierName ?? 'Selected supplier';
+    final supplierName = cart.supplierName ?? 'Selected ${order.businessType}';
 
     final deliveryAddress =
         delivery.selectedAddress?.fullAddress ?? 'Selected delivery address';
@@ -152,6 +278,7 @@ class _FoodGroceryLiveTrackingScreenState
             Expanded(
               child: _MissingTrackingView(
                 isDark: isDark,
+                businessType: order.businessType,
               ),
             ),
           ],
@@ -160,10 +287,6 @@ class _FoodGroceryLiveTrackingScreenState
     }
 
     final eta = _estimatedArrival(
-      order.trackingStage,
-    );
-
-    final partnerAssigned = _partnerAssigned(
       order.trackingStage,
     );
 
@@ -206,17 +329,40 @@ class _FoodGroceryLiveTrackingScreenState
                     currentStage: order.trackingStage,
                   ),
                   const SizedBox(height: 12),
+
+                  // TODO(FOOD_GROCERY_API):
+                  // Remove this test card when supplier substitution
+                  // notifications open the permanent screen automatically.
+                  if (substitutionNeedsAction) ...[
+                    _TemporarySubstitutionCard(
+                      isDark: isDark,
+                      onPressed: _openSubstitutionScreen,
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   _DeliveryPartnerCard(
                     isDark: isDark,
-                    assigned: partnerAssigned,
-                    onCall: () {
-                      _showContactMessage(
-                        'Calling',
-                      );
-                    },
+                    assigned: order.hasDeliveryPartner,
+                    partnerName: order.deliveryPartnerName,
+                    onCall: _callDeliveryPartner,
                     onMessage: () {
-                      _showContactMessage(
-                        'Messaging',
+                      final orderId = order.orderId;
+
+                      if (orderId == null || orderId.trim().isEmpty) {
+                        _showContactError(
+                          'The order reference is not available yet.',
+                        );
+                        return;
+                      }
+
+                      context.pushNamed(
+                        RouteNames.foodGroceryDeliveryChat,
+                        extra: FoodGroceryDeliveryChatArguments(
+                          orderId: orderId,
+                          partnerName: order.deliveryPartnerName ??
+                              'GOZOLT Delivery Partner',
+                          partnerPhone: order.deliveryPartnerPhone,
+                        ),
                       );
                     },
                   ),
@@ -225,6 +371,7 @@ class _FoodGroceryLiveTrackingScreenState
                     isDark: isDark,
                     orderId: order.orderId ?? 'Pending',
                     supplierName: supplierName,
+                    businessLabel: order.businessTypeCapitalized,
                     total: order.total,
                   ),
                 ],
@@ -273,7 +420,7 @@ class _FoodGroceryLiveTrackingScreenState
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'DELIVERY ARRIVAL',
+                          'Delivery Arrival',
                           style: AppTextStyles.labelLarge.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -286,23 +433,20 @@ class _FoodGroceryLiveTrackingScreenState
                       ],
                     ),
                   )
-                : OutlinedButton(
-                    onPressed: _isRefreshing ? null : _advanceTracking,
-                    style: OutlinedButton.styleFrom(
+                : TextButton(
+                    onPressed: substitutionNeedsAction
+                        ? _openSubstitutionScreen
+                        : _isRefreshing
+                            ? null
+                            : _advanceTracking,
+                    style: TextButton.styleFrom(
                       minimumSize: const Size(
                         double.infinity,
                         50,
                       ),
-                      foregroundColor: AppColors.primaryGold,
-                      side: const BorderSide(
-                        color: AppColors.primaryGold,
-                        width: 1.4,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(
-                          15,
-                        ),
-                      ),
+                      foregroundColor: isDark
+                          ? AppColors.primaryGold
+                          : AppColors.primaryGoldDark,
                     ),
                     child: _isRefreshing
                         ? const SizedBox(
@@ -316,15 +460,19 @@ class _FoodGroceryLiveTrackingScreenState
                         : Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(
-                                Icons.refresh_rounded,
+                              Icon(
+                                substitutionNeedsAction
+                                    ? Icons.warning_amber_rounded
+                                    : Icons.refresh_rounded,
                                 size: 20,
                               ),
                               const SizedBox(
                                 width: 8,
                               ),
                               Text(
-                                'REFRESH LIVE STATUS',
+                                substitutionNeedsAction
+                                    ? 'Resolve item issue'
+                                    : 'Update tracking',
                                 style: AppTextStyles.labelLarge.copyWith(
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -910,16 +1058,114 @@ class _TimelineStep extends StatelessWidget {
   }
 }
 
+class _TemporarySubstitutionCard extends StatelessWidget {
+  const _TemporarySubstitutionCard({
+    required this.isDark,
+    required this.onPressed,
+  });
+
+  final bool isDark;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.cardDark : Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(
+          color: AppColors.primaryGold.withValues(
+            alpha: 0.55,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: AppColors.primaryGold.withValues(
+                alpha: 0.14,
+              ),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.swap_horiz_rounded,
+              size: 22,
+              color: AppColors.primaryGoldDark,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Grocery item unavailable',
+                  style: AppTextStyles.bodyMedium.copyWith(
+                    color: isDark
+                        ? AppColors.textPrimary
+                        : AppColors.textPrimaryLight,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Review the suggested replacement or request a refund.',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: isDark
+                        ? AppColors.textSecondary
+                        : AppColors.textSecondaryLight,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          TextButton(
+            onPressed: onPressed,
+            style: OutlinedButton.styleFrom(
+              foregroundColor:
+                  isDark ? AppColors.primaryGold : AppColors.primaryGoldDark,
+              side: const BorderSide(
+                color: AppColors.primaryGold,
+              ),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 9,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(11),
+              ),
+            ),
+            child: Text(
+              'REVIEW',
+              style: AppTextStyles.labelSmall.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _DeliveryPartnerCard extends StatelessWidget {
   const _DeliveryPartnerCard({
     required this.isDark,
     required this.assigned,
+    required this.partnerName,
     required this.onCall,
     required this.onMessage,
   });
 
   final bool isDark;
   final bool assigned;
+  final String? partnerName;
   final VoidCallback onCall;
   final VoidCallback onMessage;
 
@@ -952,7 +1198,7 @@ class _DeliveryPartnerCard extends StatelessWidget {
               children: [
                 Text(
                   assigned
-                      ? 'Delivery partner assigned'
+                      ? partnerName ?? 'Delivery partner assigned'
                       : 'Finding a delivery partner',
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: isDark
@@ -964,7 +1210,7 @@ class _DeliveryPartnerCard extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   assigned
-                      ? 'GOZOLT delivery partner'
+                      ? 'GOZOLT delivery partner assigned'
                       : 'Partner details will appear here',
                   style: AppTextStyles.bodySmall.copyWith(
                     color: isDark
@@ -1028,12 +1274,14 @@ class _OrderReferenceCard extends StatelessWidget {
     required this.isDark,
     required this.orderId,
     required this.supplierName,
+    required this.businessLabel,
     required this.total,
   });
 
   final bool isDark;
   final String orderId;
   final String supplierName;
+  final String businessLabel;
   final double total;
 
   @override
@@ -1058,7 +1306,7 @@ class _OrderReferenceCard extends StatelessWidget {
           const SizedBox(height: 10),
           _ReferenceRow(
             isDark: isDark,
-            label: 'Supplier',
+            label: businessLabel,
             value: supplierName,
           ),
           const SizedBox(height: 10),
@@ -1121,9 +1369,11 @@ class _ReferenceRow extends StatelessWidget {
 class _MissingTrackingView extends StatelessWidget {
   const _MissingTrackingView({
     required this.isDark,
+    required this.businessType,
   });
 
   final bool isDark;
+  final String businessType;
 
   @override
   Widget build(BuildContext context) {
@@ -1153,7 +1403,7 @@ class _MissingTrackingView extends StatelessWidget {
             const SizedBox(height: 7),
             Text(
               'Live tracking becomes available after '
-              'the supplier accepts your order.',
+              'the $businessType accepts your order.',
               textAlign: TextAlign.center,
               style: AppTextStyles.bodySmall.copyWith(
                 color: isDark
@@ -1168,4 +1418,3 @@ class _MissingTrackingView extends StatelessWidget {
     );
   }
 }
-

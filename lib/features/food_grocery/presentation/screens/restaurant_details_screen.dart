@@ -142,7 +142,7 @@ class _RestaurantDetailsScreenState
                 Navigator.pop(dialogContext, false);
               },
               child: Text(
-                'KEEP CURRENT CART',
+                'Keep Current Cart',
                 style: AppTextStyles.labelLarge.copyWith(
                   color: isDark
                       ? AppColors.textSecondary
@@ -163,7 +163,7 @@ class _RestaurantDetailsScreenState
                 ),
               ),
               child: Text(
-                'START NEW CART',
+                'Start new cart',
                 style: AppTextStyles.labelLarge.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -489,7 +489,7 @@ class _RestaurantDetailsScreenState
                   _InformationRow(
                     icon: Icons.verified_user_outlined,
                     label: 'Business information',
-                    value: 'Verified GOZOLT food supplier',
+                    value: 'Verified GOZOLT food restaurant',
                     isDark: isDark,
                   ),
                   const SizedBox(height: 12),
@@ -794,7 +794,7 @@ class _RestaurantDetailsScreenState
                           ),
                         ),
                         Text(
-                          'VIEW CART',
+                          'View cart',
                           style: AppTextStyles.labelLarge.copyWith(
                             color: AppColors.backgroundDark,
                             fontWeight: FontWeight.w700,
@@ -939,37 +939,50 @@ class _RestaurantOverviewCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 8,
-                  children: [
-                    _OverviewDetail(
-                      icon: Icons.star_rounded,
-                      value: '${restaurant.rating} (${restaurant.ratingCount})',
-                      isDark: isDark,
-                      iconColor: AppColors.primaryGoldDark,
-                    ),
-                    _OverviewDetail(
-                      icon: Icons.schedule_rounded,
-                      value: restaurant.estimatedDeliveryTime,
-                      isDark: isDark,
-                    ),
-                    _OverviewDetail(
-                      icon: Icons.location_on_outlined,
-                      value: restaurant.distanceText,
-                      isDark: isDark,
-                    ),
-                    _OverviewDetail(
-                      icon: Icons.delivery_dining_rounded,
-                      value: restaurant.deliveryFeeText,
-                      isDark: isDark,
-                    ),
-                    _OverviewDetail(
-                      icon: Icons.euro_rounded,
-                      value: restaurant.priceLevel,
-                      isDark: isDark,
-                    ),
-                  ],
+                IntrinsicHeight(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 6,
+                        child: _OverviewDetail(
+                          icon: Icons.star_rounded,
+                          value: restaurant.rating.toString(),
+                          isDark: isDark,
+                          iconColor: AppColors.primaryGoldDark,
+                        ),
+                      ),
+                      _OverviewDivider(isDark: isDark),
+                      Expanded(
+                        flex: 10,
+                        child: _OverviewDetail(
+                          icon: Icons.schedule_rounded,
+                          value: restaurant.estimatedDeliveryTime,
+                          isDark: isDark,
+                        ),
+                      ),
+                      _OverviewDivider(isDark: isDark),
+                      Expanded(
+                        flex: 8,
+                        child: _OverviewDetail(
+                          icon: Icons.location_on_outlined,
+                          value: restaurant.distanceText,
+                          isDark: isDark,
+                        ),
+                      ),
+                      _OverviewDivider(isDark: isDark),
+                      Expanded(
+                        flex: 13,
+                        child: _OverviewDetail(
+                          icon: Icons.delivery_dining_rounded,
+                          value: restaurant.deliveryFeeText,
+                          iconColor: restaurant.hasFreeDelivery
+                              ? AppColors.success
+                              : AppColors.primaryGoldDark,
+                          isDark: isDark,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -995,24 +1008,54 @@ class _OverviewDetail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 16,
-          color: iconColor ??
-              (isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          value,
-          style: AppTextStyles.labelSmall.copyWith(
-            color:
-                isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+    final secondaryColor =
+        isDark ? AppColors.textSecondary : AppColors.textSecondaryLight;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            size: 15,
+            color: iconColor ?? secondaryColor,
           ),
-        ),
-      ],
+          const SizedBox(width: 3),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                maxLines: 1,
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: secondaryColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OverviewDivider extends StatelessWidget {
+  const _OverviewDivider({
+    required this.isDark,
+  });
+
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      margin: const EdgeInsets.symmetric(vertical: 2),
+      color: (isDark ? AppColors.borderDark : AppColors.borderLight)
+          .withValues(alpha: 0.75),
     );
   }
 }

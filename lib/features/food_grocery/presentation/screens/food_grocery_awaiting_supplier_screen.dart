@@ -37,6 +37,10 @@ class _FoodGroceryAwaitingSupplierScreenState
         .read(foodGroceryOrderProvider.notifier)
         .simulateSupplierAcceptance();
 
+    final updatedOrder = ref.read(
+      foodGroceryOrderProvider,
+    );
+
     if (!mounted) {
       return;
     }
@@ -50,7 +54,7 @@ class _FoodGroceryAwaitingSupplierScreenState
       ..showSnackBar(
         SnackBar(
           content: Text(
-            'Supplier accepted your order',
+            '${updatedOrder.businessTypeCapitalized} accepted your order',
             style: AppTextStyles.bodyMedium.copyWith(
               color: Colors.white,
             ),
@@ -71,7 +75,7 @@ class _FoodGroceryAwaitingSupplierScreenState
         ..showSnackBar(
           SnackBar(
             content: Text(
-              'Please wait for supplier acceptance',
+              'Please wait for ${order.businessType} acceptance',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: Colors.white,
               ),
@@ -103,7 +107,7 @@ class _FoodGroceryAwaitingSupplierScreenState
       foodGroceryDeliveryProvider,
     );
 
-    final supplierName = cart.supplierName ?? 'Selected supplier';
+    final supplierName = cart.supplierName ?? 'Selected ${order.businessType}';
 
     final address = delivery.selectedAddress;
 
@@ -139,12 +143,14 @@ class _FoodGroceryAwaitingSupplierScreenState
                                       'accepted',
                                     ),
                                     isDark: isDark,
+                                    businessType: order.businessType,
                                   )
                                 : _AwaitingStatusCard(
                                     key: const ValueKey(
                                       'awaiting',
                                     ),
                                     isDark: isDark,
+                                    businessType: order.businessType,
                                   ),
                           ),
                           const SizedBox(height: 12),
@@ -163,7 +169,7 @@ class _FoodGroceryAwaitingSupplierScreenState
                                 const SizedBox(height: 11),
                                 _DetailRow(
                                   isDark: isDark,
-                                  label: 'Supplier',
+                                  label: order.businessTypeCapitalized,
                                   value: supplierName,
                                 ),
                                 const SizedBox(height: 11),
@@ -248,6 +254,7 @@ class _FoodGroceryAwaitingSupplierScreenState
                           _WhatHappensNextCard(
                             isDark: isDark,
                             accepted: order.isSupplierAccepted,
+                            businessType: order.businessType,
                           ),
                         ],
                       )
@@ -292,23 +299,19 @@ class _FoodGroceryAwaitingSupplierScreenState
                               foregroundColor: AppColors.backgroundDark,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  15,
-                                ),
+                                borderRadius: BorderRadius.circular(15),
                               ),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  'TRACK ORDER',
+                                  'Track your order',
                                   style: AppTextStyles.labelLarge.copyWith(
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
-                                const SizedBox(
-                                  width: 8,
-                                ),
+                                const SizedBox(width: 8),
                                 const Icon(
                                   Icons.arrow_forward_rounded,
                                   size: 20,
@@ -316,22 +319,18 @@ class _FoodGroceryAwaitingSupplierScreenState
                               ],
                             ),
                           )
-                        : OutlinedButton(
+                        : TextButton(
                             onPressed: _isRefreshing ? null : _refreshStatus,
-                            style: OutlinedButton.styleFrom(
+                            style: TextButton.styleFrom(
                               minimumSize: const Size(
                                 double.infinity,
                                 50,
                               ),
-                              foregroundColor: AppColors.primaryGold,
-                              side: const BorderSide(
-                                color: AppColors.primaryGold,
-                                width: 1.4,
-                              ),
+                              foregroundColor: isDark
+                                  ? AppColors.primaryGold
+                                  : AppColors.primaryGoldDark,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  15,
-                                ),
+                                borderRadius: BorderRadius.circular(15),
                               ),
                             ),
                             child: _isRefreshing
@@ -350,11 +349,9 @@ class _FoodGroceryAwaitingSupplierScreenState
                                         Icons.refresh_rounded,
                                         size: 20,
                                       ),
-                                      const SizedBox(
-                                        width: 8,
-                                      ),
+                                      const SizedBox(width: 8),
                                       Text(
-                                        'REFRESH ORDER STATUS',
+                                        'Refresh Order Status',
                                         style:
                                             AppTextStyles.labelLarge.copyWith(
                                           fontWeight: FontWeight.w700,
@@ -376,9 +373,11 @@ class _AwaitingStatusCard extends StatelessWidget {
   const _AwaitingStatusCard({
     super.key,
     required this.isDark,
+    required this.businessType,
   });
 
   final bool isDark;
+  final String businessType;
 
   @override
   Widget build(BuildContext context) {
@@ -392,8 +391,8 @@ class _AwaitingStatusCard extends StatelessWidget {
       borderColor: AppColors.primaryGold.withValues(
         alpha: 0.45,
       ),
-      title: 'Awaiting supplier acceptance',
-      message: 'Your order has been sent to the supplier. '
+      title: 'Awaiting $businessType acceptance',
+      message: 'Your order has been sent to the $businessType. '
           'We will notify you as soon as it is accepted.',
       showProgress: true,
     );
@@ -404,9 +403,11 @@ class _AcceptedStatusCard extends StatelessWidget {
   const _AcceptedStatusCard({
     super.key,
     required this.isDark,
+    required this.businessType,
   });
 
   final bool isDark;
+  final String businessType;
 
   @override
   Widget build(BuildContext context) {
@@ -421,7 +422,7 @@ class _AcceptedStatusCard extends StatelessWidget {
         alpha: 0.40,
       ),
       title: 'Order accepted',
-      message: 'The supplier accepted your order and '
+      message: 'The $businessType accepted your order and '
           'will begin preparing it shortly.',
       showProgress: false,
     );
@@ -576,10 +577,12 @@ class _WhatHappensNextCard extends StatelessWidget {
   const _WhatHappensNextCard({
     required this.isDark,
     required this.accepted,
+    required this.businessType,
   });
 
   final bool isDark;
   final bool accepted;
+  final String businessType;
 
   @override
   Widget build(BuildContext context) {
@@ -592,14 +595,17 @@ class _WhatHappensNextCard extends StatelessWidget {
           _NextStep(
             isDark: isDark,
             number: '1',
-            title: accepted ? 'Order accepted' : 'Supplier accepts your order',
+            title: accepted
+                ? 'Order accepted'
+                : '${businessType[0].toUpperCase()}${businessType.substring(1)} accepts your order',
             completed: accepted,
           ),
           const SizedBox(height: 11),
           _NextStep(
             isDark: isDark,
             number: '2',
-            title: 'Supplier prepares your order',
+            title:
+                '${businessType[0].toUpperCase()}${businessType.substring(1)} prepares your order',
             completed: false,
           ),
           const SizedBox(height: 11),

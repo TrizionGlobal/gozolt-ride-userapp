@@ -118,7 +118,7 @@ class _FoodGroceryRatingReviewScreenState
                     ),
                   ),
                   child: Text(
-                    'DONE',
+                    'Done',
                     style: AppTextStyles.labelLarge.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -338,7 +338,7 @@ class _FoodGroceryRatingReviewScreenState
                           ),
                         )
                       : Text(
-                          'SUBMIT REVIEW',
+                          'Submit Review',
                           style: AppTextStyles.labelLarge.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -349,7 +349,7 @@ class _FoodGroceryRatingReviewScreenState
               TextButton(
                 onPressed: rating.isSubmitting ? null : _skipReview,
                 child: Text(
-                  'SKIP FOR NOW',
+                  'Skip for now',
                   style: AppTextStyles.labelLarge.copyWith(
                     color: isDark
                         ? AppColors.textSecondary

@@ -86,6 +86,7 @@ import '../../features/food_grocery/presentation/screens/food_grocery_substituti
 import '../../features/food_grocery/presentation/screens/food_grocery_delivery_arrival_screen.dart';
 import '../../features/food_grocery/presentation/screens/food_grocery_order_completed_screen.dart';
 import '../../features/food_grocery/presentation/screens/food_grocery_rating_review_screen.dart';
+import '../../features/food_grocery/presentation/screens/food_grocery_delivery_chat_screen.dart';
 
 // Quick Services
 import '../../features/quick_services/presentation/screens/service_location_screen.dart';
@@ -2002,6 +2003,42 @@ final routerProvider = Provider<GoRouter>((ref) {
           return CustomTransitionPage(
             key: state.pageKey,
             child: const FoodGroceryRatingReviewScreen(),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) {
+              return SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(1, 0),
+                  end: Offset.zero,
+                ).animate(
+                  CurvedAnimation(
+                    parent: animation,
+                    curve: Curves.easeInOutCubic,
+                  ),
+                ),
+                child: child,
+              );
+            },
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/food-grocery/delivery-chat',
+        name: RouteNames.foodGroceryDeliveryChat,
+        pageBuilder: (context, state) {
+          final arguments = state.extra as FoodGroceryDeliveryChatArguments?;
+
+          return CustomTransitionPage<void>(
+            key: state.pageKey,
+            child: FoodGroceryDeliveryChatScreen(
+              orderId: arguments?.orderId ?? 'Pending',
+              partnerName: arguments?.partnerName ?? 'GOZOLT Delivery Partner',
+              partnerPhone: arguments?.partnerPhone,
+            ),
             transitionsBuilder: (
               context,
               animation,

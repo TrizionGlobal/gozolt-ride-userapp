@@ -26,7 +26,9 @@ class FoodGroceryCartNotifier extends StateNotifier<FoodGroceryCartState> {
       return CartAddResult.outOfStock;
     }
 
-    if (state.isNotEmpty && state.supplierId != item.supplierId) {
+    if (state.isNotEmpty &&
+        (state.supplierId != item.supplierId ||
+            state.cartType != item.cartType)) {
       return CartAddResult.differentSupplier;
     }
 

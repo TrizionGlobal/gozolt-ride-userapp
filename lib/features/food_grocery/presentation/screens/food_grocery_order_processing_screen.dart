@@ -9,6 +9,7 @@ import '../providers/food_grocery_cart_provider.dart';
 import '../providers/food_grocery_order_provider.dart';
 import '../providers/food_grocery_payment_provider.dart';
 import '../widgets/food_grocery_header.dart';
+import '../../data/models/food_grocery_cart.dart';
 
 class FoodGroceryOrderProcessingScreen extends ConsumerStatefulWidget {
   const FoodGroceryOrderProcessingScreen({
@@ -44,6 +45,12 @@ class _FoodGroceryOrderProcessingScreenState
       foodGroceryCartProvider,
     );
 
+    final orderType = cart.cartType;
+
+    if (orderType == null) {
+      return;
+    }
+
     final payment = ref.read(
       foodGroceryPaymentProvider,
     );
@@ -52,6 +59,7 @@ class _FoodGroceryOrderProcessingScreenState
 
     await ref.read(foodGroceryOrderProvider.notifier).placeTemporaryOrder(
           paymentMethodType: payment.paymentMethodType,
+          orderType: orderType,
           total: cart.total,
         );
   }
@@ -95,6 +103,13 @@ class _FoodGroceryOrderProcessingScreenState
       foodGroceryOrderProvider,
     );
 
+    final cart = ref.watch(
+      foodGroceryCartProvider,
+    );
+
+    final businessType =
+        cart.cartType == FoodGroceryCartType.grocery ? 'store' : 'restaurant';
+
     return PopScope(
       canPop: !orderState.isProcessing,
       child: Scaffold(
@@ -116,6 +131,7 @@ class _FoodGroceryOrderProcessingScreenState
                             'processing',
                           ),
                           isDark: isDark,
+                          businessType: businessType,
                         )
                       : orderState.isPlaced
                           ? _OrderPlacedView(
@@ -140,6 +156,7 @@ class _FoodGroceryOrderProcessingScreenState
                                     'initial',
                                   ),
                                   isDark: isDark,
+                                  businessType: businessType,
                                 ),
                 ),
               ),
@@ -188,7 +205,7 @@ class _FoodGroceryOrderProcessingScreenState
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'VIEW ORDER STATUS',
+                            'View order status',
                             style: AppTextStyles.labelLarge.copyWith(
                               fontWeight: FontWeight.w700,
                             ),
@@ -214,9 +231,11 @@ class _ProcessingView extends StatelessWidget {
   const _ProcessingView({
     super.key,
     required this.isDark,
+    required this.businessType,
   });
 
   final bool isDark;
+  final String businessType;
 
   @override
   Widget build(BuildContext context) {
@@ -284,7 +303,7 @@ class _ProcessingView extends StatelessWidget {
             _StatusStep(
               isDark: isDark,
               icon: Icons.storefront_outlined,
-              title: 'Sending order to supplier',
+              title: 'Sending order to $businessType',
               active: false,
             ),
             const SizedBox(height: 24),
@@ -350,8 +369,8 @@ class _OrderPlacedView extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Your order has been sent to the supplier '
-            'for acceptance.',
+            'Your order has been sent to the '
+            '${orderState.businessType} for acceptance.',
             textAlign: TextAlign.center,
             style: AppTextStyles.bodyMedium.copyWith(
               color: isDark
@@ -368,6 +387,7 @@ class _OrderPlacedView extends StatelessWidget {
           const SizedBox(height: 12),
           _AwaitingSupplierCard(
             isDark: isDark,
+            businessType: orderState.businessType,
           ),
         ],
       ),
@@ -437,9 +457,11 @@ class _OrderDetailsCard extends StatelessWidget {
 class _AwaitingSupplierCard extends StatelessWidget {
   const _AwaitingSupplierCard({
     required this.isDark,
+    required this.businessType,
   });
 
   final bool isDark;
+  final String businessType;
 
   @override
   Widget build(BuildContext context) {
@@ -475,7 +497,7 @@ class _AwaitingSupplierCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Awaiting supplier acceptance',
+                  'Awaiting $businessType acceptance',
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: isDark
                         ? AppColors.textPrimary
@@ -486,7 +508,7 @@ class _AwaitingSupplierCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   'We will notify you as soon as the '
-                  'supplier accepts your order.',
+                  '$businessType accepts your order.',
                   style: AppTextStyles.bodySmall.copyWith(
                     color: isDark
                         ? AppColors.textSecondary
@@ -575,7 +597,7 @@ class _OrderFailedView extends StatelessWidget {
                   size: 20,
                 ),
                 label: Text(
-                  'TRY AGAIN',
+                  'Try again',
                   style: AppTextStyles.labelLarge.copyWith(
                     fontWeight: FontWeight.w700,
                   ),

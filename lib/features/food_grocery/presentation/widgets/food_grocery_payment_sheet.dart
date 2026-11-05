@@ -180,7 +180,7 @@ class _FoodGroceryPaymentSheetState extends State<FoodGroceryPaymentSheet> {
                   ),
                 ),
                 child: Text(
-                  'CONFIRM PAYMENT METHOD',
+                  'Confirm Payment Method',
                   style: AppTextStyles.labelLarge.copyWith(
                     fontWeight: FontWeight.w700,
                   ),

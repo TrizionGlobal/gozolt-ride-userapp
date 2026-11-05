@@ -6,25 +6,39 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../providers/food_grocery_substitution_provider.dart';
 import '../widgets/food_grocery_header.dart';
+import '../providers/food_grocery_order_provider.dart';
 
 class FoodGrocerySubstitutionScreen extends ConsumerWidget {
   const FoodGrocerySubstitutionScreen({
     super.key,
   });
 
+  void _applyUpdatedOrderTotal(
+    WidgetRef ref,
+    FoodGrocerySubstitutionState substitutionState,
+  ) {
+    ref
+        .read(
+          foodGroceryOrderProvider.notifier,
+        )
+        .applySubstitutionAdjustment(
+          updatedTotal: substitutionState.updatedOrderTotal,
+        );
+  }
+
   Future<void> _submitDecisions(
     BuildContext context,
     WidgetRef ref,
   ) async {
-    final state = ref.read(
+    final notifier = ref.read(
+      foodGrocerySubstitutionProvider.notifier,
+    );
+
+    final currentState = ref.read(
       foodGrocerySubstitutionProvider,
     );
 
-    final allItemsSelected = state.items.every(
-      (item) => item.choice != GrocerySubstitutionChoice.undecided,
-    );
-
-    if (!allItemsSelected) {
+    if (!currentState.allDecisionsCompleted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -39,23 +53,197 @@ class FoodGrocerySubstitutionScreen extends ConsumerWidget {
       return;
     }
 
-    await ref.read(foodGrocerySubstitutionProvider.notifier).submitDecisions();
+    await notifier.submitDecisions();
 
     if (!context.mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Your substitution preference was submitted.',
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: AppColors.success,
-      ),
+    var updatedState = ref.read(
+      foodGrocerySubstitutionProvider,
     );
 
-    context.pop();
+    if (updatedState.progress ==
+        FoodGrocerySubstitutionProgress.additionalPaymentRequired) {
+      final paymentConfirmed = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) {
+          final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
+
+          return AlertDialog(
+            backgroundColor: isDark ? AppColors.cardDark : Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
+            title: Text(
+              'Additional payment required',
+              style: AppTextStyles.titleMedium.copyWith(
+                color:
+                    isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Your selected replacement costs more than the unavailable item.',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: isDark
+                        ? AppColors.textSecondary
+                        : AppColors.textSecondaryLight,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _PaymentDialogRow(
+                  label: 'Additional payment',
+                  value:
+                      '\u20AC${updatedState.additionalPaymentAmount.toStringAsFixed(2)}',
+                  isDark: isDark,
+                  highlight: true,
+                ),
+                const SizedBox(height: 9),
+                _PaymentDialogRow(
+                  label: 'Updated order total',
+                  value:
+                      '\u20AC${updatedState.updatedOrderTotal.toStringAsFixed(2)}',
+                  isDark: isDark,
+                ),
+                const SizedBox(height: 13),
+                Text(
+                  'The store will continue preparing your order only after this payment succeeds.',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: isDark
+                        ? AppColors.textSecondary
+                        : AppColors.textSecondaryLight,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(false);
+                },
+                child: Text(
+                  'NOT NOW',
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: isDark
+                        ? AppColors.textSecondary
+                        : AppColors.textSecondaryLight,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(dialogContext).pop(true);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGold,
+                  foregroundColor: AppColors.backgroundDark,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'PAY \u20AC${updatedState.additionalPaymentAmount.toStringAsFixed(2)}',
+                  style: AppTextStyles.labelLarge.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (paymentConfirmed != true || !context.mounted) {
+        return;
+      }
+
+      await notifier.completeAdditionalPayment();
+
+      if (!context.mounted) return;
+
+      updatedState = ref.read(
+        foodGrocerySubstitutionProvider,
+      );
+
+      if (updatedState.progress == FoodGrocerySubstitutionProgress.confirmed) {
+        _applyUpdatedOrderTotal(
+          ref,
+          updatedState,
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Additional payment completed. Replacement confirmed.',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Colors.white,
+              ),
+            ),
+            backgroundColor: AppColors.success,
+          ),
+        );
+
+        context.pop();
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            updatedState.errorMessage ??
+                'Additional payment could not be completed.',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Colors.white,
+            ),
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    if (updatedState.progress ==
+        FoodGrocerySubstitutionProgress.refundInitiated) {
+      _applyUpdatedOrderTotal(ref, updatedState);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Refund of \u20AC${updatedState.refundAmount.toStringAsFixed(2)} initiated. Your remaining order will continue.',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Colors.white,
+            ),
+          ),
+          backgroundColor: AppColors.success,
+        ),
+      );
+
+      context.pop();
+      return;
+    }
+
+    if (updatedState.progress == FoodGrocerySubstitutionProgress.confirmed) {
+      _applyUpdatedOrderTotal(ref, updatedState);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Your replacement selection has been confirmed.',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: Colors.white,
+            ),
+          ),
+          backgroundColor: AppColors.success,
+        ),
+      );
+
+      context.pop();
+    }
   }
 
   @override
@@ -70,22 +258,13 @@ class FoodGrocerySubstitutionScreen extends ConsumerWidget {
       (item) => item.choice != GrocerySubstitutionChoice.undecided,
     );
 
-    final priceDifference = substitutionState.items.fold<double>(
-      0,
-      (total, item) {
-        switch (item.choice) {
-          case GrocerySubstitutionChoice.replacement:
-            return total +
-                (item.suggestedPrice * item.quantity - item.originalTotal);
+    final priceDifference = substitutionState.priceDifference;
 
-          case GrocerySubstitutionChoice.refund:
-            return total - item.originalTotal;
-
-          case GrocerySubstitutionChoice.undecided:
-            return total;
-        }
-      },
-    );
+    final primaryButtonText = priceDifference > 0
+        ? 'Continue to Payment'
+        : priceDifference < 0
+            ? 'Confirm & Update Order'
+            : 'Confirm Selection';
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -127,6 +306,17 @@ class FoodGrocerySubstitutionScreen extends ConsumerWidget {
                                     GrocerySubstitutionChoice.replacement,
                                   );
                             },
+                            onAnotherReplacementSelected: () {
+                              ref
+                                  .read(
+                                    foodGrocerySubstitutionProvider.notifier,
+                                  )
+                                  .selectChoice(
+                                    item.id,
+                                    GrocerySubstitutionChoice
+                                        .anotherReplacement,
+                                  );
+                            },
                             onRefundSelected: () {
                               ref
                                   .read(
@@ -142,7 +332,10 @@ class FoodGrocerySubstitutionScreen extends ConsumerWidget {
                       ),
                       _PriceDifferenceCard(
                         isDark: isDark,
-                        difference: priceDifference,
+                        originalOrderTotal:
+                            substitutionState.originalOrderTotal,
+                        difference: substitutionState.priceDifference,
+                        updatedOrderTotal: substitutionState.updatedOrderTotal,
                       ),
                     ],
                   ),
@@ -199,7 +392,7 @@ class FoodGrocerySubstitutionScreen extends ConsumerWidget {
                             ),
                           )
                         : Text(
-                            'CONFIRM SELECTION',
+                            primaryButtonText,
                             style: AppTextStyles.labelLarge.copyWith(
                               color: allItemsSelected
                                   ? AppColors.backgroundDark
@@ -269,12 +462,14 @@ class _UnavailableItemCard extends StatelessWidget {
     required this.item,
     required this.isDark,
     required this.onReplacementSelected,
+    required this.onAnotherReplacementSelected,
     required this.onRefundSelected,
   });
 
   final GroceryUnavailableItem item;
   final bool isDark;
   final VoidCallback onReplacementSelected;
+  final VoidCallback onAnotherReplacementSelected;
   final VoidCallback onRefundSelected;
 
   @override
@@ -361,11 +556,22 @@ class _UnavailableItemCard extends StatelessWidget {
           const SizedBox(height: 9),
           _ChoiceTile(
             isDark: isDark,
+            selected:
+                item.choice == GrocerySubstitutionChoice.anotherReplacement,
+            title: 'Choose alternative',
+            subtitle: item.alternativeName,
+            trailing: '\u20AC${item.alternativePrice.toStringAsFixed(2)}',
+            icon: Icons.compare_arrows_rounded,
+            onTap: onAnotherReplacementSelected,
+          ),
+          const SizedBox(height: 9),
+          _ChoiceTile(
+            isDark: isDark,
             selected: item.choice == GrocerySubstitutionChoice.refund,
             title: 'Refund this item',
             subtitle: 'Remove the unavailable item from my order',
             trailing: '€${item.originalTotal.toStringAsFixed(2)}',
-            icon: Icons.currency_exchange_rounded,
+            icon: Icons.euro_rounded,
             onTap: onRefundSelected,
           ),
         ],
@@ -504,19 +710,46 @@ class _ChoiceTile extends StatelessWidget {
 class _PriceDifferenceCard extends StatelessWidget {
   const _PriceDifferenceCard({
     required this.isDark,
+    required this.originalOrderTotal,
     required this.difference,
+    required this.updatedOrderTotal,
   });
 
   final bool isDark;
+  final double originalOrderTotal;
   final double difference;
+  final double updatedOrderTotal;
 
   @override
   Widget build(BuildContext context) {
-    final differenceText = difference == 0
-        ? 'No price change'
-        : difference > 0
-            ? '+€${difference.toStringAsFixed(2)}'
-            : '-€${difference.abs().toStringAsFixed(2)}';
+    final hasAdditionalPayment = difference > 0;
+    final hasRefund = difference < 0;
+
+    final adjustmentLabel = hasAdditionalPayment
+        ? 'Additional payment'
+        : hasRefund
+            ? 'Refund amount'
+            : 'Price adjustment';
+
+    final adjustmentValue = hasAdditionalPayment
+        ? '+\u20AC${difference.toStringAsFixed(2)}'
+        : hasRefund
+            ? '-\u20AC${difference.abs().toStringAsFixed(2)}'
+            : '\u20AC0.00';
+
+    final adjustmentColor = hasAdditionalPayment
+        ? AppColors.error
+        : hasRefund
+            ? AppColors.success
+            : isDark
+                ? AppColors.textPrimary
+                : AppColors.textPrimaryLight;
+
+    final message = hasAdditionalPayment
+        ? 'Payment is required before the store can continue preparing your order.'
+        : hasRefund
+            ? 'The refund will be initiated and the remaining order will continue.'
+            : 'There is no change to your order total.';
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -527,40 +760,127 @@ class _PriceDifferenceCard extends StatelessWidget {
           color: isDark ? AppColors.borderDark : AppColors.borderLight,
         ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(
-            Icons.receipt_long_outlined,
-            size: 21,
-            color: AppColors.primaryGoldDark,
+          Row(
+            children: [
+              const Icon(
+                Icons.receipt_long_outlined,
+                size: 21,
+                color: AppColors.primaryGoldDark,
+              ),
+              const SizedBox(width: 9),
+              Text(
+                'PRICE SUMMARY',
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: isDark
+                      ? AppColors.textPrimary
+                      : AppColors.textPrimaryLight,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.4,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 10),
-          Expanded(
+          const SizedBox(height: 14),
+          _SubstitutionPriceRow(
+            label: 'Original order total',
+            value: '\u20AC${originalOrderTotal.toStringAsFixed(2)}',
+            isDark: isDark,
+          ),
+          const SizedBox(height: 10),
+          _SubstitutionPriceRow(
+            label: adjustmentLabel,
+            value: adjustmentValue,
+            isDark: isDark,
+            valueColor: adjustmentColor,
+          ),
+          const SizedBox(height: 12),
+          Divider(
+            height: 1,
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          ),
+          const SizedBox(height: 12),
+          _SubstitutionPriceRow(
+            label: 'Updated order total',
+            value: '\u20AC${updatedOrderTotal.toStringAsFixed(2)}',
+            isDark: isDark,
+            isTotal: true,
+          ),
+          const SizedBox(height: 13),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(11),
+            decoration: BoxDecoration(
+              color: hasAdditionalPayment
+                  ? AppColors.error.withValues(alpha: 0.08)
+                  : hasRefund
+                      ? AppColors.success.withValues(alpha: 0.08)
+                      : AppColors.primaryGold.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(11),
+            ),
             child: Text(
-              'Estimated price difference',
+              message,
               style: AppTextStyles.bodySmall.copyWith(
                 color: isDark
                     ? AppColors.textSecondary
                     : AppColors.textSecondaryLight,
                 fontWeight: FontWeight.w500,
+                height: 1.4,
               ),
-            ),
-          ),
-          Text(
-            differenceText,
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: difference > 0
-                  ? AppColors.error
-                  : difference < 0
-                      ? AppColors.success
-                      : isDark
-                          ? AppColors.textPrimary
-                          : AppColors.textPrimaryLight,
-              fontWeight: FontWeight.w700,
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SubstitutionPriceRow extends StatelessWidget {
+  const _SubstitutionPriceRow({
+    required this.label,
+    required this.value,
+    required this.isDark,
+    this.valueColor,
+    this.isTotal = false,
+  });
+
+  final String label;
+  final String value;
+  final bool isDark;
+  final Color? valueColor;
+  final bool isTotal;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style:
+                (isTotal ? AppTextStyles.bodyMedium : AppTextStyles.bodySmall)
+                    .copyWith(
+              color: isDark
+                  ? AppColors.textSecondary
+                  : AppColors.textSecondaryLight,
+              fontWeight: isTotal ? FontWeight.w600 : FontWeight.w500,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          value,
+          style:
+              (isTotal ? AppTextStyles.titleMedium : AppTextStyles.bodyMedium)
+                  .copyWith(
+            color: valueColor ??
+                (isDark ? AppColors.textPrimary : AppColors.textPrimaryLight),
+            fontWeight: isTotal ? FontWeight.w800 : FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -665,6 +985,51 @@ class _EmptySubstitutionState extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _PaymentDialogRow extends StatelessWidget {
+  const _PaymentDialogRow({
+    required this.label,
+    required this.value,
+    required this.isDark,
+    this.highlight = false,
+  });
+
+  final String label;
+  final String value;
+  final bool isDark;
+  final bool highlight;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: isDark
+                  ? AppColors.textSecondary
+                  : AppColors.textSecondaryLight,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Text(
+          value,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: highlight
+                ? AppColors.error
+                : isDark
+                    ? AppColors.textPrimary
+                    : AppColors.textPrimaryLight,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -111,7 +111,7 @@ class _FoodItemDetailsScreenState extends ConsumerState<FoodItemDetailsScreen> {
                 Navigator.pop(dialogContext, false);
               },
               child: Text(
-                'KEEP CURRENT CART',
+                'Keep Current Cart',
                 style: AppTextStyles.labelLarge.copyWith(
                   color: isDark
                       ? AppColors.textSecondary
@@ -132,7 +132,7 @@ class _FoodItemDetailsScreenState extends ConsumerState<FoodItemDetailsScreen> {
                 ),
               ),
               child: Text(
-                'START NEW CART',
+                'Start New Cart',
                 style: AppTextStyles.labelLarge.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -296,7 +296,8 @@ class _FoodItemDetailsScreenState extends ConsumerState<FoodItemDetailsScreen> {
 
     final canAddToCart = widget.restaurant.isOrderable &&
         widget.item.isAvailable &&
-        customizationState.requiredSelectionsComplete;
+        customizationState.requiredSelectionsComplete &&
+        customizationState.quantity > 0;
 
     final sortedGroups = [
       ...customizationState.groups,
@@ -472,7 +473,7 @@ class _FoodItemDetailsScreenState extends ConsumerState<FoodItemDetailsScreen> {
                 ),
               ),
               child: Text(
-                'ADD TO CART — €${customizationState.totalPrice.toStringAsFixed(2)}',
+                'Add to Cart — €${customizationState.totalPrice.toStringAsFixed(2)}',
                 style: AppTextStyles.labelLarge.copyWith(
                   color: canAddToCart
                       ? AppColors.backgroundDark
@@ -753,6 +754,8 @@ class _ModifierGroupCard extends StatelessWidget {
     final missingRequired =
         group.isRequired && selectedCount < group.minimumSelection;
 
+    final requiredCompleted = group.isRequired && !missingRequired;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -761,9 +764,12 @@ class _ModifierGroupCard extends StatelessWidget {
         border: Border.all(
           color: missingRequired
               ? AppColors.primaryGold
-              : isDark
-                  ? AppColors.borderDark
-                  : AppColors.borderLight,
+              : requiredCompleted
+                  ? AppColors.success
+                  : isDark
+                      ? AppColors.borderDark
+                      : AppColors.borderLight,
+          width: group.isRequired ? 1.2 : 1,
         ),
       ),
       child: Column(
@@ -789,15 +795,34 @@ class _ModifierGroupCard extends StatelessWidget {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryGold.withValues(alpha: 0.15),
+                    color: requiredCompleted
+                        ? AppColors.success.withValues(alpha: 0.12)
+                        : AppColors.error.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Text(
-                    'REQUIRED',
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: AppColors.primaryGoldDark,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        requiredCompleted
+                            ? Icons.check_circle_rounded
+                            : Icons.error_outline_rounded,
+                        size: 13,
+                        color: requiredCompleted
+                            ? AppColors.success
+                            : AppColors.error,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        requiredCompleted ? 'SELECTED' : 'REQUIRED',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: requiredCompleted
+                              ? AppColors.success
+                              : AppColors.error,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
             ],
@@ -982,7 +1007,7 @@ class _QuantityCard extends StatelessWidget {
             child: Row(
               children: [
                 IconButton(
-                  onPressed: quantity > 1 ? onDecrease : null,
+                  onPressed: quantity > 0 ? onDecrease : null,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints.tightFor(
                     width: 38,

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/food_item_customization.dart';
 import '../../data/models/restaurant_menu.dart';
 
-final foodItemCustomizationProvider = StateNotifierProvider.family<
+final foodItemCustomizationProvider = StateNotifierProvider.autoDispose.family<
     FoodItemCustomizationNotifier,
     FoodItemCustomizationState,
     RestaurantMenuItem>(
@@ -420,7 +420,7 @@ class FoodItemCustomizationNotifier
   }
 
   void decreaseQuantity() {
-    if (state.quantity <= 1) {
+    if (state.quantity <= 0) {
       return;
     }
 

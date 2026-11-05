@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/grocery_catalogue.dart';
 import '../../data/models/grocery_product_details.dart';
 
-final groceryProductDetailsProvider = StateNotifierProvider.family<
+final groceryProductDetailsProvider = StateNotifierProvider.autoDispose.family<
     GroceryProductDetailsNotifier, GroceryProductDetailsState, GroceryProduct>(
   (ref, product) {
     return GroceryProductDetailsNotifier(product);
@@ -250,7 +250,7 @@ class GroceryProductDetailsNotifier
   }
 
   void decreaseQuantity() {
-    if (state.quantity <= 1) {
+    if (state.quantity <= 0) {
       return;
     }
 

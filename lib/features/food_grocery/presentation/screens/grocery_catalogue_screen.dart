@@ -7,7 +7,9 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/grocery_catalogue.dart';
 import '../../data/models/grocery_store.dart';
+import '../../data/models/food_grocery_cart.dart';
 import '../providers/grocery_catalogue_provider.dart';
+import '../providers/food_grocery_cart_provider.dart';
 import '../widgets/food_grocery_header.dart';
 
 class GroceryCatalogueScreen extends ConsumerStatefulWidget {
@@ -95,10 +97,28 @@ class _GroceryCatalogueScreenState
     );
   }
 
-  void _addProduct(
+  String _groceryLineId(GroceryProduct product) {
+    return 'grocery:${widget.store.id}:${product.id}';
+  }
+
+  int _cartQuantityFor(
+    FoodGroceryCartState cart,
     GroceryProduct product,
-    GroceryCatalogueState catalogueState,
   ) {
+    for (final item in cart.items) {
+      if (item.supplierId == widget.store.id &&
+          item.productId == product.id &&
+          item.cartType == FoodGroceryCartType.grocery) {
+        return item.quantity;
+      }
+    }
+
+    return 0;
+  }
+
+  Future<void> _addProduct(
+    GroceryProduct product,
+  ) async {
     if (!widget.store.isOrderable) {
       _showMessage(
         'This store is no longer accepting orders',
@@ -106,7 +126,8 @@ class _GroceryCatalogueScreenState
       return;
     }
 
-    if (product.stockStatus == GroceryProductStockStatus.outOfStock) {
+    if (!product.isActive ||
+        product.stockStatus == GroceryProductStockStatus.outOfStock) {
       _showMessage(
         '${product.name} is currently out of stock',
       );
@@ -119,7 +140,11 @@ class _GroceryCatalogueScreenState
       return;
     }
 
-    final currentQuantity = catalogueState.quantityFor(product.id);
+    final cart = ref.read(foodGroceryCartProvider);
+    final currentQuantity = _cartQuantityFor(
+      cart,
+      product,
+    );
 
     if (currentQuantity >= product.allowedQuantity) {
       _showMessage(
@@ -128,13 +153,113 @@ class _GroceryCatalogueScreenState
       return;
     }
 
-    ref
-        .read(
-          groceryCatalogueProvider(
-            widget.store.id,
-          ).notifier,
-        )
-        .addSimpleProduct(product);
+    final cartItem = FoodGroceryCartItem(
+      lineId: _groceryLineId(product),
+      productId: product.id,
+      supplierId: widget.store.id,
+      supplierName: widget.store.name,
+      name: product.name,
+      cartType: FoodGroceryCartType.grocery,
+      unitPrice: product.currentPrice,
+      quantity: 1,
+      imageUrl: product.imageUrl,
+      variantName: product.unitText,
+      maximumQuantity: product.allowedQuantity,
+    );
+
+    final result = ref.read(foodGroceryCartProvider.notifier).addItem(cartItem);
+
+    switch (result) {
+      case CartAddResult.added:
+      case CartAddResult.updated:
+        return;
+
+      case CartAddResult.outOfStock:
+        _showMessage(
+          'Only ${product.allowedQuantity} available',
+        );
+        return;
+
+      case CartAddResult.differentSupplier:
+        final replaceCart = await _confirmReplaceCart();
+
+        if (!mounted || !replaceCart) {
+          return;
+        }
+
+        ref.read(foodGroceryCartProvider.notifier).replaceCartWith(cartItem);
+
+        _showMessage(
+          '${product.name} added to your new cart',
+        );
+        return;
+    }
+  }
+
+  Future<bool> _confirmReplaceCart() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor:
+              isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          title: Text(
+            'Start a new cart?',
+            style: AppTextStyles.titleMedium.copyWith(
+              color:
+                  isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: Text(
+            'Your cart contains items from another restaurant or store. '
+            'Starting a new cart will remove those items.',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: isDark
+                  ? AppColors.textSecondary
+                  : AppColors.textSecondaryLight,
+              height: 1.4,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(false);
+              },
+              child: Text(
+                'Keep Current Cart',
+                style: AppTextStyles.labelSmall.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(true);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGold,
+                foregroundColor: AppColors.backgroundDark,
+                elevation: 0,
+              ),
+              child: Text(
+                'Start New Cart',
+                style: AppTextStyles.labelSmall.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    return confirmed ?? false;
   }
 
   Future<void> _showOfferDetails() async {
@@ -241,6 +366,17 @@ class _GroceryCatalogueScreenState
       groceryCatalogueProvider(widget.store.id),
     );
 
+    final cart = ref.watch(
+      foodGroceryCartProvider,
+    );
+
+    final isCurrentStoreCart = cart.cartType == FoodGroceryCartType.grocery &&
+        cart.supplierId == widget.store.id;
+
+    final storeCartItemCount = isCurrentStoreCart ? cart.itemCount : 0;
+
+    final storeCartSubtotal = isCurrentStoreCart ? cart.subtotal : 0.0;
+
     final visibleProducts = _visibleProducts(catalogueState);
 
     return Scaffold(
@@ -299,7 +435,7 @@ class _GroceryCatalogueScreenState
                   const SizedBox(height: 12),
                   _MinimumOrderProgress(
                     minimumOrder: widget.store.minimumOrder,
-                    currentSubtotal: catalogueState.cartSubtotal,
+                    currentSubtotal: storeCartSubtotal,
                     isDark: isDark,
                   ),
                   const SizedBox(height: 18),
@@ -394,8 +530,9 @@ class _GroceryCatalogueScreenState
                                 width: cardWidth,
                                 child: _GroceryProductCard(
                                   product: product,
-                                  quantity: catalogueState.quantityFor(
-                                    product.id,
+                                  quantity: _cartQuantityFor(
+                                    cart,
+                                    product,
                                   ),
                                   storeOrderable: widget.store.isOrderable,
                                   isDark: isDark,
@@ -405,26 +542,16 @@ class _GroceryCatalogueScreenState
                                     );
                                   },
                                   onAdd: () {
-                                    _addProduct(
-                                      product,
-                                      catalogueState,
-                                    );
+                                    _addProduct(product);
                                   },
                                   onIncrease: () {
-                                    _addProduct(
-                                      product,
-                                      catalogueState,
-                                    );
+                                    _addProduct(product);
                                   },
                                   onDecrease: () {
                                     ref
-                                        .read(
-                                          groceryCatalogueProvider(
-                                            widget.store.id,
-                                          ).notifier,
-                                        )
-                                        .decreaseProduct(
-                                          product,
+                                        .read(foodGroceryCartProvider.notifier)
+                                        .decreaseQuantity(
+                                          _groceryLineId(product),
                                         );
                                   },
                                 ),
@@ -440,7 +567,7 @@ class _GroceryCatalogueScreenState
           ),
         ],
       ),
-      bottomNavigationBar: catalogueState.cartItemCount == 0
+      bottomNavigationBar: storeCartItemCount == 0
           ? null
           : SafeArea(
               top: false,
@@ -495,7 +622,7 @@ class _GroceryCatalogueScreenState
                             ),
                           ),
                           child: Text(
-                            '${catalogueState.cartItemCount}',
+                            '$storeCartItemCount',
                             style: AppTextStyles.labelSmall.copyWith(
                               color: AppColors.backgroundDark,
                               fontWeight: FontWeight.w700,
@@ -505,7 +632,7 @@ class _GroceryCatalogueScreenState
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            '${catalogueState.cartItemCount} ${catalogueState.cartItemCount == 1 ? 'Item' : 'Items'} • €${catalogueState.cartSubtotal.toStringAsFixed(2)}',
+                            '$storeCartItemCount ${storeCartItemCount == 1 ? 'Item' : 'Items'} • €${storeCartSubtotal.toStringAsFixed(2)}',
                             style: AppTextStyles.labelLarge.copyWith(
                               color: AppColors.backgroundDark,
                               fontWeight: FontWeight.w700,
@@ -513,7 +640,7 @@ class _GroceryCatalogueScreenState
                           ),
                         ),
                         Text(
-                          'VIEW CART',
+                          'View cart',
                           style: AppTextStyles.labelLarge.copyWith(
                             color: AppColors.backgroundDark,
                             fontWeight: FontWeight.w700,
@@ -661,37 +788,50 @@ class _StoreOverviewCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 11),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 8,
-                  children: [
-                    _StoreDetailItem(
-                      icon: Icons.star_rounded,
-                      value: '${store.rating} (${store.ratingCount})',
-                      iconColor: AppColors.primaryGoldDark,
-                      isDark: isDark,
-                    ),
-                    _StoreDetailItem(
-                      icon: Icons.schedule_rounded,
-                      value: store.estimatedDeliveryTime,
-                      isDark: isDark,
-                    ),
-                    _StoreDetailItem(
-                      icon: Icons.delivery_dining_rounded,
-                      value: store.deliveryFeeText,
-                      isDark: isDark,
-                    ),
-                    _StoreDetailItem(
-                      icon: Icons.location_on_outlined,
-                      value: store.distanceText,
-                      isDark: isDark,
-                    ),
-                    _StoreDetailItem(
-                      icon: Icons.shopping_bag_outlined,
-                      value: store.minimumOrderText,
-                      isDark: isDark,
-                    ),
-                  ],
+                IntrinsicHeight(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 6,
+                        child: _StoreDetailItem(
+                          icon: Icons.star_rounded,
+                          value: store.rating.toString(),
+                          iconColor: AppColors.primaryGoldDark,
+                          isDark: isDark,
+                        ),
+                      ),
+                      _StoreDetailDivider(isDark: isDark),
+                      Expanded(
+                        flex: 10,
+                        child: _StoreDetailItem(
+                          icon: Icons.schedule_rounded,
+                          value: store.estimatedDeliveryTime,
+                          isDark: isDark,
+                        ),
+                      ),
+                      _StoreDetailDivider(isDark: isDark),
+                      Expanded(
+                        flex: 8,
+                        child: _StoreDetailItem(
+                          icon: Icons.location_on_outlined,
+                          value: store.distanceText,
+                          isDark: isDark,
+                        ),
+                      ),
+                      _StoreDetailDivider(isDark: isDark),
+                      Expanded(
+                        flex: 13,
+                        child: _StoreDetailItem(
+                          icon: Icons.delivery_dining_rounded,
+                          value: store.deliveryFeeText,
+                          iconColor: store.hasFreeDelivery
+                              ? AppColors.success
+                              : AppColors.primaryGoldDark,
+                          isDark: isDark,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -736,24 +876,54 @@ class _StoreDetailItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 16,
-          color: iconColor ??
-              (isDark ? AppColors.textSecondary : AppColors.textSecondaryLight),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          value,
-          style: AppTextStyles.labelSmall.copyWith(
-            color:
-                isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+    final secondaryColor =
+        isDark ? AppColors.textSecondary : AppColors.textSecondaryLight;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            size: 15,
+            color: iconColor ?? secondaryColor,
           ),
-        ),
-      ],
+          const SizedBox(width: 3),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                maxLines: 1,
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: secondaryColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StoreDetailDivider extends StatelessWidget {
+  const _StoreDetailDivider({
+    required this.isDark,
+  });
+
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 1,
+      margin: const EdgeInsets.symmetric(vertical: 2),
+      color: (isDark ? AppColors.borderDark : AppColors.borderLight)
+          .withValues(alpha: 0.75),
     );
   }
 }

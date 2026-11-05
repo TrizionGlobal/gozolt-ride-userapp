@@ -116,8 +116,10 @@ class _FoodGroceryReviewOrderScreenState
                       children: [
                         _SupplierRow(
                           isDark: isDark,
-                          supplierName:
-                              cart.supplierName ?? 'Selected supplier',
+                          supplierName: cart.supplierName ??
+                              (cart.cartType == FoodGroceryCartType.grocery
+                                  ? 'Selected store'
+                                  : 'Selected restaurant'),
                           itemCount: cart.itemCount,
                         ),
                         const SizedBox(height: 12),
@@ -210,33 +212,34 @@ class _FoodGroceryReviewOrderScreenState
                             ],
                           ),
                   ),
-                  const SizedBox(height: 12),
-                  _ReviewCard(
-                    isDark: isDark,
-                    title: 'DELIVERY PREFERENCE',
-                    icon: Icons.delivery_dining_outlined,
-                    child: Column(
-                      children: [
-                        _DetailRow(
-                          isDark: isDark,
-                          label: 'Hand-off',
-                          value: delivery.leaveAtDoor
-                              ? 'Leave at the door'
-                              : 'Meet at the door',
-                        ),
-                        if (delivery.deliveryInstructions
-                            .trim()
-                            .isNotEmpty) ...[
-                          const SizedBox(height: 10),
+                  if (delivery.leaveAtDoor) ...[
+                    const SizedBox(height: 12),
+                    _ReviewCard(
+                      isDark: isDark,
+                      title: 'DELIVERY PREFERENCE',
+                      icon: Icons.door_front_door_outlined,
+                      iconColor: AppColors.success,
+                      child: Column(
+                        children: [
                           _DetailRow(
                             isDark: isDark,
-                            label: 'Instructions',
-                            value: delivery.deliveryInstructions.trim(),
+                            label: 'Hand-off',
+                            value: 'Leave at the door',
                           ),
+                          if (delivery.deliveryInstructions
+                              .trim()
+                              .isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            _DetailRow(
+                              isDark: isDark,
+                              label: 'Instructions',
+                              value: delivery.deliveryInstructions.trim(),
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                   const SizedBox(height: 12),
                   if (cart.discount > 0) ...[
                     _AppliedGoCoinsCard(
@@ -250,14 +253,6 @@ class _FoodGroceryReviewOrderScreenState
                     isDark: isDark,
                     cart: cart,
                   ),
-                  if (cart.items.any(
-                    (item) => item.isEstimatedWeight,
-                  )) ...[
-                    const SizedBox(height: 12),
-                    _EstimatedWeightNotice(
-                      isDark: isDark,
-                    ),
-                  ],
                   const SizedBox(height: 12),
                   _ReviewCard(
                     isDark: isDark,
@@ -356,7 +351,7 @@ class _FoodGroceryReviewOrderScreenState
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'CONTINUE TO PAYMENT',
+                        'Continue to payment',
                         style: AppTextStyles.labelLarge.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
@@ -419,14 +414,21 @@ class _AppliedGoCoinsCard extends StatelessWidget {
           Container(
             width: 38,
             height: 38,
+            padding: const EdgeInsets.all(3),
             decoration: BoxDecoration(
-              color: AppColors.primaryGold.withValues(alpha: 0.18),
+              color: AppColors.primaryGold.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.stars_rounded,
-              size: 21,
-              color: AppColors.primaryGold,
+            child: Image.asset(
+              'assets/images/icon_gocoin.png',
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return const Icon(
+                  Icons.toll_rounded,
+                  size: 21,
+                  color: AppColors.primaryGoldDark,
+                );
+              },
             ),
           ),
           const SizedBox(width: 12),
@@ -460,7 +462,7 @@ class _AppliedGoCoinsCard extends StatelessWidget {
           Text(
             '-€${discount.toStringAsFixed(2)}',
             style: AppTextStyles.bodyMedium.copyWith(
-              color: AppColors.primaryGold,
+              color: AppColors.success,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -476,6 +478,7 @@ class _ReviewCard extends StatelessWidget {
     required this.title,
     required this.icon,
     required this.child,
+    this.iconColor,
     this.trailing,
   });
 
@@ -483,6 +486,7 @@ class _ReviewCard extends StatelessWidget {
   final String title;
   final IconData icon;
   final Widget child;
+  final Color? iconColor;
   final Widget? trailing;
 
   @override
@@ -504,7 +508,7 @@ class _ReviewCard extends StatelessWidget {
               Icon(
                 icon,
                 size: 19,
-                color: AppColors.primaryGold,
+                color: iconColor ?? AppColors.primaryGold,
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -931,49 +935,6 @@ class _AgreementRow extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _EstimatedWeightNotice extends StatelessWidget {
-  const _EstimatedWeightNotice({
-    required this.isDark,
-  });
-
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.primaryGold.withValues(
-          alpha: 0.10,
-        ),
-        borderRadius: BorderRadius.circular(13),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            Icons.scale_outlined,
-            size: 19,
-            color: AppColors.primaryGold,
-          ),
-          const SizedBox(width: 9),
-          Expanded(
-            child: Text(
-              'The final price of weighted grocery items '
-              'may change slightly after preparation.',
-              style: AppTextStyles.bodySmall.copyWith(
-                color:
-                    isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
-                height: 1.4,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -8,7 +8,6 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../ride/data/models/location_data.dart';
 import '../../../ride/presentation/screens/map_pin_selection_screen.dart';
-import '../widgets/food_grocery_header.dart';
 
 class FoodGroceryHomeScreen extends StatefulWidget {
   const FoodGroceryHomeScreen({super.key});
@@ -223,11 +222,12 @@ class _FoodGroceryHomeScreenState extends State<FoodGroceryHomeScreen> {
       backgroundColor: backgroundColor,
       body: Column(
         children: [
-          FoodGroceryHeader(
-            title: 'Food & Groceries',
+          _FoodGroceryHomeHeader(
             deliveryLocation: _deliveryLocation,
-            onChangeLocation: _changeLocation,
-            onBack: () {
+            isDetectingLocation: _isDetectingLocation,
+            isDark: isDark,
+            onLocationPressed: _changeLocation,
+            onBackPressed: () {
               context.goNamed(RouteNames.home);
             },
           ),
@@ -235,7 +235,7 @@ class _FoodGroceryHomeScreenState extends State<FoodGroceryHomeScreen> {
             child: SafeArea(
               top: false,
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
                 children: [
                   _SearchField(
                     controller: _searchController,
@@ -387,6 +387,139 @@ class _FoodGroceryHomeScreenState extends State<FoodGroceryHomeScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FoodGroceryHomeHeader extends StatelessWidget {
+  const _FoodGroceryHomeHeader({
+    required this.deliveryLocation,
+    required this.isDetectingLocation,
+    required this.isDark,
+    required this.onLocationPressed,
+    required this.onBackPressed,
+  });
+
+  final String deliveryLocation;
+  final bool isDetectingLocation;
+  final bool isDark;
+  final VoidCallback onLocationPressed;
+  final VoidCallback onBackPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final primaryTextColor =
+        isDark ? AppColors.textPrimary : AppColors.textPrimaryLight;
+
+    return SafeArea(
+      bottom: false,
+      child: Container(
+        color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+        padding: const EdgeInsets.fromLTRB(
+          12,
+          10,
+          16,
+          6,
+        ),
+        child: Row(
+          children: [
+            Material(
+              color: Colors.transparent,
+              shape: const CircleBorder(),
+              child: InkWell(
+                onTap: onBackPressed,
+                customBorder: const CircleBorder(),
+                child: SizedBox(
+                  width: 42,
+                  height: 42,
+                  child: Icon(
+                    Icons.arrow_back_rounded,
+                    size: 22,
+                    color: isDark
+                        ? AppColors.primaryGold
+                        : AppColors.backgroundDark,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: onLocationPressed,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 5,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGold.withValues(
+                              alpha: 0.16,
+                            ),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.location_on_rounded,
+                            size: 21,
+                            color: AppColors.primaryGoldDark,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'DELIVER TO',
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  color: AppColors.primaryGoldDark,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.6,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                deliveryLocation,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: primaryTextColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (isDetectingLocation) ...[
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            width: 17,
+                            height: 17,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: isDark
+                                  ? AppColors.primaryGold
+                                  : AppColors.primaryGoldDark,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

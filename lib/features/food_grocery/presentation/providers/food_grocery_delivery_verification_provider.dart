@@ -13,6 +13,7 @@ class FoodGroceryDeliveryVerificationState {
     this.amount = 0,
     this.paymentStatus = FoodGroceryDeliveryPaymentStatus.paidOnline,
     this.isDeliveryPartnerArrived = false,
+    this.isPinVerified = false,
     this.isOrderReceived = false,
     this.isConfirming = false,
   });
@@ -22,6 +23,7 @@ class FoodGroceryDeliveryVerificationState {
   final double amount;
   final FoodGroceryDeliveryPaymentStatus paymentStatus;
   final bool isDeliveryPartnerArrived;
+  final bool isPinVerified;
   final bool isOrderReceived;
   final bool isConfirming;
 
@@ -33,12 +35,21 @@ class FoodGroceryDeliveryVerificationState {
       paymentStatus == FoodGroceryDeliveryPaymentStatus.paidOnline ||
       paymentStatus == FoodGroceryDeliveryPaymentStatus.cashCollected;
 
+  bool get canConfirmOrderReceived {
+    return isDeliveryPartnerArrived &&
+        isPinVerified &&
+        isPaid &&
+        !isConfirming &&
+        !isOrderReceived;
+  }
+
   FoodGroceryDeliveryVerificationState copyWith({
     String? orderId,
     String? verificationCode,
     double? amount,
     FoodGroceryDeliveryPaymentStatus? paymentStatus,
     bool? isDeliveryPartnerArrived,
+    bool? isPinVerified,
     bool? isOrderReceived,
     bool? isConfirming,
   }) {
@@ -49,6 +60,7 @@ class FoodGroceryDeliveryVerificationState {
       paymentStatus: paymentStatus ?? this.paymentStatus,
       isDeliveryPartnerArrived:
           isDeliveryPartnerArrived ?? this.isDeliveryPartnerArrived,
+      isPinVerified: isPinVerified ?? this.isPinVerified,
       isOrderReceived: isOrderReceived ?? this.isOrderReceived,
       isConfirming: isConfirming ?? this.isConfirming,
     );
@@ -78,18 +90,36 @@ class FoodGroceryDeliveryVerificationNotifier
     );
   }
 
-  void markCashCollected() {
-    if (!state.isCash) {
+  void markPinVerified() {
+    if (!state.isDeliveryPartnerArrived || state.isPinVerified) {
       return;
     }
 
+    // TODO(FOOD_GROCERY_REALTIME):
+    // Remove this temporary method when PIN verification is
+    // received from the GOZOLT Go Partner app/backend.
+    state = state.copyWith(
+      isPinVerified: true,
+    );
+  }
+
+  void markCashCollected() {
+    if (!state.isCash ||
+        !state.isPinVerified ||
+        state.paymentStatus == FoodGroceryDeliveryPaymentStatus.cashCollected) {
+      return;
+    }
+
+    // TODO(FOOD_GROCERY_REALTIME):
+    // Replace this temporary action with the cash-collected
+    // event received from the GOZOLT Go Partner app/backend.
     state = state.copyWith(
       paymentStatus: FoodGroceryDeliveryPaymentStatus.cashCollected,
     );
   }
 
   Future<void> confirmOrderReceived() async {
-    if (state.isConfirming || state.isOrderReceived) {
+    if (!state.canConfirmOrderReceived) {
       return;
     }
 

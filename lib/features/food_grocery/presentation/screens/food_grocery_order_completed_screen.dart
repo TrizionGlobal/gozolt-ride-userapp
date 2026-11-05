@@ -40,7 +40,7 @@ class FoodGroceryOrderCompletedScreen extends ConsumerWidget {
         ? verification.orderId
         : order.orderId ?? 'Pending';
 
-    final supplierName = cart.supplierName ?? 'Selected supplier';
+    final supplierName = cart.supplierName ?? 'Selected ${order.businessType}';
 
     final deliveryAddress =
         delivery.selectedAddress?.fullAddress ?? 'Selected delivery address';
@@ -54,7 +54,7 @@ class FoodGroceryOrderCompletedScreen extends ConsumerWidget {
     switch (verification.paymentStatus) {
       case FoodGroceryDeliveryPaymentStatus.paidOnline:
         paymentMethod = 'Card';
-        paymentStatus = 'Paid online';
+        paymentStatus = 'Payment successful';
         paymentStatusColor = AppColors.success;
 
       case FoodGroceryDeliveryPaymentStatus.cashDue:
@@ -64,7 +64,7 @@ class FoodGroceryOrderCompletedScreen extends ConsumerWidget {
 
       case FoodGroceryDeliveryPaymentStatus.cashCollected:
         paymentMethod = 'Cash';
-        paymentStatus = 'Cash payment completed';
+        paymentStatus = 'Cash collected';
         paymentStatusColor = AppColors.success;
     }
 
@@ -92,6 +92,7 @@ class FoodGroceryOrderCompletedScreen extends ConsumerWidget {
                 _OrderSummaryCard(
                   isDark: isDark,
                   supplierName: supplierName,
+                  businessLabel: order.businessTypeCapitalized,
                   deliveryAddress: deliveryAddress,
                   total: total,
                 ),
@@ -154,7 +155,7 @@ class FoodGroceryOrderCompletedScreen extends ConsumerWidget {
                     ),
                   ),
                   child: Text(
-                    'RATE YOUR ORDER',
+                    'Rate your order',
                     style: AppTextStyles.labelLarge.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -165,26 +166,19 @@ class FoodGroceryOrderCompletedScreen extends ConsumerWidget {
               SizedBox(
                 width: double.infinity,
                 height: 46,
-                child: OutlinedButton(
+                child: TextButton(
                   onPressed: () {
                     context.goNamed(
                       RouteNames.foodGroceryHome,
                     );
                   },
-                  style: OutlinedButton.styleFrom(
+                  style: TextButton.styleFrom(
                     foregroundColor: isDark
                         ? AppColors.textPrimary
                         : AppColors.textPrimaryLight,
-                    side: BorderSide(
-                      color:
-                          isDark ? AppColors.borderDark : AppColors.borderLight,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
                   ),
                   child: Text(
-                    'BACK TO FOOD & GROCERIES',
+                    'Back to Food & Groceries',
                     style: AppTextStyles.labelLarge.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -304,12 +298,14 @@ class _OrderSummaryCard extends StatelessWidget {
   const _OrderSummaryCard({
     required this.isDark,
     required this.supplierName,
+    required this.businessLabel,
     required this.deliveryAddress,
     required this.total,
   });
 
   final bool isDark;
   final String supplierName;
+  final String businessLabel;
   final String deliveryAddress;
   final double total;
 
@@ -322,7 +318,7 @@ class _OrderSummaryCard extends StatelessWidget {
       children: [
         _CompletedRow(
           isDark: isDark,
-          label: 'Supplier',
+          label: businessLabel,
           value: supplierName,
         ),
         const SizedBox(height: 11),

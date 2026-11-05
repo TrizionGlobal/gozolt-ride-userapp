@@ -175,7 +175,10 @@ class _FoodGroceryCartScreenState extends ConsumerState<FoodGroceryCartScreen> {
                     children: [
                       _SupplierCard(
                         isDark: isDark,
-                        supplierName: cart.supplierName ?? 'Selected store',
+                        supplierName: cart.supplierName ??
+                            (cart.cartType == FoodGroceryCartType.grocery
+                                ? 'Selected store'
+                                : 'Selected restaurant'),
                         cartType: cart.cartType ?? FoodGroceryCartType.food,
                         itemCount: cart.itemCount,
                       ),
@@ -232,22 +235,6 @@ class _FoodGroceryCartScreenState extends ConsumerState<FoodGroceryCartScreen> {
                         cart: cart,
                         goCoinsDiscount: goCoinsDiscount,
                       ),
-                      if (cart.items.any(
-                        (item) => item.isEstimatedWeight,
-                      )) ...[
-                        const SizedBox(height: 12),
-                        _EstimatedWeightNotice(
-                          isDark: isDark,
-                        ),
-                      ],
-                      if (cart.items.any(
-                        (item) => item.isEstimatedWeight,
-                      )) ...[
-                        const SizedBox(height: 12),
-                        _EstimatedWeightNotice(
-                          isDark: isDark,
-                        ),
-                      ],
                     ],
                   ),
           ),
@@ -293,7 +280,7 @@ class _FoodGroceryCartScreenState extends ConsumerState<FoodGroceryCartScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'CONTINUE TO DELIVERY',
+                          'Continue to delivery',
                           style: AppTextStyles.labelLarge.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -481,14 +468,12 @@ class _CartItemCard extends StatelessWidget {
                     InkWell(
                       onTap: onRemove,
                       borderRadius: BorderRadius.circular(18),
-                      child: Padding(
-                        padding: const EdgeInsets.all(3),
+                      child: const Padding(
+                        padding: EdgeInsets.all(3),
                         child: Icon(
                           Icons.delete_outline_rounded,
                           size: 20,
-                          color: isDark
-                              ? AppColors.textSecondary
-                              : AppColors.textSecondaryLight,
+                          color: AppColors.error,
                         ),
                       ),
                     ),
@@ -944,50 +929,6 @@ class _PriceRow extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _EstimatedWeightNotice extends StatelessWidget {
-  const _EstimatedWeightNotice({
-    required this.isDark,
-  });
-
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.info.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(13),
-        border: Border.all(
-          color: AppColors.info.withValues(alpha: 0.30),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            Icons.scale_outlined,
-            size: 19,
-            color: AppColors.info,
-          ),
-          const SizedBox(width: 9),
-          Expanded(
-            child: Text(
-              'The final amount for weighted grocery products may change slightly after preparation.',
-              style: AppTextStyles.bodySmall.copyWith(
-                color: isDark
-                    ? AppColors.textSecondary
-                    : AppColors.textSecondaryLight,
-                height: 1.4,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

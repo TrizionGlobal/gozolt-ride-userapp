@@ -326,7 +326,7 @@ class FoodGroceryPaymentMethodScreen extends ConsumerWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'PLACE ORDER',
+                          'Place order',
                           style: AppTextStyles.labelLarge.copyWith(
                             fontWeight: FontWeight.w700,
                           ),

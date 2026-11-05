@@ -148,8 +148,6 @@ class _FoodGroceryDeliveryAddressScreenState
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
                 children: [
-                  _InformationBanner(isDark: isDark),
-                  const SizedBox(height: 18),
                   Row(
                     children: [
                       Expanded(
@@ -168,7 +166,7 @@ class _FoodGroceryDeliveryAddressScreenState
                         onPressed: _openAddressForm,
                         icon: const Icon(Icons.add_rounded, size: 19),
                         label: Text(
-                          'ADD ADDRESS',
+                          'Add Address',
                           style: AppTextStyles.labelLarge.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -254,7 +252,7 @@ class _FoodGroceryDeliveryAddressScreenState
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'CONTINUE TO REVIEW',
+                    'Continue to review',
                     style: AppTextStyles.labelLarge.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -266,46 +264,6 @@ class _FoodGroceryDeliveryAddressScreenState
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _InformationBanner extends StatelessWidget {
-  const _InformationBanner({required this.isDark});
-
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(13),
-      decoration: BoxDecoration(
-        color: AppColors.primaryGold.withValues(alpha: isDark ? 0.13 : 0.09),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: AppColors.primaryGold.withValues(alpha: 0.42),
-        ),
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.location_on_outlined,
-            size: 21,
-            color: AppColors.primaryGoldDark,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Choose the exact address where you want your food or groceries delivered.',
-              style: AppTextStyles.bodySmall.copyWith(
-                color:
-                    isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
-                height: 1.35,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -489,7 +447,7 @@ class _AddressCard extends StatelessWidget {
                   ? const Icon(
                       Icons.check_rounded,
                       size: 17,
-                      color: AppColors.backgroundDark,
+                      color: Colors.white,
                     )
                   : null,
             ),
@@ -537,7 +495,7 @@ class _EmptyAddressCard extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: onAdd,
             icon: const Icon(Icons.add_rounded),
-            label: const Text('ADD ADDRESS'),
+            label: const Text('Add Address'),
           ),
         ],
       ),
@@ -659,9 +617,13 @@ class _DeliveryPreferenceCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.door_front_door_outlined,
-                color: AppColors.primaryGoldDark,
+                color: leaveAtDoor
+                    ? AppColors.success
+                    : isDark
+                        ? AppColors.textSecondary
+                        : AppColors.textSecondaryLight,
                 size: 20,
               ),
               const SizedBox(width: 8),
@@ -919,8 +881,8 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                         ),
                         child: Text(
                           widget.address == null
-                              ? 'ADD ADDRESS'
-                              : 'SAVE CHANGES',
+                              ? 'Add Address'
+                              : 'Save Changes',
                           style: AppTextStyles.labelLarge.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
