@@ -100,17 +100,21 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
               summaryAsync.when(
                 loading: () => const SizedBox.shrink(),
                 error: (context, error) => const SizedBox.shrink(),
-                data: (summary) => Row(
-                  children: [
-                    _presetButton(200, summary.currentPoints),
-                    const SizedBox(width: 8),
-                    _presetButton(500, summary.currentPoints),
-                    const SizedBox(width: 8),
-                    _presetButton(1000, summary.currentPoints),
-                    const SizedBox(width: 8),
-                    _presetButton(2000, summary.currentPoints),
-                    const SizedBox(width: 8),
-                    Expanded(
+                data: (summary) {
+                  final minPoints = rulesAsync.value?.redemption.minimumPoints ?? 200;
+                  return Row(
+                    children: [
+                      _presetButton(minPoints, summary.currentPoints),
+                      if (minPoints < 500) ...[
+                        const SizedBox(width: 8),
+                        _presetButton(500, summary.currentPoints),
+                      ],
+                      const SizedBox(width: 8),
+                      _presetButton(1000, summary.currentPoints),
+                      const SizedBox(width: 8),
+                      _presetButton(2000, summary.currentPoints),
+                      const SizedBox(width: 8),
+                      Expanded(
                       child: GestureDetector(
                         onTap: () {
                           _pointsController.text =
@@ -137,8 +141,9 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
                       ),
                     ),
                   ],
-                ),
-              ),
+                );
+              },
+            ),
               const SizedBox(height: 16),
 
               // Points input
@@ -185,16 +190,8 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
                 data: (summary) {
                   final points =
                       int.tryParse(_pointsController.text) ?? 0;
-                  double coinValueInEur = 0.0025;
-                  if (summary.tier == 'PLATINUM') {
-                    coinValueInEur = 0.01;
-                  } else if (summary.tier == 'GOLD') {
-                    coinValueInEur = 0.0075;
-                  } else if (summary.tier == 'SILVER') {
-                    coinValueInEur = 0.005;
-                  } else {
-                    coinValueInEur = 0.0025;
-                  }
+                  final ratio = rulesAsync.value?.redemption.pointsToEurRatio ?? 100.0;
+                  final double coinValueInEur = ratio > 0 ? (1.0 / ratio) : 0.01;
                   final eurValue = points * coinValueInEur;
                   return Container(
                     width: double.infinity,
@@ -221,7 +218,7 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
 
               // Minimum notice
               Text(
-                'Minimum 200 coins to redeem',
+                'Minimum ${rulesAsync.value?.redemption.minimumPoints ?? 200} coins to redeem',
                 style: AppTextStyles.labelSmall.copyWith(
                   color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight,
                 ),
@@ -323,14 +320,8 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
 
       if (mounted) {
         Navigator.pop(context);
-        double coinValueInEur = 0.0025;
-        if (summary?.tier == 'PLATINUM') {
-          coinValueInEur = 0.01;
-        } else if (summary?.tier == 'GOLD') {
-          coinValueInEur = 0.0075;
-        } else if (summary?.tier == 'SILVER') {
-          coinValueInEur = 0.005;
-        }
+        final ratio = rules?.redemption.pointsToEurRatio ?? 100.0;
+        final double coinValueInEur = ratio > 0 ? (1.0 / ratio) : 0.01;
         final eurValue = points * coinValueInEur;
         _showSuccessDialog(points, eurValue);
         // Refresh data
@@ -342,7 +333,7 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
       String message = 'Redemption failed. Please try again.';
       final err = e.toString();
       if (err.contains('Minimum redemption')) {
-        message = 'Minimum 200 coins required to redeem.';
+        message = 'Minimum ${rules?.redemption.minimumPoints ?? 200} coins required to redeem.';
       } else if (err.contains('Insufficient')) {
         message = 'You don\'t have enough coins.';
       } else if (err.contains('401') || err.contains('Unauthorized')) {

@@ -50,7 +50,7 @@ final rewardRulesProvider = FutureProvider<RewardRules>((ref) async {
   } catch (_) {
     return const RewardRules(
       earning: EarningRules(
-        pointsPerEur: 10,
+        pointsPerEur: 1,
         firstRideBonus: 0,
         fiveStarRatingBonus: 0,
         scheduledRideBonus: 0,
@@ -63,8 +63,8 @@ final rewardRulesProvider = FutureProvider<RewardRules>((ref) async {
       ),
       redemption: RedemptionRules(
         minimumPoints: 200,
-        pointsToEurRatio: 400,
-        description: '400 GoCoins = €1 wallet credit. Redeem coins directly to your wallet.',
+        pointsToEurRatio: 100,
+        description: '100 GoCoins = €1 wallet credit. Redeem coins directly to your wallet.',
       ),
       tiers: [
         TierInfo(
@@ -74,8 +74,9 @@ final rewardRulesProvider = FutureProvider<RewardRules>((ref) async {
           multiplier: 1.0,
           maxDiscount: 99999,
           benefits: [
-            'Earn 10 coins for every €1 spent on rides',
+            'Earn 1 coin for every €1 spent',
             'Bronze loyalty status',
+            'Redemption rate: 100 Coins = €1.00',
           ],
         ),
         TierInfo(
@@ -85,9 +86,9 @@ final rewardRulesProvider = FutureProvider<RewardRules>((ref) async {
           multiplier: 1.0,
           maxDiscount: 99999,
           benefits: [
-            'Earn 10 coins for every €1 spent on rides',
+            'Earn 1 coin for every €1 spent',
             'Silver loyalty status',
-            'Redemption rate: 100 Coins = €0.50',
+            'Redemption rate: 100 Coins = €1.00',
           ],
         ),
         TierInfo(
@@ -97,9 +98,9 @@ final rewardRulesProvider = FutureProvider<RewardRules>((ref) async {
           multiplier: 1.0,
           maxDiscount: 99999,
           benefits: [
-            'Earn 10 coins for every €1 spent on rides',
+            'Earn 1 coin for every €1 spent',
             'Gold loyalty status',
-            'Redemption rate: 100 Coins = €0.75',
+            'Redemption rate: 100 Coins = €1.00',
           ],
         ),
         TierInfo(
@@ -109,7 +110,7 @@ final rewardRulesProvider = FutureProvider<RewardRules>((ref) async {
           multiplier: 1.0,
           maxDiscount: 99999,
           benefits: [
-            'Earn 10 coins for every €1 spent on rides',
+            'Earn 1 coin for every €1 spent',
             'Platinum loyalty status',
             'Redemption rate: 100 Coins = €1.00',
           ],

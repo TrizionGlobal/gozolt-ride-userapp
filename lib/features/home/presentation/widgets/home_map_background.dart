@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../providers/nearby_drivers_provider.dart';

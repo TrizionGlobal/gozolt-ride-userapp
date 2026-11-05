@@ -10,6 +10,7 @@ import '../../../../core/router/route_names.dart';
 import '../../data/models/reward_transaction.dart';
 import '../../data/models/reward_summary.dart';
 import '../../data/models/referral_info.dart';
+import '../../data/models/reward_rules.dart';
 import '../providers/rewards_providers.dart';
 import '../widgets/redeem_bottom_sheet.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
@@ -25,18 +26,10 @@ class RewardsScreen extends ConsumerStatefulWidget {
 class _RewardsScreenState extends ConsumerState<RewardsScreen> {
   String? _previousTier;
 
-  String _tierRedeemRateText(String tier) {
-    switch (tier) {
-      case 'PLATINUM':
-        return '100 Coins = \u20AC1.00';
-      case 'GOLD':
-        return '100 Coins = \u20AC0.75';
-      case 'SILVER':
-        return '100 Coins = \u20AC0.50';
-      case 'BRONZE':
-      default:
-        return '100 Coins = \u20AC0.25';
-    }
+  String _tierRedeemRateText(String tier, [RewardRules? rules]) {
+    final ratio = rules?.redemption.pointsToEurRatio ?? 100.0;
+    final eurVal = (ratio > 0 ? (100.0 / ratio) : 1.0).toStringAsFixed(2);
+    return '100 Coins = \u20AC$eurVal';
   }
 
   int _tierWeight(String tier) {
@@ -300,7 +293,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
     );
   }
 
-  Widget _buildCurrentTierCard(BuildContext context, RewardSummary summary) {
+  Widget _buildCurrentTierCard(BuildContext context, RewardSummary summary, [RewardRules? rules]) {
     final tier = summary.tier;
     final gradient = _tierGradient(tier);
     final isPlatinum = tier == 'PLATINUM';
@@ -385,7 +378,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                           const Icon(Icons.currency_exchange, color: Colors.white, size: 12),
                           const SizedBox(width: 4),
                           Text(
-                            _tierRedeemRateText(tier),
+                            _tierRedeemRateText(tier, rules),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 10,
@@ -521,7 +514,8 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
     return const SizedBox.shrink();
   }
 
-  Widget _buildEarnMoreCoinsInfoCard(BuildContext context) {
+  Widget _buildEarnMoreCoinsInfoCard(BuildContext context, [RewardRules? rules]) {
+    final coinsPerEur = rules?.earning.pointsPerEur ?? 1;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       padding: const EdgeInsets.all(16),
@@ -551,7 +545,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Earn 10 coins for every \u20AC1 spent on rides. Coins are credited automatically upon completion.',
+                  'Earn $coinsPerEur ${coinsPerEur == 1 ? "coin" : "coins"} for every \u20AC1 spent on rides. Coins are credited automatically upon completion.',
                   style: AppTextStyles.bodySmall.copyWith(
                     color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight,
                   ),
@@ -1039,7 +1033,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
               child: summaryAsync.when(
                 loading: () => _buildShimmerCard(),
                 error: (err, _) => _buildErrorCard('Failed to load tier'),
-                data: (summary) => _buildCurrentTierCard(context, summary),
+                data: (summary) => _buildCurrentTierCard(context, summary, rulesAsync.value),
               ),
             ),
 
@@ -1063,7 +1057,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
 
             // 5. Earn More Coins Info Card
             SliverToBoxAdapter(
-              child: _buildEarnMoreCoinsInfoCard(context),
+              child: _buildEarnMoreCoinsInfoCard(context, rulesAsync.value),
             ),
 
             // 6. Tier Benefits Section

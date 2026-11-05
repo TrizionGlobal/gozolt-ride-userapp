@@ -28,7 +28,9 @@ class RewardTransaction {
       type == 'five_star_bonus' ||
       type == 'scheduled_ride_bonus';
 
-  bool get isRedemption => type == 'redemption';
+  bool get isRedemption =>
+      type == 'redemption' ||
+      type.endsWith('_redemption');
 
   bool get isPositive => points > 0;
 
@@ -36,6 +38,26 @@ class RewardTransaction {
     switch (type) {
       case 'ride_completion':
         return 'Ride Reward';
+      case 'rental_completion':
+        return 'Car Rental Reward';
+      case 'bike_rental_completion':
+        return 'Bike Rental Reward';
+      case 'quick_service_completion':
+        return 'Quick Service Reward';
+      case 'airport_transfer_completion':
+        return 'Airport Transfer Reward';
+      case 'redemption':
+        return 'Wallet Credit Redeemed';
+      case 'ride_redemption':
+        return 'Ride Discount';
+      case 'car_rental_redemption':
+        return 'Car Rental Discount';
+      case 'bike_rental_redemption':
+        return 'Bike Rental Discount';
+      case 'airport_transfer_redemption':
+        return 'Airport Transfer Discount';
+      case 'quick_service_redemption':
+        return 'Quick Service Discount';
       case 'first_ride_bonus':
         return 'First Ride Bonus';
       case 'five_star_bonus':
@@ -46,10 +68,11 @@ class RewardTransaction {
         return 'Referral Welcome';
       case 'referral_referrer':
         return 'Referral Reward';
+      case 'signup_bonus':
+        return 'Welcome Bonus';
       case 'weekly_streak':
+      case 'weekly_streak_bonus':
         return 'Weekly Streak';
-      case 'redemption':
-        return 'Redeemed';
       case 'tier_upgrade_bonus_silver_25':
         return 'Silver Tier Reward';
       case 'tier_upgrade_bonus_gold_50':

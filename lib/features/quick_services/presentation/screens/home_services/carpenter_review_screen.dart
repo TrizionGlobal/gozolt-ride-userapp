@@ -169,12 +169,6 @@ class _CarpenterReviewScreenState extends ConsumerState<CarpenterReviewScreen> {
     );
   }
 
-  double _calculateTotal() {
-    double total = _bookingData.estimatedTotalMin;
-    if (useCoins) total -= 2.00;
-    return total > 0 ? total : 0;
-  }
-
   String _formatDate(DateTime date) {
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     final weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];

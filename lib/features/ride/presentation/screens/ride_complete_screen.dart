@@ -18,6 +18,7 @@ import '../widgets/add_card_sheet.dart';
 import '../../../history/presentation/screens/receipt_screen.dart';
 import '../../../history/data/models/ride_history_item.dart';
 import '../../../home/presentation/providers/home_providers.dart';
+import '../../../rewards/presentation/providers/rewards_providers.dart';
 
 class RideCompleteScreen extends ConsumerStatefulWidget {
   const RideCompleteScreen({super.key});
@@ -572,7 +573,7 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        '+${(fare * 10).floor()} GoCoins Earned!',
+                        '+${(fare * (ref.watch(rewardRulesProvider).value?.earning.pointsPerEur ?? 1)).floor()} GoCoins Earned!',
                         style: AppTextStyles.titleSmall.copyWith(
                           color: AppColors.primaryGold,
                           fontWeight: FontWeight.bold,

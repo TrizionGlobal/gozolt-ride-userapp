@@ -319,15 +319,19 @@ class _BikeRentalReviewScreenState extends ConsumerState<BikeRentalReviewScreen>
     // GoCoins logic
     final rewardSummary = ref.watch(rewardSummaryProvider).value;
     final int balance = rewardSummary?.currentPoints.toInt() ?? 0;
-    final int conversionRate = (ref.watch(rewardRulesProvider).value?.redemption.pointsToEurRatio ?? 400.0).toInt();
+    final int conversionRate = (ref.watch(rewardRulesProvider).value?.redemption.pointsToEurRatio ?? 100.0).toInt();
     
     final double maxEurValue = balance / conversionRate;
     final double appliedEurValue = maxEurValue > subtotal ? subtotal : maxEurValue;
     final int coinsUsed = (appliedEurValue * conversionRate).round();
 
-    final double discount = _useCoins ? appliedEurValue : 0.0;
+    final int minRedeemCoins = ref.watch(rewardRulesProvider).value?.redemption.minimumPoints ?? 200;
+    final bool canRedeem = balance >= minRedeemCoins && balance > 0;
+
+    final double discount = (_useCoins && canRedeem) ? appliedEurValue : 0.0;
     final double totalPayable = subtotal - discount;
-    final int earnedCoins = (subtotal * 10).floor();
+    final int coinsPerEur = ref.watch(rewardRulesProvider).value?.earning.pointsPerEur ?? 1;
+    final int earnedCoins = (subtotal * coinsPerEur).floor();
 
     final isFormValid = _acceptTerms && _acceptPrivacy && _documentsUploaded;
 
@@ -556,7 +560,15 @@ class _BikeRentalReviewScreenState extends ConsumerState<BikeRentalReviewScreen>
                                   'Balance: $balance Coins',
                                   style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
                                 ),
-                                if (appliedEurValue > 0)
+                                if (!canRedeem && balance > 0)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 2),
+                                    child: Text(
+                                      'Min $minRedeemCoins coins required to redeem',
+                                      style: AppTextStyles.bodySmall.copyWith(color: Colors.orange.shade700, fontWeight: FontWeight.w600),
+                                    ),
+                                  )
+                                else if (appliedEurValue > 0)
                                   Padding(
                                     padding: const EdgeInsets.only(top: 2),
                                     child: Text(
@@ -570,15 +582,15 @@ class _BikeRentalReviewScreenState extends ConsumerState<BikeRentalReviewScreen>
                           Transform.scale(
                             scale: 0.9,
                             child: Switch.adaptive(
-                              value: _useCoins,
+                              value: _useCoins && canRedeem,
                               activeColor: AppColors.backgroundDark,
                               activeTrackColor: AppColors.primaryGold,
                               inactiveTrackColor: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
-                              onChanged: (val) {
+                              onChanged: canRedeem ? (val) {
                                 setState(() {
                                   _useCoins = val;
                                 });
-                              },
+                              } : null,
                             ),
                           ),
                         ],

@@ -102,7 +102,7 @@ class RewardsInfoScreen extends ConsumerWidget {
                     const SizedBox(height: 16),
                     _bulletPoint(
                         context,
-                        'Earn ${rules.earning.pointsPerEur} coins for every \u20AC1 spent on completed rides.'),
+                        'Earn ${rules.earning.pointsPerEur} ${rules.earning.pointsPerEur == 1 ? "coin" : "coins"} for every \u20AC1 spent on completed rides.'),
                  
                     _bulletPoint(
                         context,
@@ -200,7 +200,7 @@ class RewardsInfoScreen extends ConsumerWidget {
                               'Minimum ${rules.redemption.minimumPoints} coins to redeem'),
                           _bulletPoint(
                               context,
-                              'Redeem rate depends on your active tier (up to 100 coins = \u20AC1.00 for Platinum)'),
+                              'Redemption rate: 100 coins = \u20AC${(rules.redemption.pointsToEurRatio > 0 ? (100.0 / rules.redemption.pointsToEurRatio) : 1.0).toStringAsFixed(2)}'),
                           _bulletPoint(
                               context,
                               'Redeemed cash is instantly credited to your wallet balance and can be used on any future bookings.'),

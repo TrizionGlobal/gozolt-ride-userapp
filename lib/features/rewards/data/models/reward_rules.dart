@@ -6,6 +6,8 @@ class EarningRules {
   final int weeklyStreakThreshold;
   final int weeklyStreakBonus;
 
+  int get coinsPerEur => pointsPerEur;
+
   const EarningRules({
     required this.pointsPerEur,
     required this.firstRideBonus,
@@ -50,6 +52,8 @@ class RedemptionRules {
   final double pointsToEurRatio;
   final String description;
 
+  double get coinsToEurRatio => pointsToEurRatio;
+
   const RedemptionRules({
     required this.minimumPoints,
     required this.pointsToEurRatio,
@@ -60,7 +64,7 @@ class RedemptionRules {
     return RedemptionRules(
       minimumPoints: (json['minimumPoints'] as num?)?.toInt() ?? 200,
       pointsToEurRatio:
-          (json['pointsToEurRatio'] as num?)?.toDouble() ?? 200.0,
+          (json['pointsToEurRatio'] as num?)?.toDouble() ?? 100.0,
       description: json['description'] as String? ?? '',
     );
   }

@@ -423,7 +423,18 @@ class QuickServicesPriceSummary extends ConsumerWidget {
                             Text('Balance: ${payment.balance} Coins',
                                 style: AppTextStyles.bodyMedium
                                     .copyWith(color: AppColors.textSecondary)),
-                            if (payment.potentialDiscount > 0)
+                            if (!payment.canRedeem && payment.balance > 0)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Text(
+                                  'Min ${payment.minRedeemCoins} coins required to redeem',
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: Colors.orange.shade700,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              )
+                            else if (payment.potentialDiscount > 0)
                               Padding(
                                 padding: const EdgeInsets.only(top: 2),
                                 child: Text(
@@ -440,13 +451,13 @@ class QuickServicesPriceSummary extends ConsumerWidget {
                       Transform.scale(
                         scale: 0.9,
                         child: Switch.adaptive(
-                          value: useGoCoins,
+                          value: useGoCoins && payment.canRedeem,
                           activeColor: AppColors.backgroundDark,
                           activeTrackColor: AppColors.primaryGold,
                           inactiveTrackColor:
                               Theme.of(context).dividerTheme.color ??
                                   AppColors.borderDark,
-                          onChanged: onGoCoinsChanged,
+                          onChanged: payment.canRedeem ? onGoCoinsChanged : null,
                         ),
                       ),
                     ],

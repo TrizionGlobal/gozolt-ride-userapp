@@ -141,7 +141,7 @@ class _AirportTransferReviewScreenState
     }
   }
 
-  Future<void> _proceedToPayment(double totalAmount) async {
+  Future<void> _proceedToPayment(double totalAmount, {double? discount}) async {
     if (_isBooking) return;
 
     showModalBottomSheet<void>(
@@ -158,7 +158,7 @@ class _AirportTransferReviewScreenState
               _paymentOption = option;
               _selectedCardId = cardId;
             });
-            return await _processBooking(option, cardId: cardId, totalAmount: totalAmount);
+            return await _processBooking(option, cardId: cardId, totalAmount: totalAmount, discount: discount);
           },
         );
       },
@@ -169,6 +169,7 @@ class _AirportTransferReviewScreenState
     AirportPaymentOption option, {
     String? cardId,
     required double totalAmount,
+    double? discount,
   }) async {
     setState(() {
       _isBooking = true;
@@ -271,6 +272,7 @@ class _AirportTransferReviewScreenState
         paymentMethod: paymentMethodStr,
         paymentMethodId: option == AirportPaymentOption.card ? cardId : null,
         totalAmount: totalAmount,
+        discount: (discount != null && discount > 0) ? discount : null,
       );
 
       createdBookingId = res['id']?.toString();
@@ -357,7 +359,7 @@ class _AirportTransferReviewScreenState
           'errorMessage': message,
           'serviceTitle': 'Airport Transfer',
           'onRetry': () {
-            _proceedToPayment(totalAmount);
+            _proceedToPayment(totalAmount, discount: discount);
           },
         },
       );
@@ -415,13 +417,17 @@ class _AirportTransferReviewScreenState
         : (ref.watch(userRewardsPointsProvider).value ?? 0);
 
     final int conversionRate =
-        (ref.watch(rewardRulesProvider).value?.redemption.pointsToEurRatio ?? 400.0).toInt();
+        (ref.watch(rewardRulesProvider).value?.redemption.pointsToEurRatio ?? 100.0).toInt();
 
     final double maxEurValue = conversionRate > 0 ? (balance / conversionRate) : 0.0;
     final double appliedEurValue = maxEurValue > subtotal ? subtotal : maxEurValue;
     final int coinsUsed = (appliedEurValue * conversionRate).round();
 
-    final double discount = _useGoCoins && balance > 0 ? appliedEurValue : 0.0;
+    final int minRedeemCoins =
+        ref.watch(rewardRulesProvider).value?.redemption.minimumPoints ?? 200;
+    final bool canRedeem = balance >= minRedeemCoins && balance > 0;
+
+    final double discount = _useGoCoins && canRedeem ? appliedEurValue : 0.0;
     final double finalTotal = (subtotal - discount).clamp(0.0, double.infinity);
 
     String formatAmount(double amount) {
@@ -1383,7 +1389,18 @@ class _AirportTransferReviewScreenState
                                     : AppColors.textSecondaryLight,
                               ),
                             ),
-                            if (appliedEurValue > 0 && balance > 0)
+                            if (!canRedeem && balance > 0)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Text(
+                                  'Min $minRedeemCoins coins required to redeem',
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: Colors.orange.shade700,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              )
+                            else if (appliedEurValue > 0 && balance > 0)
                               Padding(
                                 padding: const EdgeInsets.only(top: 2),
                                 child: Text(
@@ -1400,8 +1417,8 @@ class _AirportTransferReviewScreenState
                       Transform.scale(
                         scale: 0.7,
                         child: Switch.adaptive(
-                          value: _useGoCoins && balance > 0,
-                          onChanged: balance > 0
+                          value: _useGoCoins && canRedeem,
+                          onChanged: canRedeem
                               ? (val) {
                                   HapticFeedback.selectionClick();
                                   setState(() {
@@ -1564,7 +1581,7 @@ class _AirportTransferReviewScreenState
                           setState(() {
                             _showAgreementError = false;
                           });
-                          _proceedToPayment(finalTotal);
+                          _proceedToPayment(finalTotal, discount: discount);
                         }),
               if (!_acceptTerms || !_acceptPrivacy) ...[
                 if (_showAgreementError) const SizedBox(height: 7),

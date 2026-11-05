@@ -1236,19 +1236,10 @@ class _DiscountBottomSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final booking = ref.watch(rideBookingProvider);
     final rewardsAsync = ref.watch(userRewardsPointsProvider);
-    final rewardSummaryAsync = ref.watch(rewardSummaryProvider);
+    final rulesAsync = ref.watch(rewardRulesProvider);
 
-    double getTierConversionRate(String tier) {
-      switch (tier.toUpperCase()) {
-        case 'PLATINUM': return 100.0;
-        case 'GOLD': return 133.33;
-        case 'SILVER': return 200.0;
-        default: return 400.0;
-      }
-    }
-
-    final currentTier = rewardSummaryAsync.value?.tier ?? 'BRONZE';
-    final conversionRate = getTierConversionRate(currentTier);
+    final double conversionRate = rulesAsync.value?.redemption.pointsToEurRatio ?? 100.0;
+    final int minRedeemCoins = rulesAsync.value?.redemption.minimumPoints ?? 200;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -1272,87 +1263,113 @@ class _DiscountBottomSheet extends ConsumerWidget {
 
           // ── Use GOZOLT Coins ──────────────────────────
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Theme.of(context).brightness == Brightness.dark 
                   ? AppColors.cardDark 
                   : AppColors.backgroundLight,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: Theme.of(context).dividerTheme.color ?? 
                     (Theme.of(context).brightness == Brightness.dark ? AppColors.borderDark : AppColors.borderLight),
                 width: 0.5,
               ),
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Use GOZOLT Coins',
-                        style: AppTextStyles.titleSmall
-                            .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textPrimary : AppColors.textPrimaryLight),
-                      ),
-                      const SizedBox(height: 2),
-                      rewardsAsync.when(
-                        data: (points) {
-                          final eurValue = points / conversionRate;
-                          final remainingFare = (booking.fareEstimate?.estimatedFare ?? 0.0) - (booking.promoDiscount ?? 0.0);
-                          final appliedEurValue = eurValue > remainingFare && remainingFare >= 0 ? remainingFare : eurValue;
+            child: rewardsAsync.when(
+              data: (rawPoints) {
+                final summaryPoints = ref.watch(rewardSummaryProvider).value?.currentPoints.toInt();
+                final points = (summaryPoints != null && summaryPoints > 0) ? summaryPoints : rawPoints;
+                final canRedeem = points >= minRedeemCoins && points > 0;
+                final eurValue = points / conversionRate;
+                final remainingFare = (booking.fareEstimate?.estimatedFare ?? 0.0) - (booking.promoDiscount ?? 0.0);
+                final appliedEurValue = eurValue > remainingFare && remainingFare >= 0 ? remainingFare : eurValue;
+                final coinsUsed = (appliedEurValue * conversionRate).round();
 
-                          return Text(
-                            'save €${appliedEurValue.toStringAsFixed(2)} on your ride',
-                            style: AppTextStyles.bodySmall
-                                .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
-                          );
-                        },
-                        loading: () => const SizedBox.shrink(),
-                        error: (_, __) => const SizedBox.shrink(),
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGold.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
                       ),
-                    ],
-                  ),
-                ),
-                rewardsAsync.when(
-                  data: (points) {
-                    final eurValue = points / conversionRate;
-                    final remainingFare = (booking.fareEstimate?.estimatedFare ?? 0.0) - (booking.promoDiscount ?? 0.0);
-                    final appliedEurValue = eurValue > remainingFare && remainingFare >= 0 ? remainingFare : eurValue;
-                    final coinsUsed = (appliedEurValue * conversionRate).round();
-                    
-                    return Row(
-                      children: [
-                        Text(
-                          '$coinsUsed',
-                          style: AppTextStyles.titleSmall
-                              .copyWith(color: AppColors.primaryGold),
-                        ),
-                        const SizedBox(width: 4),
-                        Image.asset(AssetPaths.iconGoCoin,
-                            width: 18, height: 18),
-                        const SizedBox(width: 10),
-                        Transform.scale(
-                          scale: 0.7,
-                          child: Switch.adaptive(
-                            value: booking.useCoins,
-                            activeTrackColor: AppColors.primaryGold,
-                            inactiveTrackColor: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
-                            onChanged: (val) {
-                              HapticFeedback.selectionClick();
-                              ref
-                                  .read(rideBookingProvider.notifier)
-                                  .toggleUseCoins(val, discount: val ? appliedEurValue : 0);
-                            },
+                      child: Image.asset(AssetPaths.iconGoCoin, width: 32, height: 32),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Use GOZOLT GoCoins',
+                            style: AppTextStyles.titleMedium.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? AppColors.textPrimary
+                                  : AppColors.textPrimaryLight,
+                            ),
                           ),
-                        ),
-                      ],
-                    );
-                  },
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, __) => const SizedBox.shrink(),
+                          const SizedBox(height: 3),
+                          Text(
+                            'Balance: $points Coins',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: Theme.of(context).brightness == Brightness.dark
+                                  ? AppColors.textSecondary
+                                  : AppColors.textSecondaryLight,
+                            ),
+                          ),
+                          if (!canRedeem && points > 0)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(
+                                'Min $minRedeemCoins coins required to redeem',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: Colors.orange.shade700,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            )
+                          else if (appliedEurValue > 0)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(
+                                'Save €${appliedEurValue.toStringAsFixed(2)} with $coinsUsed coins',
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.primaryGold,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    Transform.scale(
+                      scale: 0.85,
+                      child: Switch.adaptive(
+                        value: booking.useCoins && canRedeem,
+                        activeTrackColor: AppColors.primaryGold,
+                        inactiveTrackColor: Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
+                        onChanged: canRedeem
+                            ? (val) {
+                                HapticFeedback.selectionClick();
+                                ref
+                                    .read(rideBookingProvider.notifier)
+                                    .toggleUseCoins(val, discount: val ? appliedEurValue : 0);
+                              }
+                            : null,
+                      ),
+                    ),
+                  ],
+                );
+              },
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(12),
+                  child: CircularProgressIndicator(color: AppColors.primaryGold),
                 ),
-              ],
+              ),
+              error: (_, __) => const SizedBox.shrink(),
             ),
           ),
 
