@@ -1065,12 +1065,17 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
     setModalState(() => _isSubmittingRating = true);
     setState(() => _isSubmittingRating = true);
     
-    final comment = _commentController.text.trim();
+    String? comment = _commentController.text.trim();
+    if (comment.isEmpty) {
+      comment = null;
+    } else {
+      comment = comment[0].toUpperCase() + comment.substring(1);
+    }
     
     await Future.wait([
       ref.read(activeRideProvider.notifier).rateRide(
             _rating,
-            comment: comment.isNotEmpty ? comment : null,
+            comment: comment,
           ),
       Future.delayed(const Duration(milliseconds: 800)),
     ]);
@@ -1175,11 +1180,30 @@ class _RideCompleteScreenState extends ConsumerState<RideCompleteScreen>
                       );
                     }),
                   ),
+                  if (_rating > 0) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      _rating == 5
+                          ? 'Excellent'
+                          : _rating == 4
+                              ? 'Good'
+                              : _rating == 3
+                                  ? 'Average'
+                                  : _rating == 2
+                                      ? 'Poor'
+                                      : 'Very Poor',
+                      style: AppTextStyles.titleMedium.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryGold,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 24),
                   // Comment box
                   TextField(
                     controller: _commentController,
                     maxLines: 3,
+                    textCapitalization: TextCapitalization.sentences,
                     style: AppTextStyles.bodyMedium,
                     decoration: InputDecoration(
                       hintText: 'Write your experience',

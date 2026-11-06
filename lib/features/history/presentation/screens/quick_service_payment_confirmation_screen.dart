@@ -5,6 +5,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../quick_services/presentation/providers/quick_services_booking_provider.dart';
+import '../widgets/supplier_rating_modal.dart';
 
 class QuickServicePaymentConfirmationScreen extends ConsumerStatefulWidget {
   final String bookingId;
@@ -35,6 +36,10 @@ class _QuickServicePaymentConfirmationScreenState
   late String _serviceTitle;
   late double _amount;
   late String _paymentMethod;
+  String? _supplierName;
+  bool _hasRated = false;
+  bool _hasPromptedRating = false;
+
   @override
   void initState() {
     super.initState();
@@ -43,9 +48,15 @@ class _QuickServicePaymentConfirmationScreenState
     _amount = widget.amount;
     _paymentMethod = widget.paymentMethod;
 
-    if (_bookingId.isNotEmpty && (_amount <= 0 || _serviceTitle == 'Quick Service')) {
-      _loadDynamicDetails();
-    }
+    _loadDynamicDetails();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 1400), () {
+        if (mounted && !_hasRated && !_hasPromptedRating) {
+          _openRatingModal();
+        }
+      });
+    });
   }
 
   Future<void> _loadDynamicDetails() async {
@@ -59,10 +70,51 @@ class _QuickServicePaymentConfirmationScreenState
           if (res['amount'] is num) {
             _amount = (res['amount'] as num).toDouble();
           }
+          if (res['supplier'] != null && res['supplier']['companyName'] != null) {
+            _supplierName = res['supplier']['companyName'].toString();
+          }
+          if (res['rating'] != null) {
+            _hasRated = true;
+          }
         });
       }
     } catch (_) {
       // Keep initial parameters on error
+    }
+  }
+
+  Future<void> _openRatingModal() async {
+    if (_hasRated || !mounted) return;
+    _hasPromptedRating = true;
+    final supplier = (_supplierName != null && _supplierName!.isNotEmpty)
+        ? _supplierName!
+        : 'Service Supplier';
+
+    final didRate = await SupplierRatingModal.show(
+      context,
+      supplierName: supplier,
+      serviceTitle: _serviceTitle,
+      bookingReference: _bookingId.length >= 8
+          ? 'Service ID: GZ-QS-${_bookingId.substring(0, 8).toUpperCase()}'
+          : null,
+      onSubmitRating: (rating, review) async {
+        await ref.read(quickServicesRepositoryProvider).rateBooking(
+              _bookingId,
+              rating,
+              review: review,
+            );
+        if (mounted) {
+          setState(() {
+            _hasRated = true;
+          });
+        }
+      },
+    );
+
+    if (didRate == true && mounted) {
+      setState(() {
+        _hasRated = true;
+      });
     }
   }
 
@@ -270,6 +322,57 @@ class _QuickServicePaymentConfirmationScreenState
                 ),
 
                 const Spacer(),
+
+                if (!_hasRated) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: OutlinedButton.icon(
+                      onPressed: _openRatingModal,
+                      icon: const Icon(Icons.star_rounded, color: AppColors.primaryGold, size: 22),
+                      label: const Text(
+                        'Rate Supplier',
+                        style: TextStyle(
+                          color: AppColors.primaryGold,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.primaryGold, width: 1.5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ] else ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+                    ),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.check_circle_rounded, color: AppColors.success, size: 18),
+                        SizedBox(width: 8),
+                        Text(
+                          'Supplier Rated • Thank you!',
+                          style: TextStyle(
+                            color: AppColors.success,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                ],
 
                 // Done Button
                 SizedBox(

@@ -16,6 +16,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import 'quick_services_history_view.dart';
 import 'quick_service_cancellation_success_screen.dart';
+import '../widgets/supplier_rating_modal.dart';
 
 class QuickServiceHistoryDetailsScreen extends ConsumerStatefulWidget {
   final QuickServiceHistoryModel booking;
@@ -32,6 +33,31 @@ class _QuickServiceHistoryDetailsScreenState extends ConsumerState<QuickServiceH
   StreamSubscription? _socketSub;
   bool _isShowingPaymentResult = false;
   Timer? _pollingTimer;
+  bool _hasRated = false;
+
+  void _openRatingModal() {
+    final supplierName = _booking.options['supplierName']?.toString() ?? 'Service Supplier';
+    SupplierRatingModal.show(
+      context,
+      supplierName: supplierName.isNotEmpty ? supplierName : 'Service Supplier',
+      serviceTitle: _booking.serviceTitle,
+      bookingReference: _booking.id.length >= 8
+          ? 'Service ID: GZ-QS-${_booking.id.substring(0, 8).toUpperCase()}'
+          : null,
+      onSubmitRating: (rating, review) async {
+        await ref.read(quickServicesRepositoryProvider).rateBooking(
+              _booking.id,
+              rating,
+              review: review,
+            );
+        if (mounted) {
+          setState(() {
+            _hasRated = true;
+          });
+        }
+      },
+    );
+  }
 
   void _navigateToPaymentConfirmation({
     required double amount,
@@ -1524,6 +1550,47 @@ Time: $displayTime
                             textAlign: TextAlign.center,
                             style: AppTextStyles.bodyMedium.copyWith(color: Theme.of(context).brightness == Brightness.dark ? Colors.grey[300] : Colors.grey[800]),
                           ),
+                          const SizedBox(height: 16),
+                          if (!_hasRated)
+                            SizedBox(
+                              width: double.infinity,
+                              height: 44,
+                              child: ElevatedButton.icon(
+                                onPressed: _openRatingModal,
+                                icon: const Icon(Icons.star_rounded, color: AppColors.backgroundDark, size: 20),
+                                label: const Text('Rate Supplier', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryGold,
+                                  foregroundColor: AppColors.backgroundDark,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  elevation: 0,
+                                ),
+                              ),
+                            )
+                          else
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGold.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.4)),
+                              ),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.star_rounded, color: AppColors.primaryGold, size: 18),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Supplier Rated • Thank you!',
+                                    style: TextStyle(
+                                      color: AppColors.primaryGold,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                         ],
                       ),
                     ),

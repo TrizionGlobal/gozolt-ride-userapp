@@ -12,6 +12,7 @@ import '../../../ride/presentation/widgets/stripe_add_card_sheet.dart';
 import 'bike_rentals_history_view.dart';
 import 'bike_rental_cancellation_success_screen.dart';
 import 'rental_extension_success_screen.dart';
+import '../widgets/supplier_rating_modal.dart';
 import '../../../../core/network/socket_service.dart';
 
 final bikeRentalBookingDetailsProvider = FutureProvider.autoDispose.family<Map<String, dynamic>, String>((ref, bookingId) async {
@@ -32,15 +33,48 @@ final bikeRentalBookingDetailsProvider = FutureProvider.autoDispose.family<Map<S
   return datasource.getBookingDetails(bookingId);
 });
 
-class BikeRentalBookingDetailsScreen extends ConsumerWidget {
+class BikeRentalBookingDetailsScreen extends ConsumerStatefulWidget {
   final String bookingId;
 
   const BikeRentalBookingDetailsScreen({super.key, required this.bookingId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BikeRentalBookingDetailsScreen> createState() =>
+      _BikeRentalBookingDetailsScreenState();
+}
+
+class _BikeRentalBookingDetailsScreenState
+    extends ConsumerState<BikeRentalBookingDetailsScreen> {
+  bool _hasShownRatingModal = false;
+
+  void _openRatingModal(Map<String, dynamic> booking) {
+    final vehicle = booking['vehicle'] as Map<String, dynamic>?;
+    final supplierName =
+        vehicle?['supplier']?['companyName']?.toString() ?? 'Bike Rental Supplier';
+    final vehicleName = vehicle?['name']?.toString() ?? 'Rental Bike';
+    final fullBookingId = booking['id'] as String;
+    final displayBookingId = fullBookingId.length >= 8
+        ? 'Service ID: GZ-BIKE-${fullBookingId.substring(0, 8).toUpperCase()}'
+        : null;
+
+    SupplierRatingModal.show(
+      context,
+      supplierName: supplierName.isNotEmpty ? supplierName : 'Bike Rental Supplier',
+      serviceTitle: 'Bike Rental • $vehicleName',
+      bookingReference: displayBookingId,
+      onSubmitRating: (rating, review) async {
+        final dio = ref.read(dioProvider);
+        final ds = BikeRentalRemoteDatasource(dio);
+        await ds.rateBooking(widget.bookingId, rating, review: review);
+        ref.invalidate(bikeRentalBookingDetailsProvider(widget.bookingId));
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final asyncDetails = ref.watch(bikeRentalBookingDetailsProvider(bookingId));
+    final asyncDetails = ref.watch(bikeRentalBookingDetailsProvider(widget.bookingId));
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -142,16 +176,31 @@ Pickup Time: ${DateFormat('h:mm a').format(startDate)}
 
 (ID: $fullBookingId)
 '''.trim();
+
+          if (status == 'COMPLETED' && booking['rating'] == null && !_hasShownRatingModal) {
+            _hasShownRatingModal = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                _openRatingModal(booking);
+              }
+            });
+          }
           
           return RefreshIndicator(
             color: AppColors.primaryGold,
-            onRefresh: () => ref.refresh(bikeRentalBookingDetailsProvider(bookingId).future),
+            onRefresh: () => ref.refresh(bikeRentalBookingDetailsProvider(widget.bookingId).future),
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               physics: const AlwaysScrollableScrollPhysics(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Completed & Rating Section
+                if (status == 'COMPLETED') ...[
+                  _buildCompletedAndRatingCard(context, booking, vehicle, isDark),
+                  const SizedBox(height: 16),
+                ],
+
                 // QR Code Section
                 if (status != 'COMPLETED' && status != 'CANCELLED') ...[
                   Container(
@@ -1079,7 +1128,7 @@ Pickup Time: ${DateFormat('h:mm a').format(startDate)}
                       
                       if (additionalCost > 0) {
                         // First get the payment intent
-                        await datasource.createExtensionPaymentIntent(bookingId, newEndDateStr);
+                        await datasource.createExtensionPaymentIntent(widget.bookingId, newEndDateStr);
                         
                         if (!innerContext.mounted) return;
                         Navigator.of(innerContext).pop(); // dismiss modal
@@ -1100,12 +1149,12 @@ Pickup Time: ${DateFormat('h:mm a').format(startDate)}
                               // Card was charged/added, now we submit the actual extension request
                               try {
                                 await datasource.createExtensionRequest(
-                                  bookingId, 
+                                  widget.bookingId, 
                                   newEndDateStr, 
                                   paymentIntentId: paymentMethodId
                                 );
                                 
-                                ref.invalidate(bikeRentalBookingDetailsProvider(bookingId));
+                                ref.invalidate(bikeRentalBookingDetailsProvider(widget.bookingId));
                                 paymentSuccess = true;
                               } catch (e) {
                                 throw Exception(e.toString().replaceAll('Exception: ', ''));
@@ -1121,11 +1170,11 @@ Pickup Time: ${DateFormat('h:mm a').format(startDate)}
                         }
                       } else {
                         // If 0 cost, just submit
-                        await datasource.createExtensionRequest(bookingId, newEndDateStr);
+                        await datasource.createExtensionRequest(widget.bookingId, newEndDateStr);
                         if (!innerContext.mounted) return;
                         Navigator.of(innerContext).pop(); // dismiss modal
                         
-                        ref.invalidate(bikeRentalBookingDetailsProvider(bookingId));
+                        ref.invalidate(bikeRentalBookingDetailsProvider(widget.bookingId));
                         
                         if (parentContext.mounted) {
                           Navigator.of(parentContext).push(
@@ -1157,6 +1206,117 @@ Pickup Time: ${DateFormat('h:mm a').format(startDate)}
       ),
     );
       },
+    );
+  }
+
+  Widget _buildCompletedAndRatingCard(
+    BuildContext context,
+    Map<String, dynamic> booking,
+    Map<String, dynamic>? vehicle,
+    bool isDark,
+  ) {
+    final supplierName =
+        vehicle?['supplier']?['companyName']?.toString() ?? 'Supplier';
+    final rating = booking['rating'] as Map<String, dynamic>?;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceDark : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.success.withValues(alpha: 0.35),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.success.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: AppColors.success.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Center(
+              child: Icon(
+                Icons.check_circle_rounded,
+                color: AppColors.success,
+                size: 28,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Bike Return Complete',
+            style: AppTextStyles.titleMedium.copyWith(
+              fontWeight: FontWeight.bold,
+              color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'The bike has been successfully returned and inspected. Thank you for choosing GoZolt!',
+            style: AppTextStyles.bodySmall.copyWith(
+              color: isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          if (rating != null) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGold.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.4)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.star_rounded, color: AppColors.primaryGold, size: 18),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Rated ${rating['rating']} ★ for $supplierName',
+                    style: const TextStyle(
+                      color: AppColors.primaryGold,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: ElevatedButton.icon(
+                onPressed: () => _openRatingModal(booking),
+                icon: const Icon(Icons.star_rounded, color: AppColors.backgroundDark, size: 20),
+                label: Text(
+                  'Rate $supplierName',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGold,
+                  foregroundColor: AppColors.backgroundDark,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  elevation: 0,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 

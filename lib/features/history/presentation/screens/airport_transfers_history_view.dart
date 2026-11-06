@@ -364,13 +364,16 @@ class _AirportTransfersHistoryViewState
     final dropoffLocation = (booking['dropoffLocation'] ?? '').toString();
 
     final isRound = (booking['transferType'] ?? '') == 'ROUND_TRIP';
-    final returnStatus = (booking['returnStatus'] ?? status).toString();
+    final rawReturnStatus = booking['returnStatus']?.toString().trim().toUpperCase();
+    final returnStatus = isRound
+        ? (rawReturnStatus != null && rawReturnStatus.isNotEmpty ? rawReturnStatus : 'PENDING')
+        : status;
     final returnStatusColor = _getStatusColor(returnStatus);
     final returnStatusLabel = _getStatusLabel(returnStatus);
     final statusColor = _getStatusColor(status);
     final statusLabel = _getStatusLabel(status);
     final isFullyCompleted = isRound
-        ? (status == 'COMPLETED' && returnStatus == 'COMPLETED')
+        ? (status == 'COMPLETED' && rawReturnStatus == 'COMPLETED')
         : (status == 'COMPLETED');
     final isFullyCancelled = isRound
         ? ((status == 'CANCELLED' || status == 'REFUNDED') &&

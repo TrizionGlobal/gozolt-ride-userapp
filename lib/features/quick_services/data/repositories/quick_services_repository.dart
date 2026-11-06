@@ -360,4 +360,21 @@ class QuickServicesRepository {
       throw Exception(e.toString());
     }
   }
+
+  Future<Map<String, dynamic>> rateBooking(String bookingId, int rating, {String? review}) async {
+    try {
+      final response = await _dio.post('/quick-services/user/booking/$bookingId/rate', data: {
+        'rating': rating,
+        if (review != null && review.isNotEmpty) 'review': review,
+      });
+      return (response.data is Map<String, dynamic>)
+          ? response.data as Map<String, dynamic>
+          : <String, dynamic>{'success': true};
+    } catch (e) {
+      if (e is DioException) {
+        throw Exception(e.response?.data?['message'] ?? e.message ?? 'Failed to submit rating');
+      }
+      throw Exception(e.toString());
+    }
+  }
 }

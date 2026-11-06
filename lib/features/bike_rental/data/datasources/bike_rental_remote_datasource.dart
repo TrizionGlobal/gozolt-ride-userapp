@@ -101,6 +101,25 @@ class BikeRentalRemoteDatasource {
       throw Exception('Failed to cancel booking: $e');
     }
   }
+
+  Future<Map<String, dynamic>> rateBooking(String bookingId, int rating, {String? review}) async {
+    try {
+      final response = await _dio.post(
+        '/bike-rentals/my-bookings/$bookingId/rate',
+        data: {
+          'rating': rating,
+          if (review != null && review.isNotEmpty) 'review': review,
+        },
+      );
+      return response.data as Map<String, dynamic>;
+    } catch (e) {
+      if (e is DioException) {
+        final message = e.response?.data?['message'] ?? 'Failed to submit rating';
+        throw Exception(message);
+      }
+      throw Exception('Failed to submit rating: $e');
+    }
+  }
   Future<Map<String, dynamic>> calculateExtensionCost(String bookingId, String newEndDate) async {
     try {
       final response = await _dio.post(

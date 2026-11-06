@@ -9,6 +9,8 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/utils/app_date_utils.dart';
 import '../../../airport_transfer/data/datasources/airport_transfer_remote_datasource.dart';
 import '../../../../core/network/socket_service.dart';
+import '../../../../core/providers/dio_provider.dart';
+import '../widgets/supplier_rating_modal.dart';
 import 'airport_transfers_history_view.dart';
 import 'airport_transfer_cancellation_success_screen.dart';
 
@@ -46,6 +48,27 @@ class AirportTransferHistoryDetailsScreen extends ConsumerStatefulWidget {
 class _AirportTransferHistoryDetailsScreenState
     extends ConsumerState<AirportTransferHistoryDetailsScreen> {
   bool _isCancelling = false;
+  bool _hasShownRatingModal = false;
+
+  void _openRatingModal(Map<String, dynamic> booking) {
+    final supplierName = booking['supplier']?['companyName']?.toString() ?? 'Airport Transfer Supplier';
+    final vehicle = booking['vehicle'];
+    final vehicleName = vehicle != null ? '${vehicle['make'] ?? ''} ${vehicle['model'] ?? ''}'.trim() : 'Airport Transfer';
+    final refCode = booking['bookingReference']?.toString() ?? '';
+
+    SupplierRatingModal.show(
+      context,
+      supplierName: supplierName.isNotEmpty ? supplierName : 'Airport Transfer Supplier',
+      serviceTitle: 'Airport Transfer • $vehicleName',
+      bookingReference: refCode.isNotEmpty ? 'Service ID: $refCode' : null,
+      onSubmitRating: (rating, review) async {
+        final dio = ref.read(dioProvider);
+        final ds = AirportTransferRemoteDatasource(dio);
+        await ds.rateBooking(widget.bookingId, rating, review: review);
+        ref.invalidate(airportTransferBookingDetailsProvider(widget.bookingId));
+      },
+    );
+  }
 
   String _formatDateTime(dynamic dateTimeStr) {
     return AppDateUtils.formatDateTime(dateTimeStr);
@@ -488,16 +511,27 @@ class _AirportTransferHistoryDetailsScreenState
         (booking['status'] ?? 'CONFIRMED').toString().trim().toUpperCase();
     final isRound =
         (booking['transferType'] ?? '').toString().trim().toUpperCase() == 'ROUND_TRIP';
-    final returnStatus =
-        (booking['returnStatus'] ?? status).toString().trim().toUpperCase();
+    final rawReturnStatus = booking['returnStatus']?.toString().trim().toUpperCase();
+    final returnStatus = isRound
+        ? (rawReturnStatus != null && rawReturnStatus.isNotEmpty ? rawReturnStatus : 'PENDING')
+        : status;
     final returnStatusColor = _getStatusColor(returnStatus);
     final statusColor = _getStatusColor(status);
     final isCancelled = status == 'CANCELLED' || status == 'REFUNDED';
     final canCancel =
         status == 'PENDING_APPROVAL' || status == 'CONFIRMED';
     final isFullyCompleted = isRound
-        ? (status == 'COMPLETED' && returnStatus == 'COMPLETED')
+        ? (status == 'COMPLETED' && rawReturnStatus == 'COMPLETED')
         : (status == 'COMPLETED');
+
+    if (isFullyCompleted && booking['rating'] == null && !_hasShownRatingModal) {
+      _hasShownRatingModal = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _openRatingModal(booking);
+        }
+      });
+    }
     final isFullyCancelled = isRound
         ? ((status == 'CANCELLED' || status == 'REFUNDED') &&
             (returnStatus == 'CANCELLED' || returnStatus == 'REFUNDED'))
@@ -894,6 +928,49 @@ class _AirportTransferHistoryDetailsScreenState
                     ],
                   ),
                 ],
+              ),
+            ),
+          ],
+          if (booking['rating'] != null) ...[
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGold.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.4)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.star_rounded, color: AppColors.primaryGold, size: 18),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Rated ${booking['rating']['rating']} ★ - Thank you!',
+                    style: const TextStyle(
+                      color: AppColors.primaryGold,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              height: 44,
+              child: ElevatedButton.icon(
+                onPressed: () => _openRatingModal(booking),
+                icon: const Icon(Icons.star_rounded, color: AppColors.backgroundDark, size: 20),
+                label: const Text('Rate Supplier', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGold,
+                  foregroundColor: AppColors.backgroundDark,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  elevation: 0,
+                ),
               ),
             ),
           ],
