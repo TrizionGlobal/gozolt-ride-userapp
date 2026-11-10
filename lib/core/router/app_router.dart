@@ -66,21 +66,6 @@ import '../../features/airport_transfer/presentation/screens/airport_transfer_pa
 import '../../features/airport_transfer/presentation/screens/airport_transfer_payment_failure_screen.dart';
 import '../../features/history/presentation/screens/airport_transfer_history_details_screen.dart';
 
-// Food & Groceries
-import '../../features/food_grocery/data/models/food_restaurant.dart';
-import '../../features/food_grocery/presentation/screens/food_grocery_home_screen.dart';
-import '../../features/food_grocery/presentation/screens/restaurant_listing_screen.dart';
-import '../../features/food_grocery/presentation/screens/restaurant_details_screen.dart';
-import '../../features/food_grocery/data/models/restaurant_menu.dart';
-import '../../features/food_grocery/presentation/screens/food_item_details_screen.dart';
-import '../../features/food_grocery/presentation/screens/grocery_store_listing_screen.dart';
-import '../../features/food_grocery/data/models/grocery_store.dart';
-import '../../features/food_grocery/presentation/screens/grocery_catalogue_screen.dart';
-import '../../features/food_grocery/data/models/grocery_catalogue.dart';
-import '../../features/food_grocery/presentation/screens/grocery_product_details_screen.dart';
-import '../../features/food_grocery/presentation/screens/food_grocery_cart_screen.dart';
-import '../../features/food_grocery/presentation/screens/food_grocery_delivery_address_screen.dart';
-import '../../features/food_grocery/presentation/screens/food_grocery_review_order_screen.dart';
 
 // Food & Groceries
 import '../../features/food_grocery/data/models/food_restaurant.dart';
@@ -647,17 +632,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           final amountVal = extra['amount'] ?? q['amount'];
           return QuickServicePaymentConfirmationScreen(
             bookingId: extra['bookingId']?.toString() ?? q['bookingId'] ?? '',
-            serviceTitle: extra['serviceTitle']?.toString() ??
-                q['serviceTitle'] ??
-                'Quick Service',
+            serviceTitle: extra['serviceTitle']?.toString() ?? q['serviceTitle'] ?? 'Quick Service',
             amount: (amountVal is num)
                 ? (amountVal as num).toDouble()
                 : (double.tryParse(amountVal?.toString() ?? '0') ?? 0.0),
-            paymentMethod: extra['paymentMethod']?.toString() ??
-                q['paymentMethod'] ??
-                'Online Payment (Stripe)',
-            stripePaymentIntentId: extra['stripePaymentIntentId']?.toString() ??
-                q['paymentIntentId'],
+            paymentMethod: extra['paymentMethod']?.toString() ?? q['paymentMethod'] ?? 'Online Payment (Stripe)',
+            stripePaymentIntentId: extra['stripePaymentIntentId']?.toString() ?? q['paymentIntentId'],
             onDone: extra['onDone'] as VoidCallback?,
           );
         },
@@ -671,17 +651,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           final amountVal = extra['amount'] ?? q['amount'];
           return QuickServicePaymentConfirmationScreen(
             bookingId: extra['bookingId']?.toString() ?? q['bookingId'] ?? '',
-            serviceTitle: extra['serviceTitle']?.toString() ??
-                q['serviceTitle'] ??
-                'Quick Service',
+            serviceTitle: extra['serviceTitle']?.toString() ?? q['serviceTitle'] ?? 'Quick Service',
             amount: (amountVal is num)
                 ? (amountVal as num).toDouble()
                 : (double.tryParse(amountVal?.toString() ?? '0') ?? 0.0),
-            paymentMethod: extra['paymentMethod']?.toString() ??
-                q['paymentMethod'] ??
-                'Online Payment (Stripe)',
-            stripePaymentIntentId: extra['stripePaymentIntentId']?.toString() ??
-                q['paymentIntentId'],
+            paymentMethod: extra['paymentMethod']?.toString() ?? q['paymentMethod'] ?? 'Online Payment (Stripe)',
+            stripePaymentIntentId: extra['stripePaymentIntentId']?.toString() ?? q['paymentIntentId'],
             onDone: extra['onDone'] as VoidCallback?,
           );
         },
@@ -696,14 +671,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           final amountVal = extra['amount'] ?? q['amount'];
           return QuickServicePaymentFailureScreen(
             bookingId: extra['bookingId']?.toString() ?? q['bookingId'] ?? '',
-            serviceTitle: extra['serviceTitle']?.toString() ??
-                q['serviceTitle'] ??
-                'Quick Service',
+            serviceTitle: extra['serviceTitle']?.toString() ?? q['serviceTitle'] ?? 'Quick Service',
             amount: (amountVal is num)
                 ? (amountVal as num).toDouble()
                 : (double.tryParse(amountVal?.toString() ?? '0') ?? 0.0),
-            errorMessage:
-                extra['errorMessage']?.toString() ?? q['errorMessage'],
+            errorMessage: extra['errorMessage']?.toString() ?? q['errorMessage'],
             onRetry: extra['onRetry'] as VoidCallback?,
             onCancel: extra['onCancel'] as VoidCallback?,
           );
@@ -718,14 +690,11 @@ final routerProvider = Provider<GoRouter>((ref) {
           final amountVal = extra['amount'] ?? q['amount'];
           return QuickServicePaymentFailureScreen(
             bookingId: extra['bookingId']?.toString() ?? q['bookingId'] ?? '',
-            serviceTitle: extra['serviceTitle']?.toString() ??
-                q['serviceTitle'] ??
-                'Quick Service',
+            serviceTitle: extra['serviceTitle']?.toString() ?? q['serviceTitle'] ?? 'Quick Service',
             amount: (amountVal is num)
                 ? (amountVal as num).toDouble()
                 : (double.tryParse(amountVal?.toString() ?? '0') ?? 0.0),
-            errorMessage:
-                extra['errorMessage']?.toString() ?? q['errorMessage'],
+            errorMessage: extra['errorMessage']?.toString() ?? q['errorMessage'],
             onRetry: extra['onRetry'] as VoidCallback?,
             onCancel: extra['onCancel'] as VoidCallback?,
           );
@@ -1481,6 +1450,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
 
+
       // ── Food & Groceries ────────────────────────────────────
       GoRoute(
         path: '/food-grocery',
@@ -1871,7 +1841,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           return AirportTransferHistoryDetailsScreen(bookingId: bookingId);
         },
       ),
-      GoRoute(
+            GoRoute(
         path: '/food-grocery/payment-method',
         name: RouteNames.foodGroceryPaymentMethod,
         pageBuilder: (context, state) {
@@ -2489,12 +2459,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/computer-repair-confirmation',
         name: RouteNames.quickServicesComputerRepairConfirmation,
         builder: (context, state) {
-          final bookingData =
-              state.extra as QuickServiceBookingData? ?? _dummyBookingData;
-          return SharedQuickServiceConfirmationScreen(
-              bookingData: state.extra as QuickServiceBookingData,
-              serviceIcon: Icons.laptop,
-              defaultTitle: 'Computer Repair');
+          final bookingData = _resolveQuickServiceData(state.extra);
+          return SharedQuickServiceConfirmationScreen(bookingData: bookingData, serviceIcon: Icons.laptop, defaultTitle: 'Computer & Laptop Repair');
         },
       ),
       GoRoute(
@@ -2505,8 +2471,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           final bookingData = extra['bookingData'] as QuickServiceBookingData;
           final serviceIcon = extra['serviceIcon'] as IconData;
           final defaultTitle = extra['defaultTitle'] as String;
-          final onRetrySuccessRouteName =
-              extra['onRetrySuccessRouteName'] as String;
+          final onRetrySuccessRouteName = extra['onRetrySuccessRouteName'] as String;
           return SharedQuickServiceFailedScreen(
             bookingData: bookingData,
             serviceIcon: serviceIcon,

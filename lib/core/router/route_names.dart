@@ -78,8 +78,7 @@ abstract final class RouteNames {
   static const String airportTransferSearch = 'airport-transfer-search';
   static const String airportTransferChoose = 'airport-transfer-choose';
   static const String airportTransferDetails = 'airport-transfer-details';
-  static const String airportTransferPassengerDetails =
-      'airport-transfer-passenger-details';
+  static const String airportTransferPassengerDetails = 'airport-transfer-passenger-details';
   static const String airportTransferReview = 'airport-transfer-review';
   static const String airportTransferConfirmation = 'airport-transfer-confirmation';
   static const String airportTransferPaymentConfirmation = 'airport-transfer-payment-confirmation';
@@ -264,18 +263,11 @@ abstract final class RouteNames {
   static const String quickServicesPestControlConfirmation =
       'quick-services-pest-control-confirmation';
 
-  static const String quickServicesPrinterScanner =
-      'quick-services-printer-scanner';
-  static const String quickServicesPrinterScannerReview =
-      'quick-services-printer-scanner-review';
-  static const String quickServicesPrinterScannerConfirmation =
-      'quick-services-printer-scanner-confirmation';
-  static const String quickServiceHistoryDetails =
-      'quick-service-history-details';
-  static const String quickServicesPaymentFailed =
-      'quick-services-payment-failed';
-  static const String quickServicePaymentConfirmation =
-      'quick-service-payment-confirmation';
-  static const String quickServicePaymentFailure =
-      'quick-service-payment-failure';
+  static const String quickServicesPrinterScanner = 'quick-services-printer-scanner';
+  static const String quickServicesPrinterScannerReview = 'quick-services-printer-scanner-review';
+  static const String quickServicesPrinterScannerConfirmation = 'quick-services-printer-scanner-confirmation';
+  static const String quickServiceHistoryDetails = 'quick-service-history-details';
+  static const String quickServicesPaymentFailed = 'quick-services-payment-failed';
+  static const String quickServicePaymentConfirmation = 'quick-service-payment-confirmation';
+  static const String quickServicePaymentFailure = 'quick-service-payment-failure';
 }
