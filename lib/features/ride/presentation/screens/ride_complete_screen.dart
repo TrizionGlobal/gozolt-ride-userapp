@@ -1,4 +1,6 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import '../../../../core/network/api_exception.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -1318,21 +1320,30 @@ class _PaymentMethodSheetState extends ConsumerState<_PaymentMethodSheet> {
             // Save card to our database via confirm-setup
             try {
               await ds.confirmSetupIntent(paymentMethodId);
-            } catch (_) {}
-            // Reload cards
-            ref.invalidate(paymentMethodsProvider);
-            // Select the new card
-            setState(() {
-              _selectedMethod = 'CARD';
-              _selectedMethodId = paymentMethodId;
-            });
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Card saved successfully'),
-                  backgroundColor: AppColors.success,
-                ),
-              );
+              ref.invalidate(paymentMethodsProvider);
+              setState(() {
+                _selectedMethod = 'CARD';
+                _selectedMethodId = paymentMethodId;
+              });
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Card saved successfully'),
+                    backgroundColor: AppColors.success,
+                  ),
+                );
+              }
+            } catch (e) {
+              ref.invalidate(paymentMethodsProvider);
+              String msg = 'Failed to save card. Please try again.';
+              if (e is DioException && e.error is ApiException) {
+                msg = (e.error as ApiException).userMessage;
+              } else if (e is DioException) {
+                msg = ApiException.fromDioException(e).userMessage;
+              } else if (e is ApiException) {
+                msg = e.userMessage;
+              }
+              throw Exception(msg);
             }
           }
         },

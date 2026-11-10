@@ -6,6 +6,7 @@ import '../../../../core/providers/dio_provider.dart';
 import '../../../home/data/models/user_address.dart';
 import '../../data/datasources/account_remote_datasource.dart';
 import '../../../ride/data/models/saved_payment_method.dart';
+import '../../../ride/presentation/providers/ride_providers.dart';
 
 final accountRemoteDatasourceProvider =
     Provider<AccountRemoteDatasource>((ref) {
@@ -24,7 +25,7 @@ final accountAddressesProvider =
 final accountPaymentMethodsProvider = StateNotifierProvider<
     AccountPaymentMethodsNotifier, AccountPaymentMethodsState>((ref) {
   final ds = ref.read(accountRemoteDatasourceProvider);
-  return AccountPaymentMethodsNotifier(ds);
+  return AccountPaymentMethodsNotifier(ds, ref);
 });
 
 /// Language preference.
@@ -130,8 +131,9 @@ class AccountPaymentMethodsState {
 class AccountPaymentMethodsNotifier
     extends StateNotifier<AccountPaymentMethodsState> {
   final AccountRemoteDatasource _ds;
+  final Ref _ref;
 
-  AccountPaymentMethodsNotifier(this._ds)
+  AccountPaymentMethodsNotifier(this._ds, this._ref)
       : super(const AccountPaymentMethodsState()) {
     load();
   }
@@ -158,7 +160,8 @@ class AccountPaymentMethodsNotifier
   Future<void> deleteMethod(String id) async {
     try {
       await _ds.deletePaymentMethod(id);
-      load();
+      await load();
+      _ref.invalidate(paymentMethodsProvider);
     } catch (e) {
       String msg = e.toString();
       if (e is DioException && e.error is ApiException) {
@@ -175,6 +178,7 @@ class AccountPaymentMethodsNotifier
     try {
       await _ds.confirmSetupIntent(paymentMethodId);
       await load();
+      _ref.invalidate(paymentMethodsProvider);
       return true;
     } catch (e) {
       String msg = e.toString();

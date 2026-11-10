@@ -13,11 +13,25 @@ import '../../../ride/presentation/widgets/add_card_sheet.dart';
 import '../../../ride/presentation/widgets/stripe_add_card_sheet.dart';
 import '../../../ride/presentation/widgets/payment_brand_icon.dart';
 
-class PaymentMethodsScreen extends ConsumerWidget {
+class PaymentMethodsScreen extends ConsumerStatefulWidget {
   const PaymentMethodsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PaymentMethodsScreen> createState() =>
+      _PaymentMethodsScreenState();
+}
+
+class _PaymentMethodsScreenState extends ConsumerState<PaymentMethodsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(accountPaymentMethodsProvider.notifier).load();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     ref.listen<AccountPaymentMethodsState>(accountPaymentMethodsProvider, (previous, next) {
       if (next.error != null && (previous == null || previous.error != next.error)) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -313,10 +327,11 @@ class PaymentMethodsScreen extends ConsumerWidget {
             child: Text('Cancel', style: TextStyle(color: AppColors.textMuted, fontSize: 13, fontWeight: FontWeight.w500)),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               HapticFeedback.mediumImpact();
               Navigator.pop(ctx);
-              ref.read(accountPaymentMethodsProvider.notifier).deleteMethod(pm.id);
+              await ref.read(accountPaymentMethodsProvider.notifier).deleteMethod(pm.id);
+              ref.invalidate(paymentMethodsProvider);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
@@ -346,6 +361,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
           onCardAdded: (paymentMethodId) async {
             if (paymentMethodId != null) {
               final success = await ref.read(accountPaymentMethodsProvider.notifier).confirmSetup(paymentMethodId);
+              ref.invalidate(paymentMethodsProvider);
               if (success && context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -356,6 +372,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
               }
             } else {
               ref.read(accountPaymentMethodsProvider.notifier).load();
+              ref.invalidate(paymentMethodsProvider);
             }
           },
         );

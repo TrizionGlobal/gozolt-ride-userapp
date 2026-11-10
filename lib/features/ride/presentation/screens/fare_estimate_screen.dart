@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
+import '../../../../core/network/api_exception.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -13,6 +14,7 @@ import '../../../../core/constants/asset_paths.dart';
 import '../../../rewards/presentation/providers/rewards_providers.dart';
 import '../../../../core/router/route_names.dart';
 import '../../data/models/saved_payment_method.dart';
+import '../../../account/presentation/providers/account_providers.dart';
 import '../providers/ride_booking_state.dart';
 import '../providers/ride_providers.dart';
 import '../widgets/fare_breakdown_card.dart';
@@ -67,6 +69,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
   /// Pre-select the user's default saved card when the screen loads.
   Future<void> _autoSelectDefaultPayment() async {
     try {
+      ref.invalidate(paymentMethodsProvider);
       final methods = await ref.read(paymentMethodsProvider.future);
       if (!mounted) return;
       await ref
@@ -329,6 +332,7 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
 
   // ── Inline Payment Method Sheet ───────────────────────────
   void _showPaymentMethodSheet() {
+    ref.invalidate(paymentMethodsProvider);
     final booking = ref.read(rideBookingProvider);
     showModalBottomSheet(
       context: context,
@@ -354,11 +358,33 @@ class _FareEstimateScreenState extends ConsumerState<FareEstimateScreen> {
 
     final paymentMethodsAsync = ref.watch(paymentMethodsProvider);
     SavedPaymentMethod? selectedCard;
-    if (booking.paymentMethodType == PaymentMethodType.card && booking.selectedCardId != null) {
-      final methods = paymentMethodsAsync.value ?? [];
-      try {
-        selectedCard = methods.firstWhere((m) => m.id == booking.selectedCardId);
-      } catch (_) {}
+    if (booking.paymentMethodType == PaymentMethodType.card) {
+      final methods = paymentMethodsAsync.value;
+      if (methods != null) {
+        if (booking.selectedCardId != null) {
+          try {
+            selectedCard =
+                methods.firstWhere((m) => m.id == booking.selectedCardId);
+          } catch (_) {}
+        }
+        if (selectedCard == null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            if (methods.isNotEmpty) {
+              final defaultCard = methods.firstWhere((m) => m.isDefault,
+                  orElse: () => methods.first);
+              ref.read(rideBookingProvider.notifier).setPaymentMethod(
+                    PaymentMethodType.card,
+                    cardId: defaultCard.id,
+                  );
+            } else {
+              ref
+                  .read(rideBookingProvider.notifier)
+                  .setPaymentMethod(PaymentMethodType.cash);
+            }
+          });
+        }
+      }
     }
 
     return Scaffold(
@@ -1412,6 +1438,9 @@ class _BookingPaymentSheetState extends ConsumerState<_BookingPaymentSheet> {
     super.initState();
     _selectedType = widget.currentType;
     _selectedCardId = widget.currentCardId;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.invalidate(paymentMethodsProvider);
+    });
   }
 
   void _confirm() {
@@ -1420,8 +1449,6 @@ class _BookingPaymentSheetState extends ConsumerState<_BookingPaymentSheet> {
   }
 
   void _addCard() {
-    
-
     final ds = ref.read(paymentRemoteDatasourceProvider);
     showModalBottomSheet(
       context: context,
@@ -1433,19 +1460,32 @@ class _BookingPaymentSheetState extends ConsumerState<_BookingPaymentSheet> {
           if (paymentMethodId != null) {
             try {
               await ds.confirmSetupIntent(paymentMethodId);
-            } catch (_) {}
-            ref.invalidate(paymentMethodsProvider);
-            setState(() {
-              _selectedType = PaymentMethodType.card;
-              _selectedCardId = paymentMethodId;
-            });
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Card saved successfully'),
-                  backgroundColor: AppColors.success,
-                ),
-              );
+              ref.invalidate(paymentMethodsProvider);
+              ref.read(accountPaymentMethodsProvider.notifier).load();
+              setState(() {
+                _selectedType = PaymentMethodType.card;
+                _selectedCardId = paymentMethodId;
+              });
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Card saved successfully'),
+                    backgroundColor: AppColors.success,
+                  ),
+                );
+              }
+            } catch (e) {
+              ref.invalidate(paymentMethodsProvider);
+              ref.read(accountPaymentMethodsProvider.notifier).load();
+              String msg = 'Failed to save card. Please try again.';
+              if (e is DioException && e.error is ApiException) {
+                msg = (e.error as ApiException).userMessage;
+              } else if (e is DioException) {
+                msg = ApiException.fromDioException(e).userMessage;
+              } else if (e is ApiException) {
+                msg = e.userMessage;
+              }
+              throw Exception(msg);
             }
           }
         },
@@ -1599,6 +1639,21 @@ class _BookingPaymentSheetState extends ConsumerState<_BookingPaymentSheet> {
     Color textColor,
     Color secondaryTextColor,
   ) {
+    if (_selectedType == PaymentMethodType.card) {
+      final bool cardExists =
+          _selectedCardId != null && methods.any((m) => m.id == _selectedCardId);
+      if (!cardExists) {
+        if (methods.isNotEmpty) {
+          final defaultCard = methods.firstWhere((m) => m.isDefault,
+              orElse: () => methods.first);
+          _selectedCardId = defaultCard.id;
+        } else {
+          _selectedType = PaymentMethodType.cash;
+          _selectedCardId = null;
+        }
+      }
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
