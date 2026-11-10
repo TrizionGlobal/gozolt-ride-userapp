@@ -26,10 +26,25 @@ class RewardsScreen extends ConsumerStatefulWidget {
 class _RewardsScreenState extends ConsumerState<RewardsScreen> {
   String? _previousTier;
 
-  String _tierRedeemRateText(String tier, [RewardRules? rules]) {
-    final ratio = rules?.redemption.pointsToEurRatio ?? 100.0;
-    final eurVal = (ratio > 0 ? (100.0 / ratio) : 1.0).toStringAsFixed(2);
-    return '100 Coins = \u20AC$eurVal';
+  String _tierRedeemRateText(String tier, [RewardRules? rules, RewardSummary? summary]) {
+    if (summary != null && summary.tierRedemptionRates != null && summary.tierRedemptionRates!.containsKey(tier)) {
+      final val = summary.tierRedemptionRates![tier]!;
+      return '100 Coins = \u20AC${val.toStringAsFixed(2)}';
+    }
+    final tierInfo = rules?.tierFor(tier);
+    if (tierInfo != null && tierInfo.redemptionRateEur > 0) {
+      return '100 Coins = \u20AC${tierInfo.redemptionRateEur.toStringAsFixed(2)}';
+    }
+    switch (tier.toUpperCase()) {
+      case 'PLATINUM':
+        return '100 Coins = \u20AC7.00';
+      case 'GOLD':
+        return '100 Coins = \u20AC5.00';
+      case 'SILVER':
+        return '100 Coins = \u20AC3.00';
+      default:
+        return '100 Coins = \u20AC1.00';
+    }
   }
 
   int _tierWeight(String tier) {
@@ -378,7 +393,7 @@ class _RewardsScreenState extends ConsumerState<RewardsScreen> {
                           const Icon(Icons.currency_exchange, color: Colors.white, size: 12),
                           const SizedBox(width: 4),
                           Text(
-                            _tierRedeemRateText(tier, rules),
+                            _tierRedeemRateText(tier, rules, summary),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 10,

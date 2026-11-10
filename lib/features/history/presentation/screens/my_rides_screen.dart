@@ -114,9 +114,11 @@ class MyRidesScreen extends ConsumerWidget {
 
             // ── Content ────────────────────────────────
             Expanded(
-              child: selectedTab == 0
-                  ? Column(
-                      children: [
+              child: IndexedStack(
+                index: selectedTab,
+                children: [
+                  Column(
+                    children: [
 
             // ── Filter Tabs ────────────────────────────
             Padding(
@@ -317,8 +319,13 @@ class MyRidesScreen extends ConsumerWidget {
       ), // closes RefreshIndicator
     ), // closes Expanded
   ], // closes Column children
-) // closes Column
-: selectedTab == 1 ? const CarRentalsHistoryView() : selectedTab == 2 ? const BikeRentalsHistoryView() : selectedTab == 3 ? const QuickServicesHistoryView() : const AirportTransfersHistoryView(),
+), // closes Column
+                  const CarRentalsHistoryView(),
+                  const BikeRentalsHistoryView(),
+                  const QuickServicesHistoryView(),
+                  const AirportTransfersHistoryView(),
+                ],
+              ),
             ), // closes Expanded
           ], // closes Column children
         ), // closes Column

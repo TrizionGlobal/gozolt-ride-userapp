@@ -13,6 +13,8 @@ import '../../../../core/constants/asset_paths.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../history/presentation/providers/history_providers.dart';
 import '../../../home/presentation/providers/home_providers.dart';
+import '../../../../core/providers/dio_provider.dart';
+import '../../data/datasources/car_rental_remote_datasource.dart';
 
 class CarRentalConfirmationScreen extends ConsumerStatefulWidget {
   final CarModel? car;
@@ -29,12 +31,16 @@ class _CarRentalConfirmationScreenState extends ConsumerState<CarRentalConfirmat
   late String displayBookingId;
   late String fullBookingId;
   late String qrDataJson;
+  String _vehicleName = 'Premium Vehicle';
+  double? _totalAmount;
 
   @override
   void initState() {
     super.initState();
     
     fullBookingId = widget.bookingId ?? 'UNKNOWN';
+    _totalAmount = widget.totalAmount;
+    _vehicleName = widget.car?.name ?? 'Premium Vehicle';
     
     if (fullBookingId != 'UNKNOWN' && fullBookingId.length >= 8) {
       displayBookingId = 'GZ-BKG-${fullBookingId.substring(0, 8).toUpperCase()}';
@@ -42,16 +48,46 @@ class _CarRentalConfirmationScreenState extends ConsumerState<CarRentalConfirmat
       displayBookingId = '#GZ-CR-UNKNOWN';
     }
     
-    // Create payload for QR code
-    final pickupDate = DateTime.now().add(const Duration(days: 1));
+    _generateQrPayload();
+
+    if (widget.car == null && fullBookingId != 'UNKNOWN') {
+      _loadDynamicBookingDetails();
+    }
+  }
+
+  void _generateQrPayload([DateTime? pickup]) {
+    final pickupDate = pickup ?? DateTime.now().add(const Duration(days: 1));
     qrDataJson = '''
 Booking Reference: $displayBookingId
-Vehicle: ${widget.car?.name ?? "Premium Vehicle"}
+Vehicle: $_vehicleName
 Date: ${DateFormat('dd MMM yyyy').format(pickupDate)}
 Time: ${DateFormat('h:mm a').format(pickupDate)}
 
 (ID: $fullBookingId)
 '''.trim();
+  }
+
+  Future<void> _loadDynamicBookingDetails() async {
+    try {
+      final dio = ref.read(dioProvider);
+      final res = await CarRentalRemoteDatasource(dio).getBookingDetails(fullBookingId);
+      if (mounted) {
+        setState(() {
+          final vehicle = res['vehicle'] as Map<String, dynamic>?;
+          if (vehicle != null && vehicle['name'] != null) {
+            _vehicleName = vehicle['name'].toString();
+          }
+          if (_totalAmount == null && res['grandTotal'] != null) {
+            _totalAmount = (res['grandTotal'] as num).toDouble();
+          }
+          DateTime? pDate;
+          if (res['startDate'] != null) {
+            pDate = DateTime.tryParse(res['startDate'].toString());
+          }
+          _generateQrPayload(pDate);
+        });
+      }
+    } catch (_) {}
   }
 
   @override
@@ -121,14 +157,14 @@ Time: ${DateFormat('h:mm a').format(pickupDate)}
                             Text('Booking ID', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted)),
                             const SizedBox(height: 2),
                             Text(displayBookingId, style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.w900, letterSpacing: 1.5)),
-                            if (widget.totalAmount != null) ...[
+                            if (_totalAmount != null) ...[
                               const Padding(
                                 padding: EdgeInsets.symmetric(vertical: 8),
                                 child: Divider(),
                               ),
                               Text('Amount Paid', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textMuted)),
                               const SizedBox(height: 2),
-                              Text('€${widget.totalAmount!.toStringAsFixed(2)}', style: AppTextStyles.headlineSmall.copyWith(fontWeight: FontWeight.bold, color: AppColors.success)),
+                              Text('€${_totalAmount!.toStringAsFixed(2)}', style: AppTextStyles.headlineSmall.copyWith(fontWeight: FontWeight.bold, color: AppColors.success)),
                             ],
                             Padding(
                               padding: const EdgeInsets.symmetric(vertical: 8),

@@ -98,21 +98,21 @@ class RewardsInfoScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                     // Section 1: How to Earn
-                    _sectionTitle('Collect coins on every ride and turn them into wallet cash'),
+                    _sectionTitle('Collect coins on every booking and turn them into wallet cash'),
                     const SizedBox(height: 16),
                     _bulletPoint(
                         context,
-                        'Earn ${rules.earning.pointsPerEur} ${rules.earning.pointsPerEur == 1 ? "coin" : "coins"} for every \u20AC1 spent on completed rides.'),
+                        'Earn ${rules.earning.pointsPerEur} ${rules.earning.pointsPerEur == 1 ? "coin" : "coins"} for every \u20AC1 spent on completed bookings across all 5 services.'),
                  
                     _bulletPoint(
                         context,
-                        'Wallet cash can be used to pay for any of your rides without limit.'),
+                        'Wallet cash can be used to pay for any of your bookings without limit.'),
                     _bulletPoint(
                         context,
-                        'Rewards are added automatically after each completed ride.'),
+                        'Rewards are added automatically after each completed booking.'),
                     _bulletPoint(
                         context,
-                        'Reward rules are set by the app admin and may be updated anytime.'),
+                        'Reward rules are set dynamically by the admin and may be updated anytime.'),
 
                     const SizedBox(height: 28),
 
@@ -175,6 +175,15 @@ class RewardsInfoScreen extends ConsumerWidget {
 
                     // Section 3: Tier Table
                     _sectionHeader('Tier Levels'),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Qualifying bookings count across all 5 services: Cabs, Car Rentals, Bike Rentals, Airport Transfers & Quick Services.',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.textMuted
+                            : AppColors.textMutedLight,
+                      ),
+                    ),
                     const SizedBox(height: 12),
                     ...rules.tiers.map((tier) =>
                         _tierCard(context, tier, tier.tier == currentTier)),
@@ -200,7 +209,7 @@ class RewardsInfoScreen extends ConsumerWidget {
                               'Minimum ${rules.redemption.minimumPoints} coins to redeem'),
                           _bulletPoint(
                               context,
-                              'Redemption rate: 100 coins = \u20AC${(rules.redemption.pointsToEurRatio > 0 ? (100.0 / rules.redemption.pointsToEurRatio) : 1.0).toStringAsFixed(2)}'),
+                              'Tier-based redemption rates: Bronze \u20AC1.00, Silver \u20AC3.00, Gold \u20AC5.00, Platinum \u20AC7.00 per 100 coins.'),
                           _bulletPoint(
                               context,
                               'Redeemed cash is instantly credited to your wallet balance and can be used on any future bookings.'),
@@ -379,7 +388,11 @@ class RewardsInfoScreen extends ConsumerWidget {
 
           // Details
           _tierDetailRow(
-              context, 'Minimum requirement', '${tier.minRides} completed rides'),
+              context,
+              'Qualification',
+              tier.minRides == 0
+                  ? '0 bookings (On signup)'
+                  : '${tier.minRides} completed bookings'),
           if (tier.benefits.isNotEmpty) ...[
             const SizedBox(height: 12),
             ...tier.benefits.map(
@@ -410,16 +423,28 @@ class RewardsInfoScreen extends ConsumerWidget {
 
   Widget _tierDetailRow(BuildContext context, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(bottom: 6),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: AppTextStyles.bodySmall
-                  .copyWith(color: Theme.of(context).brightness == Brightness.dark ? AppColors.textMuted : AppColors.textMutedLight)),
-          Text(value,
-              style: AppTextStyles.bodySmall
-                  .copyWith(fontWeight: FontWeight.w600)),
+          Text(
+            label,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColors.textMuted
+                  : AppColors.textMutedLight,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: AppTextStyles.bodySmall.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
         ],
       ),
     );

@@ -18,6 +18,7 @@ import '../../../rewards/presentation/providers/rewards_providers.dart';
 import '../../../home/presentation/providers/home_providers.dart';
 import '../widgets/airport_transfer_header.dart';
 import '../widgets/airport_transfer_payment_sheet.dart';
+import '../widgets/airport_transfer_active_booking_modal.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/asset_paths.dart';
@@ -50,6 +51,8 @@ class _AirportTransferReviewScreenState
   String? _pendingDropoffLocation;
   Timer? _pollingTimer;
 
+  Map<String, dynamic>? _activeBooking;
+
   static final Uri _termsUrl = Uri.parse(
     'https://sites.google.com/view/gozoltlegal-supplier/terms-of-service',
   );
@@ -62,23 +65,47 @@ class _AirportTransferReviewScreenState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _checkActiveBooking();
+  }
+
+  Future<void> _checkActiveBooking() async {
+    try {
+      final datasource = ref.read(airportTransferRemoteDatasourceProvider);
+      final myBookings = await datasource.getMyBookings(limit: 20);
+      final active = myBookings.cast<Map<String, dynamic>?>().firstWhere(
+        (b) => isAirportTransferBookingActive(b),
+        orElse: () => null,
+      );
+      if (active != null && mounted) {
+        setState(() {
+          _activeBooking = active;
+        });
+      }
+    } catch (_) {}
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _pollingTimer?.cancel();
+    if (_pendingBookingId != null) {
+      final idToCancel = _pendingBookingId!;
+      ref
+          .read(airportTransferRemoteDatasourceProvider)
+          .cancelBooking(idToCancel, reason: 'Payment abandoned by user')
+          .catchError((_) => <String, dynamic>{});
+    }
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && _pendingBookingId != null) {
-      _verifyPendingOnlinePayment();
+      _verifyPendingOnlinePayment(showPromptIfNotPaid: true);
     }
   }
 
-  Future<void> _verifyPendingOnlinePayment() async {
+  Future<void> _verifyPendingOnlinePayment({bool showPromptIfNotPaid = false}) async {
     if (_pendingBookingId == null || !mounted) return;
     try {
       final res = await ref
@@ -117,6 +144,39 @@ class _AirportTransferReviewScreenState
             'pickupDateTime': _pendingPickupDateTime,
             'returnDateTime': _pendingReturnDateTime,
           },
+        );
+      } else if (!isPaid && showPromptIfNotPaid && mounted && _pendingBookingId != null) {
+        ScaffoldMessenger.of(context).removeCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Payment not completed. Please retry or cancel.'),
+            backgroundColor: Colors.amber[800],
+            action: SnackBarAction(
+              label: 'Cancel Booking',
+              textColor: Colors.white,
+              onPressed: () async {
+                final idToCancel = _pendingBookingId;
+                _pollingTimer?.cancel();
+                _pendingBookingId = null;
+                if (idToCancel != null) {
+                  try {
+                    await ref
+                        .read(airportTransferRemoteDatasourceProvider)
+                        .cancelBooking(idToCancel, reason: 'Payment abandoned by user');
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Unpaid booking cancelled.'),
+                          backgroundColor: Colors.redAccent,
+                        ),
+                      );
+                    }
+                  } catch (_) {}
+                }
+              },
+            ),
+            duration: const Duration(seconds: 8),
+          ),
         );
       }
     } catch (_) {}
@@ -332,13 +392,22 @@ class _AirportTransferReviewScreenState
         });
 
         if (mounted) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Opening secure Stripe Checkout... Please complete your payment.',
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.payment_rounded, color: Colors.white, size: 20),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Redirecting to Stripe... Please complete payment to confirm.',
+                    ),
+                  ),
+                ],
               ),
-              backgroundColor: AppColors.success,
-              duration: Duration(seconds: 5),
+              backgroundColor: isDark ? AppColors.surfaceDark : AppColors.cardDark,
+              duration: const Duration(seconds: 10),
             ),
           );
         }
@@ -348,6 +417,24 @@ class _AirportTransferReviewScreenState
       if (!mounted) return false;
 
       final message = error.toString().replaceFirst('Exception: ', '');
+
+      if (message.toLowerCase().contains('current airport transfer') ||
+          message.toLowerCase().contains('active airport transfer') ||
+          message.toLowerCase().contains('conflict') ||
+          message.toLowerCase().contains('409')) {
+        await _checkActiveBooking();
+        if (_activeBooking != null && mounted) {
+          showActiveAirportTransferModal(context, _activeBooking!);
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+        return false;
+      }
 
       // Navigate to Payment Failure screen with retry options
       context.pushNamed(
@@ -416,12 +503,11 @@ class _AirportTransferReviewScreenState
         ? rewardSummary!.currentPoints.toInt()
         : (ref.watch(userRewardsPointsProvider).value ?? 0);
 
-    final int conversionRate =
-        (ref.watch(rewardRulesProvider).value?.redemption.pointsToEurRatio ?? 100.0).toInt();
+    final double coinValueInEur = rewardSummary?.coinValueInEur ?? 0.01;
 
-    final double maxEurValue = conversionRate > 0 ? (balance / conversionRate) : 0.0;
+    final double maxEurValue = balance * coinValueInEur;
     final double appliedEurValue = maxEurValue > subtotal ? subtotal : maxEurValue;
-    final int coinsUsed = (appliedEurValue * conversionRate).round();
+    final int coinsUsed = coinValueInEur > 0 ? (appliedEurValue / coinValueInEur).ceil() : 0;
 
     final int minRedeemCoins =
         ref.watch(rewardRulesProvider).value?.redemption.minimumPoints ?? 200;
@@ -1571,7 +1657,7 @@ class _AirportTransferReviewScreenState
                   width: double.infinity,
                   onPressed: _isBooking
                       ? null
-                      : () {
+                      : () async {
                           if (!_acceptTerms || !_acceptPrivacy) {
                             setState(() {
                               _showAgreementError = true;
@@ -1581,6 +1667,27 @@ class _AirportTransferReviewScreenState
                           setState(() {
                             _showAgreementError = false;
                           });
+
+                          if (_activeBooking != null) {
+                            showActiveAirportTransferModal(
+                              context,
+                              _activeBooking!,
+                            );
+                            return;
+                          }
+
+                          await _checkActiveBooking();
+                          if (!mounted) return;
+                          if (_activeBooking != null) {
+                            if (context.mounted) {
+                              showActiveAirportTransferModal(
+                                context,
+                                _activeBooking!,
+                              );
+                            }
+                            return;
+                          }
+
                           _proceedToPayment(finalTotal, discount: discount);
                         }),
               if (!_acceptTerms || !_acceptPrivacy) ...[

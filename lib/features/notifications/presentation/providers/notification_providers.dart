@@ -76,103 +76,140 @@ class NotificationsNotifier extends StateNotifier<NotificationsState> {
     load();
   }
 
+  List<NotificationItem> _filterItems(List<NotificationItem> items) {
+    if (_filter == null) return items;
+
+    if (_filter == 'CAR_RENTAL') {
+      return items.where((n) {
+        final dataType = n.data?['type'] as String?;
+        final moduleName = n.data?['module'] as String?;
+        return moduleName == 'car-rentals' || dataType == 'CAR_RENTAL';
+      }).toList();
+    } else if (_filter == 'BIKE_RENTAL') {
+      return items.where((n) {
+        final dataType = n.data?['type'] as String?;
+        final moduleName = n.data?['module'] as String?;
+        return moduleName == 'bike-rentals' || dataType == 'BIKE_RENTAL';
+      }).toList();
+    } else if (_filter == 'QUICK_SERVICE') {
+      return items.where((n) {
+        final dataType = n.data?['type'] as String?;
+        final moduleName = n.data?['module'] as String?;
+        return moduleName == 'quick-services' || dataType == 'QUICK_SERVICE';
+      }).toList();
+    } else if (_filter == 'AIRPORT_TRANSFER') {
+      return items.where((n) {
+        final dataType = n.data?['type'] as String?;
+        final moduleName = n.data?['module'] as String?;
+        final serviceName = n.data?['service'] as String?;
+        final titleLower = n.title.toLowerCase();
+        return moduleName == 'airport-transfers' ||
+            dataType == 'AIRPORT_TRANSFER' ||
+            serviceName == 'AIRPORT_TRANSFER' ||
+            titleLower.contains('airport');
+      }).toList();
+    } else if (_filter == 'RIDE_UPDATE') {
+      return items.where((n) {
+        final moduleName = n.data?['module'] as String?;
+        final serviceName = n.data?['service'] as String?;
+        if (moduleName == 'car-rentals' ||
+            moduleName == 'bike-rentals' ||
+            moduleName == 'quick-services' ||
+            moduleName == 'airport-transfers' ||
+            serviceName == 'AIRPORT_TRANSFER') {
+          return false;
+        }
+
+        final titleLower = n.title.toLowerCase();
+        if (titleLower.contains('handover') ||
+            titleLower.contains('return') ||
+            titleLower.contains('car rental') ||
+            titleLower.contains('bike rental') ||
+            titleLower.contains('quick service') ||
+            titleLower.contains('airport') ||
+            titleLower.contains('flight') ||
+            titleLower.contains('terminal')) {
+          return false;
+        }
+        return true;
+      }).toList();
+    } else {
+      return items.where((n) => n.type == _filter).toList();
+    }
+  }
+
   Future<void> load() async {
     state = state.copyWith(isLoading: true, error: null);
 
-    final apiFilter = (_filter == 'CAR_RENTAL' || _filter == 'BIKE_RENTAL' || _filter == 'QUICK_SERVICE') ? null : _filter;
+    final apiFilter = (_filter == 'CAR_RENTAL' ||
+            _filter == 'BIKE_RENTAL' ||
+            _filter == 'QUICK_SERVICE' ||
+            _filter == 'AIRPORT_TRANSFER')
+        ? null
+        : _filter;
 
     try {
-      var items = await _ds.getNotifications(type: apiFilter, page: 1);
-      // If API returned empty, show default notifications
-      if (items.isEmpty) {
-        items = _defaultNotifications();
+      var rawItems = await _ds.getNotifications(type: apiFilter, page: 1, limit: 20);
+      if (rawItems.isEmpty) {
+        rawItems = _defaultNotifications();
       }
 
-      // Apply client-side filter
-      if (_filter == 'CAR_RENTAL') {
-        items = items.where((n) {
-          final dataType = n.data?['type'] as String?;
-          final moduleName = n.data?['module'] as String?;
-          return moduleName == 'car-rentals' || dataType == 'CAR_RENTAL';
-        }).toList();
-      } else if (_filter == 'BIKE_RENTAL') {
-        items = items.where((n) {
-          final dataType = n.data?['type'] as String?;
-          final moduleName = n.data?['module'] as String?;
-          return moduleName == 'bike-rentals' || dataType == 'BIKE_RENTAL';
-        }).toList();
-      } else if (_filter == 'QUICK_SERVICE') {
-        items = items.where((n) {
-          final dataType = n.data?['type'] as String?;
-          final moduleName = n.data?['module'] as String?;
-          return moduleName == 'quick-services' || dataType == 'QUICK_SERVICE';
-        }).toList();
-      } else if (_filter == 'RIDE_UPDATE') {
-        items = items.where((n) {
-          final moduleName = n.data?['module'] as String?;
-          if (moduleName == 'car-rentals' || moduleName == 'bike-rentals' || moduleName == 'quick-services') return false;
-          
-          final titleLower = n.title.toLowerCase();
-          if (titleLower.contains('handover') || titleLower.contains('return') || 
-              titleLower.contains('car rental') || titleLower.contains('bike rental') ||
-              titleLower.contains('vehicle')) {
-            return false;
-          }
-          return true;
-        }).toList();
-      } else if (_filter != null && apiFilter == null) {
-        items = items.where((n) => n.type == _filter).toList();
-      }
+      final items = _filterItems(rawItems);
 
-      state = NotificationsState(
-        notifications: items,
-        isLoading: false,
-        hasMore: items.length >= 20,
-        page: 1,
-      );
+      if (mounted) {
+        state = NotificationsState(
+          notifications: items,
+          isLoading: false,
+          hasMore: rawItems.length >= 20,
+          page: 1,
+        );
+      }
     } catch (e) {
-      // API failed — show default notifications instead of error
-      var defaults = _defaultNotifications();
-      if (_filter == 'CAR_RENTAL') {
-        defaults = defaults.where((n) {
-          final dataType = n.data?['type'] as String?;
-          final moduleName = n.data?['module'] as String?;
-          return moduleName == 'car-rentals' || dataType == 'CAR_RENTAL';
-        }).toList();
-      } else if (_filter == 'BIKE_RENTAL') {
-        defaults = defaults.where((n) {
-          final dataType = n.data?['type'] as String?;
-          final moduleName = n.data?['module'] as String?;
-          return moduleName == 'bike-rentals' || dataType == 'BIKE_RENTAL';
-        }).toList();
-      } else if (_filter == 'QUICK_SERVICE') {
-        defaults = defaults.where((n) {
-          final dataType = n.data?['type'] as String?;
-          final moduleName = n.data?['module'] as String?;
-          return moduleName == 'quick-services' || dataType == 'QUICK_SERVICE';
-        }).toList();
-      } else if (_filter == 'RIDE_UPDATE') {
-        defaults = defaults.where((n) {
-          final moduleName = n.data?['module'] as String?;
-          if (moduleName == 'car-rentals' || moduleName == 'bike-rentals' || moduleName == 'quick-services') return false;
-          
-          final titleLower = n.title.toLowerCase();
-          if (titleLower.contains('handover') || titleLower.contains('return') || 
-              titleLower.contains('car rental') || titleLower.contains('bike rental') ||
-              titleLower.contains('vehicle')) {
-            return false;
-          }
-          return true;
-        }).toList();
-      } else if (_filter != null && apiFilter == null) {
-        defaults = defaults.where((n) => n.type == _filter).toList();
+      final defaults = _filterItems(_defaultNotifications());
+      if (mounted) {
+        state = NotificationsState(
+          notifications: defaults,
+          isLoading: false,
+          hasMore: false,
+          page: 1,
+        );
       }
-      state = NotificationsState(
-        notifications: defaults,
-        isLoading: false,
-        hasMore: false,
-        page: 1,
+    }
+  }
+
+  Future<void> loadMore() async {
+    if (state.isLoading || !state.hasMore) return;
+    state = state.copyWith(isLoading: true);
+
+    final apiFilter = (_filter == 'CAR_RENTAL' ||
+            _filter == 'BIKE_RENTAL' ||
+            _filter == 'QUICK_SERVICE' ||
+            _filter == 'AIRPORT_TRANSFER')
+        ? null
+        : _filter;
+
+    try {
+      final nextPage = state.page + 1;
+      final rawItems = await _ds.getNotifications(
+        type: apiFilter,
+        page: nextPage,
+        limit: 20,
       );
+
+      final items = _filterItems(rawItems);
+
+      if (mounted) {
+        state = state.copyWith(
+          notifications: [...state.notifications, ...items],
+          isLoading: false,
+          hasMore: rawItems.length >= 20,
+          page: nextPage,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        state = state.copyWith(isLoading: false, error: e.toString());
+      }
     }
   }
 

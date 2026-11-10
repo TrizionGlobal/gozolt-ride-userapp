@@ -190,8 +190,7 @@ class _RedeemBottomSheetState extends ConsumerState<RedeemBottomSheet> {
                 data: (summary) {
                   final points =
                       int.tryParse(_pointsController.text) ?? 0;
-                  final ratio = rulesAsync.value?.redemption.pointsToEurRatio ?? 100.0;
-                  final double coinValueInEur = ratio > 0 ? (1.0 / ratio) : 0.01;
+                  final double coinValueInEur = summary.coinValueInEur;
                   final eurValue = points * coinValueInEur;
                   return Container(
                     width: double.infinity,

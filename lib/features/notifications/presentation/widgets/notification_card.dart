@@ -120,9 +120,28 @@ class NotificationCard extends StatelessWidget {
 
   IconData get _typeIcon {
     final dataType = notification.data?['type'] as String?;
-    if (dataType == 'EXTENSION_APPROVED' || dataType == 'EXTENSION_REJECTED' ||
-        dataType == 'CAR_RENTAL' || dataType == 'BOOKING_CANCELLED') {
+    final moduleName = notification.data?['module'] as String?;
+    final serviceName = notification.data?['service'] as String?;
+    final titleLower = notification.title.toLowerCase();
+
+    if (moduleName == 'airport-transfers' ||
+        dataType == 'AIRPORT_TRANSFER' ||
+        serviceName == 'AIRPORT_TRANSFER' ||
+        titleLower.contains('airport')) {
+      return Icons.local_taxi_rounded;
+    }
+    if (dataType == 'EXTENSION_APPROVED' ||
+        dataType == 'EXTENSION_REJECTED' ||
+        dataType == 'CAR_RENTAL' ||
+        dataType == 'BOOKING_CANCELLED' ||
+        moduleName == 'car-rentals') {
       return Icons.directions_car_outlined;
+    }
+    if (moduleName == 'bike-rentals' || dataType == 'BIKE_RENTAL') {
+      return Icons.pedal_bike;
+    }
+    if (moduleName == 'quick-services' || dataType == 'QUICK_SERVICE') {
+      return Icons.home_repair_service_outlined;
     }
     switch (notification.type) {
       case 'RIDE_UPDATE':
@@ -140,10 +159,22 @@ class NotificationCard extends StatelessWidget {
 
   Color get _typeColor {
     final dataType = notification.data?['type'] as String?;
+    final moduleName = notification.data?['module'] as String?;
+    final serviceName = notification.data?['service'] as String?;
+    final titleLower = notification.title.toLowerCase();
+
+    if (moduleName == 'airport-transfers' ||
+        dataType == 'AIRPORT_TRANSFER' ||
+        serviceName == 'AIRPORT_TRANSFER' ||
+        titleLower.contains('airport')) {
+      return const Color(0xFF0EA5E9); // sky blue
+    }
     if (dataType == 'EXTENSION_APPROVED') return const Color(0xFF22C55E); // green
     if (dataType == 'EXTENSION_REJECTED') return const Color(0xFFEF4444);  // red
     if (dataType == 'BOOKING_CANCELLED') return const Color(0xFFEF4444);   // red
-    if (dataType == 'CAR_RENTAL') return const Color(0xFF3B82F6);          // blue
+    if (dataType == 'CAR_RENTAL' || moduleName == 'car-rentals') return const Color(0xFF3B82F6);          // blue
+    if (dataType == 'BIKE_RENTAL' || moduleName == 'bike-rentals') return const Color(0xFF10B981);       // emerald
+    if (dataType == 'QUICK_SERVICE' || moduleName == 'quick-services') return AppColors.primaryGold;
     switch (notification.type) {
       case 'RIDE_UPDATE':
         return AppColors.info;

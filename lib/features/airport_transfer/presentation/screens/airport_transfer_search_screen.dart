@@ -12,6 +12,8 @@ import '../../data/models/airport_transfer_draft.dart';
 import '../providers/airport_transfer_provider.dart';
 import '../widgets/airport_transfer_location_search.dart';
 import '../widgets/airport_transfer_header.dart';
+import '../widgets/airport_transfer_active_booking_modal.dart';
+import '../../data/datasources/airport_transfer_remote_datasource.dart';
 import '../../../../core/widgets/app_filled_text_field.dart';
 import '../../../../core/utils/input_validators.dart';
 import '../../../../core/utils/snackbar_utils.dart';
@@ -47,6 +49,30 @@ class _AirportTransferSearchScreenState
   int _largeLuggage = 0;
 
   bool get _isRoundTrip => _transferType == AirportTransferType.roundTrip;
+
+  Map<String, dynamic>? _activeBooking;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkActiveBooking();
+  }
+
+  Future<void> _checkActiveBooking() async {
+    try {
+      final datasource = ref.read(airportTransferRemoteDatasourceProvider);
+      final myBookings = await datasource.getMyBookings(limit: 20);
+      final active = myBookings.cast<Map<String, dynamic>?>().firstWhere(
+        (b) => isAirportTransferBookingActive(b),
+        orElse: () => null,
+      );
+      if (active != null && mounted) {
+        setState(() {
+          _activeBooking = active;
+        });
+      }
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -359,8 +385,29 @@ class _AirportTransferSearchScreenState
     return '$hours:$minutes';
   }
 
-  void _searchTransfers() {
+  Future<void> _searchTransfers() async {
     FocusScope.of(context).unfocus();
+
+    if (_activeBooking != null) {
+      showActiveAirportTransferModal(context, _activeBooking!);
+      return;
+    }
+
+    try {
+      final datasource = ref.read(airportTransferRemoteDatasourceProvider);
+      final myBookings = await datasource.getMyBookings(limit: 20);
+      final active = myBookings.cast<Map<String, dynamic>?>().firstWhere(
+        (b) => isAirportTransferBookingActive(b),
+        orElse: () => null,
+      );
+      if (active != null) {
+        _activeBooking = active;
+        if (mounted) {
+          showActiveAirportTransferModal(context, active);
+        }
+        return;
+      }
+    } catch (_) {}
 
     if (!_formKey.currentState!.validate()) return;
 
@@ -423,6 +470,7 @@ class _AirportTransferSearchScreenState
 
     ref.read(airportTransferDraftProvider.notifier).update(draft);
 
+    if (!mounted) return;
     context.pushNamed(RouteNames.airportTransferChoose);
   }
 

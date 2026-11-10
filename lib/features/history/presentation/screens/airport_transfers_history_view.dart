@@ -12,20 +12,144 @@ import '../../../../core/network/socket_service.dart';
 import '../../../../core/utils/app_date_utils.dart';
 import '../../../airport_transfer/data/datasources/airport_transfer_remote_datasource.dart';
 
-final airportTransfersHistoryProvider =
-    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+class AirportTransfersHistoryState {
+  final List<Map<String, dynamic>> bookings;
+  final bool isLoading;
+  final bool hasMore;
+  final int page;
+  final String? error;
+
+  const AirportTransfersHistoryState({
+    this.bookings = const [],
+    this.isLoading = false,
+    this.hasMore = true,
+    this.page = 1,
+    this.error,
+  });
+
+  AirportTransfersHistoryState copyWith({
+    List<Map<String, dynamic>>? bookings,
+    bool? isLoading,
+    bool? hasMore,
+    int? page,
+    String? error,
+  }) {
+    return AirportTransfersHistoryState(
+      bookings: bookings ?? this.bookings,
+      isLoading: isLoading ?? this.isLoading,
+      hasMore: hasMore ?? this.hasMore,
+      page: page ?? this.page,
+      error: error,
+    );
+  }
+}
+
+class AirportTransfersHistoryNotifier
+    extends StateNotifier<AirportTransfersHistoryState> {
+  final AirportTransferRemoteDatasource _ds;
+  String _filter = 'All';
+
+  AirportTransfersHistoryNotifier(this._ds)
+      : super(const AirportTransfersHistoryState()) {
+    load();
+  }
+
+  void setFilter(String filter) {
+    if (_filter == filter) return;
+    _filter = filter;
+    load();
+  }
+
+  Future<void> load() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final items = await _ds.getMyBookings(
+        page: 1,
+        limit: 10,
+        status: _filter,
+      );
+      final validItems = items.where((b) {
+        final st = b['status']?.toString().toUpperCase();
+        final paySt = b['paymentStatus']?.toString().toUpperCase();
+        final payMethod = b['paymentMethod']?.toString().toUpperCase() ?? '';
+        final reason = b['cancellationReason']?.toString().toLowerCase() ?? '';
+        if (st == 'PENDING_PAYMENT') return false;
+        if (payMethod == 'ONLINE' && paySt == 'PENDING') return false;
+        if (reason.contains('abandoned')) return false;
+        return true;
+      }).toList();
+      if (mounted) {
+        state = AirportTransfersHistoryState(
+          bookings: validItems,
+          isLoading: false,
+          hasMore: items.length >= 10,
+          page: 1,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        state = AirportTransfersHistoryState(
+          bookings: const [],
+          isLoading: false,
+          hasMore: false,
+          page: 1,
+          error: e.toString(),
+        );
+      }
+    }
+  }
+
+  Future<void> loadMore() async {
+    if (state.isLoading || !state.hasMore) return;
+    state = state.copyWith(isLoading: true);
+    try {
+      final nextPage = state.page + 1;
+      final items = await _ds.getMyBookings(
+        page: nextPage,
+        limit: 10,
+        status: _filter,
+      );
+      final validItems = items.where((b) {
+        final st = b['status']?.toString().toUpperCase();
+        final paySt = b['paymentStatus']?.toString().toUpperCase();
+        final payMethod = b['paymentMethod']?.toString().toUpperCase() ?? '';
+        final reason = b['cancellationReason']?.toString().toLowerCase() ?? '';
+        if (st == 'PENDING_PAYMENT') return false;
+        if (payMethod == 'ONLINE' && paySt == 'PENDING') return false;
+        if (reason.contains('abandoned')) return false;
+        return true;
+      }).toList();
+      if (mounted) {
+        state = state.copyWith(
+          bookings: [...state.bookings, ...validItems],
+          isLoading: false,
+          hasMore: items.length >= 10,
+          page: nextPage,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        state = state.copyWith(isLoading: false, error: e.toString());
+      }
+    }
+  }
+}
+
+final airportTransfersHistoryProvider = StateNotifierProvider<
+    AirportTransfersHistoryNotifier, AirportTransfersHistoryState>((ref) {
   final datasource = ref.read(airportTransferRemoteDatasourceProvider);
+  final notifier = AirportTransfersHistoryNotifier(datasource);
 
   final socketService = ref.read(socketServiceProvider);
   final sub = socketService.onAirportTransferStatusChanged.listen((_) {
-    ref.invalidateSelf();
+    notifier.load();
   });
 
   ref.onDispose(() {
     sub.cancel();
   });
 
-  return datasource.getMyBookings();
+  return notifier;
 });
 
 class AirportTransfersHistoryView extends ConsumerStatefulWidget {
@@ -124,176 +248,16 @@ class _AirportTransfersHistoryViewState
 
   @override
   Widget build(BuildContext context) {
-    final historyAsync = ref.watch(airportTransfersHistoryProvider);
+    final historyState = ref.watch(airportTransfersHistoryProvider);
 
-    return historyAsync.when(
-      skipLoadingOnReload: true,
-      data: (bookings) {
-        if (bookings.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryGold.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.local_taxi_rounded,
-                    color: AppColors.primaryGold,
-                    size: 42,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No Airport Transfers Yet',
-                  style: AppTextStyles.titleMedium
-                      .copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Your booked airport rides will appear here',
-                  style: AppTextStyles.bodySmall
-                      .copyWith(color: AppColors.textSecondary),
-                ),
-              ],
-            ),
-          );
-        }
-
-        final filteredBookings = bookings.where((b) {
-          final status = (b['status'] ?? '').toString();
-          final returnStatus = (b['returnStatus'] ?? '').toString();
-          final isRound = (b['transferType'] ?? '').toString().toUpperCase() == 'ROUND_TRIP';
-
-          if (_selectedFilter == 'All') return true;
-          if (_selectedFilter == 'Pending') {
-            return status == 'PENDING_APPROVAL' ||
-                status == 'PENDING_PAYMENT' ||
-                (isRound &&
-                    (returnStatus == 'PENDING_APPROVAL' ||
-                        returnStatus == 'PENDING_PAYMENT'));
-          }
-          if (_selectedFilter == 'Confirmed') {
-            return status == 'CONFIRMED' ||
-                status == 'DRIVER_ASSIGNED' ||
-                (isRound &&
-                    (returnStatus == 'CONFIRMED' ||
-                        returnStatus == 'DRIVER_ASSIGNED'));
-          }
-          if (_selectedFilter == 'In Progress') {
-            const inProgress = [
-              'EN_ROUTE_TO_PICKUP',
-              'ARRIVED_AT_AIRPORT',
-              'PASSENGER_MET',
-              'IN_TRANSIT'
-            ];
-            return inProgress.contains(status) ||
-                (isRound && inProgress.contains(returnStatus));
-          }
-          if (_selectedFilter == 'Completed') {
-            return isRound
-                ? (status == 'COMPLETED' && returnStatus == 'COMPLETED')
-                : (status == 'COMPLETED');
-          }
-          if (_selectedFilter == 'Cancelled') {
-            return status == 'CANCELLED' ||
-                status == 'REFUNDED' ||
-                (isRound &&
-                    (returnStatus == 'CANCELLED' ||
-                        returnStatus == 'REFUNDED'));
-          }
-          return true;
-        }).toList();
-
-        return RefreshIndicator(
-          color: AppColors.primaryGold,
-          onRefresh: () => ref.refresh(airportTransfersHistoryProvider.future),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Filter Tabs
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: _filters.map((filter) {
-                      final isSelected = _selectedFilter == filter;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: GestureDetector(
-                          onTap: () {
-                            HapticFeedback.selectionClick();
-                            setState(() {
-                              _selectedFilter = filter;
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppColors.primaryGold
-                                  : Theme.of(context).cardTheme.color,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: isSelected
-                                    ? AppColors.primaryGold
-                                    : (Theme.of(context).dividerTheme.color ??
-                                        AppColors.borderDark),
-                              ),
-                            ),
-                            child: Text(
-                              filter,
-                              style: AppTextStyles.labelLarge.copyWith(
-                                color: isSelected
-                                    ? Theme.of(context).scaffoldBackgroundColor
-                                    : (Theme.of(context).brightness == Brightness.dark
-                                        ? AppColors.textSecondary
-                                        : AppColors.textSecondaryLight),
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
-
-              // Bookings List
-              Expanded(
-                child: filteredBookings.isEmpty
-                    ? Center(
-                        child: Text(
-                          'No transfers matching "$_selectedFilter"',
-                          style: AppTextStyles.bodyMedium
-                              .copyWith(color: AppColors.textSecondary),
-                        ),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
-                        itemCount: filteredBookings.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final booking = filteredBookings[index];
-                          return _buildTransferCard(context, booking);
-                        },
-                      ),
-              ),
-            ],
-          ),
-        );
-      },
-      loading: () => const Center(
+    if (historyState.isLoading && historyState.bookings.isEmpty) {
+      return const Center(
         child: CircularProgressIndicator(color: AppColors.primaryGold),
-      ),
-      error: (err, _) => Center(
+      );
+    }
+
+    if (historyState.error != null && historyState.bookings.isEmpty) {
+      return Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -306,7 +270,7 @@ class _AirportTransfersHistoryViewState
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: () =>
-                  ref.refresh(airportTransfersHistoryProvider.future),
+                  ref.read(airportTransfersHistoryProvider.notifier).load(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryGold,
                 foregroundColor: Colors.white,
@@ -318,6 +282,139 @@ class _AirportTransfersHistoryViewState
             ),
           ],
         ),
+      );
+    }
+
+    final bookings = historyState.bookings;
+
+    return RefreshIndicator(
+      color: AppColors.primaryGold,
+      onRefresh: () => ref.read(airportTransfersHistoryProvider.notifier).load(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Filter Tabs
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: _filters.map((filter) {
+                  final isSelected = _selectedFilter == filter;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() {
+                          _selectedFilter = filter;
+                        });
+                        ref
+                            .read(airportTransfersHistoryProvider.notifier)
+                            .setFilter(filter);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppColors.primaryGold
+                              : Theme.of(context).cardTheme.color,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isSelected
+                                ? AppColors.primaryGold
+                                : (Theme.of(context).dividerTheme.color ??
+                                    AppColors.borderDark),
+                          ),
+                        ),
+                        child: Text(
+                          filter,
+                          style: AppTextStyles.labelLarge.copyWith(
+                            color: isSelected
+                                ? Theme.of(context).scaffoldBackgroundColor
+                                : (Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? AppColors.textSecondary
+                                    : AppColors.textSecondaryLight),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+
+          // Bookings List
+          Expanded(
+            child: bookings.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGold.withValues(alpha: 0.12),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.local_taxi_rounded,
+                            color: AppColors.primaryGold,
+                            size: 42,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _selectedFilter == 'All'
+                              ? 'No Airport Transfers Yet'
+                              : 'No transfers matching "$_selectedFilter"',
+                          style: AppTextStyles.titleMedium
+                              .copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Your booked airport rides will appear here',
+                          style: AppTextStyles.bodySmall
+                              .copyWith(color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
+                    itemCount: bookings.length + (historyState.hasMore ? 1 : 0),
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      if (index >= bookings.length) {
+                        if (historyState.hasMore) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            ref
+                                .read(airportTransfersHistoryProvider.notifier)
+                                .loadMore();
+                          });
+                          return const Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.primaryGold,
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      }
+                      final booking = bookings[index];
+                      return _buildTransferCard(context, booking);
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }

@@ -297,12 +297,33 @@ class QuickServicesRepository {
     }
   }
 
-  Future<List<QuickServiceHistoryModel>> getQuickServiceHistory() async {
+  Future<List<QuickServiceHistoryModel>> getQuickServiceHistory({
+    int page = 1,
+    int limit = 10,
+    String? status,
+  }) async {
     try {
-      final response = await _dio.get('/quick-services/history');
+      final queryParams = <String, dynamic>{
+        'page': page,
+        'limit': limit,
+      };
+      if (status != null && status != 'All') queryParams['status'] = status;
+
+      final response = await _dio.get(
+        '/quick-services/history',
+        queryParameters: queryParams,
+      );
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data;
-        return data.map((json) => QuickServiceHistoryModel.fromJson(json)).toList();
+        final data = response.data;
+        List<dynamic> list;
+        if (data is List) {
+          list = data;
+        } else if (data is Map && data.containsKey('data') && data['data'] is List) {
+          list = data['data'] as List<dynamic>;
+        } else {
+          list = [];
+        }
+        return list.map((json) => QuickServiceHistoryModel.fromJson(json)).toList();
       }
       return [];
     } catch (e) {

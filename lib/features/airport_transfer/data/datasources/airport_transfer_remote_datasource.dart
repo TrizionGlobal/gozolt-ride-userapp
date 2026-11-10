@@ -118,10 +118,29 @@ class AirportTransferRemoteDatasource {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getMyBookings() async {
+  Future<List<Map<String, dynamic>>> getMyBookings({
+    int page = 1,
+    int limit = 10,
+    String? status,
+  }) async {
     try {
-      final response = await _dio.get(ApiConstants.airportTransferMyBookings);
-      return (response.data as List).cast<Map<String, dynamic>>();
+      final queryParams = <String, dynamic>{
+        'page': page,
+        'limit': limit,
+      };
+      if (status != null && status != 'All') queryParams['status'] = status;
+
+      final response = await _dio.get(
+        ApiConstants.airportTransferMyBookings,
+        queryParameters: queryParams,
+      );
+      final data = response.data;
+      if (data is List) {
+        return data.cast<Map<String, dynamic>>();
+      } else if (data is Map && data.containsKey('data') && data['data'] is List) {
+        return (data['data'] as List).cast<Map<String, dynamic>>();
+      }
+      return [];
     } catch (e) {
       throw Exception('Failed to fetch airport transfer history: $e');
     }

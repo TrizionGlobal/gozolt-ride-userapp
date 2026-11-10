@@ -13,6 +13,8 @@ class StripeAddCardSheet extends StatefulWidget {
   final FutureOr<void> Function(String? paymentMethodId) onCardAdded;
   final double? amount;
   final bool simulatePayment;
+  final String? customTitle;
+  final String? customButtonText;
 
   const StripeAddCardSheet({
     super.key,
@@ -20,6 +22,8 @@ class StripeAddCardSheet extends StatefulWidget {
     required this.onCardAdded,
     this.amount,
     this.simulatePayment = false,
+    this.customTitle,
+    this.customButtonText,
   });
 
   @override
@@ -185,7 +189,10 @@ class _StripeAddCardSheetState extends State<StripeAddCardSheet> {
             const SizedBox(height: 24),
             
             Text(
-              widget.amount != null ? 'Complete Payment' : 'Secure Payment Method',
+              widget.customTitle ??
+                  (widget.amount != null
+                      ? 'Complete Payment'
+                      : 'Secure Payment Method'),
               style: AppTextStyles.titleLarge.copyWith(fontWeight: FontWeight.w800),
             ),
             
@@ -386,9 +393,10 @@ class _StripeAddCardSheetState extends State<StripeAddCardSheet> {
                         child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).scaffoldBackgroundColor),
                       )
                     : Text(
-                        widget.amount != null 
-                            ? (widget.simulatePayment ? 'Pay & Book' : 'Pay Now') 
-                            : 'Save Card',
+                        widget.customButtonText ??
+                            (widget.amount != null 
+                                ? (widget.simulatePayment ? 'Pay & Book' : 'Pay Now') 
+                                : 'Save Card'),
                         style: AppTextStyles.button.copyWith(fontWeight: FontWeight.w700),
                       ),
               ),

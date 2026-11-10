@@ -62,6 +62,7 @@ abstract final class RouteNames {
   static const String carRentalAddons = 'car-rental-addons';
   static const String carRentalReview = 'car-rental-review';
   static const String carRentalConfirmation = 'car-rental-confirmation';
+  static const String carRentalPaymentFailure = 'car-rental-payment-failure';
 
   // Bike Rental
   static const String bikeRentalSearch = 'bike-rental-search';
@@ -71,6 +72,7 @@ abstract final class RouteNames {
   static const String bikeRentalAddons = 'bike-rental-addons';
   static const String bikeRentalReview = 'bike-rental-review';
   static const String bikeRentalConfirmation = 'bike-rental-confirmation';
+  static const String bikeRentalPaymentFailure = 'bike-rental-payment-failure';
 
   // Airport Transfer
   static const String airportTransferSearch = 'airport-transfer-search';

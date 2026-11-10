@@ -4,7 +4,6 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../features/ride/presentation/widgets/payment_brand_icon.dart';
 import '../../features/ride/data/models/saved_payment_method.dart';
-import '../../features/ride/data/datasources/payment_remote_datasource.dart';
 import '../../features/ride/presentation/providers/ride_providers.dart';
 import '../../features/ride/presentation/widgets/stripe_add_card_sheet.dart';
 import '../../features/quick_services/data/models/quick_services_booking_draft.dart';
@@ -93,23 +92,31 @@ class _BookingPaymentSheetState extends ConsumerState<BookingPaymentSheet> {
     }
   }
 
-  void _addCard() {
+  Future<void> _addCard() async {
     final ds = ref.read(paymentRemoteDatasourceProvider);
-    showModalBottomSheet(
+    bool paymentDone = false;
+    await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => StripeAddCardSheet(
         datasource: ds,
-        
+        customTitle: widget.isQuickService ? 'Payment Details' : null,
+        customButtonText: widget.isQuickService
+            ? (widget.amount != null
+                ? 'Pay €${widget.amount!.toStringAsFixed(2)}'
+                : 'Pay Now')
+            : null,
         amount: widget.isQuickService ? null : widget.amount,
         onCardAdded: (paymentMethodId) async {
           if (paymentMethodId != null) {
             if (widget.isQuickService) {
-              // Quick Service: Immediately confirm booking with the new payment method
+              // Quick Service: Immediately confirm booking with the new payment method without saving
               final result = await widget.onConfirm(PaymentMethodType.card, cardId: paymentMethodId);
-              if (result == true && mounted) {
-                Navigator.of(context).pop();
+              if (result == true) {
+                paymentDone = true;
+              } else {
+                throw Exception('Payment could not be processed. Please try again.');
               }
             } else {
               // Live Services (Cab, Car, Bike): Save card and update UI selection
@@ -134,6 +141,9 @@ class _BookingPaymentSheetState extends ConsumerState<BookingPaymentSheet> {
         },
       ),
     );
+    if (paymentDone && mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   @override
@@ -148,60 +158,65 @@ class _BookingPaymentSheetState extends ConsumerState<BookingPaymentSheet> {
         Theme.of(context).dividerTheme.color ?? AppColors.borderDark;
     final paymentMethodsAsync = ref.watch(paymentMethodsProvider);
 
-    return Container(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle
-          Container(
-            width: 40,
-            height: 4,
-            margin: const EdgeInsets.only(top: 16, bottom: 20),
-            decoration: BoxDecoration(
-              color: borderColor,
-              borderRadius: BorderRadius.circular(2),
+    return PopScope(
+      canPop: !_isLoading,
+      child: Container(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(top: 16, bottom: 20),
+              decoration: BoxDecoration(
+                color: borderColor,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-          ),
 
-          // Title row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Payment Method',
-                  style: AppTextStyles.titleMedium.copyWith(
-                    color: textColor,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Container(
-                    width: 30,
-                    height: 30,
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.white.withOpacity(0.1)
-                          : Colors.black.withOpacity(0.05),
-                      shape: BoxShape.circle,
+            // Title row
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Payment Method',
+                    style: AppTextStyles.titleMedium.copyWith(
+                      color: textColor,
+                      fontWeight: FontWeight.w700,
                     ),
-                    child: Icon(Icons.close,
-                        size: 16,
-                        color: isDark ? Colors.white70 : Colors.black54),
                   ),
-                ),
-              ],
+                  GestureDetector(
+                    onTap: _isLoading ? null : () => Navigator.of(context).pop(),
+                    child: Opacity(
+                      opacity: _isLoading ? 0.3 : 1.0,
+                      child: Container(
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? Colors.white.withOpacity(0.1)
+                              : Colors.black.withOpacity(0.05),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.close,
+                            size: 16,
+                            color: isDark ? Colors.white70 : Colors.black54),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
           const SizedBox(height: 16),
 
           // Options
@@ -281,8 +296,9 @@ class _BookingPaymentSheetState extends ConsumerState<BookingPaymentSheet> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildOptions(
     List<SavedPaymentMethod> methods,
@@ -357,60 +373,76 @@ class _BookingPaymentSheetState extends ConsumerState<BookingPaymentSheet> {
           ...methods.map((pm) {
             final isSelected = _selectedType == PaymentMethodType.card &&
                 _selectedCardId == pm.id;
+            final isDisabled = _isLoading && !isSelected;
             return Padding(
               padding: const EdgeInsets.only(bottom: 10),
-              child: GestureDetector(
-                onTap: () => setState(() {
-                  _selectedType = PaymentMethodType.card;
-                  _selectedCardId = pm.id;
-                }),
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: cardColor,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color:
-                          isSelected ? AppColors.primaryGold : borderColor,
-                      width: isSelected ? 1.5 : 0.5,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      PaymentBrandIcon(brand: pm.brand),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(pm.displayName,
-                                style: AppTextStyles.titleSmall
-                                    .copyWith(color: textColor)),
-                            Text(
-                                pm.isDefault ? 'Default card' : 'Saved card',
-                                style: AppTextStyles.bodySmall
-                                    .copyWith(color: secondaryTextColor)),
-                          ],
-                        ),
+              child: AnimatedOpacity(
+                opacity: isDisabled ? 0.38 : 1.0,
+                duration: const Duration(milliseconds: 200),
+                child: GestureDetector(
+                  onTap: _isLoading
+                      ? null
+                      : () => setState(() {
+                            _selectedType = PaymentMethodType.card;
+                            _selectedCardId = pm.id;
+                          }),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color:
+                            isSelected ? AppColors.primaryGold : borderColor,
+                        width: isSelected ? 1.5 : 0.5,
                       ),
-                      if (pm.isDefault)
-                        Container(
-                          margin: const EdgeInsets.only(right: 8),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryGold.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            'Default',
-                            style: AppTextStyles.labelSmall.copyWith(
-                                color: AppColors.primaryGold,
-                                fontWeight: FontWeight.w600),
+                    ),
+                    child: Row(
+                      children: [
+                        PaymentBrandIcon(brand: pm.brand),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(pm.displayName,
+                                  style: AppTextStyles.titleSmall
+                                      .copyWith(color: textColor)),
+                              Text(
+                                  pm.isDefault ? 'Default card' : 'Saved card',
+                                  style: AppTextStyles.bodySmall
+                                      .copyWith(color: secondaryTextColor)),
+                            ],
                           ),
                         ),
-                      _radioCircle(isSelected),
-                    ],
+                        if (pm.isDefault)
+                          Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryGold.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'Default',
+                              style: AppTextStyles.labelSmall.copyWith(
+                                  color: AppColors.primaryGold,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        if (_isLoading && isSelected)
+                          const Padding(
+                            padding: EdgeInsets.only(right: 6),
+                            child: Icon(
+                              Icons.lock_rounded,
+                              size: 16,
+                              color: AppColors.primaryGold,
+                            ),
+                          ),
+                        _radioCircle(isSelected),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -449,51 +481,65 @@ class _BookingPaymentSheetState extends ConsumerState<BookingPaymentSheet> {
     required Color secondaryTextColor,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: cardColor,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isSelected ? AppColors.primaryGold : borderColor,
-            width: isSelected ? 1.5 : 0.5,
+    final isDisabled = _isLoading && !isSelected;
+    return AnimatedOpacity(
+      opacity: isDisabled ? 0.38 : 1.0,
+      duration: const Duration(milliseconds: 200),
+      child: GestureDetector(
+        onTap: _isLoading ? null : onTap,
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: cardColor,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isSelected ? AppColors.primaryGold : borderColor,
+              width: isSelected ? 1.5 : 0.5,
+            ),
           ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 28,
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primaryGold.withOpacity(0.1)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Icon(icon,
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 28,
+                decoration: BoxDecoration(
                   color: isSelected
-                      ? AppColors.primaryGold
-                      : AppColors.textSecondary,
-                  size: 18),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style:
-                          AppTextStyles.titleSmall.copyWith(color: textColor)),
-                  Text(subtitle,
-                      style: AppTextStyles.bodySmall
-                          .copyWith(color: secondaryTextColor)),
-                ],
+                      ? AppColors.primaryGold.withOpacity(0.1)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(icon,
+                    color: isSelected
+                        ? AppColors.primaryGold
+                        : AppColors.textSecondary,
+                    size: 18),
               ),
-            ),
-            _radioCircle(isSelected),
-          ],
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style:
+                            AppTextStyles.titleSmall.copyWith(color: textColor)),
+                    Text(subtitle,
+                        style: AppTextStyles.bodySmall
+                            .copyWith(color: secondaryTextColor)),
+                  ],
+                ),
+              ),
+              if (_isLoading && isSelected)
+                const Padding(
+                  padding: EdgeInsets.only(right: 6),
+                  child: Icon(
+                    Icons.lock_rounded,
+                    size: 16,
+                    color: AppColors.primaryGold,
+                  ),
+                ),
+              _radioCircle(isSelected),
+            ],
+          ),
         ),
       ),
     );

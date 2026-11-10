@@ -30,6 +30,7 @@ class BikeRentalRemoteDatasource {
     bool? isFlexible,
     required String nationalIdPath,
     required String drivingLicencePath,
+    String? paymentMethod,
     String? paymentMethodId,
     double? walletAmountUsed,
     double? deliveryFee,
@@ -46,6 +47,7 @@ class BikeRentalRemoteDatasource {
         if (pickupLocation != null) 'pickupLocation': pickupLocation,
         if (dropoffLocation != null) 'dropoffLocation': dropoffLocation,
         if (isFlexible != null) 'isFlexible': isFlexible.toString(),
+        if (paymentMethod != null) 'paymentMethod': paymentMethod,
         if (paymentMethodId != null) 'paymentMethodId': paymentMethodId,
         if (walletAmountUsed != null) 'walletAmountUsed': walletAmountUsed.toString(),
         if (deliveryFee != null) 'deliveryFee': deliveryFee.toString(),
@@ -68,10 +70,65 @@ class BikeRentalRemoteDatasource {
     }
   }
 
-  Future<List<Map<String, dynamic>>> getMyBookings() async {
+  Future<Map<String, dynamic>> verifyPayment(String bookingId) async {
     try {
-      final response = await _dio.get(ApiConstants.bikeRentalMyBookings);
-      return (response.data as List).cast<Map<String, dynamic>>();
+      final response = await _dio.get(ApiConstants.bikeRentalVerifyPayment(bookingId));
+      return response.data as Map<String, dynamic>;
+    } catch (e) {
+      if (e is DioException) {
+        final message = e.response?.data?['message'] ?? 'Failed to verify payment';
+        throw Exception(message);
+      }
+      throw Exception('Failed to verify payment: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> processPayment(
+    String bookingId, {
+    required String paymentMethod,
+    String? paymentMethodId,
+  }) async {
+    try {
+      final response = await _dio.post(
+        ApiConstants.bikeRentalProcessPayment(bookingId),
+        data: {
+          'paymentMethod': paymentMethod,
+          if (paymentMethodId != null) 'paymentMethodId': paymentMethodId,
+        },
+      );
+      return response.data as Map<String, dynamic>;
+    } catch (e) {
+      if (e is DioException) {
+        final message = e.response?.data?['message'] ?? 'Payment processing failed';
+        throw Exception(message);
+      }
+      throw Exception('Payment processing failed: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getMyBookings({
+    int page = 1,
+    int limit = 10,
+    String? status,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'page': page,
+        'limit': limit,
+      };
+      if (status != null && status != 'All') queryParams['status'] = status;
+
+      final response = await _dio.get(
+        ApiConstants.bikeRentalMyBookings,
+        queryParameters: queryParams,
+      );
+      final data = response.data;
+      if (data is List) {
+        return data.cast<Map<String, dynamic>>();
+      } else if (data is Map && data.containsKey('data') && data['data'] is List) {
+        return (data['data'] as List).cast<Map<String, dynamic>>();
+      }
+      return [];
     } catch (e) {
       throw Exception('Failed to fetch bike rental history: $e');
     }

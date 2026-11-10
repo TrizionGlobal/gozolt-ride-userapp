@@ -1277,13 +1277,15 @@ class _DiscountBottomSheet extends ConsumerWidget {
             ),
             child: rewardsAsync.when(
               data: (rawPoints) {
-                final summaryPoints = ref.watch(rewardSummaryProvider).value?.currentPoints.toInt();
+                final summary = ref.watch(rewardSummaryProvider).value;
+                final summaryPoints = summary?.currentPoints.toInt();
                 final points = (summaryPoints != null && summaryPoints > 0) ? summaryPoints : rawPoints;
                 final canRedeem = points >= minRedeemCoins && points > 0;
-                final eurValue = points / conversionRate;
+                final coinVal = summary?.coinValueInEur ?? (conversionRate > 0 ? (1.0 / conversionRate) : 0.01);
+                final eurValue = points * coinVal;
                 final remainingFare = (booking.fareEstimate?.estimatedFare ?? 0.0) - (booking.promoDiscount ?? 0.0);
                 final appliedEurValue = eurValue > remainingFare && remainingFare >= 0 ? remainingFare : eurValue;
-                final coinsUsed = (appliedEurValue * conversionRate).round();
+                final coinsUsed = coinVal > 0 ? (appliedEurValue / coinVal).ceil() : 0;
 
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.center,

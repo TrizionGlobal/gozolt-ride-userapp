@@ -71,7 +71,114 @@ class QuickServicesBookingNotifier extends StateNotifier<AsyncValue<String?>> {
   }
 }
 
-final quickServicesHistoryProvider = FutureProvider.autoDispose<List<QuickServiceHistoryModel>>((ref) async {
+class QuickServicesHistoryState {
+  final List<QuickServiceHistoryModel> bookings;
+  final bool isLoading;
+  final bool hasMore;
+  final int page;
+  final String selectedFilter;
+  final String? error;
+
+  const QuickServicesHistoryState({
+    this.bookings = const [],
+    this.isLoading = false,
+    this.hasMore = true,
+    this.page = 1,
+    this.selectedFilter = 'All',
+    this.error,
+  });
+
+  QuickServicesHistoryState copyWith({
+    List<QuickServiceHistoryModel>? bookings,
+    bool? isLoading,
+    bool? hasMore,
+    int? page,
+    String? selectedFilter,
+    String? error,
+  }) {
+    return QuickServicesHistoryState(
+      bookings: bookings ?? this.bookings,
+      isLoading: isLoading ?? this.isLoading,
+      hasMore: hasMore ?? this.hasMore,
+      page: page ?? this.page,
+      selectedFilter: selectedFilter ?? this.selectedFilter,
+      error: error,
+    );
+  }
+}
+
+class QuickServicesHistoryNotifier extends StateNotifier<QuickServicesHistoryState> {
+  final QuickServicesRepository _repo;
+
+  QuickServicesHistoryNotifier(this._repo) : super(const QuickServicesHistoryState()) {
+    load();
+  }
+
+  void setFilter(String filter) {
+    if (state.selectedFilter == filter) return;
+    load(filter: filter);
+  }
+
+  Future<void> load({String? filter}) async {
+    final activeFilter = filter ?? state.selectedFilter;
+    state = state.copyWith(isLoading: true, error: null, selectedFilter: activeFilter, page: 1, hasMore: true);
+    try {
+      final items = await _repo.getQuickServiceHistory(
+        page: 1,
+        limit: 10,
+        status: activeFilter,
+      );
+      if (mounted) {
+        state = QuickServicesHistoryState(
+          bookings: items,
+          isLoading: false,
+          hasMore: items.length >= 10,
+          page: 1,
+          selectedFilter: activeFilter,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        state = QuickServicesHistoryState(
+          bookings: const [],
+          isLoading: false,
+          hasMore: false,
+          page: 1,
+          selectedFilter: activeFilter,
+          error: e.toString(),
+        );
+      }
+    }
+  }
+
+  Future<void> loadMore() async {
+    if (state.isLoading || !state.hasMore) return;
+    state = state.copyWith(isLoading: true);
+    try {
+      final nextPage = state.page + 1;
+      final items = await _repo.getQuickServiceHistory(
+        page: nextPage,
+        limit: 10,
+        status: state.selectedFilter,
+      );
+      if (mounted) {
+        state = state.copyWith(
+          bookings: [...state.bookings, ...items],
+          isLoading: false,
+          hasMore: items.length >= 10,
+          page: nextPage,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        state = state.copyWith(isLoading: false, error: e.toString());
+      }
+    }
+  }
+}
+
+final quickServicesHistoryProvider =
+    StateNotifierProvider<QuickServicesHistoryNotifier, QuickServicesHistoryState>((ref) {
   final repository = ref.watch(quickServicesRepositoryProvider);
-  return repository.getQuickServiceHistory();
+  return QuickServicesHistoryNotifier(repository);
 });

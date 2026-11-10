@@ -44,6 +44,7 @@ import '../../features/car_rental/presentation/screens/car_rental_packages_scree
 import '../../features/car_rental/presentation/screens/car_rental_addons_screen.dart';
 import '../../features/car_rental/presentation/screens/car_rental_review_screen.dart';
 import '../../features/car_rental/presentation/screens/car_rental_confirmation_screen.dart';
+import '../../features/car_rental/presentation/screens/car_rental_payment_failure_screen.dart';
 import '../../features/car_rental/domain/models/car_model.dart';
 import '../../features/bike_rental/presentation/screens/bike_rental_search_screen.dart';
 import '../../features/bike_rental/presentation/screens/bike_rental_list_screen.dart';
@@ -51,6 +52,7 @@ import '../../features/bike_rental/presentation/screens/bike_rental_details_scre
 import '../../features/bike_rental/presentation/screens/bike_rental_packages_screen.dart';
 import '../../features/bike_rental/presentation/screens/bike_rental_review_screen.dart';
 import '../../features/bike_rental/presentation/screens/bike_rental_confirmation_screen.dart';
+import '../../features/bike_rental/presentation/screens/bike_rental_payment_failure_screen.dart';
 import '../../features/bike_rental/domain/models/bike_model.dart';
 
 // Airport Transfer
@@ -200,6 +202,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
       if (state.uri.host == 'airport-transfer-payment-failure') {
         return '/airport-transfer-payment-failure?${state.uri.query}';
+      }
+      if (state.uri.host == 'car-rental-confirmation') {
+        return '/car-rental-confirmation?${state.uri.query}';
+      }
+      if (state.uri.host == 'car-rental-payment-failure') {
+        return '/car-rental-payment-failure?${state.uri.query}';
+      }
+      if (state.uri.host == 'bike-rental-confirmation') {
+        return '/bike-rental-confirmation?${state.uri.query}';
+      }
+      if (state.uri.host == 'bike-rental-payment-failure') {
+        return '/bike-rental-payment-failure?${state.uri.query}';
       }
 
       if (state.matchedLocation == '/force-update') {
@@ -1072,10 +1086,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.carRentalConfirmation,
         pageBuilder: (context, state) {
           final extra = state.extra as Map<String, dynamic>? ?? {};
+          final q = state.uri.queryParameters;
           final car = extra['car'] as CarModel?;
-          final bookingId = extra['bookingId'] as String?;
-          final earnedCoins = extra['earnedCoins'] as int?;
-          final totalAmount = extra['totalAmount'] as double?;
+          final bookingId = (extra['bookingId'] as String?) ?? q['bookingId'];
+          final earnedCoins = (extra['earnedCoins'] as int?) ?? int.tryParse(q['earnedCoins'] ?? '');
+          final totalAmount = (extra['totalAmount'] as double?) ?? double.tryParse(q['amount'] ?? '');
 
           return CustomTransitionPage(
             key: state.pageKey,
@@ -1087,6 +1102,27 @@ final routerProvider = Provider<GoRouter>((ref) {
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) =>
                     FadeTransition(opacity: animation, child: child),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/car-rental-payment-failure',
+        name: RouteNames.carRentalPaymentFailure,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final q = state.uri.queryParameters;
+          final amountVal = extra['amount'] ?? q['amount'];
+          return CarRentalPaymentFailureScreen(
+            bookingId: extra['bookingId']?.toString() ?? q['bookingId'] ?? '',
+            vehicleName: extra['vehicleName']?.toString() ?? q['vehicleName'],
+            car: extra['car'] as CarModel?,
+            amount: (amountVal is num)
+                ? amountVal.toDouble()
+                : (double.tryParse(amountVal?.toString() ?? '0') ?? 0.0),
+            errorMessage: extra['errorMessage']?.toString() ?? q['errorMessage'],
+            earnedCoins: extra['earnedCoins'] as int?,
+            onRetry: extra['onRetry'] as VoidCallback?,
+            onCancel: extra['onCancel'] as VoidCallback?,
           );
         },
       ),
@@ -1185,10 +1221,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: RouteNames.bikeRentalConfirmation,
         pageBuilder: (context, state) {
           final extra = state.extra as Map<String, dynamic>? ?? {};
+          final q = state.uri.queryParameters;
           final bike = extra['bike'] as BikeModel?;
-          final bookingId = extra['bookingId'] as String?;
-          final earnedCoins = extra['earnedCoins'] as int?;
-          final totalAmount = extra['totalAmount'] as double?;
+          final bookingId = (extra['bookingId'] as String?) ?? q['bookingId'];
+          final earnedCoins = (extra['earnedCoins'] as int?) ?? int.tryParse(q['earnedCoins'] ?? '');
+          final totalAmount = (extra['totalAmount'] as double?) ?? double.tryParse(q['amount'] ?? '');
 
           return CustomTransitionPage(
             key: state.pageKey,
@@ -1200,6 +1237,27 @@ final routerProvider = Provider<GoRouter>((ref) {
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) =>
                     FadeTransition(opacity: animation, child: child),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/bike-rental-payment-failure',
+        name: RouteNames.bikeRentalPaymentFailure,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>? ?? {};
+          final q = state.uri.queryParameters;
+          final amountVal = extra['amount'] ?? q['amount'];
+          return BikeRentalPaymentFailureScreen(
+            bookingId: extra['bookingId']?.toString() ?? q['bookingId'] ?? '',
+            vehicleName: extra['vehicleName']?.toString() ?? q['vehicleName'],
+            bike: extra['bike'] as BikeModel?,
+            amount: (amountVal is num)
+                ? amountVal.toDouble()
+                : (double.tryParse(amountVal?.toString() ?? '0') ?? 0.0),
+            errorMessage: extra['errorMessage']?.toString() ?? q['errorMessage'],
+            earnedCoins: extra['earnedCoins'] as int?,
+            onRetry: extra['onRetry'] as VoidCallback?,
+            onCancel: extra['onCancel'] as VoidCallback?,
           );
         },
       ),

@@ -74,16 +74,22 @@ class TierInfo {
   final String tier;
   final int minPoints;
   final int minRides;
+  final int minBookings;
   final double multiplier;
   final double maxDiscount;
+  final double redemptionRateEur;
+  final double euroPerPoint;
   final List<String> benefits;
 
   const TierInfo({
     required this.tier,
     required this.minPoints,
     required this.minRides,
+    this.minBookings = 0,
     required this.multiplier,
     required this.maxDiscount,
+    this.redemptionRateEur = 1.0,
+    this.euroPerPoint = 0.01,
     required this.benefits,
   });
 
@@ -104,12 +110,23 @@ class TierInfo {
 
   factory TierInfo.fromJson(Map<String, dynamic> json) {
     final minPts = (json['minPoints'] as num?)?.toInt() ?? 0;
+    final minBk = (json['minBookings'] as num?)?.toInt() ?? (json['minRides'] as num?)?.toInt() ?? minPts;
+    final rateEur = (json['redemptionRateEur'] as num?)?.toDouble() ?? (
+      json['tier'] == 'PLATINUM' ? 7.0 :
+      json['tier'] == 'GOLD' ? 5.0 :
+      json['tier'] == 'SILVER' ? 3.0 : 1.0
+    );
+    final perPoint = (json['euroPerPoint'] as num?)?.toDouble() ?? (rateEur / 100.0);
+
     return TierInfo(
       tier: json['tier'] as String? ?? 'BRONZE',
       minPoints: minPts,
-      minRides: (json['minRides'] as num?)?.toInt() ?? minPts,
+      minRides: minBk,
+      minBookings: minBk,
       multiplier: (json['multiplier'] as num?)?.toDouble() ?? 1.0,
       maxDiscount: (json['maxDiscount'] as num?)?.toDouble() ?? 5.0,
+      redemptionRateEur: rateEur,
+      euroPerPoint: perPoint,
       benefits: (json['benefits'] as List<dynamic>?)
               ?.map((b) => b as String)
               .toList() ??
@@ -155,6 +172,26 @@ class RewardRules {
       return tiers.firstWhere((t) => t.tier == tierName);
     } catch (_) {
       return null;
+    }
+  }
+
+  double getCoinValueForTier(String tierName) {
+    final t = tierFor(tierName);
+    if (t != null && t.euroPerPoint > 0) {
+      return t.euroPerPoint;
+    }
+    if (t != null && t.redemptionRateEur > 0) {
+      return t.redemptionRateEur / 100.0;
+    }
+    switch (tierName.toUpperCase()) {
+      case 'PLATINUM':
+        return 0.07;
+      case 'GOLD':
+        return 0.05;
+      case 'SILVER':
+        return 0.03;
+      default:
+        return 0.01;
     }
   }
 

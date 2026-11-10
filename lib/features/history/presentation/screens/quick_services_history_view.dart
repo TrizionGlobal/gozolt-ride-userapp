@@ -55,34 +55,33 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
 
   @override
   Widget build(BuildContext context) {
-    final historyAsync = ref.watch(quickServicesHistoryProvider);
+    final historyState = ref.watch(quickServicesHistoryProvider);
 
-    return historyAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
-      error: (err, stack) => Center(child: Text('Error: $err', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error))),
-      data: (bookings) {
-        // Filter the dynamic bookings
-        final filteredBookings = bookings.where((booking) {
-          final s = booking.status.toUpperCase();
-          if (_selectedFilter == 'All') return true;
-          if (_selectedFilter == 'Scheduled' &&
-              (s == 'PENDING' ||
-                  s == 'ASSIGNED' ||
-                  s == 'WORKER_ASSIGNED' ||
-                  s == 'SELF_ASSIGNED' ||
-                  s == 'ACCEPTED' ||
-                  s == 'IN_PROGRESS' ||
-                  s == 'AWAITING_PAYMENT' ||
-                  s == 'CONFIRMED' ||
-                  s == 'SCHEDULED')) {
-            return true;
-          }
-          if (_selectedFilter == 'Completed' && s == 'COMPLETED') return true;
-          if (_selectedFilter == 'Cancelled' && (s == 'CANCELLED' || s == 'CANCELED')) return true;
-          return s == _selectedFilter.toUpperCase();
-        }).toList();
+    if (historyState.isLoading && historyState.bookings.isEmpty) {
+      return const Center(child: CircularProgressIndicator(color: AppColors.primaryGold));
+    }
 
-        return Column(
+    if (historyState.error != null && historyState.bookings.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, color: AppColors.textMuted, size: 48),
+            const SizedBox(height: 12),
+            Text('Failed to load quick services', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => ref.read(quickServicesHistoryProvider.notifier).load(),
+              child: const Text('Retry', style: TextStyle(color: AppColors.primaryGold)),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final bookings = historyState.bookings;
+
+    return Column(
       children: [
         // ── Filter Tabs ────────────────────────────
         Padding(
@@ -100,6 +99,7 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
                       setState(() {
                         _selectedFilter = filter;
                       });
+                      ref.read(quickServicesHistoryProvider.notifier).setFilter(filter);
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
@@ -138,9 +138,9 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
           child: RefreshIndicator(
             color: AppColors.primaryGold,
             onRefresh: () async {
-              return ref.refresh(quickServicesHistoryProvider.future);
+              return ref.read(quickServicesHistoryProvider.notifier).load();
             },
-            child: filteredBookings.isEmpty
+            child: bookings.isEmpty
                 ? LayoutBuilder(
                     builder: (context, constraints) => SingleChildScrollView(
                       physics: const AlwaysScrollableScrollPhysics(),
@@ -153,17 +153,32 @@ class _QuickServicesHistoryViewState extends ConsumerState<QuickServicesHistoryV
                 : ListView.builder(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                    itemCount: filteredBookings.length,
+                    itemCount: bookings.length + (historyState.hasMore ? 1 : 0),
                     itemBuilder: (context, index) {
-                      final booking = filteredBookings[index];
+                      if (index >= bookings.length) {
+                        if (historyState.hasMore) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            ref.read(quickServicesHistoryProvider.notifier).loadMore();
+                          });
+                          return const Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.primaryGold,
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      }
+                      final booking = bookings[index];
                       return _buildHistoryCard(booking);
                     },
                   ),
           ),
         ),
       ],
-    );
-    },
     );
   }
 

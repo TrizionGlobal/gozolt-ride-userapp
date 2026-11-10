@@ -59,9 +59,14 @@ class QuickServicesCoinsHelper {
     final int conversionRate = getConversionRate(ref, isWatching: isWatching);
     final int minRedeemCoins = getMinRedeemCoins(ref, isWatching: isWatching);
 
-    final double maxEurValue = conversionRate > 0 ? (balance / conversionRate) : 0.0;
+    final summary = isWatching
+        ? ref.watch(rewardSummaryProvider).value
+        : ref.read(rewardSummaryProvider).value;
+    final double coinValueInEur = summary?.coinValueInEur ?? (conversionRate > 0 ? (1.0 / conversionRate) : 0.01);
+
+    final double maxEurValue = balance * coinValueInEur;
     final double appliedEurValue = maxEurValue > upfrontRaw ? upfrontRaw : maxEurValue;
-    final int coinsUsed = (appliedEurValue * conversionRate).round();
+    final int coinsUsed = coinValueInEur > 0 ? (appliedEurValue / coinValueInEur).ceil() : 0;
 
     final bool canRedeem = balance >= minRedeemCoins && balance > 0;
     final double discount = (useGoCoins && canRedeem) ? appliedEurValue : 0.0;

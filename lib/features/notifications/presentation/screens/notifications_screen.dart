@@ -25,6 +25,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     _FilterTab(label: 'Car rentals', value: 'CAR_RENTAL'),
     _FilterTab(label: 'Bike rentals', value: 'BIKE_RENTAL'),
     _FilterTab(label: 'Quick services', value: 'QUICK_SERVICE'),
+    _FilterTab(label: 'Airport transfers', value: 'AIRPORT_TRANSFER'),
     _FilterTab(label: 'Promotions', value: 'PROMOTION'),
   ];
 
@@ -226,6 +227,25 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
+                      if (index >= notifState.notifications.length) {
+                        if (notifState.hasMore) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            ref
+                                .read(notificationsProvider.notifier)
+                                .loadMore();
+                          });
+                          return const Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.primaryGold,
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      }
                       final notification = notifState.notifications[index];
                       return NotificationCard(
                         notification: notification,
@@ -237,7 +257,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                         },
                       );
                     },
-                    childCount: notifState.notifications.length,
+                    childCount: notifState.notifications.length +
+                        (notifState.hasMore ? 1 : 0),
                   ),
                 ),
               ),

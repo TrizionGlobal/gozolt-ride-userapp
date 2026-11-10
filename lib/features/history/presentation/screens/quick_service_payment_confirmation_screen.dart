@@ -90,12 +90,18 @@ class _QuickServicePaymentConfirmationScreenState
         ? _supplierName!
         : 'Service Supplier';
 
+    final String refPrefix = (_serviceTitle.startsWith('Car Rental') || _serviceTitle.startsWith('Bike Rental'))
+        ? 'GZ-BKG-'
+        : _serviceTitle.startsWith('Airport Transfer')
+            ? 'GZ-APT-'
+            : 'GZ-QS-';
+
     final didRate = await SupplierRatingModal.show(
       context,
       supplierName: supplier,
       serviceTitle: _serviceTitle,
       bookingReference: _bookingId.length >= 8
-          ? 'Service ID: GZ-QS-${_bookingId.substring(0, 8).toUpperCase()}'
+          ? 'Service ID: $refPrefix${_bookingId.substring(0, 8).toUpperCase()}'
           : null,
       onSubmitRating: (rating, review) async {
         await ref.read(quickServicesRepositoryProvider).rateBooking(

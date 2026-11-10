@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -6,11 +7,9 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/constants/asset_paths.dart';
 import '../../../../core/widgets/gozolt_button.dart';
 import '../widgets/bike_rental_header.dart';
+import '../widgets/bike_rental_payment_sheet.dart';
 import '../../domain/models/bike_model.dart';
 import '../../../../core/router/route_names.dart';
-import '../../../ride/presentation/widgets/stripe_add_card_sheet.dart';
-import '../../../ride/data/datasources/payment_remote_datasource.dart';
-import 'package:dio/dio.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../data/datasources/bike_rental_remote_datasource.dart';
@@ -31,7 +30,8 @@ class BikeRentalReviewScreen extends ConsumerStatefulWidget {
   ConsumerState<BikeRentalReviewScreen> createState() => _BikeRentalReviewScreenState();
 }
 
-class _BikeRentalReviewScreenState extends ConsumerState<BikeRentalReviewScreen> {
+class _BikeRentalReviewScreenState extends ConsumerState<BikeRentalReviewScreen>
+    with WidgetsBindingObserver {
   bool _acceptTerms = false;
   bool _acceptPrivacy = false;
   bool _isBooking = false;
@@ -45,12 +45,261 @@ class _BikeRentalReviewScreenState extends ConsumerState<BikeRentalReviewScreen>
   bool _hasActiveBooking = false;
   Map<String, dynamic>? _activeBookingData;
 
+  String? _selectedCardId;
+  BikeRentalPaymentOption _paymentOption = BikeRentalPaymentOption.card;
+  Timer? _pollingTimer;
+  String? _pendingBookingId;
+  double? _pendingAmount;
+  int? _pendingEarnedCoins;
+  double? _lastTotalPayable;
+  int? _lastEarnedCoins;
+  double? _lastDiscount;
+  double? _lastDeliveryFee;
+
   final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _checkActiveBooking();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _pollingTimer?.cancel();
+    if (_pendingBookingId != null) {
+      try {
+        final dio = ref.read(dioProvider);
+        BikeRentalRemoteDatasource(dio).cancelBooking(_pendingBookingId!);
+      } catch (_) {}
+    }
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _pendingBookingId != null) {
+      _verifyPendingOnlinePayment().then((_) {
+        if (mounted && _pendingBookingId != null) {
+          _showPaymentPendingPrompt();
+        }
+      });
+    }
+  }
+
+  Future<void> _verifyPendingOnlinePayment({bool showFeedbackOnFailure = false}) async {
+    final bookingId = _pendingBookingId;
+    if (bookingId == null || !mounted) return;
+
+    try {
+      final dio = ref.read(dioProvider);
+      final res = await BikeRentalRemoteDatasource(dio).verifyPayment(bookingId);
+      if (res['isPaid'] == true && mounted) {
+        _pollingTimer?.cancel();
+        _pendingBookingId = null;
+
+        ref.invalidate(bikeRentalHistoryProvider);
+        context.pushReplacementNamed(RouteNames.bikeRentalConfirmation, extra: {
+          'bike': widget.bike,
+          'bookingId': bookingId,
+          'earnedCoins': _pendingEarnedCoins ?? 0,
+          'totalAmount': _pendingAmount ?? 0.0,
+        });
+      } else if (showFeedbackOnFailure && mounted) {
+        _showPaymentNotCompletedDialog();
+      }
+    } catch (_) {
+      if (showFeedbackOnFailure && mounted) {
+        _showPaymentNotCompletedDialog();
+      }
+    }
+  }
+
+  void _discardPendingBooking() {
+    final id = _pendingBookingId;
+    _pollingTimer?.cancel();
+    if (mounted) {
+      setState(() {
+        _pendingBookingId = null;
+      });
+    } else {
+      _pendingBookingId = null;
+    }
+    if (id != null) {
+      try {
+        final dio = ref.read(dioProvider);
+        BikeRentalRemoteDatasource(dio).cancelBooking(id);
+      } catch (_) {}
+    }
+    ref.invalidate(bikeRentalHistoryProvider);
+  }
+
+  void _showPaymentNotCompletedDialog() {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+        contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        title: const Row(
+          children: [
+            Icon(Icons.error_outline_rounded, color: Colors.orange, size: 22),
+            SizedBox(width: 8),
+            Text('Payment Not Verified', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: const Text(
+          'We have not received payment confirmation for this rental. Would you like to retry paying or discard this uncompleted booking?',
+          style: TextStyle(fontSize: 13.5),
+        ),
+        actions: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  _discardPendingBooking();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Uncompleted booking discarded.'),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                  }
+                },
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text(
+                  'Discard Booking',
+                  style: TextStyle(color: Colors.red, fontSize: 12.5, fontWeight: FontWeight.w600),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  if (_lastTotalPayable != null) {
+                    _openPaymentSheetModal(
+                      totalPayable: _lastTotalPayable!,
+                      earnedCoins: _lastEarnedCoins ?? 0,
+                      discount: _lastDiscount ?? 0.0,
+                      deliveryFee: _lastDeliveryFee ?? 0.0,
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGold,
+                  foregroundColor: Colors.black,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: const Text(
+                  'Retry Payment',
+                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPaymentPendingPrompt() {
+    if (!mounted || _pendingBookingId == null) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+        contentPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        title: const Row(
+          children: [
+            Icon(Icons.payment_rounded, color: AppColors.primaryGold, size: 22),
+            SizedBox(width: 8),
+            Text('Payment Status', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: const Text(
+          'We have not yet received confirmation of your online payment from Stripe. If you finished payment, tap "Verify". Otherwise you can retry or discard.',
+          style: TextStyle(fontSize: 13.5),
+        ),
+        actions: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(dialogCtx).pop();
+                  _discardPendingBooking();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Uncompleted booking discarded.'),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                  }
+                },
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text(
+                  'Cancel Booking',
+                  style: TextStyle(color: Colors.red, fontSize: 12.5, fontWeight: FontWeight.w600),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(dialogCtx).pop();
+                  _verifyPendingOnlinePayment(showFeedbackOnFailure: true);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGold,
+                  foregroundColor: Colors.black,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: const Text(
+                  'Verify Payment',
+                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _checkActiveBooking() async {
@@ -60,7 +309,7 @@ class _BikeRentalReviewScreenState extends ConsumerState<BikeRentalReviewScreen>
       final myBookings = await datasource.getMyBookings();
       
       final activeBooking = myBookings.cast<Map<String, dynamic>?>().firstWhere(
-        (b) => b != null && ['PENDING_PAYMENT', 'PENDING_APPROVAL', 'CONFIRMED', 'ACTIVE'].contains(b['status']),
+        (b) => b != null && ['PENDING_APPROVAL', 'CONFIRMED', 'ACTIVE'].contains(b['status']),
         orElse: () => null,
       );
 
@@ -319,11 +568,11 @@ class _BikeRentalReviewScreenState extends ConsumerState<BikeRentalReviewScreen>
     // GoCoins logic
     final rewardSummary = ref.watch(rewardSummaryProvider).value;
     final int balance = rewardSummary?.currentPoints.toInt() ?? 0;
-    final int conversionRate = (ref.watch(rewardRulesProvider).value?.redemption.pointsToEurRatio ?? 100.0).toInt();
+    final double coinValueInEur = rewardSummary?.coinValueInEur ?? 0.01;
     
-    final double maxEurValue = balance / conversionRate;
+    final double maxEurValue = balance * coinValueInEur;
     final double appliedEurValue = maxEurValue > subtotal ? subtotal : maxEurValue;
-    final int coinsUsed = (appliedEurValue * conversionRate).round();
+    final int coinsUsed = coinValueInEur > 0 ? (appliedEurValue / coinValueInEur).ceil() : 0;
 
     final int minRedeemCoins = ref.watch(rewardRulesProvider).value?.redemption.minimumPoints ?? 200;
     final bool canRedeem = balance >= minRedeemCoins && balance > 0;
@@ -335,7 +584,14 @@ class _BikeRentalReviewScreenState extends ConsumerState<BikeRentalReviewScreen>
 
     final isFormValid = _acceptTerms && _acceptPrivacy && _documentsUploaded;
 
-    return Scaffold(
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        if (_pendingBookingId != null) {
+          _discardPendingBooking();
+        }
+      },
+      child: Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Column(
         children: [
@@ -684,108 +940,219 @@ class _BikeRentalReviewScreenState extends ConsumerState<BikeRentalReviewScreen>
               GozoltButton(
                 label: _isBooking ? 'Booking...' : 'Book Now',
                 width: double.infinity,
-            onPressed: _isBooking ? null : () async {
-              if (_hasActiveBooking && _activeBookingData != null) {
-                _showActiveBookingModal(_activeBookingData!);
-                return;
-              }
+                onPressed: _isBooking ? null : () async {
+                  if (_hasActiveBooking && _activeBookingData != null) {
+                    _showActiveBookingModal(_activeBookingData!);
+                    return;
+                  }
 
-              if (!_documentsUploaded) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please upload the required documents.'),
-                    backgroundColor: Colors.redAccent,
-                  ),
-                );
-                return;
-              }
+                  if (!_documentsUploaded) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please upload the required documents.'),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                    return;
+                  }
 
-              if (!_acceptTerms) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please accept the Terms & Conditions.'),
-                    backgroundColor: Colors.redAccent,
-                  ),
-                );
-                return;
-              }
+                  if (!_acceptTerms) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please accept the Terms & Conditions.'),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                    return;
+                  }
 
-              if (!_acceptPrivacy) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please accept the Privacy Policy.'),
-                    backgroundColor: Colors.redAccent,
-                  ),
-                );
-                return;
-              }
+                  if (!_acceptPrivacy) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please accept the Privacy Policy.'),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                    return;
+                  }
 
-              String? successfulBookingId;
-              
-              await showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (_) => StripeAddCardSheet(
-                  datasource: PaymentRemoteDatasource(ref.read(dioProvider)),
-                  amount: totalPayable,
-                  simulatePayment: false,
-                  onCardAdded: (paymentMethodId) async {
-                    try {
-                      final dio = ref.read(dioProvider);
-                      final datasource = BikeRentalRemoteDatasource(dio);
-                      final searchState = ref.read(bikeRentalSearchProvider);
-                      
-                      // Fallbacks just in case
-                      final fallbackStart = DateTime.now().add(const Duration(days: 1));
-                      final fallbackEnd = fallbackStart.add(const Duration(days: 3));
-                      
-                      final startDate = searchState.pickupDate ?? fallbackStart;
-                      final endDate = searchState.dropoffDate ?? fallbackEnd;
-                      
-                      final bookingData = await datasource.createBooking(
-                        bikeId: widget.bike?.id ?? '1', 
-                        startDate: startDate, 
-                        endDate: endDate,
-                        protectionPackageId: widget.bike?.selectedProtectionPackageId,
-                        addonIds: widget.bike?.selectedAddonIds,
-                        deliveryType: searchState.deliveryType,
-                        deliveryAddress: searchState.deliveryAddress,
-                        pickupLocation: searchState.pickupLocation,
-                        dropoffLocation: searchState.dropoffLocation,
-                        isFlexible: searchState.isFlexible,
-                        nationalIdPath: _nationalIdPath!,
-                        drivingLicencePath: _drivingLicencePath!,
-                        paymentMethodId: paymentMethodId,
-                        walletAmountUsed: discount > 0 ? discount : null,
-                        deliveryFee: deliveryFee,
-                      );
-                      successfulBookingId = bookingData['id'];
-                      ref.invalidate(bikeRentalHistoryProvider);
-                      
-                    } catch (e) {
-                      debugPrint('Error creating booking: $e');
-                      throw Exception(e.toString().replaceAll('Exception: ', ''));
-                    }
-                  },
-                ),
-              );
-              
-              if (successfulBookingId != null && context.mounted) {
-                context.pushNamed(RouteNames.bikeRentalConfirmation, extra: {
-                  'bike': widget.bike,
-                  'bookingId': successfulBookingId,
-                  'earnedCoins': earnedCoins,
-                  'totalAmount': totalPayable,
-                });
-              }
-            },
-          ),
+                  _openPaymentSheetModal(
+                    totalPayable: totalPayable,
+                    earnedCoins: earnedCoins,
+                    discount: discount,
+                    deliveryFee: deliveryFee,
+                  );
+                },
+              ),
             ],
           ),
         ),
       ),
+    ),
+  );
+}
+
+  void _openPaymentSheetModal({
+    required double totalPayable,
+    required int earnedCoins,
+    required double discount,
+    required double deliveryFee,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => BikeRentalPaymentSheet(
+        amount: totalPayable,
+        initialCardId: _selectedCardId,
+        initialOption: _paymentOption,
+        onConfirm: (option, {cardId}) async {
+          setState(() {
+            _paymentOption = option;
+            _selectedCardId = cardId;
+          });
+          return await _processBooking(
+            option: option,
+            cardId: cardId,
+            totalPayable: totalPayable,
+            earnedCoins: earnedCoins,
+            discount: discount,
+            deliveryFee: deliveryFee,
+          );
+        },
+      ),
     );
+  }
+
+  Future<bool> _processBooking({
+    required BikeRentalPaymentOption option,
+    String? cardId,
+    required double totalPayable,
+    required int earnedCoins,
+    required double discount,
+    required double deliveryFee,
+  }) async {
+    _lastTotalPayable = totalPayable;
+    _lastEarnedCoins = earnedCoins;
+    _lastDiscount = discount;
+    _lastDeliveryFee = deliveryFee;
+
+    setState(() => _isBooking = true);
+    final dio = ref.read(dioProvider);
+    final datasource = BikeRentalRemoteDatasource(dio);
+    final searchState = ref.read(bikeRentalSearchProvider);
+
+    final fallbackStart = DateTime.now().add(const Duration(days: 1));
+    final fallbackEnd = fallbackStart.add(const Duration(days: 3));
+    final startDate = searchState.pickupDate ?? fallbackStart;
+    final endDate = searchState.dropoffDate ?? fallbackEnd;
+
+    try {
+      final paymentMethodStr =
+          option == BikeRentalPaymentOption.card ? 'CARD' : 'ONLINE';
+      final bookingData = await datasource.createBooking(
+        bikeId: widget.bike?.id ?? '1',
+        startDate: startDate,
+        endDate: endDate,
+        protectionPackageId: widget.bike?.selectedProtectionPackageId,
+        addonIds: widget.bike?.selectedAddonIds,
+        deliveryType: searchState.deliveryType,
+        deliveryAddress: searchState.deliveryAddress,
+        pickupLocation: searchState.pickupLocation,
+        dropoffLocation: searchState.dropoffLocation,
+        isFlexible: searchState.isFlexible,
+        nationalIdPath: _nationalIdPath!,
+        drivingLicencePath: _drivingLicencePath!,
+        paymentMethod: paymentMethodStr,
+        paymentMethodId: option == BikeRentalPaymentOption.card ? cardId : null,
+        walletAmountUsed: discount > 0 ? discount : null,
+        deliveryFee: deliveryFee,
+      );
+
+      final createdBookingId = bookingData['id']?.toString();
+
+      if (option == BikeRentalPaymentOption.card) {
+        if (mounted && createdBookingId != null) {
+          ref.invalidate(bikeRentalHistoryProvider);
+          context.pushReplacementNamed(RouteNames.bikeRentalConfirmation, extra: {
+            'bike': widget.bike,
+            'bookingId': createdBookingId,
+            'earnedCoins': earnedCoins,
+            'totalAmount': totalPayable,
+          });
+        }
+        return true;
+      } else {
+        // Online Payment - Launch Stripe Checkout
+        final checkoutUrl = bookingData['checkoutUrl']?.toString();
+        if (checkoutUrl != null) {
+          final uri = Uri.parse(checkoutUrl);
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          }
+        }
+
+        _pendingBookingId = createdBookingId;
+        _pendingAmount = totalPayable;
+        _pendingEarnedCoins = earnedCoins;
+
+        // Poll verification periodically
+        _pollingTimer?.cancel();
+        _pollingTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
+          if (timer.tick > 90) {
+            timer.cancel();
+          } else {
+            _verifyPendingOnlinePayment();
+          }
+        });
+
+        if (mounted) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.payment_rounded, color: Colors.white, size: 20),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Redirecting to Stripe... Please complete payment to confirm.',
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: isDark ? AppColors.surfaceDark : AppColors.cardDark,
+              duration: const Duration(seconds: 10),
+            ),
+          );
+        }
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Error creating booking: $e');
+      final errorMsg = e.toString().replaceAll('Exception: ', '');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMsg),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+        context.pushNamed(RouteNames.bikeRentalPaymentFailure, extra: {
+          'bookingId': '',
+          'vehicleName': widget.bike != null ? '${widget.bike?.brand} ${widget.bike?.model}'.trim() : 'Bike Rental',
+          'bike': widget.bike,
+          'amount': totalPayable,
+          'errorMessage': errorMsg,
+          'earnedCoins': earnedCoins,
+        });
+      }
+      return false;
+    } finally {
+      if (mounted) {
+        setState(() => _isBooking = false);
+      }
+    }
   }
 
   void _showActiveBookingModal(Map<String, dynamic> activeBooking) {

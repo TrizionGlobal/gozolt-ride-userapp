@@ -11,20 +11,137 @@ import '../../../../core/providers/dio_provider.dart';
 import '../../../../core/network/socket_service.dart';
 import 'bike_rental_booking_details_screen.dart';
 
-final bikeRentalHistoryProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+class BikeRentalHistoryState {
+  final List<Map<String, dynamic>> bookings;
+  final bool isLoading;
+  final bool hasMore;
+  final int page;
+  final String? error;
+
+  const BikeRentalHistoryState({
+    this.bookings = const [],
+    this.isLoading = false,
+    this.hasMore = true,
+    this.page = 1,
+    this.error,
+  });
+
+  BikeRentalHistoryState copyWith({
+    List<Map<String, dynamic>>? bookings,
+    bool? isLoading,
+    bool? hasMore,
+    int? page,
+    String? error,
+  }) {
+    return BikeRentalHistoryState(
+      bookings: bookings ?? this.bookings,
+      isLoading: isLoading ?? this.isLoading,
+      hasMore: hasMore ?? this.hasMore,
+      page: page ?? this.page,
+      error: error,
+    );
+  }
+}
+
+class BikeRentalHistoryNotifier extends StateNotifier<BikeRentalHistoryState> {
+  final BikeRentalRemoteDatasource _ds;
+  String _filter = 'All';
+
+  BikeRentalHistoryNotifier(this._ds) : super(const BikeRentalHistoryState()) {
+    load();
+  }
+
+  void setFilter(String filter) {
+    if (_filter == filter) return;
+    _filter = filter;
+    load();
+  }
+
+  Future<void> load() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final items = await _ds.getMyBookings(
+        page: 1,
+        limit: 10,
+        status: _filter,
+      );
+      final validItems = items.where((b) {
+        final st = b['status']?.toString().toUpperCase();
+        final reason = b['cancellationReason']?.toString().toLowerCase() ?? '';
+        if (st == 'PENDING_PAYMENT') return false;
+        if (reason.contains('abandoned')) return false;
+        return true;
+      }).toList();
+      if (mounted) {
+        state = BikeRentalHistoryState(
+          bookings: validItems,
+          isLoading: false,
+          hasMore: items.length >= 10,
+          page: 1,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        state = BikeRentalHistoryState(
+          bookings: const [],
+          isLoading: false,
+          hasMore: false,
+          page: 1,
+          error: e.toString(),
+        );
+      }
+    }
+  }
+
+  Future<void> loadMore() async {
+    if (state.isLoading || !state.hasMore) return;
+    state = state.copyWith(isLoading: true);
+    try {
+      final nextPage = state.page + 1;
+      final items = await _ds.getMyBookings(
+        page: nextPage,
+        limit: 10,
+        status: _filter,
+      );
+      final validItems = items.where((b) {
+        final st = b['status']?.toString().toUpperCase();
+        final reason = b['cancellationReason']?.toString().toLowerCase() ?? '';
+        if (st == 'PENDING_PAYMENT') return false;
+        if (reason.contains('abandoned')) return false;
+        return true;
+      }).toList();
+      if (mounted) {
+        state = state.copyWith(
+          bookings: [...state.bookings, ...validItems],
+          isLoading: false,
+          hasMore: items.length >= 10,
+          page: nextPage,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        state = state.copyWith(isLoading: false, error: e.toString());
+      }
+    }
+  }
+}
+
+final bikeRentalHistoryProvider =
+    StateNotifierProvider<BikeRentalHistoryNotifier, BikeRentalHistoryState>((ref) {
   final dio = ref.read(dioProvider);
   final datasource = BikeRentalRemoteDatasource(dio);
+  final notifier = BikeRentalHistoryNotifier(datasource);
 
   final socketService = ref.read(socketServiceProvider);
   final sub = socketService.onBikeRentalStatusChanged.listen((_) {
-    ref.invalidateSelf();
+    notifier.load();
   });
-  
+
   ref.onDispose(() {
     sub.cancel();
   });
 
-  return datasource.getMyBookings();
+  return notifier;
 });
 
 class BikeRentalsHistoryView extends ConsumerStatefulWidget {
@@ -41,110 +158,128 @@ class _BikeRentalsHistoryViewState extends ConsumerState<BikeRentalsHistoryView>
 
   @override
   Widget build(BuildContext context) {
-    final historyAsync = ref.watch(bikeRentalHistoryProvider);
+    final historyState = ref.watch(bikeRentalHistoryProvider);
 
-    return historyAsync.when(
-      skipLoadingOnReload: true,
-      data: (bookings) {
-        if (bookings.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.pedal_bike, color: AppColors.textMuted, size: 56),
-                const SizedBox(height: 16),
-                Text(
-                  'No bike rentals yet',
-                  style: AppTextStyles.titleMedium.copyWith(color: AppColors.textSecondary),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Your rental history will appear here',
-                  style: AppTextStyles.bodySmall,
-                ),
-              ],
+    if (historyState.isLoading && historyState.bookings.isEmpty) {
+      return const Center(child: CircularProgressIndicator(color: AppColors.primaryGold));
+    }
+
+    if (historyState.error != null && historyState.bookings.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, color: AppColors.textMuted, size: 48),
+            const SizedBox(height: 12),
+            Text('Failed to load rentals', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () => ref.read(bikeRentalHistoryProvider.notifier).load(),
+              child: const Text('Retry', style: TextStyle(color: AppColors.primaryGold)),
             ),
-          );
-        }
+          ],
+        ),
+      );
+    }
 
-        // Apply Filter
-        final filteredBookings = bookings.where((booking) {
-          final status = booking['status'] as String;
-          if (_selectedFilter == 'All') return true;
-          if (_selectedFilter == 'Pending') return status == 'PENDING_PAYMENT' || status == 'PENDING_APPROVAL';
-          if (_selectedFilter == 'Confirmed') return status == 'CONFIRMED';
-          if (_selectedFilter == 'Active') return status == 'ACTIVE';
-          if (_selectedFilter == 'Completed') return status == 'COMPLETED';
-          if (_selectedFilter == 'Cancelled') return status == 'CANCELLED' || status == 'REJECTED';
-          return true;
-        }).toList();
+    final bookings = historyState.bookings;
 
-        return RefreshIndicator(
-          color: AppColors.primaryGold,
-          onRefresh: () => ref.refresh(bikeRentalHistoryProvider.future),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Filter Chips
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  children: _filters.map((filter) {
-                    final isSelected = _selectedFilter == filter;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: GestureDetector(
-                        onTap: () {
-                          HapticFeedback.selectionClick();
-                          setState(() {
-                            _selectedFilter = filter;
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppColors.primaryGold
-                                : Theme.of(context).cardTheme.color,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: isSelected
-                                  ? AppColors.primaryGold
-                                  : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
-                            ),
-                          ),
-                          child: Text(
-                            filter,
-                            style: AppTextStyles.labelLarge.copyWith(
-                              color: isSelected
-                                  ? Theme.of(context).scaffoldBackgroundColor
-                                  : (Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
-                              fontSize: 12,
-                            ),
-                          ),
+    return RefreshIndicator(
+      color: AppColors.primaryGold,
+      onRefresh: () => ref.read(bikeRentalHistoryProvider.notifier).load(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Filter Chips
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: _filters.map((filter) {
+                final isSelected = _selectedFilter == filter;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: GestureDetector(
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setState(() {
+                        _selectedFilter = filter;
+                      });
+                      ref.read(bikeRentalHistoryProvider.notifier).setFilter(filter);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.primaryGold
+                            : Theme.of(context).cardTheme.color,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.primaryGold
+                              : (Theme.of(context).dividerTheme.color ?? AppColors.borderDark),
                         ),
                       ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              
-              // Filtered List
-              Expanded(
-                child: filteredBookings.isEmpty
-                    ? Center(
-                        child: Text(
-                          'No $_selectedFilter bike rentals found',
-                          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                      child: Text(
+                        filter,
+                        style: AppTextStyles.labelLarge.copyWith(
+                          color: isSelected
+                              ? Theme.of(context).scaffoldBackgroundColor
+                              : (Theme.of(context).brightness == Brightness.dark ? AppColors.textSecondary : AppColors.textSecondaryLight),
+                          fontSize: 12,
                         ),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
-                        itemCount: filteredBookings.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final booking = filteredBookings[index];
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          
+          // Bookings List
+          Expanded(
+            child: bookings.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.pedal_bike, color: AppColors.textMuted, size: 56),
+                        const SizedBox(height: 16),
+                        Text(
+                          _selectedFilter == 'All' ? 'No bike rentals yet' : 'No $_selectedFilter bike rentals found',
+                          style: AppTextStyles.titleMedium.copyWith(color: AppColors.textSecondary),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Your rental history will appear here',
+                          style: AppTextStyles.bodySmall,
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
+                    itemCount: bookings.length + (historyState.hasMore ? 1 : 0),
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      if (index >= bookings.length) {
+                        if (historyState.hasMore) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            ref.read(bikeRentalHistoryProvider.notifier).loadMore();
+                          });
+                          return const Padding(
+                            padding: EdgeInsets.all(16),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.primaryGold,
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      }
+                      final booking = bookings[index];
                           final vehicle = booking['vehicle'];
               final supplier = vehicle['supplier'];
               final status = booking['status'] as String;
@@ -348,25 +483,7 @@ class _BikeRentalsHistoryViewState extends ConsumerState<BikeRentalsHistoryView>
       ],
     ),
   );
-},
-      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
-      error: (e, st) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error_outline, color: AppColors.textMuted, size: 48),
-            const SizedBox(height: 12),
-            Text('Failed to load rentals', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: () => ref.refresh(bikeRentalHistoryProvider),
-              child: const Text('Retry', style: TextStyle(color: AppColors.primaryGold)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+}
 
   String _formatStatus(String status) {
     if (status == 'PENDING_APPROVAL') return 'Pending';

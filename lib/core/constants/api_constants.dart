@@ -51,6 +51,8 @@ abstract final class ApiConstants {
   static const String carRentalMyBookings = '/car-rentals/my-bookings';
   static String carRentalBookingDetails(String id) => '/car-rentals/my-bookings/$id';
   static String carRentalBookingCancel(String id) => '/car-rentals/my-bookings/$id/cancel';
+  static String carRentalVerifyPayment(String id) => '/car-rentals/my-bookings/$id/verify-payment';
+  static String carRentalProcessPayment(String id) => '/car-rentals/my-bookings/$id/process-payment';
   static String carRentalBookingExtendCalculate(String id) => '/car-rentals/bookings/$id/extend/calculate';
   static String carRentalBookingExtendPaymentIntent(String id) => '/car-rentals/bookings/$id/extend/payment-intent';
   static String carRentalBookingExtend(String id) => '/car-rentals/bookings/$id/extend';
@@ -61,6 +63,8 @@ abstract final class ApiConstants {
   static const String bikeRentalMyBookings = '/bike-rentals/my-bookings';
   static String bikeRentalBookingDetails(String id) => '/bike-rentals/my-bookings/$id';
   static String bikeRentalBookingCancel(String id) => '/bike-rentals/my-bookings/$id/cancel';
+  static String bikeRentalVerifyPayment(String id) => '/bike-rentals/my-bookings/$id/verify-payment';
+  static String bikeRentalProcessPayment(String id) => '/bike-rentals/my-bookings/$id/process-payment';
   static String bikeRentalBookingExtendCalculate(String id) => '/bike-rentals/bookings/$id/extend/calculate';
   static String bikeRentalBookingExtendPaymentIntent(String id) => '/bike-rentals/bookings/$id/extend/payment-intent';
   static String bikeRentalBookingExtend(String id) => '/bike-rentals/bookings/$id/extend';

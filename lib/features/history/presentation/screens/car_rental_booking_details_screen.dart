@@ -180,7 +180,7 @@ Time: ${DateFormat('h:mm a').format(startDate)}
                 ],
 
                 // QR Code Section
-                if (status != 'COMPLETED' && status != 'CANCELLED') ...[
+                if (['CONFIRMED', 'ACTIVE', 'PENDING_APPROVAL'].contains(status)) ...[
                   Container(
                     padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
