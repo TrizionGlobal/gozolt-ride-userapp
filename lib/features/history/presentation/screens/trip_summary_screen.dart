@@ -469,6 +469,7 @@ class TripSummaryScreen extends ConsumerWidget {
           
           Builder(
             builder: (context) {
+              final vat = ride.vatAmount ?? 0.0;
               final subtotal = (ride.baseFare ?? 0) +
                   (ride.distanceFare ?? 0) +
                   (ride.timeFare ?? 0) +
@@ -476,12 +477,17 @@ class TripSummaryScreen extends ConsumerWidget {
                   (ride.waitTimeFee ?? 0) +
                   (ride.cancellationFee ?? 0);
               final finalFare = ride.actualFare ?? ride.estimatedFare ?? 0;
-              final minFareAdjustment = finalFare - subtotal;
+              final minFareAdjustment = (finalFare - vat) - subtotal;
               
-              if (minFareAdjustment > 0.01) {
-                return _detailRow(context, 'Minimum Fare Adj.', '\u20AC${minFareAdjustment.toStringAsFixed(2)}');
-              }
-              return const SizedBox.shrink();
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (minFareAdjustment > 0.01)
+                    _detailRow(context, 'Minimum Fare Adj.', '\u20AC${minFareAdjustment.toStringAsFixed(2)}'),
+                  if (vat > 0)
+                    _detailRow(context, 'VAT Charges', '\u20AC${vat.toStringAsFixed(2)}'),
+                ],
+              );
             },
           ),
 

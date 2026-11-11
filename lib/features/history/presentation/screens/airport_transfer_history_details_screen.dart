@@ -3062,15 +3062,15 @@ class _AirportTransferHistoryDetailsScreenState
             isDark: isDark,
           ),
 
-          // Extra Services row if fee > 0
+          // VAT / Platform fee row if fee > 0
           if (extrasFee > 0) ...[
             Divider(
               height: 20,
               color: isDark ? AppColors.borderDark : AppColors.borderLight,
             ),
             _buildInfoRow(
-              icon: Icons.add_circle_outline_rounded,
-              label: 'Extra Services',
+              icon: Icons.receipt_long_outlined,
+              label: 'VAT (Platform)',
               trailing: Text(
                 '$currency ${extrasFee.toStringAsFixed(2)}',
                 style: AppTextStyles.bodySmall.copyWith(

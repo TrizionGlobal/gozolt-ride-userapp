@@ -23,13 +23,14 @@ class FareBreakdownCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final vat = estimate.vatAmount ?? 0.0;
     final subtotal = estimate.baseFare + 
         estimate.distanceFare + 
         estimate.timeFare + 
         estimate.bookingFee + 
         (estimate.hasSurge ? estimate.surgeAmount : 0) +
         (estimate.outstandingPenaltyFee ?? 0);
-    final minFareAdjustment = estimate.estimatedFare - subtotal;
+    final minFareAdjustment = (estimate.estimatedFare - vat) - subtotal;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -114,6 +115,12 @@ class FareBreakdownCard extends StatelessWidget {
             _FareLine(
               label: 'Minimum Fare Adj.',
               amount: minFareAdjustment,
+            ),
+          if (estimate.vatAmount != null && estimate.vatAmount! > 0)
+            _FareLine(
+              label: 'VAT (${estimate.vatPercentage?.toStringAsFixed(0) ?? '10'}% Platform)',
+              amount: estimate.vatAmount!,
+              color: AppColors.primaryGold,
             ),
 
           const SizedBox(height: 6),

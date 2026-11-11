@@ -455,6 +455,11 @@ Pickup Time: ${DateFormat('h:mm a').format(startDate)}
                       rows.add(_buildInfoRow(context, 'Extension ($totalExtensionDays days)', '€${totalExtensionCost.toStringAsFixed(2)}', isBold: true));
                     }
                     
+                    final taxes = double.tryParse(booking['taxes']?.toString() ?? '0') ?? 0;
+                    if (taxes > 0) {
+                      rows.add(_buildInfoRow(context, 'VAT (Platform)', '€${taxes.toStringAsFixed(2)}'));
+                    }
+
                     final walletAmountUsed = double.tryParse(booking['walletAmountUsed']?.toString() ?? '0') ?? 0;
                     if (walletAmountUsed > 0) {
                       rows.add(_buildInfoRow(context, 'GoCoins Discount', '-€${walletAmountUsed.toStringAsFixed(2)}', valueColor: AppColors.primaryGold));

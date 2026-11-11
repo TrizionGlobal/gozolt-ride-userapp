@@ -569,6 +569,8 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen>
     
     final double deliveryFee = pickupFee + dropoffFee;    
     final double subtotal = basePrice + flexiblePrice + protectionPrice + addonsPrice + deliveryFee;
+    final double vatAmount = subtotal * 0.10;
+    final double totalBeforeDiscount = subtotal + vatAmount;
     
     // GoCoins logic
     final rewardSummary = ref.watch(rewardSummaryProvider).value;
@@ -576,14 +578,14 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen>
     final double coinValueInEur = rewardSummary?.coinValueInEur ?? 0.01;
     
     final double maxEurValue = balance * coinValueInEur;
-    final double appliedEurValue = maxEurValue > subtotal ? subtotal : maxEurValue;
+    final double appliedEurValue = maxEurValue > totalBeforeDiscount ? totalBeforeDiscount : maxEurValue;
     final int coinsUsed = coinValueInEur > 0 ? (appliedEurValue / coinValueInEur).ceil() : 0;
 
     final int minRedeemCoins = ref.watch(rewardRulesProvider).value?.redemption.minimumPoints ?? 200;
     final bool canRedeem = balance >= minRedeemCoins && balance > 0;
 
     final double discount = (_useCoins && canRedeem) ? appliedEurValue : 0.0;
-    final double totalPayable = subtotal - discount;
+    final double totalPayable = (totalBeforeDiscount - discount).clamp(0.0, double.infinity);
     final int coinsPerEur = ref.watch(rewardRulesProvider).value?.earning.pointsPerEur ?? 1;
     final int earnedCoins = (subtotal * coinsPerEur).floor();
 
@@ -863,7 +865,8 @@ class _CarRentalReviewScreenState extends ConsumerState<CarRentalReviewScreen>
                       const Divider(height: 32),
                       
                       _buildRow('Subtotal', '€${subtotal.toStringAsFixed(2)}'),
-                      if (_useCoins)
+                      _buildRow('VAT (10% Platform)', '€${vatAmount.toStringAsFixed(2)}'),
+                      if (_useCoins && discount > 0)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 12),
                           child: Row(

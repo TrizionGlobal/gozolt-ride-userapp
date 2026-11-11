@@ -496,6 +496,8 @@ class _AirportTransferReviewScreenState
 
     // Distance-based dynamic airport transfer fare calculation.
     final double subtotal = vehicle.displayPrice;
+    final double vatAmount = subtotal * 0.18;
+    final double totalBeforeDiscount = subtotal + vatAmount;
 
     // GoCoins logic (standardized with Car Rental and Quick Services)
     final rewardSummary = ref.watch(rewardSummaryProvider).value;
@@ -506,7 +508,7 @@ class _AirportTransferReviewScreenState
     final double coinValueInEur = rewardSummary?.coinValueInEur ?? 0.01;
 
     final double maxEurValue = balance * coinValueInEur;
-    final double appliedEurValue = maxEurValue > subtotal ? subtotal : maxEurValue;
+    final double appliedEurValue = maxEurValue > totalBeforeDiscount ? totalBeforeDiscount : maxEurValue;
     final int coinsUsed = coinValueInEur > 0 ? (appliedEurValue / coinValueInEur).ceil() : 0;
 
     final int minRedeemCoins =
@@ -514,7 +516,7 @@ class _AirportTransferReviewScreenState
     final bool canRedeem = balance >= minRedeemCoins && balance > 0;
 
     final double discount = _useGoCoins && canRedeem ? appliedEurValue : 0.0;
-    final double finalTotal = (subtotal - discount).clamp(0.0, double.infinity);
+    final double finalTotal = (totalBeforeDiscount - discount).clamp(0.0, double.infinity);
 
     String formatAmount(double amount) {
       final symbol = (vehicle.currency == 'EUR' || vehicle.currency.isEmpty) ? '€' : vehicle.currency;
@@ -1534,13 +1536,13 @@ class _AirportTransferReviewScreenState
                     ],
                     _ReviewRow(
                       isDark: isDark,
-                      label: draft.isRoundTrip ? 'Round-trip Total' : 'One-way Transfer',
+                      label: draft.isRoundTrip ? 'Round-trip Transfer' : 'One-way Transfer',
                       value: formatAmount(subtotal),
                     ),
                     _ReviewRow(
                       isDark: isDark,
-                      label: 'Taxes & VAT',
-                      value: 'Included',
+                      label: 'VAT (18% Platform)',
+                      value: formatAmount(vatAmount),
                     ),
                     const SizedBox(height: 3),
                     _ReviewDivider(isDark: isDark),
@@ -1548,7 +1550,7 @@ class _AirportTransferReviewScreenState
                     _ReviewRow(
                       isDark: isDark,
                       label: 'Subtotal',
-                      value: formatAmount(subtotal),
+                      value: formatAmount(totalBeforeDiscount),
                     ),
                     if (_useGoCoins && discount > 0)
                       _ReviewRow(
