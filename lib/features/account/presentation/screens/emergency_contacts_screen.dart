@@ -219,31 +219,34 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
       ),
-      child: ListTile(
-        onTap: () => _callNumber(number),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-        leading: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: AppColors.error.withOpacity(0.1),
-            shape: BoxShape.circle,
+      child: Material(
+        color: Colors.transparent,
+        child: ListTile(
+          onTap: () => _callNumber(number),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+          leading: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.error.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: AppColors.error, size: 24),
           ),
-          child: Icon(icon, color: AppColors.error, size: 24),
-        ),
-        title: Text(name, style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Text(sub, style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted)),
-            const SizedBox(height: 4),
-            Text(number, style: AppTextStyles.labelLarge.copyWith(color: AppColors.primaryGold)),
-          ],
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.call, color: AppColors.success),
-          onPressed: () => _callNumber(number),
+          title: Text(name, style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 4),
+              Text(sub, style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted)),
+              const SizedBox(height: 4),
+              Text(number, style: AppTextStyles.labelLarge.copyWith(color: AppColors.primaryGold)),
+            ],
+          ),
+          trailing: IconButton(
+            icon: const Icon(Icons.call, color: AppColors.success),
+            onPressed: () => _callNumber(number),
+          ),
         ),
       ),
     );
@@ -260,18 +263,20 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Theme.of(context).dividerTheme.color ?? Colors.transparent),
       ),
-      child: ListTile(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-        leading: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: AppColors.primaryGold.withOpacity(0.1),
-            shape: BoxShape.circle,
+      child: Material(
+        color: Colors.transparent,
+        child: ListTile(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+          leading: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.primaryGold.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.person, color: AppColors.primaryGold, size: 24),
           ),
-          child: const Icon(Icons.person, color: AppColors.primaryGold, size: 24),
-        ),
-        title: Text(name, style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+          title: Text(name, style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 4),
           child: Text(phone, style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted)),
@@ -304,8 +309,9 @@ class _EmergencyContactsScreenState extends ConsumerState<EmergencyContactsScree
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {

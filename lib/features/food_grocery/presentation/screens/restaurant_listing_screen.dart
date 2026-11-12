@@ -1175,28 +1175,31 @@ class _FilterCheckbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CheckboxListTile(
-      value: value,
-      onChanged: (newValue) {
-        onChanged(newValue ?? false);
-      },
-      controlAffinity: ListTileControlAffinity.leading,
-      activeColor: AppColors.primaryGold,
-      checkColor: AppColors.backgroundDark,
-      contentPadding: EdgeInsets.zero,
-      dense: true,
-      title: Text(
-        title,
-        style: AppTextStyles.bodyMedium.copyWith(
-          color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
-          fontWeight: FontWeight.w500,
+    return Material(
+      color: Colors.transparent,
+      child: CheckboxListTile(
+        value: value,
+        onChanged: (newValue) {
+          onChanged(newValue ?? false);
+        },
+        controlAffinity: ListTileControlAffinity.leading,
+        activeColor: AppColors.primaryGold,
+        checkColor: AppColors.backgroundDark,
+        contentPadding: EdgeInsets.zero,
+        dense: true,
+        title: Text(
+          title,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+            fontWeight: FontWeight.w500,
+          ),
         ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: AppTextStyles.bodySmall.copyWith(
-          color:
-              isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+        subtitle: Text(
+          subtitle,
+          style: AppTextStyles.bodySmall.copyWith(
+            color:
+                isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+          ),
         ),
       ),
     );
@@ -1218,32 +1221,35 @@ class _SortOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      onTap: onTap,
-      contentPadding: EdgeInsets.zero,
-      dense: true,
-      title: Text(
-        title,
-        style: AppTextStyles.bodyMedium.copyWith(
-          color: selected
-              ? AppColors.primaryGoldDark
-              : isDark
-                  ? AppColors.textPrimary
-                  : AppColors.textPrimaryLight,
-          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        onTap: onTap,
+        contentPadding: EdgeInsets.zero,
+        dense: true,
+        title: Text(
+          title,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: selected
+                ? AppColors.primaryGoldDark
+                : isDark
+                    ? AppColors.textPrimary
+                    : AppColors.textPrimaryLight,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+          ),
         ),
+        trailing: selected
+            ? const Icon(
+                Icons.check_circle_rounded,
+                size: 21,
+                color: AppColors.primaryGoldDark,
+              )
+            : Icon(
+                Icons.circle_outlined,
+                size: 21,
+                color: isDark ? AppColors.textMuted : AppColors.textMutedLight,
+              ),
       ),
-      trailing: selected
-          ? const Icon(
-              Icons.check_circle_rounded,
-              size: 21,
-              color: AppColors.primaryGoldDark,
-            )
-          : Icon(
-              Icons.circle_outlined,
-              size: 21,
-              color: isDark ? AppColors.textMuted : AppColors.textMutedLight,
-            ),
     );
   }
 }

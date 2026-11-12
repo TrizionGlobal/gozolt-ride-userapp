@@ -1178,28 +1178,31 @@ class _StoreFilterCheckbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CheckboxListTile(
-      value: value,
-      onChanged: (newValue) {
-        onChanged(newValue ?? false);
-      },
-      controlAffinity: ListTileControlAffinity.leading,
-      contentPadding: EdgeInsets.zero,
-      dense: true,
-      activeColor: AppColors.primaryGold,
-      checkColor: AppColors.backgroundDark,
-      title: Text(
-        title,
-        style: AppTextStyles.bodyMedium.copyWith(
-          color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
-          fontWeight: FontWeight.w500,
+    return Material(
+      color: Colors.transparent,
+      child: CheckboxListTile(
+        value: value,
+        onChanged: (newValue) {
+          onChanged(newValue ?? false);
+        },
+        controlAffinity: ListTileControlAffinity.leading,
+        contentPadding: EdgeInsets.zero,
+        dense: true,
+        activeColor: AppColors.primaryGold,
+        checkColor: AppColors.backgroundDark,
+        title: Text(
+          title,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+            fontWeight: FontWeight.w500,
+          ),
         ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: AppTextStyles.bodySmall.copyWith(
-          color:
-              isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+        subtitle: Text(
+          subtitle,
+          style: AppTextStyles.bodySmall.copyWith(
+            color:
+                isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
+          ),
         ),
       ),
     );
@@ -1221,29 +1224,32 @@ class _StoreSortTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      onTap: onTap,
-      contentPadding: EdgeInsets.zero,
-      dense: true,
-      title: Text(
-        title,
-        style: AppTextStyles.bodyMedium.copyWith(
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        onTap: onTap,
+        contentPadding: EdgeInsets.zero,
+        dense: true,
+        title: Text(
+          title,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: selected
+                ? AppColors.primaryGoldDark
+                : isDark
+                    ? AppColors.textPrimary
+                    : AppColors.textPrimaryLight,
+            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+          ),
+        ),
+        trailing: Icon(
+          selected ? Icons.check_circle_rounded : Icons.circle_outlined,
+          size: 21,
           color: selected
               ? AppColors.primaryGoldDark
               : isDark
-                  ? AppColors.textPrimary
-                  : AppColors.textPrimaryLight,
-          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                  ? AppColors.textMuted
+                  : AppColors.textMutedLight,
         ),
-      ),
-      trailing: Icon(
-        selected ? Icons.check_circle_rounded : Icons.circle_outlined,
-        size: 21,
-        color: selected
-            ? AppColors.primaryGoldDark
-            : isDark
-                ? AppColors.textMuted
-                : AppColors.textMutedLight,
       ),
     );
   }

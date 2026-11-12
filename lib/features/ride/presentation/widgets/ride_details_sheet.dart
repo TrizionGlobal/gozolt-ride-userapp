@@ -187,51 +187,57 @@ class RideDetailsSheet extends ConsumerWidget {
               if (rideState.otpPin != null) const SizedBox(height: 20),
 
               // Payment Section
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[100],
-                    shape: BoxShape.circle,
+              Material(
+                color: Colors.transparent,
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[100],
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.account_balance_wallet_rounded, size: 20),
                   ),
-                  child: const Icon(Icons.account_balance_wallet_rounded, size: 20),
-                ),
-                title: Text('\u20AC${ride?.estimatedFare?.toStringAsFixed(2) ?? '0.00'}', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
-                subtitle: Text('Wallet: \u20AC0.00 + ${ride?.paymentMethod ?? 'Cash'}', style: AppTextStyles.bodySmall.copyWith(fontSize: 11)),
-                trailing: TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    context.pushNamed(RouteNames.paymentMethods);
-                  },
-                  child: Text('Change', style: AppTextStyles.labelSmall.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold)),
+                  title: Text('\u20AC${ride?.estimatedFare?.toStringAsFixed(2) ?? '0.00'}', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.bold)),
+                  subtitle: Text('Wallet: \u20AC0.00 + ${ride?.paymentMethod ?? 'Cash'}', style: AppTextStyles.bodySmall.copyWith(fontSize: 11)),
+                  trailing: TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      context.pushNamed(RouteNames.paymentMethods);
+                    },
+                    child: Text('Change', style: AppTextStyles.labelSmall.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold)),
+                  ),
                 ),
               ),
               Divider(color: Theme.of(context).dividerTheme.color ?? AppColors.borderLight.withOpacity(0.5), height: 12),
 
               // Share trip status
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[100],
-                    shape: BoxShape.circle,
+              Material(
+                color: Colors.transparent,
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).brightness == Brightness.dark ? AppColors.inputDark : Colors.grey[100],
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.ios_share_rounded, size: 20),
                   ),
-                  child: const Icon(Icons.ios_share_rounded, size: 20),
-                ),
-                title: Text('Share ride tracking', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.w600)),
-                trailing: TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    showModalBottomSheet(
-                      context: context,
-                      backgroundColor: Colors.transparent,
-                      useSafeArea: true,
-                      builder: (ctx) => const ShareRideSheet(),
-                    );
-                  },
-                  child: Text('Share', style: AppTextStyles.labelSmall.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold)),
+                  title: Text('Share ride tracking', style: AppTextStyles.titleSmall.copyWith(fontWeight: FontWeight.w600)),
+                  trailing: TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      showModalBottomSheet(
+                        context: context,
+                        backgroundColor: Colors.transparent,
+                        useSafeArea: true,
+                        builder: (ctx) => const ShareRideSheet(),
+                      );
+                    },
+                    child: Text('Share', style: AppTextStyles.labelSmall.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold)),
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
