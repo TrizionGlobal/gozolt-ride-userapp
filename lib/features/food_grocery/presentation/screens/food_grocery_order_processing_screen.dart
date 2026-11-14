@@ -6,6 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
 import '../providers/food_grocery_cart_provider.dart';
+import '../providers/food_grocery_delivery_provider.dart';
 import '../providers/food_grocery_order_provider.dart';
 import '../providers/food_grocery_payment_provider.dart';
 import '../widgets/food_grocery_header.dart';
@@ -48,16 +49,29 @@ class _FoodGroceryOrderProcessingScreenState
       foodGroceryPaymentProvider,
     );
 
+    final delivery = ref.read(
+      foodGroceryDeliveryProvider,
+    );
+
     ref.read(foodGroceryOrderProvider.notifier).reset();
 
-    await ref.read(foodGroceryOrderProvider.notifier).placeTemporaryOrder(
+    await ref.read(foodGroceryOrderProvider.notifier).placeOrder(
+          cart: cart,
           paymentMethodType: payment.paymentMethodType,
-          total: cart.total,
+          deliveryAddressId: delivery.selectedAddress?.id,
+          deliveryAddressSnapshot: delivery.selectedAddress?.toJson(
+            leaveAtDoor: delivery.leaveAtDoor,
+            instructions: delivery.deliveryInstructions,
+          ),
+          leaveAtDoor: delivery.leaveAtDoor,
+          deliveryInstructions: delivery.deliveryInstructions,
+          stripePaymentIntentId: payment.cardId,
         );
   }
 
   Future<void> _retry() async {
-    await ref.read(foodGroceryOrderProvider.notifier).retry();
+    _started = false;
+    await _startOrderPlacement();
   }
 
   void _continueToOrderStatus() {
@@ -90,6 +104,14 @@ class _FoodGroceryOrderProcessingScreenState
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    ref.listen<FoodGroceryOrderState>(foodGroceryOrderProvider, (_, next) {
+      if (next.isPlaced && mounted) {
+        context.pushReplacementNamed(
+          RouteNames.foodGroceryAwaitingSupplier,
+        );
+      }
+    });
 
     final orderState = ref.watch(
       foodGroceryOrderProvider,

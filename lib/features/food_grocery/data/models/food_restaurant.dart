@@ -21,6 +21,7 @@ class FoodRestaurant {
     required this.status,
     required this.isFavourite,
     required this.hasVegetarianOptions,
+    this.address,
     this.imageUrl,
     this.offerText,
     this.promotionalTag,
@@ -39,6 +40,7 @@ class FoodRestaurant {
   final RestaurantOperationalStatus status;
   final bool isFavourite;
   final bool hasVegetarianOptions;
+  final String? address;
   final String? imageUrl;
   final String? offerText;
   final String? promotionalTag;
@@ -98,6 +100,7 @@ class FoodRestaurant {
     RestaurantOperationalStatus? status,
     bool? isFavourite,
     bool? hasVegetarianOptions,
+    String? address,
     String? imageUrl,
     String? offerText,
     String? promotionalTag,
@@ -117,6 +120,7 @@ class FoodRestaurant {
       status: status ?? this.status,
       isFavourite: isFavourite ?? this.isFavourite,
       hasVegetarianOptions: hasVegetarianOptions ?? this.hasVegetarianOptions,
+      address: address ?? this.address,
       imageUrl: imageUrl ?? this.imageUrl,
       offerText: offerText ?? this.offerText,
       promotionalTag: promotionalTag ?? this.promotionalTag,

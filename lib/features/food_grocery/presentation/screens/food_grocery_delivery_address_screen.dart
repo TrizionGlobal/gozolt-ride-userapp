@@ -335,37 +335,34 @@ class _FoodGroceryDeliveryAddressScreenState
                     isDark: isDark,
                     title: 'DELIVERY PREFERENCE',
                     icon: Icons.door_front_door_outlined,
-                    child: Material(
-                      color: Colors.transparent,
-                      child: SwitchListTile.adaptive(
-                        value: deliveryState.leaveAtDoor,
-                        onChanged: (value) {
-                          ref
-                              .read(
-                                foodGroceryDeliveryProvider.notifier,
-                              )
-                              .setLeaveAtDoor(value);
-                        },
-                        contentPadding: EdgeInsets.zero,
-                        activeTrackColor: AppColors.primaryGold,
-                        title: Text(
-                          'Leave at the door',
-                          style: AppTextStyles.bodyMedium.copyWith(
-                            color: isDark
-                                ? AppColors.textPrimary
-                                : AppColors.textPrimaryLight,
-                            fontWeight: FontWeight.w600,
-                          ),
+                    child: SwitchListTile.adaptive(
+                      value: deliveryState.leaveAtDoor,
+                      onChanged: (value) {
+                        ref
+                            .read(
+                              foodGroceryDeliveryProvider.notifier,
+                            )
+                            .setLeaveAtDoor(value);
+                      },
+                      contentPadding: EdgeInsets.zero,
+                      activeTrackColor: AppColors.primaryGold,
+                      title: Text(
+                        'Leave at the door',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: isDark
+                              ? AppColors.textPrimary
+                              : AppColors.textPrimaryLight,
+                          fontWeight: FontWeight.w600,
                         ),
-                        subtitle: Text(
-                          'The delivery partner will leave '
-                          'the order safely at your door.',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: isDark
-                                ? AppColors.textSecondary
-                                : AppColors.textSecondaryLight,
-                            height: 1.35,
-                          ),
+                      ),
+                      subtitle: Text(
+                        'The delivery partner will leave '
+                        'the order safely at your door.',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isDark
+                              ? AppColors.textSecondary
+                              : AppColors.textSecondaryLight,
+                          height: 1.35,
                         ),
                       ),
                     ),
@@ -706,43 +703,41 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: isDark ? AppColors.cardDark : Colors.white,
-      shape: RoundedRectangleBorder(
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.cardDark : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
+        border: Border.all(
           color: isDark ? AppColors.borderDark : AppColors.borderLight,
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  icon,
-                  size: 19,
-                  color: AppColors.primaryGold,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                icon,
+                size: 19,
+                color: AppColors.primaryGold,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: isDark
+                      ? AppColors.textPrimary
+                      : AppColors.textPrimaryLight,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.4,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: AppTextStyles.labelLarge.copyWith(
-                    color: isDark
-                        ? AppColors.textPrimary
-                        : AppColors.textPrimaryLight,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.4,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            child,
-          ],
-        ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
       ),
     );
   }
@@ -1099,27 +1094,24 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                Material(
-                  color: Colors.transparent,
-                  child: CheckboxListTile(
-                    value: _isDefault,
-                    onChanged: (value) {
-                      setState(() {
-                        _isDefault = value ?? false;
-                      });
-                    },
-                    activeColor: AppColors.primaryGold,
-                    checkColor: AppColors.backgroundDark,
-                    contentPadding: EdgeInsets.zero,
-                    controlAffinity: ListTileControlAffinity.leading,
-                    title: Text(
-                      'Set as default address',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: isDark
-                            ? AppColors.textPrimary
-                            : AppColors.textPrimaryLight,
-                        fontWeight: FontWeight.w500,
-                      ),
+                CheckboxListTile(
+                  value: _isDefault,
+                  onChanged: (value) {
+                    setState(() {
+                      _isDefault = value ?? false;
+                    });
+                  },
+                  activeColor: AppColors.primaryGold,
+                  checkColor: AppColors.backgroundDark,
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  title: Text(
+                    'Set as default address',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: isDark
+                          ? AppColors.textPrimary
+                          : AppColors.textPrimaryLight,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),

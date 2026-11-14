@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
+import '../providers/food_grocery_delivery_provider.dart';
+import '../providers/food_grocery_order_provider.dart';
+import '../providers/restaurant_list_provider.dart';
 import '../widgets/food_grocery_header.dart';
 
-class FoodGroceryHomeScreen extends StatefulWidget {
+class FoodGroceryHomeScreen extends ConsumerStatefulWidget {
   const FoodGroceryHomeScreen({super.key});
 
   @override
-  State<FoodGroceryHomeScreen> createState() => _FoodGroceryHomeScreenState();
+  ConsumerState<FoodGroceryHomeScreen> createState() => _FoodGroceryHomeScreenState();
 }
 
-class _FoodGroceryHomeScreenState extends State<FoodGroceryHomeScreen> {
+class _FoodGroceryHomeScreenState extends ConsumerState<FoodGroceryHomeScreen> {
   final TextEditingController _searchController = TextEditingController();
-
-  // Temporary values. These will later come from providers and APIs.
-  String _deliveryLocation = 'Valletta, Malta';
-  bool _hasActiveOrder = true;
 
   @override
   void dispose() {
@@ -43,13 +43,7 @@ class _FoodGroceryHomeScreenState extends State<FoodGroceryHomeScreen> {
   }
 
   void _changeLocation() {
-    // TODO(FOOD_GROCERY_API):
-    // Replace with the saved-address/location-selection screen.
-    setState(() {
-      _deliveryLocation = _deliveryLocation == 'Valletta, Malta'
-          ? 'Sliema, Malta'
-          : 'Valletta, Malta';
-    });
+    context.pushNamed(RouteNames.foodGroceryDeliveryAddress);
   }
 
   void _openFood() {
@@ -65,13 +59,30 @@ class _FoodGroceryHomeScreenState extends State<FoodGroceryHomeScreen> {
   }
 
   void _openTracking() {
-    // Screen 14 route will be connected later.
-    _showTemporaryMessage('Live Order Tracking will open here');
+    final order = ref.read(foodGroceryOrderProvider);
+    if (order.isSupplierAccepted) {
+      context.pushNamed(RouteNames.foodGroceryLiveTracking);
+    } else {
+      context.pushNamed(RouteNames.foodGroceryAwaitingSupplier);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final delivery = ref.watch(foodGroceryDeliveryProvider);
+    final deliveryLocation =
+        delivery.selectedAddress?.locality.isNotEmpty == true
+            ? delivery.selectedAddress!.locality
+            : (delivery.selectedAddress?.city.isNotEmpty == true
+                ? delivery.selectedAddress!.city
+                : 'Valletta, Malta');
+
+    final order = ref.watch(foodGroceryOrderProvider);
+    final hasActiveOrder = order.orderId != null &&
+        order.status != FoodGroceryOrderStatus.idle &&
+        order.status != FoodGroceryOrderStatus.failed;
 
     final backgroundColor =
         isDark ? AppColors.backgroundDark : AppColors.backgroundLight;
@@ -82,7 +93,7 @@ class _FoodGroceryHomeScreenState extends State<FoodGroceryHomeScreen> {
         children: [
           FoodGroceryHeader(
             title: 'Food & Groceries',
-            deliveryLocation: _deliveryLocation,
+            deliveryLocation: deliveryLocation,
             onChangeLocation: _changeLocation,
           ),
           Expanded(
@@ -132,16 +143,14 @@ class _FoodGroceryHomeScreenState extends State<FoodGroceryHomeScreen> {
                       ),
                     ],
                   ),
-                  if (_hasActiveOrder) ...[
+                  if (hasActiveOrder) ...[
                     const SizedBox(height: 20),
                     _ActiveOrderCard(
                       isDark: isDark,
+                      title: order.trackingTitle,
+                      subtitle:
+                          '${order.displayBookingId} • €${order.total.toStringAsFixed(2)}',
                       onTrackOrder: _openTracking,
-                      onDismiss: () {
-                        setState(() {
-                          _hasActiveOrder = false;
-                        });
-                      },
                     ),
                   ],
                   const SizedBox(height: 20),
@@ -209,69 +218,98 @@ class _FoodGroceryHomeScreenState extends State<FoodGroceryHomeScreen> {
                   const SizedBox(height: 20),
                   _SectionHeading(
                     title: 'Recommended near you',
-                    subtitle: 'Popular choices around $_deliveryLocation',
+                    subtitle: 'Popular choices around $deliveryLocation',
                     isDark: isDark,
                     actionText: 'See all',
-                    onActionPressed: () {
-                      _showTemporaryMessage(
-                        'Recommended suppliers will open here',
-                      );
-                    },
+                    onActionPressed: _openFood,
                   ),
                   const SizedBox(height: 12),
-                  SizedBox(
-                    height: 188,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: [
-                        _SupplierCard(
-                          name: 'Harbour Kitchen',
-                          category: 'Mediterranean • Food',
-                          rating: '4.8',
-                          deliveryTime: '25–35 min',
-                          deliveryFee: '€1.50 delivery',
-                          icon: Icons.lunch_dining_rounded,
-                          isDark: isDark,
-                          onTap: () {
-                            _showTemporaryMessage(
-                              'Harbour Kitchen selected',
+                  Builder(
+                    builder: (context) {
+                      final restaurants = ref.watch(restaurantListProvider);
+                      final isLoading = ref.watch(restaurantListLoadingProvider);
+
+                      if (isLoading && restaurants.isEmpty) {
+                        return const SizedBox(
+                          height: 188,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.primaryGoldDark,
+                            ),
+                          ),
+                        );
+                      }
+
+                      if (restaurants.isEmpty) {
+                        return Container(
+                          height: 120,
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? AppColors.surfaceDark
+                                : AppColors.surfaceLight,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : AppColors.borderLight,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.restaurant_menu_rounded,
+                                size: 28,
+                                color: isDark
+                                    ? AppColors.textSecondary
+                                    : AppColors.textSecondaryLight,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'No restaurants currently listed nearby',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: isDark
+                                      ? AppColors.textSecondary
+                                      : AppColors.textSecondaryLight,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      return SizedBox(
+                        height: 188,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: restaurants.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(width: 12),
+                          itemBuilder: (context, index) {
+                            final restaurant = restaurants[index];
+                            final categoryText = restaurant.cuisines.isNotEmpty
+                                ? '${restaurant.cuisines.take(2).join(', ')} • Food'
+                                : 'Food & Dining';
+
+                            return _SupplierCard(
+                              name: restaurant.name,
+                              category: categoryText,
+                              rating: restaurant.rating.toStringAsFixed(1),
+                              deliveryTime: restaurant.estimatedDeliveryTime,
+                              deliveryFee: restaurant.deliveryFeeText,
+                              icon: Icons.restaurant_rounded,
+                              isDark: isDark,
+                              onTap: () {
+                                context.pushNamed(
+                                  RouteNames.foodGroceryRestaurantDetails,
+                                  extra: restaurant,
+                                );
+                              },
                             );
                           },
                         ),
-                        const SizedBox(width: 12),
-                        _SupplierCard(
-                          name: 'Fresh Market',
-                          category: 'Groceries • Daily essentials',
-                          rating: '4.7',
-                          deliveryTime: '30–40 min',
-                          deliveryFee: '€2.00 delivery',
-                          icon: Icons.shopping_basket_rounded,
-                          isDark: isDark,
-                          onTap: () {
-                            _showTemporaryMessage(
-                              'Fresh Market selected',
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  _SectionHeading(
-                    title: 'Order again',
-                    subtitle: 'Your recent favourites',
-                    isDark: isDark,
-                  ),
-                  const SizedBox(height: 12),
-                  _ReorderCard(
-                    supplierName: 'Valletta Pizza House',
-                    itemSummary: 'Margherita Pizza • Garlic Bread',
-                    previousTotal: '€18.50',
-                    isDark: isDark,
-                    onReorder: () {
-                      // Backend must revalidate price, stock and availability.
-                      _showTemporaryMessage(
-                        'Checking availability and latest price',
                       );
                     },
                   ),
@@ -493,13 +531,15 @@ class _ServiceCard extends StatelessWidget {
 class _ActiveOrderCard extends StatelessWidget {
   const _ActiveOrderCard({
     required this.isDark,
+    required this.title,
+    required this.subtitle,
     required this.onTrackOrder,
-    required this.onDismiss,
   });
 
   final bool isDark;
+  final String title;
+  final String subtitle;
   final VoidCallback onTrackOrder;
-  final VoidCallback onDismiss;
 
   @override
   Widget build(BuildContext context) {
@@ -533,7 +573,7 @@ class _ActiveOrderCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Your order is being prepared',
+                  title,
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: isDark
                         ? AppColors.textPrimary
@@ -543,7 +583,7 @@ class _ActiveOrderCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  'Estimated arrival: 25–35 min',
+                  subtitle,
                   style: AppTextStyles.bodySmall.copyWith(
                     color: isDark
                         ? AppColors.textSecondary
@@ -757,115 +797,6 @@ class _SupplierCard extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _ReorderCard extends StatelessWidget {
-  const _ReorderCard({
-    required this.supplierName,
-    required this.itemSummary,
-    required this.previousTotal,
-    required this.isDark,
-    required this.onReorder,
-  });
-
-  final String supplierName;
-  final String itemSummary;
-  final String previousTotal;
-  final bool isDark;
-  final VoidCallback onReorder;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.cardDark : AppColors.cardLight,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: AppColors.primaryGold.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.history_rounded,
-              color: AppColors.primaryGoldDark,
-              size: 23,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  supplierName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: isDark
-                        ? AppColors.textPrimary
-                        : AppColors.textPrimaryLight,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  itemSummary,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: isDark
-                        ? AppColors.textSecondary
-                        : AppColors.textSecondaryLight,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  'Previous total: $previousTotal',
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: isDark
-                        ? AppColors.textSecondary
-                        : AppColors.textSecondaryLight,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          OutlinedButton(
-            onPressed: onReorder,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.backgroundDark,
-              backgroundColor: AppColors.primaryGold,
-              side: BorderSide.none,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 9,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text(
-              'Reorder',
-              style: AppTextStyles.labelSmall.copyWith(
-                color: AppColors.backgroundDark,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

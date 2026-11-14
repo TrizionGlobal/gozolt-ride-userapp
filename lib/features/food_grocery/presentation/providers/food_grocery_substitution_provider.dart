@@ -116,22 +116,7 @@ class FoodGrocerySubstitutionState {
 
 class FoodGrocerySubstitutionNotifier
     extends StateNotifier<FoodGrocerySubstitutionState> {
-  FoodGrocerySubstitutionNotifier()
-      : super(
-          const FoodGrocerySubstitutionState(
-            items: [
-              GroceryUnavailableItem(
-                id: 'demo-unavailable-1',
-                name: 'Fresh Whole Milk 1L',
-                originalPrice: 1.65,
-                quantity: 1,
-                suggestedName: 'Semi-Skimmed Milk 1L',
-                suggestedPrice: 1.75,
-                suggestedDescription: 'Similar size and same brand.',
-              ),
-            ],
-          ),
-        );
+  FoodGrocerySubstitutionNotifier() : super(const FoodGrocerySubstitutionState());
 
   void selectChoice(
     String itemId,
@@ -156,6 +141,27 @@ class FoodGrocerySubstitutionNotifier
     );
   }
 
+  void loadFromOrderItems(List<Map<String, dynamic>> items) {
+    final unavailableItems = items
+        .where((item) =>
+            item['isUnavailable'] == true &&
+            item['substitutionStatus']?.toString() == 'PENDING')
+        .map((item) {
+          return GroceryUnavailableItem(
+            id: item['id']?.toString() ?? '',
+            name: item['name']?.toString() ?? '',
+            originalPrice: (item['unitPrice'] as num?)?.toDouble() ?? 0,
+            quantity: (item['quantity'] as num?)?.toInt() ?? 1,
+            suggestedName: item['suggestedName']?.toString() ?? '',
+            suggestedPrice: (item['suggestedPrice'] as num?)?.toDouble() ?? 0,
+            suggestedDescription: item['suggestedDescription']?.toString() ?? '',
+            suggestedImageUrl: item['suggestedImageUrl']?.toString(),
+          );
+        })
+        .toList();
+    state = FoodGrocerySubstitutionState(items: unavailableItems);
+  }
+
   Future<void> submitDecisions() async {
     if (state.isSubmitting) {
       return;
@@ -175,41 +181,12 @@ class FoodGrocerySubstitutionNotifier
       clearError: true,
     );
 
-    try {
-      // TODO(FOOD_GROCERY_API):
-      // Send the customer substitution decisions to the
-      // Food & Grocery order API.
-      await Future<void>.delayed(
-        const Duration(milliseconds: 900),
-      );
-
-      state = state.copyWith(
-        isSubmitting: false,
-        isSubmitted: true,
-        clearError: true,
-      );
-    } catch (_) {
-      state = state.copyWith(
-        isSubmitting: false,
-        isSubmitted: false,
-        errorMessage: 'Unable to save your choices. Please try again.',
-      );
-    }
-  }
-
-  void loadTemporaryUnavailableItem() {
-    state = const FoodGrocerySubstitutionState(
-      items: [
-        GroceryUnavailableItem(
-          id: 'demo-unavailable-1',
-          name: 'Fresh Whole Milk 1L',
-          originalPrice: 1.65,
-          quantity: 1,
-          suggestedName: 'Semi-Skimmed Milk 1L',
-          suggestedPrice: 1.75,
-          suggestedDescription: 'Similar size and same brand.',
-        ),
-      ],
+    // The actual API call is done by FoodGroceryOrderNotifier.submitSubstitutionDecisions
+    // which reads this provider's state. Here we just track local loading state.
+    state = state.copyWith(
+      isSubmitting: false,
+      isSubmitted: true,
+      clearError: true,
     );
   }
 

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../providers/food_grocery_order_provider.dart';
 import '../providers/food_grocery_substitution_provider.dart';
 import '../widgets/food_grocery_header.dart';
 
@@ -39,7 +40,16 @@ class FoodGrocerySubstitutionScreen extends ConsumerWidget {
       return;
     }
 
-    await ref.read(foodGrocerySubstitutionProvider.notifier).submitDecisions();
+    final order = ref.read(foodGroceryOrderProvider);
+    if (order.orderId != null) {
+      await ref
+          .read(foodGroceryOrderProvider.notifier)
+          .submitSubstitutionDecisions(order.orderId!);
+    } else {
+      await ref
+          .read(foodGrocerySubstitutionProvider.notifier)
+          .submitDecisions();
+    }
 
     if (!context.mounted) return;
 
@@ -65,6 +75,20 @@ class FoodGrocerySubstitutionScreen extends ConsumerWidget {
     final substitutionState = ref.watch(
       foodGrocerySubstitutionProvider,
     );
+
+    final order = ref.watch(foodGroceryOrderProvider);
+    final orderItems = (order.orderData?['items'] as List?)
+        ?.whereType<Map<String, dynamic>>()
+        .toList();
+    if (orderItems != null &&
+        orderItems.isNotEmpty &&
+        substitutionState.items.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref
+            .read(foodGrocerySubstitutionProvider.notifier)
+            .loadFromOrderItems(orderItems);
+      });
+    }
 
     final allItemsSelected = substitutionState.items.every(
       (item) => item.choice != GrocerySubstitutionChoice.undecided,

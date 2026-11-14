@@ -2,11 +2,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/grocery_catalogue.dart';
 import '../../data/models/grocery_product_details.dart';
+import 'grocery_catalogue_provider.dart';
 
 final groceryProductDetailsProvider = StateNotifierProvider.family<
     GroceryProductDetailsNotifier, GroceryProductDetailsState, GroceryProduct>(
   (ref, product) {
-    return GroceryProductDetailsNotifier(product);
+    final catalogue = ref.watch(groceryCatalogueProvider(product.storeId));
+    final apiVariants = catalogue.variantsByProductId[product.id];
+    return GroceryProductDetailsNotifier(product, apiVariants);
   },
 );
 
@@ -103,10 +106,13 @@ class GroceryProductDetailsNotifier
     extends StateNotifier<GroceryProductDetailsState> {
   GroceryProductDetailsNotifier(
     GroceryProduct product,
+    List<GroceryProductSelectionOption>? apiVariants,
   ) : super(
           GroceryProductDetailsState(
             product: product,
-            selectionOptions: _optionsFor(product),
+            selectionOptions: (apiVariants != null && apiVariants.isNotEmpty)
+                ? apiVariants
+                : _optionsFor(product),
             selectedOptionId: null,
             quantity: 1,
             isFavourite: false,

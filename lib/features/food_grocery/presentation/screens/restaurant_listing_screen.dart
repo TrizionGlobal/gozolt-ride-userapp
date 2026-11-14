@@ -634,7 +634,59 @@ class _RestaurantListingScreenState
                     ],
                   ),
                   const SizedBox(height: 12),
-                  if (visibleRestaurants.isEmpty)
+                  if (ref.watch(restaurantListLoadingProvider) && restaurants.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 48),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primaryGoldDark,
+                        ),
+                      ),
+                    )
+                  else if (ref.watch(restaurantListErrorProvider) != null &&
+                      restaurants.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 36,
+                        horizontal: 16,
+                      ),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            const Icon(
+                              Icons.error_outline_rounded,
+                              size: 48,
+                              color: AppColors.error,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              ref.watch(restaurantListErrorProvider)!,
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: isDark
+                                    ? AppColors.textSecondary
+                                    : AppColors.textSecondaryLight,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                ref
+                                    .read(restaurantListProvider.notifier)
+                                    .refreshRestaurants();
+                              },
+                              icon: const Icon(Icons.refresh_rounded),
+                              label: const Text('Retry'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryGoldDark,
+                                foregroundColor: AppColors.backgroundDark,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else if (visibleRestaurants.isEmpty)
                     _RestaurantEmptyState(
                       isDark: isDark,
                       hasSearch: _searchQuery.trim().isNotEmpty,

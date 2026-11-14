@@ -132,6 +132,26 @@ abstract final class ApiConstants {
   static String airportTransferVerifyPayment(String id) => '/airport-transfers/my-bookings/$id/verify-payment';
   static String airportTransferPay(String id) => '/airport-transfers/my-bookings/$id/pay';
 
+  // ── Food & Grocery ────────────────────────────────────────
+  static const String foodGroceryHome = '/food-grocery/home';
+  static const String foodGroceryRestaurants = '/food-grocery/restaurants';
+  static String foodGroceryRestaurantMenu(String id) => '/food-grocery/restaurants/$id/menu';
+  static const String foodGroceryStores = '/food-grocery/stores';
+  static String foodGroceryStoreCatalogue(String id) => '/food-grocery/stores/$id/catalogue';
+  static String foodGroceryFavourite(String businessId) => '/food-grocery/favourites/$businessId';
+  static const String foodGroceryAddresses = '/food-grocery/addresses';
+  static String foodGroceryAddressById(String id) => '/food-grocery/addresses/$id';
+  static const String foodGroceryPaymentSheet = '/food-grocery/payment-sheet';
+  static const String foodGroceryOrders = '/food-grocery/orders';
+  static const String foodGroceryActiveOrder = '/food-grocery/orders/active';
+  static const String foodGroceryOrderHistory = '/food-grocery/orders/history';
+  static String foodGroceryOrderDetails(String id) => '/food-grocery/orders/$id';
+  static String foodGroceryOrderSubstitutions(String id) => '/food-grocery/orders/$id/substitutions';
+  static String foodGroceryConfirmReceived(String id) => '/food-grocery/orders/$id/confirm-received';
+  static String foodGroceryRateOrder(String id) => '/food-grocery/orders/$id/rate';
+  static String foodGroceryOrderMessages(String id) => '/food-grocery/orders/$id/messages';
+  static String foodGrocerySupplierAccept(String id) => '/food-grocery/supplier/orders/$id/accept';
+
   // ── Helpers ───────────────────────────────────────────────
   static String fullUrl(String path) {
     if (path.startsWith('http')) return path;

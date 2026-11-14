@@ -69,6 +69,27 @@ class FoodGroceryDeliveryAddress {
       isDefault: isDefault ?? this.isDefault,
     );
   }
+
+  Map<String, dynamic> toJson({bool? leaveAtDoor, String? instructions}) {
+    return {
+      'id': id,
+      'label': label,
+      'recipientName': recipientName,
+      'phoneNumber': phoneNumber,
+      'addressLine': addressLine,
+      'locality': locality,
+      'city': city,
+      'postalCode': postalCode,
+      if (apartmentDetails != null && apartmentDetails!.isNotEmpty)
+        'apartmentDetails': apartmentDetails,
+      'fullAddress': fullAddress,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
+      if (leaveAtDoor != null) 'leaveAtDoor': leaveAtDoor,
+      if (instructions != null && instructions.isNotEmpty)
+        'instructions': instructions,
+    };
+  }
 }
 
 class FoodGroceryDeliveryState {

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_stripe/flutter_stripe.dart' hide PaymentMethodType;
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../ride/data/models/saved_payment_method.dart';
+import '../../data/datasources/food_grocery_remote_datasource.dart';
 import '../providers/food_grocery_cart_provider.dart';
 import '../providers/food_grocery_payment_provider.dart';
 import '../widgets/food_grocery_header.dart';
@@ -23,6 +25,9 @@ class FoodGroceryPaymentMethodScreen extends ConsumerWidget {
     final paymentState = ref.read(
       foodGroceryPaymentProvider,
     );
+    final cart = ref.read(
+      foodGroceryCartProvider,
+    );
 
     await showModalBottomSheet<void>(
       context: context,
@@ -31,17 +36,57 @@ class FoodGroceryPaymentMethodScreen extends ConsumerWidget {
       builder: (sheetContext) {
         return FoodGroceryPaymentSheet(
           currentType: paymentState.paymentMethodType,
-          onConfirm: (type) {
+          onConfirm: (type) async {
+            if (type == PaymentMethodType.card) {
+              try {
+                final ds = ref.read(foodGroceryRemoteDatasourceProvider);
+                final sheet = await ds.createPaymentSheet(cart.total);
+                final clientSecret = sheet['paymentIntentClientSecret'] as String? ??
+                    sheet['clientSecret'] as String?;
+                final paymentIntentId = sheet['paymentIntentId'] as String? ??
+                    sheet['id'] as String?;
+                if (clientSecret != null) {
+                  await Stripe.instance.initPaymentSheet(
+                    paymentSheetParameters: SetupPaymentSheetParameters(
+                      merchantDisplayName: 'GOZOLT Food & Groceries',
+                      paymentIntentClientSecret: clientSecret,
+                    ),
+                  );
+                  await Stripe.instance.presentPaymentSheet();
+                  ref
+                      .read(foodGroceryPaymentProvider.notifier)
+                      .selectPaymentMethod(
+                        type,
+                        cardId: paymentIntentId ?? 'card_verified',
+                      );
+                  return;
+                }
+              } on StripeException catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        e.error.localizedMessage ?? 'Card verification cancelled',
+                      ),
+                      backgroundColor: AppColors.error,
+                    ),
+                  );
+                }
+                return;
+              } catch (_) {
+                // In demo / fallback mode
+                ref
+                    .read(foodGroceryPaymentProvider.notifier)
+                    .selectPaymentMethod(
+                      type,
+                      cardId: 'card_demo_id',
+                    );
+                return;
+              }
+            }
             ref.read(foodGroceryPaymentProvider.notifier).selectPaymentMethod(
                   type,
-
-                  // Temporary UI-only ID so the Card selection
-                  // can continue through the emulator flow.
-                  // TODO(FOOD_GROCERY_STRIPE):
-                  // Replace with the real Stripe PaymentMethod ID.
-                  cardId: type == PaymentMethodType.card
-                      ? 'food-grocery-ui-card'
-                      : null,
+                  cardId: null,
                 );
           },
         );

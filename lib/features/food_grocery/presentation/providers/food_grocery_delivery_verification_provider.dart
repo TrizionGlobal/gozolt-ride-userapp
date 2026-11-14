@@ -66,10 +66,11 @@ class FoodGroceryDeliveryVerificationNotifier
     required String orderId,
     required double amount,
     required bool isCash,
+    String? deliveryPin,
   }) {
     state = FoodGroceryDeliveryVerificationState(
       orderId: orderId,
-      verificationCode: '4826',
+      verificationCode: deliveryPin?.isNotEmpty == true ? deliveryPin! : '4826',
       amount: amount,
       paymentStatus: isCash
           ? FoodGroceryDeliveryPaymentStatus.cashDue

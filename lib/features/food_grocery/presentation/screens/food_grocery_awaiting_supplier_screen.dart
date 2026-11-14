@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -23,6 +25,26 @@ class FoodGroceryAwaitingSupplierScreen extends ConsumerStatefulWidget {
 class _FoodGroceryAwaitingSupplierScreenState
     extends ConsumerState<FoodGroceryAwaitingSupplierScreen> {
   bool _isRefreshing = false;
+  Timer? _pollTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(foodGroceryOrderProvider.notifier).getActiveOrder();
+      _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+        if (mounted) {
+          ref.read(foodGroceryOrderProvider.notifier).getActiveOrder();
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
+  }
 
   Future<void> _refreshStatus() async {
     if (_isRefreshing) {
@@ -35,7 +57,7 @@ class _FoodGroceryAwaitingSupplierScreenState
 
     await ref
         .read(foodGroceryOrderProvider.notifier)
-        .simulateSupplierAcceptance();
+        .getActiveOrder();
 
     if (!mounted) {
       return;
@@ -44,20 +66,6 @@ class _FoodGroceryAwaitingSupplierScreenState
     setState(() {
       _isRefreshing = false;
     });
-
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            'Supplier accepted your order',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: Colors.white,
-            ),
-          ),
-          backgroundColor: AppColors.success,
-        ),
-      );
   }
 
   void _continueToTracking() {
@@ -91,6 +99,15 @@ class _FoodGroceryAwaitingSupplierScreenState
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    ref.listen<FoodGroceryOrderState>(foodGroceryOrderProvider, (_, next) {
+      if (next.isSupplierAccepted && mounted) {
+        _pollTimer?.cancel();
+        context.pushReplacementNamed(
+          RouteNames.foodGroceryLiveTracking,
+        );
+      }
+    });
+
     final order = ref.watch(
       foodGroceryOrderProvider,
     );
@@ -103,7 +120,14 @@ class _FoodGroceryAwaitingSupplierScreenState
       foodGroceryDeliveryProvider,
     );
 
-    final supplierName = cart.supplierName ?? 'Selected supplier';
+    final resolvedSupplierName = order.orderData?['business']?['name'] as String? ??
+        order.orderData?['businessName'] as String? ??
+        cart.supplierName ??
+        'Selected supplier';
+
+    final structuredOrderId = order.displayBookingId.isNotEmpty
+        ? order.displayBookingId
+        : 'GZ-FG-PENDING';
 
     final address = delivery.selectedAddress;
 
@@ -114,8 +138,9 @@ class _FoodGroceryAwaitingSupplierScreenState
             isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
         body: Column(
           children: [
-            const FoodGroceryHeader(
+            FoodGroceryHeader(
               title: 'Order Status',
+              deliveryLocation: 'Order ID: $structuredOrderId',
             ),
             Expanded(
               child: SafeArea(
@@ -156,15 +181,15 @@ class _FoodGroceryAwaitingSupplierScreenState
                               children: [
                                 _DetailRow(
                                   isDark: isDark,
-                                  label: 'Order reference',
-                                  value: order.orderId ?? 'Pending',
+                                  label: 'Order ID',
+                                  value: structuredOrderId,
                                   emphasize: true,
                                 ),
                                 const SizedBox(height: 11),
                                 _DetailRow(
                                   isDark: isDark,
                                   label: 'Supplier',
-                                  value: supplierName,
+                                  value: resolvedSupplierName,
                                 ),
                                 const SizedBox(height: 11),
                                 _DetailRow(

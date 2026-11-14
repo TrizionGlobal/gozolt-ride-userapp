@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -5,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/network/socket_service.dart';
 import '../../../../core/router/route_names.dart';
 import '../providers/food_grocery_cart_provider.dart';
 import '../providers/food_grocery_delivery_provider.dart';
@@ -26,6 +29,42 @@ class FoodGroceryLiveTrackingScreen extends ConsumerStatefulWidget {
 class _FoodGroceryLiveTrackingScreenState
     extends ConsumerState<FoodGroceryLiveTrackingScreen> {
   bool _isRefreshing = false;
+  final List<StreamSubscription> _subscriptions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final socket = ref.read(socketServiceProvider);
+      _subscriptions.add(
+        socket.onFoodGroceryOrderStatus.listen((data) {
+          if (!mounted) return;
+          final order = ref.read(foodGroceryOrderProvider);
+          if (order.orderId != null) {
+            ref.read(foodGroceryOrderProvider.notifier).pollOrderStatus(order.orderId!);
+          }
+          final statusStr = data['status']?.toString();
+          if (statusStr == 'ARRIVED_AT_CUSTOMER' || statusStr == 'ARRIVING_SOON') {
+            _continueToArrival();
+          }
+        }),
+      );
+      _subscriptions.add(
+        socket.onFoodGrocerySubstitution.listen((_) {
+          if (!mounted) return;
+          context.pushNamed(RouteNames.foodGrocerySubstitution);
+        }),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    for (final sub in _subscriptions) {
+      sub.cancel();
+    }
+    super.dispose();
+  }
 
   Future<void> _advanceTracking() async {
     if (_isRefreshing) {
@@ -36,9 +75,10 @@ class _FoodGroceryLiveTrackingScreenState
       _isRefreshing = true;
     });
 
-    await ref
-        .read(foodGroceryOrderProvider.notifier)
-        .advanceTemporaryTracking();
+    final order = ref.read(foodGroceryOrderProvider);
+    if (order.orderId != null) {
+      await ref.read(foodGroceryOrderProvider.notifier).pollOrderStatus(order.orderId!);
+    }
 
     if (!mounted) {
       return;
@@ -58,6 +98,8 @@ class _FoodGroceryLiveTrackingScreenState
       foodGroceryPaymentProvider,
     );
 
+    final pin = order.orderData?['deliveryPin']?.toString();
+
     ref
         .read(
           foodGroceryDeliveryVerificationProvider.notifier,
@@ -66,6 +108,7 @@ class _FoodGroceryLiveTrackingScreenState
           orderId: order.orderId ?? 'Pending',
           amount: order.total,
           isCash: payment.isCash,
+          deliveryPin: pin,
         );
 
     context.pushNamed(
@@ -94,6 +137,8 @@ class _FoodGroceryLiveTrackingScreenState
     FoodGroceryTrackingStage stage,
   ) {
     switch (stage) {
+      case FoodGroceryTrackingStage.awaitingSupplier:
+        return '40–50 min';
       case FoodGroceryTrackingStage.supplierAccepted:
         return '35–45 min';
       case FoodGroceryTrackingStage.preparing:
@@ -106,6 +151,8 @@ class _FoodGroceryLiveTrackingScreenState
         return '10–20 min';
       case FoodGroceryTrackingStage.arrivingSoon:
         return '2–5 min';
+      case FoodGroceryTrackingStage.arrivedAtCustomer:
+        return 'Arrived';
     }
   }
 
@@ -131,7 +178,18 @@ class _FoodGroceryLiveTrackingScreenState
       foodGroceryDeliveryProvider,
     );
 
-    final supplierName = cart.supplierName ?? 'Selected supplier';
+    final resolvedSupplierName = order.orderData?['business']?['name'] as String? ??
+        order.orderData?['businessName'] as String? ??
+        cart.supplierName ??
+        'Selected supplier';
+
+    final structuredOrderId = order.displayBookingId.isNotEmpty
+        ? order.displayBookingId
+        : 'GZ-FG-PENDING';
+
+    final resolvedTotal = order.total > 0
+        ? order.total
+        : (order.orderData?['totalAmount'] as num?)?.toDouble() ?? 0.0;
 
     final deliveryAddress =
         delivery.selectedAddress?.fullAddress ?? 'Selected delivery address';
@@ -146,8 +204,9 @@ class _FoodGroceryLiveTrackingScreenState
             isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
         body: Column(
           children: [
-            const FoodGroceryHeader(
+            FoodGroceryHeader(
               title: 'Live Order Tracking',
+              deliveryLocation: 'Order ID: $structuredOrderId',
             ),
             Expanded(
               child: _MissingTrackingView(
@@ -172,8 +231,9 @@ class _FoodGroceryLiveTrackingScreenState
           isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       body: Column(
         children: [
-          const FoodGroceryHeader(
+          FoodGroceryHeader(
             title: 'Live Order Tracking',
+            deliveryLocation: 'Order ID: $structuredOrderId',
           ),
           Expanded(
             child: SafeArea(
@@ -189,7 +249,7 @@ class _FoodGroceryLiveTrackingScreenState
                   _TrackingMapPlaceholder(
                     isDark: isDark,
                     stage: order.trackingStage,
-                    supplierName: supplierName,
+                    supplierName: resolvedSupplierName,
                     deliveryAddress: deliveryAddress,
                     deliveryLatitude: deliveryLatitude,
                     deliveryLongitude: deliveryLongitude,
@@ -223,9 +283,9 @@ class _FoodGroceryLiveTrackingScreenState
                   const SizedBox(height: 12),
                   _OrderReferenceCard(
                     isDark: isDark,
-                    orderId: order.orderId ?? 'Pending',
-                    supplierName: supplierName,
-                    total: order.total,
+                    orderId: structuredOrderId,
+                    supplierName: resolvedSupplierName,
+                    total: resolvedTotal,
                   ),
                 ],
               ),
@@ -391,6 +451,8 @@ class _TrackingMapPlaceholder extends StatelessWidget {
 
   double get _deliveryProgress {
     switch (stage) {
+      case FoodGroceryTrackingStage.awaitingSupplier:
+        return 0;
       case FoodGroceryTrackingStage.supplierAccepted:
         return 0;
       case FoodGroceryTrackingStage.preparing:
@@ -403,6 +465,8 @@ class _TrackingMapPlaceholder extends StatelessWidget {
         return 0.62;
       case FoodGroceryTrackingStage.arrivingSoon:
         return 0.90;
+      case FoodGroceryTrackingStage.arrivedAtCustomer:
+        return 1.0;
     }
   }
 
@@ -728,6 +792,8 @@ class _CurrentStatusCard extends StatelessWidget {
     FoodGroceryTrackingStage stage,
   ) {
     switch (stage) {
+      case FoodGroceryTrackingStage.awaitingSupplier:
+        return Icons.hourglass_top_rounded;
       case FoodGroceryTrackingStage.supplierAccepted:
         return Icons.check_circle_outline_rounded;
       case FoodGroceryTrackingStage.preparing:
@@ -740,6 +806,8 @@ class _CurrentStatusCard extends StatelessWidget {
         return Icons.delivery_dining_rounded;
       case FoodGroceryTrackingStage.arrivingSoon:
         return Icons.near_me_rounded;
+      case FoodGroceryTrackingStage.arrivedAtCustomer:
+        return Icons.location_on_rounded;
     }
   }
 }
@@ -811,6 +879,8 @@ class _TimelineStep extends StatelessWidget {
 
   String get title {
     switch (stage) {
+      case FoodGroceryTrackingStage.awaitingSupplier:
+        return 'Waiting for supplier';
       case FoodGroceryTrackingStage.supplierAccepted:
         return 'Order accepted';
       case FoodGroceryTrackingStage.preparing:
@@ -823,6 +893,8 @@ class _TimelineStep extends StatelessWidget {
         return 'On the way';
       case FoodGroceryTrackingStage.arrivingSoon:
         return 'Arriving soon';
+      case FoodGroceryTrackingStage.arrivedAtCustomer:
+        return 'Arrived at destination';
     }
   }
 
@@ -1038,24 +1110,55 @@ class _OrderReferenceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final displayId = orderId;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? AppColors.cardDark : Colors.white,
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark ? AppColors.borderDark : AppColors.borderLight,
         ),
       ),
       child: Column(
         children: [
-          _ReferenceRow(
-            isDark: isDark,
-            label: 'Order reference',
-            value: orderId,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Order ID',
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: isDark
+                      ? AppColors.textSecondary
+                      : AppColors.textSecondaryLight,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGold.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppColors.primaryGold.withValues(alpha: 0.45),
+                  ),
+                ),
+                child: Text(
+                  displayId,
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: AppColors.primaryGoldDark,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           _ReferenceRow(
             isDark: isDark,
             label: 'Supplier',

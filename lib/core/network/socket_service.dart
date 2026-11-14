@@ -20,6 +20,7 @@ class UserSocketService {
 
   /// The ride room currently joined — re-joined automatically on reconnect.
   String? _currentRideId;
+  String? _currentFoodGroceryOrderId;
 
   // Stream controllers for ride events
   final _rideAcceptedController =
@@ -44,6 +45,14 @@ class UserSocketService {
       StreamController<Map<String, dynamic>>.broadcast();
   final _airportTransferStatusController =
       StreamController<Map<String, dynamic>>.broadcast();
+  final _foodGroceryStatusController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  final _foodGroceryLocationController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  final _foodGrocerySubstitutionController =
+      StreamController<Map<String, dynamic>>.broadcast();
+  final _foodGroceryChatController =
+      StreamController<Map<String, dynamic>>.broadcast();
 
 
   Stream<Map<String, dynamic>> get onBikeRentalStatusChanged =>
@@ -54,6 +63,14 @@ class UserSocketService {
       _quickServiceEventController.stream;
   Stream<Map<String, dynamic>> get onAirportTransferStatusChanged =>
       _airportTransferStatusController.stream;
+  Stream<Map<String, dynamic>> get onFoodGroceryOrderStatus =>
+      _foodGroceryStatusController.stream;
+  Stream<Map<String, dynamic>> get onFoodGroceryDriverLocation =>
+      _foodGroceryLocationController.stream;
+  Stream<Map<String, dynamic>> get onFoodGrocerySubstitution =>
+      _foodGrocerySubstitutionController.stream;
+  Stream<Map<String, dynamic>> get onFoodGroceryChatMessage =>
+      _foodGroceryChatController.stream;
 
 
   Stream<Map<String, dynamic>> get onRideAccepted =>
@@ -102,6 +119,10 @@ class UserSocketService {
         _log('[Socket] Re-joining ride room: $_currentRideId');
         _socket!.emit('ride:join', {'rideId': _currentRideId});
       }
+      if (_currentFoodGroceryOrderId != null) {
+        _log('[Socket] Re-joining food_grocery room: $_currentFoodGroceryOrderId');
+        _socket!.emit('food_grocery:join', {'orderId': _currentFoodGroceryOrderId});
+      }
     });
 
     _socket!.onDisconnect((_) {
@@ -118,6 +139,10 @@ class UserSocketService {
       if (_currentRideId != null) {
         _log('[Socket] Re-joining ride room after reconnect: $_currentRideId');
         _socket!.emit('ride:join', {'rideId': _currentRideId});
+      }
+      if (_currentFoodGroceryOrderId != null) {
+        _log('[Socket] Re-joining food_grocery room after reconnect: $_currentFoodGroceryOrderId');
+        _socket!.emit('food_grocery:join', {'orderId': _currentFoodGroceryOrderId});
       }
     });
 
@@ -256,6 +281,47 @@ class UserSocketService {
         _rideMatchingProgressController.add(map);
       }
     });
+
+    // Food & Grocery order real-time events
+    _socket!.on('food_grocery:order:status', (data) {
+      _log('[Socket] Food/Grocery order status: $data');
+      final map = _toMap(data);
+      if (map != null) {
+        _foodGroceryStatusController.add(map);
+      }
+    });
+
+    _socket!.on('food_grocery:driver:location', (data) {
+      final map = _toMap(data);
+      if (map != null) {
+        _foodGroceryLocationController.add(map);
+      }
+    });
+
+    _socket!.on('food_grocery:substitution:requested', (data) {
+      _log('[Socket] Food/Grocery substitution requested: $data');
+      final map = _toMap(data);
+      if (map != null) {
+        map['eventType'] = 'requested';
+        _foodGrocerySubstitutionController.add(map);
+      }
+    });
+
+    _socket!.on('food_grocery:substitution:resolved', (data) {
+      _log('[Socket] Food/Grocery substitution resolved: $data');
+      final map = _toMap(data);
+      if (map != null) {
+        map['eventType'] = 'resolved';
+        _foodGrocerySubstitutionController.add(map);
+      }
+    });
+
+    _socket!.on('food_grocery:chat:message', (data) {
+      final map = _toMap(data);
+      if (map != null) {
+        _foodGroceryChatController.add(map);
+      }
+    });
   }
 
   Map<String, dynamic>? _toMap(dynamic data) {
@@ -295,8 +361,30 @@ class UserSocketService {
     });
   }
 
+  void joinFoodGroceryOrder(String orderId) {
+    _currentFoodGroceryOrderId = orderId;
+    _log('[Socket] joinFoodGroceryOrder: orderId=$orderId, connected=$isConnected');
+    _socket?.emit('food_grocery:join', {'orderId': orderId});
+  }
+
+  void leaveFoodGroceryOrder(String orderId) {
+    if (_currentFoodGroceryOrderId == orderId) {
+      _currentFoodGroceryOrderId = null;
+    }
+    _socket?.emit('food_grocery:leave', {'orderId': orderId});
+  }
+
+  void sendFoodGroceryChatMessage(String orderId, String message) {
+    _log('[Socket] Sending food_grocery chat message: orderId=$orderId');
+    _socket?.emit('food_grocery:chat:message', {
+      'orderId': orderId,
+      'message': message,
+    });
+  }
+
   void disconnect() {
     _currentRideId = null;
+    _currentFoodGroceryOrderId = null;
     _socket?.disconnect();
     _socket?.dispose();
     _socket = null;
@@ -313,5 +401,9 @@ class UserSocketService {
     _rideMatchingProgressController.close();
     _quickServiceEventController.close();
     _airportTransferStatusController.close();
+    _foodGroceryStatusController.close();
+    _foodGroceryLocationController.close();
+    _foodGrocerySubstitutionController.close();
+    _foodGroceryChatController.close();
   }
 }

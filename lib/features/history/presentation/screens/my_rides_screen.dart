@@ -14,6 +14,7 @@ import 'car_rentals_history_view.dart';
 import 'bike_rentals_history_view.dart';
 import 'quick_services_history_view.dart';
 import 'airport_transfers_history_view.dart';
+import 'food_grocery_history_view.dart';
 
 class MyRidesScreen extends ConsumerWidget {
   const MyRidesScreen({super.key});
@@ -78,7 +79,7 @@ class MyRidesScreen extends ConsumerWidget {
                                 elevation: 4,
                                 borderRadius: BorderRadius.circular(12),
                                 selectedItemBuilder: (BuildContext context) {
-                                  return ['My Rides', 'Car Rentals', 'Bike Rentals', 'Quick Services', 'Airport Transfers'].map((String name) {
+                                  return ['My Rides', 'Car Rentals', 'Bike Rentals', 'Quick Services', 'Airport Transfers', 'Food & Groceries'].map((String name) {
                                     return Align(
                                       alignment: Alignment.centerLeft,
                                       child: Text(
@@ -100,6 +101,7 @@ class MyRidesScreen extends ConsumerWidget {
                                   DropdownMenuItem(value: 2, child: Text('Bike Rentals')),
                                   DropdownMenuItem(value: 3, child: Text('Quick Services')),
                                   DropdownMenuItem(value: 4, child: Text('Airport Transfers')),
+                                  DropdownMenuItem(value: 5, child: Text('Food & Groceries')),
                                 ],
                               ),
                             ),
@@ -324,6 +326,7 @@ class MyRidesScreen extends ConsumerWidget {
                   const BikeRentalsHistoryView(),
                   const QuickServicesHistoryView(),
                   const AirportTransfersHistoryView(),
+                  const FoodGroceryHistoryView(),
                 ],
               ),
             ), // closes Expanded

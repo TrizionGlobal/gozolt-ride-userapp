@@ -1,104 +1,120 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/datasources/food_grocery_remote_datasource.dart';
 import '../../data/models/food_grocery_delivery_address.dart';
 
-final foodGroceryDeliveryProvider = StateNotifierProvider<
-    FoodGroceryDeliveryNotifier, FoodGroceryDeliveryState>(
-  (ref) => FoodGroceryDeliveryNotifier(),
+final foodGroceryDeliveryProvider =
+    StateNotifierProvider<FoodGroceryDeliveryNotifier, FoodGroceryDeliveryState>(
+  (ref) => FoodGroceryDeliveryNotifier(ref),
 );
 
 class FoodGroceryDeliveryNotifier
     extends StateNotifier<FoodGroceryDeliveryState> {
-  FoodGroceryDeliveryNotifier()
-      : super(
-          const FoodGroceryDeliveryState(
-            addresses: [
-              FoodGroceryDeliveryAddress(
-                id: 'temporary-home-address',
-                label: 'Home',
-                recipientName: 'Customer Name',
-                phoneNumber: '+356 9900 0000',
-                addressLine: 'Triq il-Karmnu',
-                locality: 'Ħal Luqa',
-                city: 'Malta',
-                postalCode: 'LQA 1311',
-                apartmentDetails: 'Apartment 2',
-                isDefault: true,
-              ),
-            ],
-            selectedAddressId: 'temporary-home-address',
-          ),
-        );
+  FoodGroceryDeliveryNotifier(this._ref)
+      : super(const FoodGroceryDeliveryState()) {
+    Future.microtask(() => _loadAddresses());
+  }
+
+  final Ref _ref;
+
+  Future<void> _loadAddresses() async {
+    try {
+      final ds = _ref.read(foodGroceryRemoteDatasourceProvider);
+      final addresses = await ds.getAddresses();
+      if (!mounted) return;
+      final defaultId = addresses
+          .where((a) => a.isDefault)
+          .map((a) => a.id)
+          .firstOrNull;
+      state = FoodGroceryDeliveryState(
+        addresses: addresses,
+        selectedAddressId: defaultId ??
+            (addresses.isNotEmpty ? addresses.first.id : null),
+      );
+    } catch (_) {
+      // Keep empty state — user can add addresses manually
+    }
+  }
+
+  Future<void> refreshAddresses() => _loadAddresses();
 
   void selectAddress(String addressId) {
     final addressExists = state.addresses.any(
       (address) => address.id == addressId,
     );
 
-    if (!addressExists) {
-      return;
+    if (!addressExists) return;
+
+    state = state.copyWith(selectedAddressId: addressId);
+  }
+
+  Future<bool> addAddress(FoodGroceryDeliveryAddress address) async {
+    try {
+      final ds = _ref.read(foodGroceryRemoteDatasourceProvider);
+      final created = await ds.createAddress(address);
+      if (!mounted) return true;
+      final updatedAddresses = [...state.addresses, created];
+      state = state.copyWith(
+        addresses: updatedAddresses,
+        selectedAddressId: created.id,
+      );
+      return true;
+    } catch (_) {
+      return false;
     }
-
-    state = state.copyWith(
-      selectedAddressId: addressId,
-    );
   }
 
-  void addAddress(FoodGroceryDeliveryAddress address) {
-    final updatedAddresses = [
-      ...state.addresses,
-      address,
-    ];
-
-    state = state.copyWith(
-      addresses: updatedAddresses,
-      selectedAddressId: address.id,
-    );
+  Future<bool> updateAddress(FoodGroceryDeliveryAddress updatedAddress) async {
+    try {
+      final ds = _ref.read(foodGroceryRemoteDatasourceProvider);
+      final updated = await ds.updateAddress(updatedAddress);
+      if (!mounted) return true;
+      state = state.copyWith(
+        addresses: state.addresses.map((a) {
+          return a.id == updated.id ? updated : a;
+        }).toList(),
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
-  void updateAddress(FoodGroceryDeliveryAddress updatedAddress) {
-    final updatedAddresses = state.addresses.map((address) {
-      if (address.id == updatedAddress.id) {
-        return updatedAddress;
-      }
-
-      return address;
-    }).toList();
-
-    state = state.copyWith(
-      addresses: updatedAddresses,
-    );
-  }
-
-  void removeAddress(String addressId) {
+  Future<bool> removeAddress(String addressId) async {
+    final previous = state;
     final updatedAddresses =
         state.addresses.where((address) => address.id != addressId).toList();
-
     String? nextSelectedAddressId = state.selectedAddressId;
-
     if (state.selectedAddressId == addressId) {
-      nextSelectedAddressId =
-          updatedAddresses.isEmpty ? null : updatedAddresses.first.id;
+      nextSelectedAddressId = updatedAddresses.isEmpty
+          ? null
+          : updatedAddresses.first.id;
     }
-
     state = FoodGroceryDeliveryState(
       addresses: updatedAddresses,
       selectedAddressId: nextSelectedAddressId,
       deliveryInstructions: state.deliveryInstructions,
       leaveAtDoor: state.leaveAtDoor,
     );
+
+    try {
+      final ds = _ref.read(foodGroceryRemoteDatasourceProvider);
+      await ds.deleteAddress(addressId);
+      return true;
+    } catch (_) {
+      if (mounted) {
+        state = previous;
+      }
+      return false;
+    }
   }
 
   void updateDeliveryInstructions(String value) {
-    state = state.copyWith(
-      deliveryInstructions: value,
-    );
+    state = state.copyWith(deliveryInstructions: value);
   }
 
   void setLeaveAtDoor(bool value) {
-    state = state.copyWith(
-      leaveAtDoor: value,
-    );
+    state = state.copyWith(leaveAtDoor: value);
   }
 
   void resetCheckoutDeliveryDetails() {

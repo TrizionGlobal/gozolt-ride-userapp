@@ -2,13 +2,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/food_item_customization.dart';
 import '../../data/models/restaurant_menu.dart';
+import 'restaurant_menu_provider.dart';
 
 final foodItemCustomizationProvider = StateNotifierProvider.family<
     FoodItemCustomizationNotifier,
     FoodItemCustomizationState,
     RestaurantMenuItem>(
   (ref, item) {
-    return FoodItemCustomizationNotifier(item);
+    final menuState = ref.watch(restaurantMenuProvider(item.restaurantId));
+    final apiGroups = menuState.modifiersByItemId[item.id];
+    return FoodItemCustomizationNotifier(item, apiGroups);
   },
 );
 
@@ -137,11 +140,18 @@ class FoodItemCustomizationNotifier
     extends StateNotifier<FoodItemCustomizationState> {
   FoodItemCustomizationNotifier(
     RestaurantMenuItem item,
+    List<FoodModifierGroup>? apiGroups,
   ) : super(
           FoodItemCustomizationState(
             item: item,
-            groups: _temporaryGroups,
-            selectedOptionIds: _defaultSelections(),
+            groups: (apiGroups != null && apiGroups.isNotEmpty)
+                ? apiGroups
+                : (item.isCustomizable ? _temporaryGroups : const []),
+            selectedOptionIds: _defaultSelections(
+              (apiGroups != null && apiGroups.isNotEmpty)
+                  ? apiGroups
+                  : (item.isCustomizable ? _temporaryGroups : const []),
+            ),
             quantity: 1,
             specialInstructions: '',
           ),
@@ -342,10 +352,12 @@ class FoodItemCustomizationNotifier
     ),
   ];
 
-  static Map<String, Set<String>> _defaultSelections() {
+  static Map<String, Set<String>> _defaultSelections(
+    List<FoodModifierGroup> groups,
+  ) {
     final selections = <String, Set<String>>{};
 
-    for (final group in _temporaryGroups) {
+    for (final group in groups) {
       final defaults = group.options
           .where((option) {
             return option.isDefault && option.isAvailable;
@@ -439,7 +451,7 @@ class FoodItemCustomizationNotifier
 
   void reset() {
     state = state.copyWith(
-      selectedOptionIds: _defaultSelections(),
+      selectedOptionIds: _defaultSelections(state.groups),
       quantity: 1,
       specialInstructions: '',
     );

@@ -36,11 +36,16 @@ class FoodGroceryOrderCompletedScreen extends ConsumerWidget {
       foodGroceryDeliveryVerificationProvider,
     );
 
-    final orderReference = verification.orderId.trim().isNotEmpty
-        ? verification.orderId
-        : order.orderId ?? 'Pending';
+    final orderReference = order.displayBookingId.isNotEmpty
+        ? order.displayBookingId
+        : (verification.orderId.trim().isNotEmpty
+            ? verification.orderId
+            : 'GZ-FG-COMPLETED');
 
-    final supplierName = cart.supplierName ?? 'Selected supplier';
+    final supplierName = order.orderData?['business']?['name'] as String? ??
+        order.orderData?['businessName'] as String? ??
+        cart.supplierName ??
+        'Supplier';
 
     final deliveryAddress =
         delivery.selectedAddress?.fullAddress ?? 'Selected delivery address';
@@ -141,6 +146,12 @@ class FoodGroceryOrderCompletedScreen extends ConsumerWidget {
                 height: 48,
                 child: ElevatedButton(
                   onPressed: () {
+                    final orderId = order.orderId;
+                    if (orderId != null) {
+                      ref
+                          .read(foodGroceryOrderProvider.notifier)
+                          .confirmOrderReceived(orderId);
+                    }
                     context.pushNamed(
                       RouteNames.foodGroceryRatingReview,
                     );

@@ -358,7 +358,63 @@ class _GroceryCatalogueScreenState
                     ),
                   ),
                   const SizedBox(height: 16),
-                  if (visibleProducts.isEmpty)
+                  if (catalogueState.isLoading && catalogueState.products.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 48),
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primaryGoldDark,
+                        ),
+                      ),
+                    )
+                  else if (catalogueState.errorMessage != null &&
+                      catalogueState.products.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 36,
+                        horizontal: 16,
+                      ),
+                      child: Center(
+                        child: Column(
+                          children: [
+                            const Icon(
+                              Icons.error_outline_rounded,
+                              size: 48,
+                              color: AppColors.error,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              catalogueState.errorMessage!,
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.bodyMedium.copyWith(
+                                color: isDark
+                                    ? AppColors.textSecondary
+                                    : AppColors.textSecondaryLight,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                ref
+                                    .read(
+                                      groceryCatalogueProvider(
+                                        widget.store.id,
+                                      ).notifier,
+                                    )
+                                    .refreshCatalogue();
+                              },
+                              icon: const Icon(Icons.refresh_rounded),
+                              label: const Text('Retry'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryGoldDark,
+                                foregroundColor: AppColors.backgroundDark,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else if (visibleProducts.isEmpty)
                     _EmptyCatalogueState(
                       isDark: isDark,
                       onClear: () {

@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/datasources/food_grocery_remote_datasource.dart';
 import '../../data/models/grocery_catalogue.dart';
+import '../../data/models/grocery_product_details.dart';
 
 final groceryCatalogueProvider = StateNotifierProvider.family<
     GroceryCatalogueNotifier, GroceryCatalogueState, String>(
   (ref, storeId) {
-    return GroceryCatalogueNotifier(storeId);
+    return GroceryCatalogueNotifier(ref, storeId);
   },
 );
 
@@ -15,12 +17,18 @@ class GroceryCatalogueState {
     required this.categories,
     required this.products,
     required this.quantities,
+    this.variantsByProductId = const {},
+    this.isLoading = false,
+    this.errorMessage,
   });
 
   final String storeId;
   final List<GroceryProductCategory> categories;
   final List<GroceryProduct> products;
   final Map<String, int> quantities;
+  final Map<String, List<GroceryProductSelectionOption>> variantsByProductId;
+  final bool isLoading;
+  final String? errorMessage;
 
   int quantityFor(String productId) {
     return quantities[productId] ?? 0;
@@ -38,7 +46,6 @@ class GroceryCatalogueState {
 
     for (final product in products) {
       final quantity = quantityFor(product.id);
-
       if (quantity > 0) {
         total += product.currentPrice * quantity;
       }
@@ -52,305 +59,127 @@ class GroceryCatalogueState {
     List<GroceryProductCategory>? categories,
     List<GroceryProduct>? products,
     Map<String, int>? quantities,
+    Map<String, List<GroceryProductSelectionOption>>? variantsByProductId,
+    bool? isLoading,
+    String? errorMessage,
+    bool clearError = false,
   }) {
     return GroceryCatalogueState(
       storeId: storeId ?? this.storeId,
       categories: categories ?? this.categories,
       products: products ?? this.products,
       quantities: quantities ?? this.quantities,
+      variantsByProductId: variantsByProductId ?? this.variantsByProductId,
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
     );
   }
 }
 
 class GroceryCatalogueNotifier extends StateNotifier<GroceryCatalogueState> {
-  GroceryCatalogueNotifier(String storeId)
+  GroceryCatalogueNotifier(this._ref, String storeId)
       : super(
           GroceryCatalogueState(
             storeId: storeId,
-            categories: _temporaryCategories,
-            products: _temporaryProducts(storeId),
+            categories: const [],
+            products: const [],
             quantities: const {},
+            isLoading: true,
           ),
-        );
+        ) {
+    Future.microtask(() => loadCatalogue());
+  }
 
-  static const List<GroceryProductCategory> _temporaryCategories = [
-    GroceryProductCategory(
-      id: 'popular',
-      name: 'Popular',
-      displayOrder: 1,
-      isActive: true,
-    ),
-    GroceryProductCategory(
-      id: 'offers',
-      name: 'Offers',
-      displayOrder: 2,
-      isActive: true,
-    ),
-    GroceryProductCategory(
-      id: 'fruit-vegetables',
-      name: 'Fruits & Vegetables',
-      displayOrder: 3,
-      isActive: true,
-    ),
-    GroceryProductCategory(
-      id: 'dairy-eggs',
-      name: 'Dairy & Eggs',
-      displayOrder: 4,
-      isActive: true,
-    ),
-    GroceryProductCategory(
-      id: 'bakery',
-      name: 'Bakery',
-      displayOrder: 5,
-      isActive: true,
-    ),
-    GroceryProductCategory(
-      id: 'beverages',
-      name: 'Beverages',
-      displayOrder: 6,
-      isActive: true,
-    ),
-    GroceryProductCategory(
-      id: 'snacks',
-      name: 'Snacks',
-      displayOrder: 7,
-      isActive: true,
-    ),
-    GroceryProductCategory(
-      id: 'pantry',
-      name: 'Pantry',
-      displayOrder: 8,
-      isActive: true,
-    ),
-    GroceryProductCategory(
-      id: 'household',
-      name: 'Household',
-      displayOrder: 9,
-      isActive: true,
-    ),
-    GroceryProductCategory(
-      id: 'personal-care',
-      name: 'Personal Care',
-      displayOrder: 10,
-      isActive: true,
-    ),
-  ];
+  final Ref _ref;
 
-  static List<GroceryProduct> _temporaryProducts(
-    String storeId,
-  ) {
-    // TODO(FOOD_GROCERY_API):
-    // Replace with products returned by the selected store's API.
-    return [
-      GroceryProduct(
-        id: 'product-001',
-        storeId: storeId,
-        categoryId: 'dairy-eggs',
-        name: 'Fresh Milk',
-        brand: 'Benna',
-        description: 'Fresh full-fat milk produced in Malta',
+  Future<void> loadCatalogue() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final ds = _ref.read(foodGroceryRemoteDatasourceProvider);
+      final catalogue = await ds.getStoreCatalogue(state.storeId);
+      if (!mounted) return;
+      state = state.copyWith(
+        categories: catalogue.categories,
+        products: catalogue.products,
+        variantsByProductId: catalogue.variantsByProductId,
+        isLoading: false,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Unable to load store catalogue. Please try again.',
+      );
+    }
+  }
+
+  void incrementProduct(String productId) {
+    final product = state.products.firstWhere(
+      (element) => element.id == productId,
+      orElse: () => const GroceryProduct(
+        id: '',
+        storeId: '',
+        categoryId: '',
+        name: '',
+        brand: '',
+        description: '',
         unitType: GroceryProductUnitType.fixedUnit,
-        unitText: '1L',
-        basePrice: 1.80,
-        stockStatus: GroceryProductStockStatus.inStock,
-        availableQuantity: 25,
-        maximumQuantity: 10,
-        hasVariants: false,
-        isActive: true,
-      ),
-      GroceryProduct(
-        id: 'product-002',
-        storeId: storeId,
-        categoryId: 'beverages',
-        name: 'Coca-Cola',
-        brand: 'Coca-Cola',
-        description: 'Classic sparkling soft drink',
-        unitType: GroceryProductUnitType.pack,
-        unitText: '6 × 330ml',
-        basePrice: 5.50,
-        offerPrice: 4.95,
-        offerText: '10% OFF',
-        stockStatus: GroceryProductStockStatus.inStock,
-        availableQuantity: 18,
-        maximumQuantity: 6,
-        hasVariants: true,
-        isActive: true,
-      ),
-      GroceryProduct(
-        id: 'product-003',
-        storeId: storeId,
-        categoryId: 'bakery',
-        name: 'Maltese Bread',
-        brand: 'Local Bakery',
-        description: 'Traditional freshly baked Maltese bread',
-        unitType: GroceryProductUnitType.piece,
-        unitText: '1 loaf',
-        basePrice: 1.25,
-        stockStatus: GroceryProductStockStatus.lowStock,
-        availableQuantity: 3,
-        maximumQuantity: 5,
-        hasVariants: false,
-        isActive: true,
-      ),
-      GroceryProduct(
-        id: 'product-004',
-        storeId: storeId,
-        categoryId: 'fruit-vegetables',
-        name: 'Bananas',
-        brand: 'Fresh Produce',
-        description: 'Fresh bananas sold by approximate weight',
-        unitType: GroceryProductUnitType.weight,
-        unitText: '€2.40/kg',
-        basePrice: 2.40,
-        stockStatus: GroceryProductStockStatus.inStock,
-        availableQuantity: 20,
-        maximumQuantity: 5,
-        hasVariants: true,
-        isActive: true,
-      ),
-      GroceryProduct(
-        id: 'product-005',
-        storeId: storeId,
-        categoryId: 'dairy-eggs',
-        name: 'Free Range Eggs',
-        brand: 'Farm Fresh',
-        description: 'Locally sourced free-range eggs',
-        unitType: GroceryProductUnitType.pack,
-        unitText: '6 Pack',
-        basePrice: 2.95,
-        stockStatus: GroceryProductStockStatus.inStock,
-        availableQuantity: 14,
-        maximumQuantity: 6,
-        hasVariants: false,
-        isActive: true,
-      ),
-      GroceryProduct(
-        id: 'product-006',
-        storeId: storeId,
-        categoryId: 'household',
-        name: 'Laundry Detergent',
-        brand: 'CleanHome',
-        description: 'Concentrated laundry detergent',
-        unitType: GroceryProductUnitType.fixedUnit,
-        unitText: '1.5L',
-        basePrice: 7.50,
-        offerPrice: 6.50,
-        offerText: 'SAVE €1',
-        stockStatus: GroceryProductStockStatus.inStock,
-        availableQuantity: 9,
-        maximumQuantity: 4,
-        hasVariants: false,
-        isActive: true,
-      ),
-      GroceryProduct(
-        id: 'product-007',
-        storeId: storeId,
-        categoryId: 'personal-care',
-        name: 'Fresh Mint Toothpaste',
-        brand: 'SmileCare',
-        description: 'Daily protection fresh mint toothpaste',
-        unitType: GroceryProductUnitType.fixedUnit,
-        unitText: '100ml',
-        basePrice: 2.75,
+        unitText: '',
+        basePrice: 0,
         stockStatus: GroceryProductStockStatus.outOfStock,
         availableQuantity: 0,
-        maximumQuantity: 4,
+        maximumQuantity: 0,
         hasVariants: false,
-        isActive: true,
+        isActive: false,
       ),
-      GroceryProduct(
-        id: 'product-008',
-        storeId: storeId,
-        categoryId: 'snacks',
-        name: 'Sea Salt Crisps',
-        brand: 'Island Crunch',
-        description: 'Crispy potato snacks with sea salt',
-        unitType: GroceryProductUnitType.fixedUnit,
-        unitText: '150g',
-        basePrice: 2.20,
-        stockStatus: GroceryProductStockStatus.inStock,
-        availableQuantity: 16,
-        maximumQuantity: 8,
-        hasVariants: false,
-        isActive: true,
-      ),
-    ];
-  }
+    );
 
-  void addSimpleProduct(GroceryProduct product) {
-    if (!product.canAddDirectly) {
+    if (product.id.isEmpty || !product.canAddDirectly) {
       return;
     }
 
-    final currentQuantity = state.quantityFor(product.id);
-
-    if (currentQuantity >= product.allowedQuantity) {
+    final current = state.quantityFor(productId);
+    if (current >= product.allowedQuantity) {
       return;
     }
 
     state = state.copyWith(
       quantities: {
         ...state.quantities,
-        product.id: currentQuantity + 1,
+        productId: current + 1,
       },
     );
   }
 
-  void addProductFromDetails({
-    required GroceryProduct product,
-    required int quantity,
-  }) {
-    if (!product.isActive ||
-        product.stockStatus == GroceryProductStockStatus.outOfStock ||
-        quantity <= 0) {
+  void decrementProduct(String productId) {
+    final current = state.quantityFor(productId);
+    if (current <= 0) {
       return;
     }
 
-    final currentQuantity = state.quantityFor(product.id);
-
-    final requestedQuantity = currentQuantity + quantity;
-
-    state = state.copyWith(
-      quantities: {
-        ...state.quantities,
-        product.id: requestedQuantity > product.allowedQuantity
-            ? product.allowedQuantity
-            : requestedQuantity,
-      },
-    );
-  }
-
-  void decreaseProduct(GroceryProduct product) {
-    final currentQuantity = state.quantityFor(product.id);
-
-    if (currentQuantity <= 0) {
-      return;
-    }
-
-    final updatedQuantities = Map<String, int>.from(state.quantities);
-
-    if (currentQuantity == 1) {
-      updatedQuantities.remove(product.id);
+    final updated = Map<String, int>.from(state.quantities);
+    if (current == 1) {
+      updated.remove(productId);
     } else {
-      updatedQuantities[product.id] = currentQuantity - 1;
+      updated[productId] = current - 1;
     }
 
-    state = state.copyWith(
-      quantities: updatedQuantities,
-    );
+    state = state.copyWith(quantities: updated);
   }
 
-  void refreshCatalogue() {
-    // TODO(FOOD_GROCERY_API):
-    // Re-fetch store status, products, prices and stock.
-    state = state.copyWith(
-      products: List<GroceryProduct>.from(state.products),
-    );
+  Future<void> refreshCatalogue() async => loadCatalogue();
+
+  void addSimpleProduct(GroceryProduct product) => incrementProduct(product.id);
+
+  void decreaseProduct(dynamic productOrId) {
+    if (productOrId is GroceryProduct) {
+      decrementProduct(productOrId.id);
+    } else if (productOrId is String) {
+      decrementProduct(productOrId);
+    }
   }
 
-  void clearCartPreview() {
-    state = state.copyWith(
-      quantities: const {},
-    );
+  void clearQuantities() {
+    state = state.copyWith(quantities: const {});
   }
 }

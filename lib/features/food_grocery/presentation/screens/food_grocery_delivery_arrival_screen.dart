@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
+import '../providers/food_grocery_order_provider.dart';
 import '../providers/food_grocery_delivery_verification_provider.dart';
 import '../widgets/food_grocery_header.dart';
 
@@ -79,9 +80,15 @@ class _FoodGroceryDeliveryArrivalScreenState
       foodGroceryDeliveryVerificationProvider,
     );
 
-    final orderReference = verificationState.orderId.trim().isEmpty
-        ? 'Pending'
-        : verificationState.orderId;
+    final order = ref.watch(
+      foodGroceryOrderProvider,
+    );
+
+    final orderReference = order.displayBookingId.isNotEmpty
+        ? order.displayBookingId
+        : (verificationState.orderId.trim().isEmpty
+            ? 'Pending'
+            : verificationState.orderId);
 
     final qrData = '''
 GOZOLT FOOD & GROCERY

@@ -54,20 +54,7 @@ class _FoodGroceryReviewOrderScreenState
       _showAgreementError = false;
     });
 
-    // Temporary action.
-    // Replace this with navigation to FG-UA-11
-    // after the Payment Method screen is created.
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Order reviewed successfully',
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: Colors.white,
-          ),
-        ),
-        backgroundColor: AppColors.success,
-      ),
-    );
+    context.pushNamed(RouteNames.foodGroceryPaymentMethod);
   }
 
   void _showMessage(String message) {
