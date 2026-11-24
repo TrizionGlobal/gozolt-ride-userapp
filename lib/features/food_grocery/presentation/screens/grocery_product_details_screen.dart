@@ -8,9 +8,10 @@ import '../../data/models/grocery_catalogue.dart';
 import '../../data/models/grocery_product_details.dart';
 import '../../data/models/grocery_store.dart';
 import '../providers/grocery_product_details_provider.dart';
-import '../../../../core/router/route_names.dart';
 import '../../data/models/food_grocery_cart.dart';
 import '../providers/food_grocery_cart_provider.dart';
+import '../providers/food_grocery_delivery_provider.dart';
+import '../widgets/smart_product_image.dart';
 
 class GroceryProductDetailsScreen extends ConsumerWidget {
   const GroceryProductDetailsScreen({
@@ -211,9 +212,17 @@ class GroceryProductDetailsScreen extends ConsumerWidget {
       return;
     }
 
+    final selectedAddress = ref.read(foodGroceryDeliveryProvider).selectedAddress;
+    final distance = store.calculateDistanceTo(
+      selectedAddress?.latitude,
+      selectedAddress?.longitude,
+    );
+    final deliveryFee = double.parse((distance * 1.0).toStringAsFixed(2));
+
     cartNotifier.updateCharges(
-      deliveryFee: store.deliveryFee,
+      deliveryFee: deliveryFee,
       serviceFee: 0,
+      distanceKm: distance,
     );
 
     ref
@@ -224,9 +233,7 @@ class GroceryProductDetailsScreen extends ConsumerWidget {
 
     if (!context.mounted) return;
 
-    context.pushNamed(
-      RouteNames.foodGroceryCart,
-    );
+    context.pop(true);
   }
 
   @override
@@ -555,7 +562,7 @@ class GroceryProductDetailsScreen extends ConsumerWidget {
                 ),
               ),
               child: Text(
-                'ADD TO CART — €${state.totalPrice.toStringAsFixed(2)}',
+                'Add to Cart — €${state.totalPrice.toStringAsFixed(2)}',
                 style: AppTextStyles.labelLarge.copyWith(
                   color: canAdd
                       ? AppColors.backgroundDark
@@ -707,20 +714,12 @@ class _ProductOverviewCard extends StatelessWidget {
         children: [
           Stack(
             children: [
-              Container(
+              SmartProductImage(
+                imageUrl: product.imageUrl,
                 width: double.infinity,
                 height: 190,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryGold.withValues(alpha: 0.13),
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
-                ),
-                child: const Icon(
-                  Icons.shopping_basket_rounded,
-                  size: 62,
-                  color: AppColors.primaryGoldDark,
-                ),
+                fallbackIcon: Icons.shopping_basket_rounded,
+                borderRadius: 16,
               ),
               if (product.offerText != null)
                 Positioned(
@@ -1381,18 +1380,12 @@ class _RelatedProductCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Container(
+              const SmartProductImage(
+                imageUrl: null,
                 width: 42,
                 height: 42,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryGold.withValues(alpha: 0.13),
-                  borderRadius: BorderRadius.circular(11),
-                ),
-                child: const Icon(
-                  Icons.shopping_basket_rounded,
-                  size: 22,
-                  color: AppColors.primaryGoldDark,
-                ),
+                fallbackIcon: Icons.shopping_basket_rounded,
+                borderRadius: 11,
               ),
               const SizedBox(width: 8),
               Expanded(

@@ -4,11 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/network/socket_service.dart';
 import '../../../../core/router/route_names.dart';
+import '../../data/datasources/food_grocery_remote_datasource.dart';
+import 'food_grocery_delivery_chat_screen.dart';
 import '../providers/food_grocery_cart_provider.dart';
 import '../providers/food_grocery_delivery_provider.dart';
 import '../providers/food_grocery_order_provider.dart';
@@ -29,37 +32,85 @@ class FoodGroceryLiveTrackingScreen extends ConsumerStatefulWidget {
 class _FoodGroceryLiveTrackingScreenState
     extends ConsumerState<FoodGroceryLiveTrackingScreen> {
   bool _isRefreshing = false;
+  bool _isLoading = true;
+  LatLng? _liveDriverLocation;
   final List<StreamSubscription> _subscriptions = [];
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final socket = ref.read(socketServiceProvider);
-      _subscriptions.add(
-        socket.onFoodGroceryOrderStatus.listen((data) {
-          if (!mounted) return;
-          final order = ref.read(foodGroceryOrderProvider);
-          if (order.orderId != null) {
-            ref.read(foodGroceryOrderProvider.notifier).pollOrderStatus(order.orderId!);
-          }
-          final statusStr = data['status']?.toString();
-          if (statusStr == 'ARRIVED_AT_CUSTOMER' || statusStr == 'ARRIVING_SOON') {
-            _continueToArrival();
-          }
-        }),
-      );
-      _subscriptions.add(
-        socket.onFoodGrocerySubstitution.listen((_) {
-          if (!mounted) return;
-          context.pushNamed(RouteNames.foodGrocerySubstitution);
-        }),
-      );
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final currentOrder = ref.read(foodGroceryOrderProvider);
+      if (currentOrder.orderId == null) {
+        await ref.read(foodGroceryOrderProvider.notifier).getActiveOrder();
+      } else {
+        ref.read(foodGroceryOrderProvider.notifier).pollOrderStatus(currentOrder.orderId!);
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+
+      final order = ref.read(foodGroceryOrderProvider);
+      if (order.orderId != null && !order.isSupplierAccepted) {
+        context.pushReplacementNamed(RouteNames.foodGroceryAwaitingSupplier);
+        return;
+      }
+
+      _setupSubscriptions();
+
+      _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+        if (!mounted) return;
+        final o = ref.read(foodGroceryOrderProvider);
+        if (o.orderId != null) {
+          ref.read(foodGroceryOrderProvider.notifier).pollOrderStatus(o.orderId!);
+        }
+      });
     });
+  }
+
+  void _setupSubscriptions() {
+    final socket = ref.read(socketServiceProvider);
+    _subscriptions.add(
+      socket.onFoodGroceryOrderStatus.listen((data) {
+        if (!mounted) return;
+        final order = ref.read(foodGroceryOrderProvider);
+        if (order.orderId != null) {
+          ref.read(foodGroceryOrderProvider.notifier).pollOrderStatus(order.orderId!);
+        }
+        final statusStr = data['status']?.toString();
+        if (statusStr == 'ARRIVED_AT_CUSTOMER' || statusStr == 'ARRIVING_SOON') {
+          _continueToArrival();
+        }
+      }),
+    );
+    _subscriptions.add(
+      socket.onFoodGroceryDriverLocation.listen((data) {
+        if (!mounted) return;
+        final lat = (data['latitude'] as num?)?.toDouble() ??
+            (data['lat'] as num?)?.toDouble();
+        final lng = (data['longitude'] as num?)?.toDouble() ??
+            (data['lng'] as num?)?.toDouble();
+        if (lat != null && lng != null) {
+          setState(() {
+            _liveDriverLocation = LatLng(lat, lng);
+          });
+        }
+      }),
+    );
+    _subscriptions.add(
+      socket.onFoodGrocerySubstitution.listen((_) {
+        if (!mounted) return;
+        context.pushNamed(RouteNames.foodGrocerySubstitution);
+      }),
+    );
   }
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     for (final sub in _subscriptions) {
       sub.cancel();
     }
@@ -166,6 +217,34 @@ class _FoodGroceryLiveTrackingScreenState
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    ref.listen<FoodGroceryOrderState>(foodGroceryOrderProvider, (_, next) {
+      if (next.orderId != null && !next.isSupplierAccepted && mounted) {
+        _pollTimer?.cancel();
+        context.pushReplacementNamed(RouteNames.foodGroceryAwaitingSupplier);
+      }
+    });
+
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor:
+            isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+        body: const Column(
+          children: [
+            FoodGroceryHeader(
+              title: 'Live Order Tracking',
+            ),
+            Expanded(
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.primaryGold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final order = ref.watch(
       foodGroceryOrderProvider,
     );
@@ -178,25 +257,64 @@ class _FoodGroceryLiveTrackingScreenState
       foodGroceryDeliveryProvider,
     );
 
-    final resolvedSupplierName = order.orderData?['business']?['name'] as String? ??
-        order.orderData?['businessName'] as String? ??
-        cart.supplierName ??
-        'Selected supplier';
+    final resolvedSupplierName = order.vendorDisplayName.isNotEmpty
+        ? order.vendorDisplayName
+        : (order.orderData?['business']?['name'] as String? ??
+            order.orderData?['businessName'] as String? ??
+            cart.supplierName ??
+            (order.vendorTypeLabel == 'store' ? 'Store' : 'Restaurant'));
 
     final structuredOrderId = order.displayBookingId.isNotEmpty
         ? order.displayBookingId
-        : 'GZ-FG-PENDING';
+        : (order.orderId != null && order.orderId!.isNotEmpty
+            ? 'GZ-FG-${order.orderId!.replaceAll('-', '').toUpperCase().substring(0, 8)}'
+            : 'GZ-FG-PENDING');
 
     final resolvedTotal = order.total > 0
         ? order.total
         : (order.orderData?['totalAmount'] as num?)?.toDouble() ?? 0.0;
 
-    final deliveryAddress =
-        delivery.selectedAddress?.fullAddress ?? 'Selected delivery address';
+    final deliveryAddressData = order.orderData?['deliveryAddress'];
+    final resolvedAddress = delivery.selectedAddress ??
+        (deliveryAddressData is Map
+            ? FoodGroceryRemoteDatasource.parseAddress(
+                Map<String, dynamic>.from(deliveryAddressData),
+              )
+            : null);
 
-    final deliveryLatitude = delivery.selectedAddress?.latitude;
+    final deliveryAddress = resolvedAddress?.fullAddress ??
+        order.orderData?['deliveryAddress']?['fullAddress']?.toString() ??
+        'Selected delivery address';
 
-    final deliveryLongitude = delivery.selectedAddress?.longitude;
+    final deliveryLatitude = resolvedAddress?.latitude ??
+        (order.orderData?['deliveryLat'] as num?)?.toDouble() ??
+        (order.orderData?['deliveryAddress']?['latitude'] as num?)?.toDouble();
+
+    final deliveryLongitude = resolvedAddress?.longitude ??
+        (order.orderData?['deliveryLng'] as num?)?.toDouble() ??
+        (order.orderData?['deliveryAddress']?['longitude'] as num?)?.toDouble();
+
+    if (order.orderId == null || order.status == FoodGroceryOrderStatus.idle) {
+      return Scaffold(
+        backgroundColor:
+            isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+        body: Column(
+          children: [
+            const FoodGroceryHeader(
+              title: 'Live Order Tracking',
+            ),
+            Expanded(
+              child: _MissingTrackingView(
+                isDark: isDark,
+                onBrowse: () {
+                  context.goNamed(RouteNames.foodGroceryHome);
+                },
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     if (!order.isSupplierAccepted) {
       return Scaffold(
@@ -205,12 +323,45 @@ class _FoodGroceryLiveTrackingScreenState
         body: Column(
           children: [
             FoodGroceryHeader(
-              title: 'Live Order Tracking',
-              deliveryLocation: 'Order ID: $structuredOrderId',
+              title: 'Order Status',
+              deliveryLocation: resolvedAddress != null
+                  ? (resolvedAddress.addressLine.isNotEmpty
+                      ? resolvedAddress.addressLine
+                      : resolvedAddress.fullAddress)
+                  : null,
             ),
             Expanded(
-              child: _MissingTrackingView(
-                isDark: isDark,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(
+                        color: AppColors.primaryGold,
+                      ),
+                      const SizedBox(height: 18),
+                      Text(
+                        'Connecting to ${order.vendorTypeLabel}...',
+                        style: AppTextStyles.titleSmall.copyWith(
+                          color: isDark
+                              ? AppColors.textPrimary
+                              : AppColors.textPrimaryLight,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Redirecting to order status...',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isDark
+                              ? AppColors.textSecondary
+                              : AppColors.textSecondaryLight,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
@@ -218,13 +369,32 @@ class _FoodGroceryLiveTrackingScreenState
       );
     }
 
+    final businessObj = order.orderData?['business'] as Map<String, dynamic>?;
+    final supplierLat = (businessObj?['latitude'] as num?)?.toDouble() ??
+        (order.orderData?['businessLatitude'] as num?)?.toDouble();
+    final supplierLng = (businessObj?['longitude'] as num?)?.toDouble() ??
+        (order.orderData?['businessLongitude'] as num?)?.toDouble();
+
+    final driverObj = order.orderData?['driver'] as Map<String, dynamic>?;
+    final driverUser = driverObj?['user'] as Map<String, dynamic>?;
+    final driverName = driverUser?['fullName'] as String? ??
+        driverObj?['name'] as String? ??
+        order.orderData?['driverName'] as String?;
+    final driverPhone = driverUser?['phone'] as String? ??
+        driverObj?['phone'] as String? ??
+        order.orderData?['driverPhone'] as String?;
+    final driverVehicle = driverObj?['vehicleModel'] as String? ??
+        driverObj?['vehicleType'] as String? ??
+        'GOZOLT Fleet Courier';
+
     final eta = _estimatedArrival(
       order.trackingStage,
     );
 
-    final partnerAssigned = _partnerAssigned(
-      order.trackingStage,
-    );
+    final partnerAssigned = (driverName != null && driverName.trim().isNotEmpty) ||
+        order.orderData?['driver'] != null ||
+        order.orderData?['driverId'] != null ||
+        _partnerAssigned(order.trackingStage);
 
     return Scaffold(
       backgroundColor:
@@ -233,7 +403,11 @@ class _FoodGroceryLiveTrackingScreenState
         children: [
           FoodGroceryHeader(
             title: 'Live Order Tracking',
-            deliveryLocation: 'Order ID: $structuredOrderId',
+            deliveryLocation: resolvedAddress != null
+                ? (resolvedAddress.addressLine.isNotEmpty
+                    ? resolvedAddress.addressLine
+                    : resolvedAddress.fullAddress)
+                : null,
           ),
           Expanded(
             child: SafeArea(
@@ -253,6 +427,9 @@ class _FoodGroceryLiveTrackingScreenState
                     deliveryAddress: deliveryAddress,
                     deliveryLatitude: deliveryLatitude,
                     deliveryLongitude: deliveryLongitude,
+                    supplierLatitude: supplierLat,
+                    supplierLongitude: supplierLng,
+                    driverLocation: _liveDriverLocation,
                   ),
                   const SizedBox(height: 12),
                   _CurrentStatusCard(
@@ -269,14 +446,29 @@ class _FoodGroceryLiveTrackingScreenState
                   _DeliveryPartnerCard(
                     isDark: isDark,
                     assigned: partnerAssigned,
-                    onCall: () {
+                    driverName: driverName,
+                    driverPhone: driverPhone,
+                    driverVehicle: driverVehicle,
+                    onCall: () async {
+                      if (driverPhone != null && driverPhone.trim().isNotEmpty) {
+                        final uri = Uri(scheme: 'tel', path: driverPhone.trim());
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(uri);
+                          return;
+                        }
+                      }
                       _showContactMessage(
                         'Calling',
                       );
                     },
                     onMessage: () {
-                      _showContactMessage(
-                        'Messaging',
+                      context.pushNamed(
+                        RouteNames.foodGroceryDeliveryChat,
+                        extra: FoodGroceryDeliveryChatArguments(
+                          orderId: structuredOrderId,
+                          partnerName: driverName ?? 'Delivery Partner',
+                          partnerPhone: driverPhone,
+                        ),
                       );
                     },
                   ),
@@ -285,6 +477,7 @@ class _FoodGroceryLiveTrackingScreenState
                     isDark: isDark,
                     orderId: structuredOrderId,
                     supplierName: resolvedSupplierName,
+                    vendorTypeLabel: order.vendorTypeLabel,
                     total: resolvedTotal,
                   ),
                 ],
@@ -407,6 +600,9 @@ class _TrackingMapPlaceholder extends StatelessWidget {
     required this.deliveryAddress,
     required this.deliveryLatitude,
     required this.deliveryLongitude,
+    this.supplierLatitude,
+    this.supplierLongitude,
+    this.driverLocation,
   });
 
   final bool isDark;
@@ -415,21 +611,26 @@ class _TrackingMapPlaceholder extends StatelessWidget {
   final String deliveryAddress;
   final double? deliveryLatitude;
   final double? deliveryLongitude;
+  final double? supplierLatitude;
+  final double? supplierLongitude;
+  final LatLng? driverLocation;
 
-  // TODO(FOOD_GROCERY_API):
-  // Replace this temporary supplier location with coordinates
-  // returned by the selected restaurant/store API.
-  static const LatLng _temporarySupplierLocation = LatLng(
+  static const LatLng _maltaDefaultSupplier = LatLng(
     35.8992,
     14.5141,
   );
 
-  // Used only when a manually entered address does not yet
-  // contain coordinates.
   static const LatLng _maltaDeliveryFallback = LatLng(
     35.9122,
     14.5042,
   );
+
+  LatLng get _supplierLocation {
+    if (supplierLatitude != null && supplierLongitude != null) {
+      return LatLng(supplierLatitude!, supplierLongitude!);
+    }
+    return _maltaDefaultSupplier;
+  }
 
   LatLng get _customerLocation {
     final latitude = deliveryLatitude;
@@ -446,7 +647,8 @@ class _TrackingMapPlaceholder extends StatelessWidget {
   }
 
   bool get _showDeliveryPartner {
-    return stage.index >= FoodGroceryTrackingStage.pickedUp.index;
+    return stage.index >= FoodGroceryTrackingStage.pickedUp.index ||
+        driverLocation != null;
   }
 
   double get _deliveryProgress {
@@ -471,14 +673,18 @@ class _TrackingMapPlaceholder extends StatelessWidget {
   }
 
   LatLng get _deliveryPartnerLocation {
+    if (driverLocation != null) {
+      return driverLocation!;
+    }
+    final supplier = _supplierLocation;
     final customer = _customerLocation;
     final progress = _deliveryProgress;
 
-    final latitude = _temporarySupplierLocation.latitude +
-        (customer.latitude - _temporarySupplierLocation.latitude) * progress;
+    final latitude = supplier.latitude +
+        (customer.latitude - supplier.latitude) * progress;
 
-    final longitude = _temporarySupplierLocation.longitude +
-        (customer.longitude - _temporarySupplierLocation.longitude) * progress;
+    final longitude = supplier.longitude +
+        (customer.longitude - supplier.longitude) * progress;
 
     return LatLng(
       latitude,
@@ -488,10 +694,11 @@ class _TrackingMapPlaceholder extends StatelessWidget {
 
   LatLng get _cameraTarget {
     final customer = _customerLocation;
+    final supplier = _supplierLocation;
 
     return LatLng(
-      (_temporarySupplierLocation.latitude + customer.latitude) / 2,
-      (_temporarySupplierLocation.longitude + customer.longitude) / 2,
+      (supplier.latitude + customer.latitude) / 2,
+      (supplier.longitude + customer.longitude) / 2,
     );
   }
 
@@ -501,7 +708,7 @@ class _TrackingMapPlaceholder extends StatelessWidget {
         markerId: const MarkerId(
           'supplier',
         ),
-        position: _temporarySupplierLocation,
+        position: _supplierLocation,
         infoWindow: InfoWindow(
           title: supplierName,
           snippet: 'Pickup location',
@@ -553,7 +760,7 @@ class _TrackingMapPlaceholder extends StatelessWidget {
           'delivery-route',
         ),
         points: [
-          _temporarySupplierLocation,
+          _supplierLocation,
           _customerLocation,
         ],
         color: AppColors.primaryGold,
@@ -880,7 +1087,7 @@ class _TimelineStep extends StatelessWidget {
   String get title {
     switch (stage) {
       case FoodGroceryTrackingStage.awaitingSupplier:
-        return 'Waiting for supplier';
+        return 'Waiting for confirmation';
       case FoodGroceryTrackingStage.supplierAccepted:
         return 'Order accepted';
       case FoodGroceryTrackingStage.preparing:
@@ -986,12 +1193,18 @@ class _DeliveryPartnerCard extends StatelessWidget {
   const _DeliveryPartnerCard({
     required this.isDark,
     required this.assigned,
+    this.driverName,
+    this.driverPhone,
+    this.driverVehicle,
     required this.onCall,
     required this.onMessage,
   });
 
   final bool isDark;
   final bool assigned;
+  final String? driverName;
+  final String? driverPhone;
+  final String? driverVehicle;
   final VoidCallback onCall;
   final VoidCallback onMessage;
 
@@ -1024,7 +1237,9 @@ class _DeliveryPartnerCard extends StatelessWidget {
               children: [
                 Text(
                   assigned
-                      ? 'Delivery partner assigned'
+                      ? (driverName?.isNotEmpty == true
+                          ? driverName!
+                          : 'Delivery partner assigned')
                       : 'Finding a delivery partner',
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: isDark
@@ -1036,7 +1251,9 @@ class _DeliveryPartnerCard extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   assigned
-                      ? 'GOZOLT delivery partner'
+                      ? (driverVehicle?.isNotEmpty == true
+                          ? driverVehicle!
+                          : 'GOZOLT delivery partner')
                       : 'Partner details will appear here',
                   style: AppTextStyles.bodySmall.copyWith(
                     color: isDark
@@ -1100,12 +1317,14 @@ class _OrderReferenceCard extends StatelessWidget {
     required this.isDark,
     required this.orderId,
     required this.supplierName,
+    required this.vendorTypeLabel,
     required this.total,
   });
 
   final bool isDark;
   final String orderId;
   final String supplierName;
+  final String vendorTypeLabel;
   final double total;
 
   @override
@@ -1124,50 +1343,21 @@ class _OrderReferenceCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Order ID',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: isDark
-                      ? AppColors.textSecondary
-                      : AppColors.textSecondaryLight,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryGold.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: AppColors.primaryGold.withValues(alpha: 0.45),
-                  ),
-                ),
-                child: Text(
-                  displayId,
-                  style: AppTextStyles.labelLarge.copyWith(
-                    color: AppColors.primaryGoldDark,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
           _ReferenceRow(
             isDark: isDark,
-            label: 'Supplier',
+            label: 'Order ID',
+            value: displayId,
+          ),
+          const SizedBox(height: 10),
+          _ReferenceRow(
+            isDark: isDark,
+            label: vendorTypeLabel == 'store' ? 'Store' : 'Restaurant',
             value: supplierName,
           ),
           const SizedBox(height: 10),
           _ReferenceRow(
             isDark: isDark,
-            label: 'Total',
+            label: 'Order Total',
             value: '€${total.toStringAsFixed(2)}',
           ),
         ],
@@ -1190,20 +1380,19 @@ class _ReferenceRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Text(
-            label,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: isDark
-                  ? AppColors.textSecondary
-                  : AppColors.textSecondaryLight,
-            ),
+        Text(
+          label,
+          style: AppTextStyles.bodySmall.copyWith(
+            color: isDark
+                ? AppColors.textSecondary
+                : AppColors.textSecondaryLight,
           ),
         ),
         const SizedBox(width: 12),
-        Flexible(
+        Expanded(
           child: Text(
             value,
             textAlign: TextAlign.end,
@@ -1224,9 +1413,11 @@ class _ReferenceRow extends StatelessWidget {
 class _MissingTrackingView extends StatelessWidget {
   const _MissingTrackingView({
     required this.isDark,
+    this.onBrowse,
   });
 
   final bool isDark;
+  final VoidCallback? onBrowse;
 
   @override
   Widget build(BuildContext context) {
@@ -1237,7 +1428,7 @@ class _MissingTrackingView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.location_searching_rounded,
+              Icons.receipt_long_outlined,
               size: 54,
               color: isDark
                   ? AppColors.textSecondary
@@ -1245,7 +1436,7 @@ class _MissingTrackingView extends StatelessWidget {
             ),
             const SizedBox(height: 14),
             Text(
-              'Tracking is not available yet',
+              'No active order to track',
               textAlign: TextAlign.center,
               style: AppTextStyles.titleMedium.copyWith(
                 color:
@@ -1255,8 +1446,7 @@ class _MissingTrackingView extends StatelessWidget {
             ),
             const SizedBox(height: 7),
             Text(
-              'Live tracking becomes available after '
-              'the supplier accepts your order.',
+              'You do not have any food or grocery orders in progress right now.',
               textAlign: TextAlign.center,
               style: AppTextStyles.bodySmall.copyWith(
                 color: isDark
@@ -1265,6 +1455,26 @@ class _MissingTrackingView extends StatelessWidget {
                 height: 1.4,
               ),
             ),
+            if (onBrowse != null) ...[
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: onBrowse,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGold,
+                  foregroundColor: AppColors.backgroundDark,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                icon: const Icon(Icons.restaurant_rounded, size: 18),
+                label: const Text(
+                  'BROWSE FOOD & GROCERIES',
+                  style: TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
           ],
         ),
       ),

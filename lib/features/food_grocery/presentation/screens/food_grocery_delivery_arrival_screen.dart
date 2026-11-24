@@ -92,7 +92,7 @@ class _FoodGroceryDeliveryArrivalScreenState
 
     final qrData = '''
 GOZOLT FOOD & GROCERY
-Order Reference: $orderReference
+Order ID: $orderReference
 Delivery PIN: ${verificationState.verificationCode}
 Delivery Status: Partner Arrived
 '''

@@ -8,11 +8,15 @@ class FoodGroceryCartModifier {
     required this.id,
     required this.name,
     required this.price,
+    this.quantity = 1,
   });
 
   final String id;
   final String name;
   final double price;
+  final int quantity;
+
+  double get totalPrice => price * quantity;
 }
 
 class FoodGroceryCartItem {
@@ -43,7 +47,7 @@ class FoodGroceryCartItem {
   final String name;
   final FoodGroceryCartType cartType;
 
-  /// Complete price for one unit, including selected modifiers.
+  /// Base price for one unit of the item (including size variant).
   final double unitPrice;
 
   final int quantity;
@@ -62,7 +66,12 @@ class FoodGroceryCartItem {
   /// True for products whose final weight may vary.
   final bool isEstimatedWeight;
 
-  double get lineTotal => unitPrice * quantity;
+  double get modifiersTotal => modifiers.fold(
+        0.0,
+        (sum, modifier) => sum + modifier.totalPrice,
+      );
+
+  double get lineTotal => (unitPrice * quantity) + modifiersTotal;
 
   FoodGroceryCartItem copyWith({
     String? lineId,
@@ -107,12 +116,14 @@ class FoodGroceryCartState {
     this.deliveryFee = 0,
     this.serviceFee = 0,
     this.discount = 0,
+    this.distanceKm,
   });
 
   final List<FoodGroceryCartItem> items;
   final double deliveryFee;
   final double serviceFee;
   final double discount;
+  final double? distanceKm;
 
   bool get isEmpty => items.isEmpty;
 
@@ -132,8 +143,11 @@ class FoodGroceryCartState {
     );
   }
 
+  /// 10% Platform VAT matching Car Rental and other Gozolt services
+  double get vat => subtotal * 0.10;
+
   double get total {
-    final calculatedTotal = subtotal + deliveryFee + serviceFee - discount;
+    final calculatedTotal = subtotal + deliveryFee + serviceFee + vat - discount;
 
     return calculatedTotal < 0 ? 0 : calculatedTotal;
   }
@@ -155,12 +169,14 @@ class FoodGroceryCartState {
     double? deliveryFee,
     double? serviceFee,
     double? discount,
+    double? distanceKm,
   }) {
     return FoodGroceryCartState(
       items: items ?? this.items,
       deliveryFee: deliveryFee ?? this.deliveryFee,
       serviceFee: serviceFee ?? this.serviceFee,
       discount: discount ?? this.discount,
+      distanceKm: distanceKm ?? this.distanceKm,
     );
   }
 }

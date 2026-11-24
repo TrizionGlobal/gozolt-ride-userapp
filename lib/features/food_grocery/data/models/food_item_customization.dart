@@ -55,10 +55,10 @@ class FoodModifierGroup {
       return '$requirement • Select 1';
     }
 
-    if (minimumSelection > 0) {
-      return '$requirement • Select $minimumSelection–$maximumSelection';
+    if (isRequired && minimumSelection > 0) {
+      return '$requirement • Select at least $minimumSelection';
     }
 
-    return '$requirement • Select up to $maximumSelection';
+    return requirement;
   }
 }

@@ -1541,7 +1541,7 @@ class _AirportTransferReviewScreenState
                     ),
                     _ReviewRow(
                       isDark: isDark,
-                      label: 'VAT (18% Platform)',
+                      label: 'VAT (10% Platform)',
                       value: formatAmount(vatAmount),
                     ),
                     const SizedBox(height: 3),

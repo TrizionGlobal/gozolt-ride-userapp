@@ -177,10 +177,16 @@ class FoodGroceryRemoteDatasource {
       status: _parseRestaurantStatus(json['status']),
       isFavourite: json['isFavourite'] == true,
       hasVegetarianOptions: json['hasVegetarianOptions'] == true,
+      minimumOrder: _toDouble(json['minimumOrder'], 15.0),
+      preparationTime: json['preparationTime']?.toString() ?? '15–20 min',
+      deliveryInstructions: json['deliveryInstructions']?.toString(),
       address: json['address']?.toString(),
+      latitude: json['latitude'] != null ? _toDouble(json['latitude'], 35.9086639) : null,
+      longitude: json['longitude'] != null ? _toDouble(json['longitude'], 14.5061964) : null,
       imageUrl: json['imageUrl']?.toString(),
       offerText: json['offerText']?.toString(),
       promotionalTag: json['promotionalTag']?.toString(),
+      operatingHours: json['operatingHours'] as List<dynamic>?,
     );
   }
 
@@ -203,9 +209,13 @@ class FoodGroceryRemoteDatasource {
       status: _parseStoreStatus(json['status']),
       isFavourite: json['isFavourite'] == true,
       matchingProductNames: matchingRaw.map((e) => e.toString()).toList(),
+      preparationTime: json['preparationTime']?.toString() ?? '15–20 min',
+      latitude: json['latitude'] != null ? _toDouble(json['latitude'], 35.8989) : null,
+      longitude: json['longitude'] != null ? _toDouble(json['longitude'], 14.5146) : null,
       imageUrl: json['imageUrl']?.toString(),
       offerText: json['offerText']?.toString(),
       promotionalTag: json['promotionalTag']?.toString(),
+      operatingHours: json['operatingHours'] as List<dynamic>?,
     );
   }
 
@@ -298,8 +308,18 @@ class FoodGroceryRemoteDatasource {
         .toList();
   }
 
-  Future<FoodGroceryMenuResponse> getRestaurantMenu(String restaurantId) async {
-    final res = await _dio.get(ApiConstants.foodGroceryRestaurantMenu(restaurantId));
+  Future<FoodGroceryMenuResponse> getRestaurantMenu(
+    String restaurantId, {
+    double? lat,
+    double? lng,
+  }) async {
+    final res = await _dio.get(
+      ApiConstants.foodGroceryRestaurantMenu(restaurantId),
+      queryParameters: {
+        if (lat != null) 'lat': lat,
+        if (lng != null) 'lng': lng,
+      },
+    );
     final data = _unwrap(res.data) as Map<String, dynamic>;
 
     final restaurant = parseRestaurant(
@@ -323,31 +343,41 @@ class FoodGroceryRemoteDatasource {
       final id = p['id']?.toString() ?? '';
 
       final modGroupsRaw = p['modifierGroups'] as List<dynamic>? ?? const [];
-      modifiersByItemId[id] = modGroupsRaw.map((mgRaw) {
-        final mg = Map<String, dynamic>.from(mgRaw as Map);
-        final optsRaw = mg['options'] as List<dynamic>? ?? const [];
-        return FoodModifierGroup(
-          id: mg['id']?.toString() ?? '',
-          name: mg['name']?.toString() ?? '',
-          selectionType: mg['selectionType']?.toString().toUpperCase() == 'MULTIPLE'
-              ? ModifierSelectionType.multiple
-              : ModifierSelectionType.single,
-          isRequired: mg['isRequired'] == true,
-          minimumSelection: _toInt(mg['minimumSelection']),
-          maximumSelection: _toInt(mg['maximumSelection'], 1),
-          displayOrder: _toInt(mg['displayOrder']),
-          options: optsRaw.map((optRaw) {
-            final opt = Map<String, dynamic>.from(optRaw as Map);
-            return FoodModifierOption(
-              id: opt['id']?.toString() ?? '',
-              name: opt['name']?.toString() ?? '',
-              priceAdjustment: _toDouble(opt['priceAdjustment']),
-              isAvailable: opt['isAvailable'] != false,
-              isDefault: opt['isDefault'] == true,
+      modifiersByItemId[id] = modGroupsRaw
+          .map((mgRaw) {
+            final mg = Map<String, dynamic>.from(mgRaw as Map);
+            final optsRaw = mg['options'] as List<dynamic>? ?? const [];
+            final availableOpts = optsRaw
+                .map((optRaw) {
+                  final opt = Map<String, dynamic>.from(optRaw as Map);
+                  return FoodModifierOption(
+                    id: opt['id']?.toString() ?? '',
+                    name: opt['name']?.toString() ?? '',
+                    priceAdjustment:
+                        _toDouble(opt['priceAdjustment'] ?? opt['price']),
+                    isAvailable: opt['isAvailable'] != false,
+                    isDefault: opt['isDefault'] == true,
+                  );
+                })
+                .where((opt) => opt.isAvailable)
+                .toList();
+
+            return FoodModifierGroup(
+              id: mg['id']?.toString() ?? '',
+              name: mg['name']?.toString() ?? '',
+              selectionType:
+                  mg['selectionType']?.toString().toUpperCase() == 'MULTIPLE'
+                      ? ModifierSelectionType.multiple
+                      : ModifierSelectionType.single,
+              isRequired: mg['isRequired'] == true,
+              minimumSelection: _toInt(mg['minimumSelection']),
+              maximumSelection: _toInt(mg['maximumSelection'], 1),
+              displayOrder: _toInt(mg['displayOrder']),
+              options: availableOpts,
             );
-          }).toList(),
-        );
-      }).toList();
+          })
+          .where((group) => group.options.isNotEmpty)
+          .toList();
 
       final tagsRaw = p['dietaryTags'] as List<dynamic>? ?? const [];
       return RestaurantMenuItem(
@@ -415,8 +445,18 @@ class FoodGroceryRemoteDatasource {
         .toList();
   }
 
-  Future<FoodGroceryCatalogueResponse> getStoreCatalogue(String storeId) async {
-    final res = await _dio.get(ApiConstants.foodGroceryStoreCatalogue(storeId));
+  Future<FoodGroceryCatalogueResponse> getStoreCatalogue(
+    String storeId, {
+    double? lat,
+    double? lng,
+  }) async {
+    final res = await _dio.get(
+      ApiConstants.foodGroceryStoreCatalogue(storeId),
+      queryParameters: {
+        if (lat != null) 'lat': lat,
+        if (lng != null) 'lng': lng,
+      },
+    );
     final data = _unwrap(res.data) as Map<String, dynamic>;
 
     final store = parseGroceryStore(

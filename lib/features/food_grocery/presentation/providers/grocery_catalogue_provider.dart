@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/datasources/food_grocery_remote_datasource.dart';
 import '../../data/models/grocery_catalogue.dart';
 import '../../data/models/grocery_product_details.dart';
+import 'food_grocery_delivery_provider.dart';
 
 final groceryCatalogueProvider = StateNotifierProvider.family<
     GroceryCatalogueNotifier, GroceryCatalogueState, String>(
@@ -95,8 +96,14 @@ class GroceryCatalogueNotifier extends StateNotifier<GroceryCatalogueState> {
   Future<void> loadCatalogue() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
+      final delivery = _ref.read(foodGroceryDeliveryProvider);
+      final selected = delivery.selectedAddress;
       final ds = _ref.read(foodGroceryRemoteDatasourceProvider);
-      final catalogue = await ds.getStoreCatalogue(state.storeId);
+      final catalogue = await ds.getStoreCatalogue(
+        state.storeId,
+        lat: selected?.latitude,
+        lng: selected?.longitude,
+      );
       if (!mounted) return;
       state = state.copyWith(
         categories: catalogue.categories,

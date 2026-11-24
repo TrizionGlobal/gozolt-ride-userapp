@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/constants/asset_paths.dart';
 import '../../../../core/router/route_names.dart';
 import '../../data/models/food_grocery_cart.dart';
 import '../providers/food_grocery_cart_provider.dart';
@@ -415,16 +416,15 @@ class _AppliedGoCoinsCard extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 38,
-            height: 38,
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: AppColors.primaryGold.withValues(alpha: 0.18),
+              color: AppColors.primaryGold.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.stars_rounded,
-              size: 21,
-              color: AppColors.primaryGold,
+            child: Image.asset(
+              AssetPaths.iconGoCoin,
+              width: 26,
+              height: 26,
             ),
           ),
           const SizedBox(width: 12),
@@ -433,7 +433,7 @@ class _AppliedGoCoinsCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'GO Coins applied',
+                  'GoCoins applied',
                   style: AppTextStyles.bodyMedium.copyWith(
                     color: isDark
                         ? AppColors.textPrimary
@@ -747,13 +747,13 @@ class _PriceSummaryCard extends StatelessWidget {
         children: [
           _PriceRow(
             isDark: isDark,
-            label: 'Item subtotal',
+            label: 'Item Subtotal',
             value: '€${cart.subtotal.toStringAsFixed(2)}',
           ),
           const SizedBox(height: 9),
           _PriceRow(
             isDark: isDark,
-            label: 'Delivery fee',
+            label: 'Delivery Fee',
             value: cart.deliveryFee <= 0
                 ? 'Free'
                 : '€${cart.deliveryFee.toStringAsFixed(2)}',
@@ -761,18 +761,16 @@ class _PriceSummaryCard extends StatelessWidget {
           const SizedBox(height: 9),
           _PriceRow(
             isDark: isDark,
-            label: 'Service fee',
-            value: cart.serviceFee <= 0
-                ? '€0.00'
-                : '€${cart.serviceFee.toStringAsFixed(2)}',
+            label: 'VAT (10% Platform)',
+            value: '€${cart.vat.toStringAsFixed(2)}',
           ),
           if (cart.discount > 0) ...[
             const SizedBox(height: 9),
             _PriceRow(
               isDark: isDark,
-              label: 'GO Coins',
+              label: 'GoCoins Discount',
               value: '-€${cart.discount.toStringAsFixed(2)}',
-              valueColor: AppColors.success,
+              valueColor: AppColors.primaryGold,
             ),
           ],
           Padding(
@@ -784,21 +782,9 @@ class _PriceSummaryCard extends StatelessWidget {
           ),
           _PriceRow(
             isDark: isDark,
-            label: 'Final total',
+            label: 'Final Total',
             value: '€${cart.total.toStringAsFixed(2)}',
             isTotal: true,
-          ),
-          const SizedBox(height: 7),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Taxes & VAT included where applicable',
-              style: AppTextStyles.labelSmall.copyWith(
-                color: isDark
-                    ? AppColors.textSecondary
-                    : AppColors.textSecondaryLight,
-              ),
-            ),
           ),
         ],
       ),

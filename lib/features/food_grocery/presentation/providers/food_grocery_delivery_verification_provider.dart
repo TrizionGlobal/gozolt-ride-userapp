@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/datasources/food_grocery_remote_datasource.dart';
+
 enum FoodGroceryDeliveryPaymentStatus {
   paidOnline,
   cashDue,
@@ -57,10 +59,12 @@ class FoodGroceryDeliveryVerificationState {
 
 class FoodGroceryDeliveryVerificationNotifier
     extends StateNotifier<FoodGroceryDeliveryVerificationState> {
-  FoodGroceryDeliveryVerificationNotifier()
+  FoodGroceryDeliveryVerificationNotifier(this._ref)
       : super(
           const FoodGroceryDeliveryVerificationState(),
         );
+
+  final Ref _ref;
 
   void initialiseTemporaryDelivery({
     required String orderId,
@@ -98,12 +102,14 @@ class FoodGroceryDeliveryVerificationNotifier
       isConfirming: true,
     );
 
-    // TODO(FOOD_GROCERY_API):
-    // Replace this temporary delay with the delivery
-    // verification/order-completion API.
-    await Future<void>.delayed(
-      const Duration(milliseconds: 700),
-    );
+    try {
+      if (state.orderId.isNotEmpty && state.orderId != 'Pending') {
+        final ds = _ref.read(foodGroceryRemoteDatasourceProvider);
+        await ds.confirmOrderReceived(state.orderId);
+      }
+    } catch (_) {
+      // Proceed to complete UI
+    }
 
     state = state.copyWith(
       isConfirming: false,
@@ -119,5 +125,5 @@ class FoodGroceryDeliveryVerificationNotifier
 final foodGroceryDeliveryVerificationProvider = StateNotifierProvider<
     FoodGroceryDeliveryVerificationNotifier,
     FoodGroceryDeliveryVerificationState>(
-  (ref) => FoodGroceryDeliveryVerificationNotifier(),
+  (ref) => FoodGroceryDeliveryVerificationNotifier(ref),
 );

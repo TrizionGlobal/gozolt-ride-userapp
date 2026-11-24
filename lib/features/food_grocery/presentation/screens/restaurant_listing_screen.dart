@@ -8,6 +8,7 @@ import '../../../../core/router/route_names.dart';
 import '../../data/models/food_restaurant.dart';
 import '../providers/restaurant_list_provider.dart';
 import '../widgets/food_grocery_header.dart';
+import '../widgets/smart_product_image.dart';
 
 enum RestaurantSortOption {
   recommended,
@@ -961,21 +962,13 @@ class _RestaurantCard extends StatelessWidget {
               children: [
                 Stack(
                   children: [
-                    Container(
-                      height: 132,
+                    SmartProductImage(
+                      imageUrl: restaurant.imageUrl,
                       width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryGold.withValues(
-                          alpha: 0.14,
-                        ),
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(15),
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.restaurant_menu_rounded,
-                        size: 48,
-                        color: AppColors.primaryGoldDark,
+                      height: 140,
+                      fallbackIcon: Icons.restaurant_menu_rounded,
+                      customBorderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(15),
                       ),
                     ),
                     if (restaurant.promotionalTag != null)
@@ -1060,7 +1053,9 @@ class _RestaurantCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 3),
                       Text(
-                        restaurant.cuisineText,
+                        restaurant.cuisineText.isNotEmpty
+                            ? restaurant.cuisineText
+                            : 'Restaurant • Multi-Cuisine',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.bodySmall.copyWith(
@@ -1076,14 +1071,13 @@ class _RestaurantCard extends StatelessWidget {
                         children: [
                           _RestaurantMetaItem(
                             icon: Icons.star_rounded,
-                            text:
-                                '${restaurant.rating} (${restaurant.ratingCount})',
+                            text: restaurant.formattedRatingText,
                             iconColor: AppColors.primaryGoldDark,
                             isDark: isDark,
                           ),
                           _RestaurantMetaItem(
                             icon: Icons.schedule_rounded,
-                            text: restaurant.estimatedDeliveryTime,
+                            text: restaurant.preparationTime,
                             isDark: isDark,
                           ),
                           _RestaurantMetaItem(
@@ -1096,29 +1090,22 @@ class _RestaurantCard extends StatelessWidget {
                       const SizedBox(height: 10),
                       Row(
                         children: [
-                          Icon(
-                            restaurant.hasFreeDelivery
-                                ? Icons.delivery_dining_rounded
-                                : Icons.moped_outlined,
-                            size: 18,
-                            color: restaurant.hasFreeDelivery
-                                ? AppColors.success
-                                : AppColors.primaryGoldDark,
+                          const Icon(
+                            Icons.shopping_bag_outlined,
+                            size: 16,
+                            color: AppColors.primaryGoldDark,
                           ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              restaurant.deliveryFeeText,
-                              style: AppTextStyles.bodySmall.copyWith(
-                                color: restaurant.hasFreeDelivery
-                                    ? AppColors.success
-                                    : isDark
-                                        ? AppColors.textSecondary
-                                        : AppColors.textSecondaryLight,
-                                fontWeight: FontWeight.w500,
-                              ),
+                          const SizedBox(width: 5),
+                          Text(
+                            restaurant.minimumOrderText,
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: isDark
+                                  ? AppColors.textSecondary
+                                  : AppColors.textSecondaryLight,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
+                          const Spacer(),
                           if (restaurant.offerText != null)
                             _CardBadge(
                               text: restaurant.offerText!,

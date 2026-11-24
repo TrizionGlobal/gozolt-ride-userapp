@@ -1,17 +1,32 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/models/food_grocery_cart.dart';
 import '../../data/models/food_item_customization.dart';
 import '../../data/models/restaurant_menu.dart';
+import 'food_grocery_cart_provider.dart';
 import 'restaurant_menu_provider.dart';
 
-final foodItemCustomizationProvider = StateNotifierProvider.family<
+final foodItemCustomizationProvider = StateNotifierProvider.autoDispose.family<
     FoodItemCustomizationNotifier,
     FoodItemCustomizationState,
     RestaurantMenuItem>(
   (ref, item) {
     final menuState = ref.watch(restaurantMenuProvider(item.restaurantId));
     final apiGroups = menuState.modifiersByItemId[item.id];
-    return FoodItemCustomizationNotifier(item, apiGroups);
+    final notifier = FoodItemCustomizationNotifier(item, apiGroups);
+
+    final cart = ref.read(foodGroceryCartProvider);
+    final existingItem = cart.items
+        .where((c) =>
+            c.cartType == FoodGroceryCartType.food &&
+            c.productId == item.id &&
+            c.supplierId == item.restaurantId)
+        .lastOrNull;
+    if (existingItem != null) {
+      notifier.loadFromCartItem(existingItem);
+    }
+
+    return notifier;
   },
 );
 
@@ -20,6 +35,7 @@ class FoodItemCustomizationState {
     required this.item,
     required this.groups,
     required this.selectedOptionIds,
+    this.optionCounts = const {},
     required this.quantity,
     required this.specialInstructions,
   });
@@ -27,6 +43,7 @@ class FoodItemCustomizationState {
   final RestaurantMenuItem item;
   final List<FoodModifierGroup> groups;
   final Map<String, Set<String>> selectedOptionIds;
+  final Map<String, int> optionCounts;
   final int quantity;
   final String specialInstructions;
 
@@ -39,6 +56,22 @@ class FoodItemCustomizationState {
     required String optionId,
   }) {
     return selectionsFor(groupId).contains(optionId);
+  }
+
+  int optionCount(String groupId, String optionId) {
+    if (!isOptionSelected(groupId: groupId, optionId: optionId)) {
+      return 0;
+    }
+    return optionCounts[optionId] ?? 1;
+  }
+
+  int totalGroupCount(String groupId) {
+    final optionIds = selectionsFor(groupId);
+    var total = 0;
+    for (final id in optionIds) {
+      total += optionCounts[id] ?? 1;
+    }
+    return total;
   }
 
   FoodModifierOption? optionById(String optionId) {
@@ -56,21 +89,47 @@ class FoodItemCustomizationState {
   double get modifierPrice {
     var total = 0.0;
 
-    for (final optionIds in selectedOptionIds.values) {
-      for (final optionId in optionIds) {
-        total += optionById(optionId)?.priceAdjustment ?? 0;
+    for (final entry in selectedOptionIds.entries) {
+      final groupId = entry.key;
+      for (final optionId in entry.value) {
+        final option = optionById(optionId);
+        if (option != null) {
+          final count = optionCount(groupId, optionId);
+          total += option.priceAdjustment * count;
+        }
       }
     }
 
     return total;
   }
 
-  double get unitPrice {
-    return item.currentPrice + modifierPrice;
+  /// Base price for 1 item unit, including size variant option if selected.
+  double get baseItemPrice {
+    FoodModifierOption? sizeOption;
+    for (final group in groups) {
+      if (group.id == 'size') {
+        final sizeOptions = selectedOptionsFor(group);
+        if (sizeOptions.isNotEmpty) {
+          sizeOption = sizeOptions.first;
+        }
+        break;
+      }
+    }
+
+    return item.currentPrice + (sizeOption?.priceAdjustment ?? 0.0);
   }
 
+  /// Unit price for the base item.
+  double get unitPrice {
+    return baseItemPrice;
+  }
+
+  /// Total price for this customized line:
+  /// (base item price * item quantity) + total add-ons price.
+  /// The quantity stepper increments the item itself, while add-ons
+  /// have their own independent quantity steppers.
   double get totalPrice {
-    return unitPrice * quantity;
+    return (baseItemPrice * quantity) + modifierPrice;
   }
 
   bool get requiredSelectionsComplete {
@@ -79,13 +138,9 @@ class FoodItemCustomizationState {
         continue;
       }
 
-      final selectionCount = selectionsFor(group.id).length;
+      final count = totalGroupCount(group.id);
 
-      if (selectionCount < group.minimumSelection) {
-        return false;
-      }
-
-      if (selectionCount > group.maximumSelection) {
+      if (count < group.minimumSelection) {
         return false;
       }
     }
@@ -99,9 +154,9 @@ class FoodItemCustomizationState {
         continue;
       }
 
-      final selectionCount = selectionsFor(group.id).length;
+      final count = totalGroupCount(group.id);
 
-      if (selectionCount < group.minimumSelection) {
+      if (count < group.minimumSelection) {
         return group;
       }
     }
@@ -123,6 +178,7 @@ class FoodItemCustomizationState {
     RestaurantMenuItem? item,
     List<FoodModifierGroup>? groups,
     Map<String, Set<String>>? selectedOptionIds,
+    Map<String, int>? optionCounts,
     int? quantity,
     String? specialInstructions,
   }) {
@@ -130,6 +186,7 @@ class FoodItemCustomizationState {
       item: item ?? this.item,
       groups: groups ?? this.groups,
       selectedOptionIds: selectedOptionIds ?? this.selectedOptionIds,
+      optionCounts: optionCounts ?? this.optionCounts,
       quantity: quantity ?? this.quantity,
       specialInstructions: specialInstructions ?? this.specialInstructions,
     );
@@ -146,211 +203,21 @@ class FoodItemCustomizationNotifier
             item: item,
             groups: (apiGroups != null && apiGroups.isNotEmpty)
                 ? apiGroups
-                : (item.isCustomizable ? _temporaryGroups : const []),
+                : const [],
             selectedOptionIds: _defaultSelections(
               (apiGroups != null && apiGroups.isNotEmpty)
                   ? apiGroups
-                  : (item.isCustomizable ? _temporaryGroups : const []),
+                  : const [],
+            ),
+            optionCounts: _defaultCounts(
+              (apiGroups != null && apiGroups.isNotEmpty)
+                  ? apiGroups
+                  : const [],
             ),
             quantity: 1,
             specialInstructions: '',
           ),
         );
-
-  static const List<FoodModifierGroup> _temporaryGroups = [
-    FoodModifierGroup(
-      id: 'size',
-      name: 'Choose Size',
-      selectionType: ModifierSelectionType.single,
-      isRequired: true,
-      minimumSelection: 1,
-      maximumSelection: 1,
-      displayOrder: 1,
-      options: [
-        FoodModifierOption(
-          id: 'size-regular',
-          name: 'Regular',
-          priceAdjustment: 0,
-          isAvailable: true,
-        ),
-        FoodModifierOption(
-          id: 'size-large',
-          name: 'Large',
-          priceAdjustment: 2,
-          isAvailable: true,
-        ),
-        FoodModifierOption(
-          id: 'size-family',
-          name: 'Family',
-          priceAdjustment: 4,
-          isAvailable: true,
-        ),
-      ],
-    ),
-    FoodModifierGroup(
-      id: 'crust',
-      name: 'Choose Crust',
-      selectionType: ModifierSelectionType.single,
-      isRequired: true,
-      minimumSelection: 1,
-      maximumSelection: 1,
-      displayOrder: 2,
-      options: [
-        FoodModifierOption(
-          id: 'crust-classic',
-          name: 'Classic Crust',
-          priceAdjustment: 0,
-          isAvailable: true,
-        ),
-        FoodModifierOption(
-          id: 'crust-thin',
-          name: 'Thin Crust',
-          priceAdjustment: 0,
-          isAvailable: true,
-        ),
-        FoodModifierOption(
-          id: 'crust-stuffed',
-          name: 'Cheese Stuffed Crust',
-          priceAdjustment: 2.50,
-          isAvailable: true,
-        ),
-      ],
-    ),
-    FoodModifierGroup(
-      id: 'toppings',
-      name: 'Extra Toppings',
-      selectionType: ModifierSelectionType.multiple,
-      isRequired: false,
-      minimumSelection: 0,
-      maximumSelection: 4,
-      displayOrder: 3,
-      options: [
-        FoodModifierOption(
-          id: 'topping-cheese',
-          name: 'Extra Cheese',
-          priceAdjustment: 1.50,
-          isAvailable: true,
-        ),
-        FoodModifierOption(
-          id: 'topping-mushrooms',
-          name: 'Mushrooms',
-          priceAdjustment: 1,
-          isAvailable: true,
-        ),
-        FoodModifierOption(
-          id: 'topping-olives',
-          name: 'Olives',
-          priceAdjustment: 1,
-          isAvailable: true,
-        ),
-        FoodModifierOption(
-          id: 'topping-pepperoni',
-          name: 'Pepperoni',
-          priceAdjustment: 1.50,
-          isAvailable: true,
-        ),
-        FoodModifierOption(
-          id: 'topping-chicken',
-          name: 'Grilled Chicken',
-          priceAdjustment: 2,
-          isAvailable: false,
-        ),
-      ],
-    ),
-    FoodModifierGroup(
-      id: 'remove',
-      name: 'Remove Ingredients',
-      selectionType: ModifierSelectionType.multiple,
-      isRequired: false,
-      minimumSelection: 0,
-      maximumSelection: 3,
-      displayOrder: 4,
-      options: [
-        FoodModifierOption(
-          id: 'remove-onions',
-          name: 'No Onions',
-          priceAdjustment: 0,
-          isAvailable: true,
-        ),
-        FoodModifierOption(
-          id: 'remove-olives',
-          name: 'No Olives',
-          priceAdjustment: 0,
-          isAvailable: true,
-        ),
-        FoodModifierOption(
-          id: 'remove-sauce',
-          name: 'No Sauce',
-          priceAdjustment: 0,
-          isAvailable: true,
-        ),
-      ],
-    ),
-    FoodModifierGroup(
-      id: 'spice',
-      name: 'Spice Level',
-      selectionType: ModifierSelectionType.single,
-      isRequired: false,
-      minimumSelection: 0,
-      maximumSelection: 1,
-      displayOrder: 5,
-      options: [
-        FoodModifierOption(
-          id: 'spice-mild',
-          name: 'Mild',
-          priceAdjustment: 0,
-          isAvailable: true,
-        ),
-        FoodModifierOption(
-          id: 'spice-medium',
-          name: 'Medium',
-          priceAdjustment: 0,
-          isAvailable: true,
-        ),
-        FoodModifierOption(
-          id: 'spice-hot',
-          name: 'Hot',
-          priceAdjustment: 0,
-          isAvailable: true,
-        ),
-        FoodModifierOption(
-          id: 'spice-extra-hot',
-          name: 'Extra Hot',
-          priceAdjustment: 0,
-          isAvailable: true,
-        ),
-      ],
-    ),
-    FoodModifierGroup(
-      id: 'cooking',
-      name: 'Cooking Preference',
-      selectionType: ModifierSelectionType.single,
-      isRequired: false,
-      minimumSelection: 0,
-      maximumSelection: 1,
-      displayOrder: 6,
-      options: [
-        FoodModifierOption(
-          id: 'cooking-regular',
-          name: 'Regular',
-          priceAdjustment: 0,
-          isAvailable: true,
-        ),
-        FoodModifierOption(
-          id: 'cooking-well-done',
-          name: 'Well Done',
-          priceAdjustment: 0,
-          isAvailable: true,
-        ),
-        FoodModifierOption(
-          id: 'cooking-crispy',
-          name: 'Extra Crispy',
-          priceAdjustment: 0,
-          isAvailable: true,
-        ),
-      ],
-    ),
-  ];
 
   static Map<String, Set<String>> _defaultSelections(
     List<FoodModifierGroup> groups,
@@ -358,19 +225,47 @@ class FoodItemCustomizationNotifier
     final selections = <String, Set<String>>{};
 
     for (final group in groups) {
-      final defaults = group.options
-          .where((option) {
-            return option.isDefault && option.isAvailable;
-          })
-          .map((option) => option.id)
-          .toSet();
+      // Add-on options default to 0 count (unselected).
+      // Only single-choice groups (e.g. Size) select a default option.
+      if (group.selectionType == ModifierSelectionType.single) {
+        final defaults = group.options
+            .where((option) {
+              return option.isDefault && option.isAvailable;
+            })
+            .map((option) => option.id)
+            .toSet();
 
-      if (defaults.isNotEmpty) {
-        selections[group.id] = defaults;
+        if (defaults.isNotEmpty) {
+          selections[group.id] = defaults;
+        } else if (group.isRequired && group.options.isNotEmpty) {
+          final firstAvail = group.options.firstWhere(
+            (o) => o.isAvailable,
+            orElse: () => group.options.first,
+          );
+          selections[group.id] = {firstAvail.id};
+        }
       }
     }
 
     return selections;
+  }
+
+  static Map<String, int> _defaultCounts(
+    List<FoodModifierGroup> groups,
+  ) {
+    final counts = <String, int>{};
+
+    for (final group in groups) {
+      if (group.selectionType == ModifierSelectionType.single) {
+        for (final option in group.options) {
+          if (option.isDefault && option.isAvailable) {
+            counts[option.id] = 1;
+          }
+        }
+      }
+    }
+
+    return counts;
   }
 
   String? toggleOption({
@@ -385,26 +280,30 @@ class FoodItemCustomizationNotifier
       for (final entry in state.selectedOptionIds.entries)
         entry.key: Set<String>.from(entry.value),
     };
+    final updatedCounts = Map<String, int>.from(state.optionCounts);
 
     final currentSelections = updatedSelections[group.id] ?? <String>{};
 
     if (group.selectionType == ModifierSelectionType.single) {
       if (currentSelections.contains(option.id) && !group.isRequired) {
         currentSelections.clear();
+        updatedCounts.remove(option.id);
       } else {
+        for (final prevId in currentSelections) {
+          updatedCounts.remove(prevId);
+        }
         currentSelections
           ..clear()
           ..add(option.id);
+        updatedCounts[option.id] = 1;
       }
     } else {
       if (currentSelections.contains(option.id)) {
         currentSelections.remove(option.id);
+        updatedCounts.remove(option.id);
       } else {
-        if (currentSelections.length >= group.maximumSelection) {
-          return 'You can select up to ${group.maximumSelection} options';
-        }
-
         currentSelections.add(option.id);
+        updatedCounts[option.id] = 1;
       }
     }
 
@@ -416,9 +315,75 @@ class FoodItemCustomizationNotifier
 
     state = state.copyWith(
       selectedOptionIds: updatedSelections,
+      optionCounts: updatedCounts,
     );
 
     return null;
+  }
+
+  String? incrementOption({
+    required FoodModifierGroup group,
+    required FoodModifierOption option,
+  }) {
+    if (!option.isAvailable) {
+      return '${option.name} is currently unavailable';
+    }
+
+    if (group.selectionType == ModifierSelectionType.single) {
+      return toggleOption(group: group, option: option);
+    }
+
+    final currentCount = state.optionCount(group.id, option.id);
+    final updatedSelections = <String, Set<String>>{
+      for (final entry in state.selectedOptionIds.entries)
+        entry.key: Set<String>.from(entry.value),
+    };
+    final updatedCounts = Map<String, int>.from(state.optionCounts);
+
+    final currentSelections = updatedSelections[group.id] ?? <String>{};
+    currentSelections.add(option.id);
+    updatedSelections[group.id] = currentSelections;
+    updatedCounts[option.id] = currentCount + 1;
+
+    state = state.copyWith(
+      selectedOptionIds: updatedSelections,
+      optionCounts: updatedCounts,
+    );
+
+    return null;
+  }
+
+  void decrementOption({
+    required FoodModifierGroup group,
+    required FoodModifierOption option,
+  }) {
+    final currentCount = state.optionCount(group.id, option.id);
+    if (currentCount <= 0) return;
+
+    final updatedSelections = <String, Set<String>>{
+      for (final entry in state.selectedOptionIds.entries)
+        entry.key: Set<String>.from(entry.value),
+    };
+    final updatedCounts = Map<String, int>.from(state.optionCounts);
+
+    final currentSelections = updatedSelections[group.id] ?? <String>{};
+
+    if (currentCount <= 1) {
+      currentSelections.remove(option.id);
+      updatedCounts.remove(option.id);
+      if (currentSelections.isEmpty) {
+        updatedSelections.remove(group.id);
+      } else {
+        updatedSelections[group.id] = currentSelections;
+      }
+    } else {
+      updatedCounts[option.id] = currentCount - 1;
+    }
+
+    state = state.copyWith(
+      selectedOptionIds: updatedSelections,
+      optionCounts: updatedCounts,
+    );
   }
 
   void increaseQuantity() {
@@ -449,9 +414,47 @@ class FoodItemCustomizationNotifier
     );
   }
 
+  void loadFromCartItem(FoodGroceryCartItem cartItem) {
+    final selections = <String, Set<String>>{};
+    final counts = <String, int>{};
+
+    for (final modifier in cartItem.modifiers) {
+      for (final group in state.groups) {
+        final option = group.options
+            .where((o) =>
+                o.id == modifier.id ||
+                o.name.trim().toLowerCase() ==
+                    modifier.name.split(' (').first.trim().toLowerCase())
+            .firstOrNull;
+        if (option != null) {
+          selections.putIfAbsent(group.id, () => <String>{}).add(option.id);
+          counts[option.id] = modifier.quantity;
+          break;
+        }
+      }
+    }
+
+    if (cartItem.variantId != null) {
+      for (final group in state.groups) {
+        if (group.id == 'size') {
+          selections[group.id] = {cartItem.variantId!};
+          break;
+        }
+      }
+    }
+
+    state = state.copyWith(
+      selectedOptionIds: selections,
+      optionCounts: counts,
+      quantity: cartItem.quantity > 0 ? cartItem.quantity : 1,
+      specialInstructions: cartItem.instructions ?? '',
+    );
+  }
+
   void reset() {
     state = state.copyWith(
       selectedOptionIds: _defaultSelections(state.groups),
+      optionCounts: _defaultCounts(state.groups),
       quantity: 1,
       specialInstructions: '',
     );

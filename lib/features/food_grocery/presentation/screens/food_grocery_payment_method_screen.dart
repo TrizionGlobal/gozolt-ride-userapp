@@ -1,33 +1,99 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_stripe/flutter_stripe.dart' hide PaymentMethodType;
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../ride/data/models/saved_payment_method.dart';
-import '../../data/datasources/food_grocery_remote_datasource.dart';
+import '../../../ride/presentation/widgets/payment_brand_icon.dart';
 import '../providers/food_grocery_cart_provider.dart';
+import '../providers/food_grocery_delivery_provider.dart';
+import '../providers/food_grocery_order_provider.dart';
 import '../providers/food_grocery_payment_provider.dart';
 import '../widgets/food_grocery_header.dart';
 import '../widgets/food_grocery_payment_sheet.dart';
 
-class FoodGroceryPaymentMethodScreen extends ConsumerWidget {
-  const FoodGroceryPaymentMethodScreen({
-    super.key,
-  });
+class FoodGroceryPaymentMethodScreen extends ConsumerStatefulWidget {
+  const FoodGroceryPaymentMethodScreen({super.key});
 
-  Future<void> _showPaymentMethods(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
-    final paymentState = ref.read(
-      foodGroceryPaymentProvider,
-    );
-    final cart = ref.read(
-      foodGroceryCartProvider,
-    );
+  @override
+  ConsumerState<FoodGroceryPaymentMethodScreen> createState() =>
+      _FoodGroceryPaymentMethodScreenState();
+}
+
+class _FoodGroceryPaymentMethodScreenState
+    extends ConsumerState<FoodGroceryPaymentMethodScreen> {
+  bool? _isCashSelected;
+  bool _isLaunchingCheckout = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Do not pre-select any payment method by default
+    _isCashSelected = null;
+  }
+
+  Future<void> _launchOnlineCheckout() async {
+    final cart = ref.read(foodGroceryCartProvider);
+    if (cart.isEmpty) {
+      _showMessage('Your cart is empty', isError: true);
+      return;
+    }
+
+    final delivery = ref.read(foodGroceryDeliveryProvider);
+    final goCoinsToUse =
+        cart.discount > 0 ? (cart.discount / 0.01).round() : 0;
+
+    setState(() {
+      _isLaunchingCheckout = true;
+    });
+
+    try {
+      ref.read(foodGroceryOrderProvider.notifier).reset();
+
+      await ref.read(foodGroceryOrderProvider.notifier).placeOrder(
+            cart: cart,
+            paymentMethodType: PaymentMethodType.card,
+            deliveryAddressId: delivery.selectedAddress?.id,
+            deliveryAddressSnapshot: delivery.selectedAddress?.toJson(
+              leaveAtDoor: delivery.leaveAtDoor,
+              instructions: delivery.deliveryInstructions,
+            ),
+            leaveAtDoor: delivery.leaveAtDoor,
+            deliveryInstructions: delivery.deliveryInstructions,
+            goCoinsToUse: goCoinsToUse,
+            stripePaymentMethodId: null,
+            stripePaymentIntentId: null,
+          );
+
+      if (!mounted) return;
+
+      final orderState = ref.read(foodGroceryOrderProvider);
+      setState(() {
+        _isLaunchingCheckout = false;
+      });
+
+      if (orderState.hasFailed) {
+        _showMessage(
+          orderState.errorMessage ??
+              'Unable to initialize online checkout. Please try again.',
+          isError: true,
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLaunchingCheckout = false;
+      });
+      _showMessage('Failed to open payment gateway: $e', isError: true);
+    }
+  }
+
+  Future<void> _showPaymentMethods() async {
+    final paymentState = ref.read(foodGroceryPaymentProvider);
+    final cart = ref.read(foodGroceryCartProvider);
 
     await showModalBottomSheet<void>(
       context: context,
@@ -35,103 +101,69 @@ class FoodGroceryPaymentMethodScreen extends ConsumerWidget {
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {
         return FoodGroceryPaymentSheet(
+          amount: cart.total,
           currentType: paymentState.paymentMethodType,
-          onConfirm: (type) async {
-            if (type == PaymentMethodType.card) {
-              try {
-                final ds = ref.read(foodGroceryRemoteDatasourceProvider);
-                final sheet = await ds.createPaymentSheet(cart.total);
-                final clientSecret = sheet['paymentIntentClientSecret'] as String? ??
-                    sheet['clientSecret'] as String?;
-                final paymentIntentId = sheet['paymentIntentId'] as String? ??
-                    sheet['id'] as String?;
-                if (clientSecret != null) {
-                  await Stripe.instance.initPaymentSheet(
-                    paymentSheetParameters: SetupPaymentSheetParameters(
-                      merchantDisplayName: 'GOZOLT Food & Groceries',
-                      paymentIntentClientSecret: clientSecret,
-                    ),
-                  );
-                  await Stripe.instance.presentPaymentSheet();
-                  ref
-                      .read(foodGroceryPaymentProvider.notifier)
-                      .selectPaymentMethod(
-                        type,
-                        cardId: paymentIntentId ?? 'card_verified',
-                      );
-                  return;
-                }
-              } on StripeException catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        e.error.localizedMessage ?? 'Card verification cancelled',
-                      ),
-                      backgroundColor: AppColors.error,
-                    ),
-                  );
-                }
-                return;
-              } catch (_) {
-                // In demo / fallback mode
-                ref
-                    .read(foodGroceryPaymentProvider.notifier)
-                    .selectPaymentMethod(
-                      type,
-                      cardId: 'card_demo_id',
-                    );
-                return;
-              }
-            }
+          currentCardId: paymentState.cardId,
+          isOnline: paymentState.isOnline,
+          onConfirm: (
+            type, {
+            cardId,
+            cardDisplayName,
+            cardBrand,
+            isOnline = false,
+          }) async {
+            // Update payment provider with the selected card or online payment details
             ref.read(foodGroceryPaymentProvider.notifier).selectPaymentMethod(
                   type,
-                  cardId: null,
+                  cardId: cardId,
+                  cardDisplayName: cardDisplayName,
+                  cardBrand: cardBrand,
+                  isOnline: isOnline,
                 );
+
+            if (mounted) {
+              setState(() {
+                _isCashSelected = false;
+              });
+            }
+
+            if (isOnline) {
+              // Online payment: Launch Stripe checkout directly.
+              // DO NOT navigate to order processing yet.
+              // The Order Placement screen will show AFTER payment completes.
+              await _launchOnlineCheckout();
+              return true;
+            } else {
+              // Saved card: navigate to order processing to charge card and place order
+              if (context.mounted) {
+                context.pushNamed(RouteNames.foodGroceryOrderProcessing);
+              }
+              return true;
+            }
           },
         );
       },
     );
   }
 
-  void _placeOrder(
-    BuildContext context,
-    WidgetRef ref,
-  ) {
-    final cart = ref.read(
-      foodGroceryCartProvider,
-    );
-
-    final paymentState = ref.read(
-      foodGroceryPaymentProvider,
-    );
+  void _placeCashOrder() {
+    final cart = ref.read(foodGroceryCartProvider);
 
     if (cart.isEmpty) {
-      _showMessage(
-        context,
-        'Your cart is empty',
-        isError: true,
-      );
+      _showMessage('Your cart is empty', isError: true);
       return;
     }
 
-    if (!paymentState.hasValidSelection) {
-      _showMessage(
-        context,
-        'Please select a payment method',
-        isError: true,
-      );
-      return;
+    ref.read(foodGroceryPaymentProvider.notifier).selectPaymentMethod(
+          PaymentMethodType.cash,
+        );
+
+    if (context.mounted) {
+      context.pushNamed(RouteNames.foodGroceryOrderProcessing);
     }
-    // Navigate to the order processing screen
-    context.pushNamed(RouteNames.foodGroceryOrderProcessing);
   }
 
-  void _showMessage(
-    BuildContext context,
-    String message, {
-    bool isError = false,
-  }) {
+  void _showMessage(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
@@ -148,30 +180,41 @@ class FoodGroceryPaymentMethodScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final cart = ref.watch(
-      foodGroceryCartProvider,
-    );
-
-    final paymentState = ref.watch(
-      foodGroceryPaymentProvider,
-    );
-
+    final cart = ref.watch(foodGroceryCartProvider);
+    final paymentState = ref.watch(foodGroceryPaymentProvider);
+    final orderState = ref.watch(foodGroceryOrderProvider);
     final total = cart.total;
 
-    final paymentTitle = paymentState.isCash
-        ? 'Cash on Delivery'
-        : paymentState.cardId == null
-            ? 'Select a saved card'
-            : 'Saved card selected';
+    // Listen for Stripe payment success to navigate to Order Placement screen AFTER payment
+    ref.listen<FoodGroceryOrderState>(foodGroceryOrderProvider, (previous, next) {
+      if (next.isPlaced && next.orderId != null && !next.isProcessing) {
+        context.pushReplacementNamed(
+          RouteNames.foodGroceryOrderProcessing,
+          queryParameters: {
+            'status': 'success',
+            'orderId': next.orderId!,
+          },
+        );
+      } else if (next.hasFailed && next.errorMessage != null && !next.isProcessing) {
+        _showMessage(next.errorMessage!, isError: true);
+      }
+    });
 
-    final paymentDescription = paymentState.isCash
-        ? 'Pay the delivery partner when your order arrives.'
-        : paymentState.cardId == null
-            ? 'Choose a saved card or securely add a new card.'
-            : 'Your selected card will be used for this order.';
+    final borderColor = isDark ? AppColors.borderDark : AppColors.borderLight;
+    final cardColor = isDark ? AppColors.cardDark : Colors.white;
+
+    final String buttonText;
+    if (_isLaunchingCheckout) {
+      buttonText = 'OPENING STRIPE CHECKOUT...';
+    } else if (_isCashSelected == null) {
+      buttonText = 'SELECT PAYMENT METHOD';
+    } else if (_isCashSelected == true) {
+      buttonText = 'PLACE ORDER';
+    } else {
+      buttonText = paymentState.isOnline ? 'PAY VIA STRIPE' : 'PAY WITH CARD';
+    }
 
     return Scaffold(
       backgroundColor:
@@ -185,123 +228,115 @@ class FoodGroceryPaymentMethodScreen extends ConsumerWidget {
             child: SafeArea(
               top: false,
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(
-                  16,
-                  16,
-                  16,
-                  28,
-                ),
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
                 children: [
-                  _OrderTotalCard(
-                    isDark: isDark,
-                    total: total,
-                  ),
-                  const SizedBox(height: 12),
                   _SectionCard(
                     isDark: isDark,
-                    title: 'PAYMENT METHOD',
+                    title: 'CHOOSE PAYMENT METHOD',
                     icon: Icons.account_balance_wallet_outlined,
-                    child: InkWell(
-                      onTap: () {
-                        _showPaymentMethods(
-                          context,
-                          ref,
-                        );
-                      },
-                      borderRadius: BorderRadius.circular(13),
-                      child: Container(
-                        padding: const EdgeInsets.all(13),
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? AppColors.backgroundDark
-                              : AppColors.backgroundLight,
-                          borderRadius: BorderRadius.circular(13),
-                          border: Border.all(
+                    child: Column(
+                      children: [
+                        // Card 1: Cash on Delivery
+                        _PaymentOptionCard(
+                          isDark: isDark,
+                          isSelected: _isCashSelected == true,
+                          cardColor: cardColor,
+                          borderColor: borderColor,
+                          icon: Icons.payments_outlined,
+                          title: 'Cash on Delivery',
+                          subtitle:
+                              'Pay the delivery partner when your order arrives.',
+                          trailing: _radioCircle(_isCashSelected == true),
+                          onTap: () {
+                            setState(() {
+                              _isCashSelected = true;
+                            });
+                            ref
+                                .read(foodGroceryPaymentProvider.notifier)
+                                .selectPaymentMethod(PaymentMethodType.cash);
+                          },
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Card 2: Other payments
+                        _PaymentOptionCard(
+                          isDark: isDark,
+                          isSelected: _isCashSelected == false,
+                          cardColor: cardColor,
+                          borderColor: borderColor,
+                          iconWidget: !paymentState.isCash &&
+                                  paymentState.cardBrand != null
+                              ? PaymentBrandIcon(
+                                  brand: paymentState.cardBrand!,
+                                )
+                              : null,
+                          icon: Icons.credit_card_rounded,
+                          title: 'Other Payments',
+                          subtitle: !paymentState.isCash &&
+                                  paymentState.cardDisplayName != null
+                              ? paymentState.cardDisplayName!
+                              : 'Credit / Debit Card or Online Payment via Stripe',
+                          trailing: const Icon(
+                            Icons.chevron_right_rounded,
+                            size: 22,
                             color: AppColors.primaryGold,
-                            width: 1.2,
                           ),
+                          onTap: () {
+                            _showPaymentMethods();
+                          },
                         ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 42,
-                              height: 42,
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryGold
-                                    .withValues(alpha: 0.14),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                paymentState.isCash
-                                    ? Icons.payments_outlined
-                                    : Icons.credit_card_rounded,
-                                size: 21,
-                                color: AppColors.primaryGold,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    paymentTitle,
-                                    style: AppTextStyles.bodyMedium.copyWith(
-                                      color: isDark
-                                          ? AppColors.textPrimary
-                                          : AppColors.textPrimaryLight,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    paymentDescription,
-                                    style: AppTextStyles.bodySmall.copyWith(
-                                      color: isDark
-                                          ? AppColors.textSecondary
-                                          : AppColors.textSecondaryLight,
-                                      height: 1.35,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Icon(
-                              Icons.chevron_right_rounded,
-                              size: 22,
-                              color: AppColors.primaryGold,
-                            ),
-                          ],
-                        ),
-                      ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _SecurityCard(
-                    isDark: isDark,
-                    isCash: paymentState.isCash,
-                  ),
-                  const SizedBox(height: 12),
+
                   _SectionCard(
                     isDark: isDark,
-                    title: 'PAYMENT INFORMATION',
+                    title: 'PRICE DETAILS',
                     icon: Icons.receipt_long_outlined,
                     child: Column(
                       children: [
                         _PaymentRow(
                           isDark: isDark,
-                          label: 'Order total',
-                          value: '€${total.toStringAsFixed(2)}',
+                          label: 'Items Subtotal',
+                          value: '€${cart.subtotal.toStringAsFixed(2)}',
                         ),
                         const SizedBox(height: 10),
                         _PaymentRow(
                           isDark: isDark,
-                          label: 'Payment',
-                          value: paymentState.isCash
-                              ? 'Cash on Delivery'
-                              : 'Credit / Debit Card',
+                          label: 'Delivery Fee',
+                          value: cart.deliveryFee <= 0
+                              ? 'FREE'
+                              : '€${cart.deliveryFee.toStringAsFixed(2)}',
+                          valueColor: cart.deliveryFee <= 0
+                              ? AppColors.success
+                              : null,
                         ),
+                        if (cart.serviceFee > 0) ...[
+                          const SizedBox(height: 10),
+                          _PaymentRow(
+                            isDark: isDark,
+                            label: 'Service Fee',
+                            value: '€${cart.serviceFee.toStringAsFixed(2)}',
+                          ),
+                        ],
+                        if (cart.vat > 0) ...[
+                          const SizedBox(height: 10),
+                          _PaymentRow(
+                            isDark: isDark,
+                            label: 'VAT (10%)',
+                            value: '€${cart.vat.toStringAsFixed(2)}',
+                          ),
+                        ],
+                        if (cart.discount > 0) ...[
+                          const SizedBox(height: 10),
+                          _PaymentRow(
+                            isDark: isDark,
+                            label: 'Discount',
+                            value: '-€${cart.discount.toStringAsFixed(2)}',
+                            valueColor: AppColors.success,
+                          ),
+                        ],
                         const SizedBox(height: 12),
                         Divider(
                           height: 1,
@@ -312,13 +347,113 @@ class FoodGroceryPaymentMethodScreen extends ConsumerWidget {
                         const SizedBox(height: 12),
                         _PaymentRow(
                           isDark: isDark,
-                          label: 'Amount payable',
+                          label: 'Total Amount',
                           value: '€${total.toStringAsFixed(2)}',
                           emphasize: true,
                         ),
                       ],
                     ),
                   ),
+                  if (orderState.isProcessing &&
+                      orderState.orderData?['checkoutUrl'] != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryGold.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: AppColors.primaryGold.withValues(alpha: 0.4),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: AppColors.primaryGold,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Waiting for Stripe payment...',
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: isDark
+                                        ? AppColors.textPrimary
+                                        : AppColors.textPrimaryLight,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Please complete your payment on the Stripe checkout page. Your order will be confirmed automatically once payment is received.',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: isDark
+                                  ? AppColors.textSecondary
+                                  : AppColors.textSecondaryLight,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton(
+                                  onPressed: () async {
+                                    final url = orderState
+                                        .orderData!['checkoutUrl']
+                                        .toString();
+                                    final uri = Uri.parse(url);
+                                    if (await canLaunchUrl(uri)) {
+                                      await launchUrl(uri,
+                                          mode:
+                                              LaunchMode.externalApplication);
+                                    }
+                                  },
+                                  style: OutlinedButton.styleFrom(
+                                    side: const BorderSide(
+                                        color: AppColors.primaryGold),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Reopen Stripe Checkout',
+                                    style: AppTextStyles.labelLarge.copyWith(
+                                      color: AppColors.primaryGold,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              TextButton(
+                                onPressed: () {
+                                  ref
+                                      .read(foodGroceryOrderProvider.notifier)
+                                      .reset();
+                                },
+                                child: Text(
+                                  'Cancel',
+                                  style: AppTextStyles.labelLarge.copyWith(
+                                    color: AppColors.error,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -330,38 +465,46 @@ class FoodGroceryPaymentMethodScreen extends ConsumerWidget {
           : SafeArea(
               top: false,
               child: Container(
-                padding: const EdgeInsets.fromLTRB(
-                  16,
-                  10,
-                  16,
-                  12,
-                ),
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.cardDark : Colors.white,
                   border: Border(
                     top: BorderSide(
-                      color:
-                          isDark ? AppColors.borderDark : AppColors.borderLight,
+                      color: isDark
+                          ? AppColors.borderDark
+                          : AppColors.borderLight,
                     ),
                   ),
                 ),
                 child: SizedBox(
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: paymentState.hasValidSelection
-                        ? () {
-                            _placeOrder(
-                              context,
-                              ref,
-                            );
-                          }
-                        : null,
+                    onPressed: _isLaunchingCheckout
+                        ? null
+                        : () {
+                            if (_isCashSelected == null) {
+                              _showMessage(
+                                'Please select a payment method to proceed',
+                                isError: true,
+                              );
+                              return;
+                            }
+                            if (_isCashSelected == true) {
+                              _placeCashOrder();
+                              return;
+                            }
+                            // Other payments selected
+                            if (paymentState.isOnline) {
+                              _launchOnlineCheckout();
+                            } else if (paymentState.cardId != null) {
+                              context.pushNamed(RouteNames.foodGroceryOrderProcessing);
+                            } else {
+                              _showPaymentMethods();
+                            }
+                          },
                     style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 50),
                       backgroundColor: AppColors.primaryGold,
                       foregroundColor: AppColors.backgroundDark,
-                      disabledBackgroundColor:
-                          isDark ? AppColors.borderDark : AppColors.borderLight,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(15),
@@ -370,24 +513,30 @@ class FoodGroceryPaymentMethodScreen extends ConsumerWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        if (_isLaunchingCheckout) ...[
+                          const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.backgroundDark,
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                        ],
                         Text(
-                          'PLACE ORDER',
+                          buttonText,
                           style: AppTextStyles.labelLarge.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '€${total.toStringAsFixed(2)}',
-                          style: AppTextStyles.labelLarge.copyWith(
-                            fontWeight: FontWeight.w700,
+                        if (!_isLaunchingCheckout) ...[
+                          const SizedBox(width: 8),
+                          const Icon(
+                            Icons.arrow_forward_rounded,
+                            size: 20,
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Icon(
-                          Icons.arrow_forward_rounded,
-                          size: 20,
-                        ),
+                        ],
                       ],
                     ),
                   ),
@@ -396,85 +545,121 @@ class FoodGroceryPaymentMethodScreen extends ConsumerWidget {
             ),
     );
   }
+
+  Widget _radioCircle(bool selected) {
+    return Container(
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: selected ? AppColors.primaryGold : Colors.grey,
+          width: 2,
+        ),
+      ),
+      child: selected
+          ? Center(
+              child: Container(
+                width: 12,
+                height: 12,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.primaryGold,
+                ),
+              ),
+            )
+          : null,
+    );
+  }
 }
 
-class _OrderTotalCard extends StatelessWidget {
-  const _OrderTotalCard({
+class _PaymentOptionCard extends StatelessWidget {
+  const _PaymentOptionCard({
     required this.isDark,
-    required this.total,
+    required this.isSelected,
+    required this.cardColor,
+    required this.borderColor,
+    required this.icon,
+    this.iconWidget,
+    required this.title,
+    required this.subtitle,
+    required this.trailing,
+    required this.onTap,
   });
 
   final bool isDark;
-  final double total;
+  final bool isSelected;
+  final Color cardColor;
+  final Color borderColor;
+  final IconData icon;
+  final Widget? iconWidget;
+  final String title;
+  final String subtitle;
+  final Widget trailing;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.primaryGold.withValues(
-          alpha: isDark ? 0.16 : 0.12,
-        ),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: AppColors.primaryGold.withValues(
-            alpha: 0.55,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(13),
+      child: Container(
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(13),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryGold : borderColor,
+            width: isSelected ? 1.5 : 0.8,
           ),
         ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: const BoxDecoration(
-              color: AppColors.primaryGold,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.shopping_bag_outlined,
-              size: 22,
-              color: AppColors.backgroundDark,
-            ),
-          ),
-          const SizedBox(width: 13),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'TOTAL TO PAY',
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: isDark
-                        ? AppColors.textSecondary
-                        : AppColors.textSecondaryLight,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.7,
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppColors.primaryGold.withValues(alpha: 0.14),
+                shape: BoxShape.circle,
+              ),
+              child: iconWidget ??
+                  Icon(
+                    icon,
+                    size: 21,
+                    color: AppColors.primaryGold,
                   ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  'Includes delivery and service fees',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: isDark
-                        ? AppColors.textSecondary
-                        : AppColors.textSecondaryLight,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: isDark
+                          ? AppColors.textPrimary
+                          : AppColors.textPrimaryLight,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: isDark
+                          ? AppColors.textSecondary
+                          : AppColors.textSecondaryLight,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            '€${total.toStringAsFixed(2)}',
-            style: AppTextStyles.titleLarge.copyWith(
-              color:
-                  isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            trailing,
+          ],
+        ),
       ),
     );
   }
@@ -497,10 +682,10 @@ class _SectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? AppColors.cardDark : Colors.white,
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark ? AppColors.borderDark : AppColors.borderLight,
         ),
@@ -512,7 +697,7 @@ class _SectionCard extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                size: 19,
+                size: 18,
                 color: AppColors.primaryGold,
               ),
               const SizedBox(width: 8),
@@ -523,85 +708,13 @@ class _SectionCard extends StatelessWidget {
                       ? AppColors.textPrimary
                       : AppColors.textPrimaryLight,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
+                  letterSpacing: 0.8,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 13),
+          const SizedBox(height: 12),
           child,
-        ],
-      ),
-    );
-  }
-}
-
-class _SecurityCard extends StatelessWidget {
-  const _SecurityCard({
-    required this.isDark,
-    required this.isCash,
-  });
-
-  final bool isDark;
-  final bool isCash;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(13),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.cardDark : Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: AppColors.success.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.lock_outline_rounded,
-              size: 19,
-              color: AppColors.success,
-            ),
-          ),
-          const SizedBox(width: 11),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isCash ? 'Pay safely on delivery' : 'Secure card payment',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    color: isDark
-                        ? AppColors.textPrimary
-                        : AppColors.textPrimaryLight,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  isCash
-                      ? 'Please keep the payable amount ready when your order arrives.'
-                      : 'Your card information is securely handled through Stripe.',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: isDark
-                        ? AppColors.textSecondary
-                        : AppColors.textSecondaryLight,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -613,43 +726,50 @@ class _PaymentRow extends StatelessWidget {
     required this.isDark,
     required this.label,
     required this.value,
+    this.valueColor,
     this.emphasize = false,
   });
 
   final bool isDark;
   final String label;
   final String value;
+  final Color? valueColor;
   final bool emphasize;
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Expanded(
-          child: Text(
-            label,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: isDark
-                  ? AppColors.textSecondary
-                  : AppColors.textSecondaryLight,
-              fontWeight: emphasize ? FontWeight.w600 : FontWeight.w400,
-            ),
+        Text(
+          label,
+          style: (emphasize
+                  ? AppTextStyles.titleSmall
+                  : AppTextStyles.bodyMedium)
+              .copyWith(
+            color: isDark
+                ? (emphasize
+                    ? AppColors.textPrimary
+                    : AppColors.textSecondary)
+                : (emphasize
+                    ? AppColors.textPrimaryLight
+                    : AppColors.textSecondaryLight),
+            fontWeight: emphasize ? FontWeight.w700 : FontWeight.w400,
           ),
         ),
-        const SizedBox(width: 12),
-        Flexible(
-          child: Text(
-            value,
-            textAlign: TextAlign.end,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: emphasize
-                  ? AppColors.primaryGold
-                  : isDark
-                      ? AppColors.textPrimary
-                      : AppColors.textPrimaryLight,
-              fontWeight: emphasize ? FontWeight.w700 : FontWeight.w600,
-            ),
+        Text(
+          value,
+          style: (emphasize
+                  ? AppTextStyles.titleMedium
+                  : AppTextStyles.bodyMedium)
+              .copyWith(
+            color: valueColor ??
+                (emphasize
+                    ? AppColors.primaryGold
+                    : (isDark
+                        ? AppColors.textPrimary
+                        : AppColors.textPrimaryLight)),
+            fontWeight: emphasize ? FontWeight.w700 : FontWeight.w500,
           ),
         ),
       ],

@@ -4,11 +4,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/utils/string_extensions.dart';
 import '../../../../core/router/route_names.dart';
 import '../providers/food_grocery_delivery_provider.dart';
 import '../providers/food_grocery_order_provider.dart';
 import '../providers/restaurant_list_provider.dart';
+import '../providers/grocery_store_list_provider.dart';
 import '../widgets/food_grocery_header.dart';
+import '../widgets/smart_product_image.dart';
 
 class FoodGroceryHomeScreen extends ConsumerStatefulWidget {
   const FoodGroceryHomeScreen({super.key});
@@ -19,6 +22,14 @@ class FoodGroceryHomeScreen extends ConsumerStatefulWidget {
 
 class _FoodGroceryHomeScreenState extends ConsumerState<FoodGroceryHomeScreen> {
   final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(foodGroceryOrderProvider.notifier).getActiveOrder();
+    });
+  }
 
   @override
   void dispose() {
@@ -87,15 +98,30 @@ class _FoodGroceryHomeScreenState extends ConsumerState<FoodGroceryHomeScreen> {
     final backgroundColor =
         isDark ? AppColors.backgroundDark : AppColors.backgroundLight;
 
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      body: Column(
-        children: [
-          FoodGroceryHeader(
-            title: 'Food & Groceries',
-            deliveryLocation: deliveryLocation,
-            onChangeLocation: _changeLocation,
-          ),
+    void handleBack() {
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.goNamed(RouteNames.home);
+      }
+    }
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        handleBack();
+      },
+      child: Scaffold(
+        backgroundColor: backgroundColor,
+        body: Column(
+          children: [
+            FoodGroceryHeader(
+              title: 'Food & Groceries',
+              deliveryLocation: deliveryLocation,
+              onChangeLocation: _changeLocation,
+              onBackPressed: handleBack,
+            ),
           Expanded(
             child: SafeArea(
               top: false,
@@ -290,11 +316,12 @@ class _FoodGroceryHomeScreenState extends ConsumerState<FoodGroceryHomeScreen> {
                           itemBuilder: (context, index) {
                             final restaurant = restaurants[index];
                             final categoryText = restaurant.cuisines.isNotEmpty
-                                ? '${restaurant.cuisines.take(2).join(', ')} • Food'
+                                ? '${restaurant.cuisines.take(2).map((c) => c.toTitleCase()).join(', ')} • Food'
                                 : 'Food & Dining';
 
                             return _SupplierCard(
-                              name: restaurant.name,
+                              name: restaurant.name.toTitleCase(),
+                              imageUrl: restaurant.imageUrl,
                               category: categoryText,
                               rating: restaurant.rating.toStringAsFixed(1),
                               deliveryTime: restaurant.estimatedDeliveryTime,
@@ -313,14 +340,115 @@ class _FoodGroceryHomeScreenState extends ConsumerState<FoodGroceryHomeScreen> {
                       );
                     },
                   ),
+                  const SizedBox(height: 20),
+                  _SectionHeading(
+                    title: 'Supermarkets & Groceries',
+                    subtitle: 'Fresh produce and essentials near you',
+                    isDark: isDark,
+                    actionText: 'See all',
+                    onActionPressed: _openGrocery,
+                  ),
+                  const SizedBox(height: 12),
+                  Builder(
+                    builder: (context) {
+                      final stores = ref.watch(groceryStoreListProvider);
+                      final isLoading =
+                          ref.watch(groceryStoreListLoadingProvider);
+
+                      if (isLoading && stores.isEmpty) {
+                        return const SizedBox(
+                          height: 188,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: AppColors.primaryGoldDark,
+                            ),
+                          ),
+                        );
+                      }
+
+                      if (stores.isEmpty) {
+                        return Container(
+                          height: 120,
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? AppColors.surfaceDark
+                                : AppColors.surfaceLight,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : AppColors.borderLight,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.storefront_rounded,
+                                size: 28,
+                                color: isDark
+                                    ? AppColors.textSecondary
+                                    : AppColors.textSecondaryLight,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'No grocery stores currently listed nearby',
+                                style: AppTextStyles.bodyMedium.copyWith(
+                                  color: isDark
+                                      ? AppColors.textSecondary
+                                      : AppColors.textSecondaryLight,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      return SizedBox(
+                        height: 188,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: stores.length,
+                          separatorBuilder: (context, index) =>
+                              const SizedBox(width: 12),
+                          itemBuilder: (context, index) {
+                            final store = stores[index];
+                            final categoryText = store.mainCategories.isNotEmpty
+                                ? '${store.mainCategories.take(2).map((c) => c.toTitleCase()).join(', ')} • Supermarket'
+                                : 'Groceries & Essentials';
+
+                            return _SupplierCard(
+                              name: store.name.toTitleCase(),
+                              imageUrl: store.imageUrl,
+                              category: categoryText,
+                              rating: store.rating.toStringAsFixed(1),
+                              deliveryTime: store.estimatedDeliveryTime,
+                              deliveryFee: store.deliveryFeeText,
+                              icon: Icons.local_grocery_store_rounded,
+                              isDark: isDark,
+                              onTap: () {
+                                context.pushNamed(
+                                  RouteNames.foodGroceryCatalogue,
+                                  extra: store,
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class _SearchField extends StatelessWidget {
@@ -688,6 +816,7 @@ class _OfferCard extends StatelessWidget {
 class _SupplierCard extends StatelessWidget {
   const _SupplierCard({
     required this.name,
+    this.imageUrl,
     required this.category,
     required this.rating,
     required this.deliveryTime,
@@ -698,6 +827,7 @@ class _SupplierCard extends StatelessWidget {
   });
 
   final String name;
+  final String? imageUrl;
   final String category;
   final String rating;
   final String deliveryTime;
@@ -726,18 +856,12 @@ class _SupplierCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                height: 72,
+              SmartProductImage(
+                imageUrl: imageUrl,
                 width: double.infinity,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryGold.withValues(alpha: 0.13),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  icon,
-                  size: 38,
-                  color: AppColors.primaryGoldDark,
-                ),
+                height: 80,
+                fallbackIcon: icon,
+                borderRadius: 12,
               ),
               const SizedBox(height: 10),
               Text(

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/router/route_names.dart';
 
 class FoodGroceryHeader extends StatelessWidget {
   const FoodGroceryHeader({
@@ -9,11 +11,13 @@ class FoodGroceryHeader extends StatelessWidget {
     required this.title,
     this.deliveryLocation,
     this.onChangeLocation,
+    this.onBackPressed,
   });
 
   final String title;
   final String? deliveryLocation;
   final VoidCallback? onChangeLocation;
+  final VoidCallback? onBackPressed;
 
   bool get _showDeliveryLocation {
     return deliveryLocation != null && deliveryLocation!.trim().isNotEmpty;
@@ -54,7 +58,15 @@ class FoodGroceryHeader extends StatelessWidget {
                     color: Colors.transparent,
                     child: InkWell(
                       onTap: () {
-                        Navigator.of(context).maybePop();
+                        if (onBackPressed != null) {
+                          onBackPressed!();
+                          return;
+                        }
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          context.goNamed(RouteNames.home);
+                        }
                       },
                       customBorder: const CircleBorder(),
                       child: Container(

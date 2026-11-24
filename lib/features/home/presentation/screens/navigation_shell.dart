@@ -12,6 +12,8 @@ import 'home_screen.dart';
 
 import '../../../ride/presentation/providers/active_ride_provider.dart';
 import '../widgets/active_ride_banner.dart';
+import '../../../food_grocery/presentation/providers/food_grocery_order_provider.dart';
+import '../widgets/active_food_grocery_banner.dart';
 
 class NavigationShell extends ConsumerStatefulWidget {
   const NavigationShell({super.key});
@@ -61,6 +63,9 @@ class _NavigationShellState extends ConsumerState<NavigationShell> {
         !rideState.isCompleted &&
         !rideState.isCancelled;
 
+    final foodOrderState = ref.watch(foodGroceryOrderProvider);
+    final hasActiveFoodOrder = foodOrderState.hasActiveOrder;
+
     // Listen to tab changes to build history
     ref.listen<int>(homeTabIndexProvider, (previous, next) {
       if (_isPopping) return;
@@ -74,7 +79,7 @@ class _NavigationShellState extends ConsumerState<NavigationShell> {
 
     return PopScope(
       canPop: currentIndex == 0 && _tabHistory.isEmpty,
-      onPopInvoked: (didPop) {
+      onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
         _handlePop();
       },
@@ -98,6 +103,13 @@ class _NavigationShellState extends ConsumerState<NavigationShell> {
                 left: 0,
                 right: 0,
                 child: const ActiveRideBanner(),
+              )
+            else if (hasActiveFoodOrder)
+              Positioned(
+                bottom: MediaQuery.of(context).padding.bottom + 88,
+                left: 0,
+                right: 0,
+                child: const ActiveFoodGroceryBanner(),
               ),
           ],
         ),
@@ -111,19 +123,19 @@ class _NavigationShellState extends ConsumerState<NavigationShell> {
                 child: Container(
                   decoration: BoxDecoration(
                     color: isDark 
-                        ? AppColors.surfaceDark.withOpacity(0.7) 
-                        : AppColors.surfaceLight.withOpacity(0.85),
+                        ? AppColors.surfaceDark.withValues(alpha: 0.7) 
+                        : AppColors.surfaceLight.withValues(alpha: 0.85),
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
                       color: isDark 
-                          ? AppColors.primaryGold.withOpacity(0.15)
-                          : AppColors.primaryGold.withOpacity(0.3),
+                          ? AppColors.primaryGold.withValues(alpha: 0.15)
+                          : AppColors.primaryGold.withValues(alpha: 0.3),
                     ),
                     boxShadow: [
                       BoxShadow(
                         color: isDark 
-                            ? Colors.black.withOpacity(0.3)
-                            : Colors.black.withOpacity(0.1),
+                            ? Colors.black.withValues(alpha: 0.3)
+                            : Colors.black.withValues(alpha: 0.1),
                         blurRadius: 20,
                         offset: const Offset(0, 8),
                       ),

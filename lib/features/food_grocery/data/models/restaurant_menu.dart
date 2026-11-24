@@ -75,4 +75,14 @@ class RestaurantMenuItem {
       }
     }).join(' • ');
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is RestaurantMenuItem &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }

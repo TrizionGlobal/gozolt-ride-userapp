@@ -5,9 +5,12 @@ import '../../../../core/router/route_names.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/constants/asset_paths.dart';
+import '../../../../core/utils/string_extensions.dart';
 import '../../data/models/food_grocery_cart.dart';
 import '../providers/food_grocery_cart_provider.dart';
 import '../widgets/food_grocery_header.dart';
+import '../widgets/smart_product_image.dart';
 import '../../../rewards/presentation/providers/rewards_providers.dart';
 import '../../../ride/presentation/providers/ride_providers.dart';
 
@@ -110,6 +113,7 @@ class _FoodGroceryCartScreenState extends ConsumerState<FoodGroceryCartScreen> {
           deliveryFee: cart.deliveryFee,
           serviceFee: cart.serviceFee,
           discount: goCoinsDiscount,
+          distanceKm: cart.distanceKm,
         );
 
     FocusScope.of(context).unfocus();
@@ -125,34 +129,28 @@ class _FoodGroceryCartScreenState extends ConsumerState<FoodGroceryCartScreen> {
 
     final cart = ref.watch(foodGroceryCartProvider);
 
-    final rewardsAsync = ref.watch(userRewardsPointsProvider);
+    // GoCoins logic (standardized with Car Rental, Bike Rental, Airport Transfer)
+    final rewardSummary = ref.watch(rewardSummaryProvider).value;
+    final int balance = (rewardSummary?.currentPoints.toInt() ?? 0) > 0
+        ? rewardSummary!.currentPoints.toInt()
+        : (ref.watch(userRewardsPointsProvider).value ?? 0);
 
-    final rewardSummaryAsync = ref.watch(rewardSummaryProvider);
+    final double coinValueInEur = rewardSummary?.coinValueInEur ?? 0.01;
 
-    final rewardRulesAsync = ref.watch(rewardRulesProvider);
+    final double totalBeforeDiscount =
+        cart.subtotal + cart.deliveryFee + cart.vat;
+    final double maxEurValue = balance * coinValueInEur;
+    final double appliedEurValue =
+        maxEurValue > totalBeforeDiscount ? totalBeforeDiscount : maxEurValue;
+    final int coinsUsed =
+        coinValueInEur > 0 ? (appliedEurValue / coinValueInEur).ceil() : 0;
 
-    final int availableCoins = rewardsAsync.value ??
-        rewardSummaryAsync.value?.currentPoints.toInt() ??
-        0;
-
-    final double conversionRate =
-        rewardRulesAsync.value?.redemption.pointsToEurRatio.toDouble() ?? 400.0;
-
-    final int minimumPoints =
-        rewardRulesAsync.value?.redemption.minimumPoints ?? 100;
-
-    final bool canUseGoCoins =
-        availableCoins >= minimumPoints && cart.subtotal > 0;
-
-    final double maximumCoinValue = availableCoins / conversionRate;
-
-    final double applicableCoinValue =
-        maximumCoinValue > cart.subtotal ? cart.subtotal : maximumCoinValue;
+    final int minRedeemCoins =
+        ref.watch(rewardRulesProvider).value?.redemption.minimumPoints ?? 200;
+    final bool canRedeem = balance >= minRedeemCoins && balance > 0;
 
     final double goCoinsDiscount =
-        _useGoCoins && canUseGoCoins ? applicableCoinValue : 0;
-
-    final int coinsUsed = (goCoinsDiscount * conversionRate).round();
+        (_useGoCoins && canRedeem) ? appliedEurValue : 0.0;
 
     return Scaffold(
       backgroundColor:
@@ -213,12 +211,13 @@ class _FoodGroceryCartScreenState extends ConsumerState<FoodGroceryCartScreen> {
                       const SizedBox(height: 12),
                       _GoCoinsCard(
                         isDark: isDark,
-                        availableCoins: availableCoins,
+                        balance: balance,
                         coinsUsed: coinsUsed,
-                        discount: goCoinsDiscount,
-                        canUseGoCoins: canUseGoCoins,
+                        appliedEurValue: appliedEurValue,
+                        minRedeemCoins: minRedeemCoins,
+                        canRedeem: canRedeem,
                         useGoCoins: _useGoCoins,
-                        onChanged: canUseGoCoins
+                        onChanged: canRedeem
                             ? (value) {
                                 setState(() {
                                   _useGoCoins = value;
@@ -293,7 +292,7 @@ class _FoodGroceryCartScreenState extends ConsumerState<FoodGroceryCartScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'CONTINUE TO DELIVERY',
+                          'Continue to Delivery',
                           style: AppTextStyles.labelLarge.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -364,7 +363,7 @@ class _SupplierCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  supplierName,
+                  supplierName.toTitleCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.titleSmall.copyWith(
@@ -409,8 +408,6 @@ class _CartItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasImage = item.imageUrl != null && item.imageUrl!.trim().isNotEmpty;
-
     final hasMaximumQuantity = item.maximumQuantity != null;
 
     final reachedMaximum =
@@ -428,32 +425,14 @@ class _CartItemCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              width: 76,
-              height: 76,
-              color: isDark ? AppColors.inputDark : Colors.grey.shade100,
-              child: hasImage
-                  ? Image.network(
-                      item.imageUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (
-                        context,
-                        error,
-                        stackTrace,
-                      ) {
-                        return _ProductPlaceholder(
-                          isDark: isDark,
-                          cartType: item.cartType,
-                        );
-                      },
-                    )
-                  : _ProductPlaceholder(
-                      isDark: isDark,
-                      cartType: item.cartType,
-                    ),
-            ),
+          SmartProductImage(
+            imageUrl: item.imageUrl,
+            width: 76,
+            height: 76,
+            fallbackIcon: item.cartType == FoodGroceryCartType.grocery
+                ? Icons.shopping_basket_rounded
+                : Icons.fastfood_rounded,
+            borderRadius: 12,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -465,7 +444,7 @@ class _CartItemCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        item.name,
+                        item.name.toTitleCase(),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.bodyMedium.copyWith(
@@ -509,7 +488,13 @@ class _CartItemCard extends StatelessWidget {
                 if (item.modifiers.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
-                    item.modifiers.map((modifier) => modifier.name).join(', '),
+                    item.modifiers.map((m) {
+                      final name = m.name.toTitleCase();
+                      if (name.contains('×') || name.contains('(x')) {
+                        return name;
+                      }
+                      return '$name (${m.quantity}×)';
+                    }).join(', '),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.bodySmall.copyWith(
@@ -539,12 +524,31 @@ class _CartItemCard extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(
-                        '€${item.lineTotal.toStringAsFixed(2)}',
-                        style: AppTextStyles.titleSmall.copyWith(
-                          color: AppColors.primaryGoldDark,
-                          fontWeight: FontWeight.w800,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '€${item.lineTotal.toStringAsFixed(2)}',
+                            style: AppTextStyles.titleSmall.copyWith(
+                              color: AppColors.primaryGoldDark,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          if (item.quantity > 1)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 1),
+                              child: Text(
+                                '${item.quantity} items',
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  color: isDark
+                                      ? AppColors.textMuted
+                                      : AppColors.textMutedLight,
+                                  fontSize: 10.5,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                     _QuantityControl(
@@ -573,27 +577,6 @@ class _CartItemCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _ProductPlaceholder extends StatelessWidget {
-  const _ProductPlaceholder({
-    required this.isDark,
-    required this.cartType,
-  });
-
-  final bool isDark;
-  final FoodGroceryCartType cartType;
-
-  @override
-  Widget build(BuildContext context) {
-    return Icon(
-      cartType == FoodGroceryCartType.grocery
-          ? Icons.shopping_basket_outlined
-          : Icons.fastfood_outlined,
-      size: 30,
-      color: isDark ? AppColors.textMuted : AppColors.textMutedLight,
     );
   }
 }
@@ -691,108 +674,114 @@ class _QuantityButton extends StatelessWidget {
 class _GoCoinsCard extends StatelessWidget {
   const _GoCoinsCard({
     required this.isDark,
-    required this.availableCoins,
+    required this.balance,
     required this.coinsUsed,
-    required this.discount,
-    required this.canUseGoCoins,
+    required this.appliedEurValue,
+    required this.minRedeemCoins,
+    required this.canRedeem,
     required this.useGoCoins,
     required this.onChanged,
   });
 
   final bool isDark;
-  final int availableCoins;
+  final int balance;
   final int coinsUsed;
-  final double discount;
-  final bool canUseGoCoins;
+  final double appliedEurValue;
+  final int minRedeemCoins;
+  final bool canRedeem;
   final bool useGoCoins;
   final ValueChanged<bool>? onChanged;
 
   @override
   Widget build(BuildContext context) {
+    final isSelected = useGoCoins && canRedeem;
+
     return Container(
-      padding: const EdgeInsets.all(14),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.cardDark : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: useGoCoins
+          color: isSelected
               ? AppColors.primaryGold
-              : isDark
-                  ? AppColors.borderDark
-                  : AppColors.borderLight,
-          width: useGoCoins ? 1.5 : 1,
+              : (isDark ? AppColors.borderDark : AppColors.borderLight),
+          width: isSelected ? 1.5 : 0.5,
         ),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
-            width: 42,
-            height: 42,
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.primaryGold.withValues(
-                alpha: 0.14,
-              ),
-              borderRadius: BorderRadius.circular(12),
+              color: AppColors.primaryGold.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.toll_rounded,
-              size: 23,
-              color: AppColors.primaryGoldDark,
+            child: Image.asset(
+              AssetPaths.iconGoCoin,
+              width: 32,
+              height: 32,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Use GO Coins',
-                  style: AppTextStyles.bodyMedium.copyWith(
+                  'Redeem GoCoins',
+                  style: AppTextStyles.titleMedium.copyWith(
+                    fontWeight: FontWeight.bold,
                     color: isDark
                         ? AppColors.textPrimary
                         : AppColors.textPrimaryLight,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '$availableCoins coins available',
-                  style: AppTextStyles.bodySmall.copyWith(
+                  'Balance: $balance Coins',
+                  style: AppTextStyles.bodyMedium.copyWith(
                     color: isDark
                         ? AppColors.textSecondary
                         : AppColors.textSecondaryLight,
                   ),
                 ),
-                if (useGoCoins && canUseGoCoins) ...[
-                  const SizedBox(height: 3),
-                  Text(
-                    'Save €${discount.toStringAsFixed(2)} '
-                    'using $coinsUsed coins',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: AppColors.primaryGoldDark,
-                      fontWeight: FontWeight.w600,
+                if (!canRedeem && balance > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      'Min $minRedeemCoins coins required to redeem',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Colors.orange.shade700,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  )
+                else if (appliedEurValue > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      'Save €${appliedEurValue.toStringAsFixed(2)} with $coinsUsed coins',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.primaryGold,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ],
-                if (!canUseGoCoins) ...[
-                  const SizedBox(height: 3),
-                  Text(
-                    'More GO Coins are required',
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: isDark
-                          ? AppColors.textMuted
-                          : AppColors.textMutedLight,
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
           const SizedBox(width: 8),
-          Switch.adaptive(
-            value: useGoCoins && canUseGoCoins,
-            activeTrackColor: AppColors.primaryGold,
-            onChanged: onChanged,
+          Transform.scale(
+            scale: 0.9,
+            child: Switch.adaptive(
+              value: isSelected,
+              activeTrackColor: AppColors.primaryGold,
+              inactiveTrackColor:
+                  Theme.of(context).dividerTheme.color ?? AppColors.borderDark,
+              onChanged: onChanged,
+            ),
           ),
         ],
       ),
@@ -814,9 +803,9 @@ class _PriceSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.cardDark : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark ? AppColors.borderDark : AppColors.borderLight,
@@ -838,13 +827,13 @@ class _PriceSummaryCard extends StatelessWidget {
           const SizedBox(height: 13),
           _PriceRow(
             isDark: isDark,
-            label: 'Items subtotal',
+            label: 'Items Subtotal',
             value: '€${cart.subtotal.toStringAsFixed(2)}',
           ),
           const SizedBox(height: 9),
           _PriceRow(
             isDark: isDark,
-            label: 'Delivery fee',
+            label: 'Delivery Fee',
             value: cart.deliveryFee <= 0
                 ? 'Calculated later'
                 : '€${cart.deliveryFee.toStringAsFixed(2)}',
@@ -852,18 +841,16 @@ class _PriceSummaryCard extends StatelessWidget {
           const SizedBox(height: 9),
           _PriceRow(
             isDark: isDark,
-            label: 'Service fee',
-            value: cart.serviceFee <= 0
-                ? '€0.00'
-                : '€${cart.serviceFee.toStringAsFixed(2)}',
+            label: 'VAT (10% Platform)',
+            value: '€${cart.vat.toStringAsFixed(2)}',
           ),
-          if (cart.discount > 0) ...[
+          if (goCoinsDiscount > 0) ...[
             const SizedBox(height: 9),
             _PriceRow(
               isDark: isDark,
-              label: 'Discount',
-              value: '€${goCoinsDiscount.toStringAsFixed(2)}',
-              valueColor: AppColors.success,
+              label: 'GoCoins Discount',
+              value: '-€${goCoinsDiscount.toStringAsFixed(2)}',
+              valueColor: AppColors.primaryGold,
             ),
           ],
           Padding(
@@ -877,15 +864,8 @@ class _PriceSummaryCard extends StatelessWidget {
             isDark: isDark,
             label: 'Total',
             value:
-                '€${(cart.subtotal + cart.deliveryFee + cart.serviceFee - goCoinsDiscount).clamp(0, double.infinity).toStringAsFixed(2)}',
+                '€${(cart.subtotal + cart.deliveryFee + cart.vat - goCoinsDiscount).clamp(0, double.infinity).toStringAsFixed(2)}',
             isTotal: true,
-          ),
-          const SizedBox(height: 7),
-          Text(
-            'Taxes & VAT included where applicable',
-            style: AppTextStyles.labelSmall.copyWith(
-              color: isDark ? AppColors.textMuted : AppColors.textMutedLight,
-            ),
           ),
         ],
       ),

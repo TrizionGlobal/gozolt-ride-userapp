@@ -18,6 +18,7 @@ import '../../../../core/router/route_names.dart';
 import '../../../ride/presentation/providers/active_ride_state.dart';
 import '../../../ride/presentation/providers/unrated_ride_provider.dart';
 import '../../../ride/presentation/widgets/unrated_ride_modal.dart';
+import '../../../food_grocery/presentation/providers/food_grocery_order_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -36,6 +37,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       ref.read(socketServiceProvider).connect();
       ref.read(activeRideProvider.notifier).checkForActiveRide();
       ref.read(unratedRideProvider.notifier).checkForUnratedRide();
+      ref.read(foodGroceryOrderProvider.notifier).getActiveOrder();
     });
   }
 
@@ -52,6 +54,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       ref.read(socketServiceProvider).connect();
       ref.read(activeRideProvider.notifier).checkForActiveRide();
       ref.read(unratedRideProvider.notifier).checkForUnratedRide();
+      ref.read(foodGroceryOrderProvider.notifier).getActiveOrder();
     }
   }
 

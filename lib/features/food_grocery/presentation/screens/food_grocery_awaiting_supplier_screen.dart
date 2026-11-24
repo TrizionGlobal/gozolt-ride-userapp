@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
+import '../../data/datasources/food_grocery_remote_datasource.dart';
 import '../providers/food_grocery_cart_provider.dart';
 import '../providers/food_grocery_delivery_provider.dart';
 import '../providers/food_grocery_order_provider.dart';
@@ -30,8 +31,20 @@ class _FoodGroceryAwaitingSupplierScreenState
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(foodGroceryOrderProvider.notifier).getActiveOrder();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final activeOrder = await ref.read(foodGroceryOrderProvider.notifier).getActiveOrder();
+      if (!mounted) return;
+      if (activeOrder != null) {
+        final backendStatus = activeOrder['status']?.toString().toUpperCase();
+        final isAccepted = backendStatus != null &&
+            backendStatus != 'AWAITING_SUPPLIER' &&
+            backendStatus != 'PENDING';
+        if (isAccepted) {
+          _pollTimer?.cancel();
+          context.pushReplacementNamed(RouteNames.foodGroceryLiveTracking);
+          return;
+        }
+      }
       _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) {
         if (mounted) {
           ref.read(foodGroceryOrderProvider.notifier).getActiveOrder();
@@ -79,7 +92,7 @@ class _FoodGroceryAwaitingSupplierScreenState
         ..showSnackBar(
           SnackBar(
             content: Text(
-              'Please wait for supplier acceptance',
+              'Please wait for ${order.vendorTypeLabel} acceptance',
               style: AppTextStyles.bodyMedium.copyWith(
                 color: Colors.white,
               ),
@@ -120,16 +133,25 @@ class _FoodGroceryAwaitingSupplierScreenState
       foodGroceryDeliveryProvider,
     );
 
-    final resolvedSupplierName = order.orderData?['business']?['name'] as String? ??
-        order.orderData?['businessName'] as String? ??
-        cart.supplierName ??
-        'Selected supplier';
+    final resolvedSupplierName = order.vendorDisplayName.isNotEmpty
+        ? order.vendorDisplayName
+        : (cart.supplierName ?? (order.vendorTypeLabel == 'store' ? 'Selected store' : 'Selected restaurant'));
 
     final structuredOrderId = order.displayBookingId.isNotEmpty
         ? order.displayBookingId
         : 'GZ-FG-PENDING';
 
     final address = delivery.selectedAddress;
+    final orderItems = (order.orderData?['items'] as List?) ??
+        (order.orderData?['orderItems'] as List?) ??
+        [];
+    final deliveryAddressData = order.orderData?['deliveryAddress'];
+    final resolvedAddress = address ??
+        (deliveryAddressData is Map
+            ? FoodGroceryRemoteDatasource.parseAddress(
+                Map<String, dynamic>.from(deliveryAddressData),
+              )
+            : null);
 
     return PopScope(
       canPop: false,
@@ -140,7 +162,11 @@ class _FoodGroceryAwaitingSupplierScreenState
           children: [
             FoodGroceryHeader(
               title: 'Order Status',
-              deliveryLocation: 'Order ID: $structuredOrderId',
+              deliveryLocation: resolvedAddress != null
+                  ? (resolvedAddress.addressLine.isNotEmpty
+                      ? resolvedAddress.addressLine
+                      : resolvedAddress.fullAddress)
+                  : null,
             ),
             Expanded(
               child: SafeArea(
@@ -164,12 +190,16 @@ class _FoodGroceryAwaitingSupplierScreenState
                                       'accepted',
                                     ),
                                     isDark: isDark,
+                                    vendorTypeLabel: order.vendorTypeLabel,
+                                    vendorName: resolvedSupplierName,
                                   )
                                 : _AwaitingStatusCard(
                                     key: const ValueKey(
                                       'awaiting',
                                     ),
                                     isDark: isDark,
+                                    vendorTypeLabel: order.vendorTypeLabel,
+                                    vendorName: resolvedSupplierName,
                                   ),
                           ),
                           const SizedBox(height: 12),
@@ -178,6 +208,7 @@ class _FoodGroceryAwaitingSupplierScreenState
                             title: 'ORDER DETAILS',
                             icon: Icons.receipt_long_outlined,
                             child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _DetailRow(
                                   isDark: isDark,
@@ -188,19 +219,59 @@ class _FoodGroceryAwaitingSupplierScreenState
                                 const SizedBox(height: 11),
                                 _DetailRow(
                                   isDark: isDark,
-                                  label: 'Supplier',
+                                  label: order.vendorTypeLabel == 'store'
+                                      ? 'Store'
+                                      : 'Restaurant',
                                   value: resolvedSupplierName,
                                 ),
-                                const SizedBox(height: 11),
-                                _DetailRow(
-                                  isDark: isDark,
-                                  label: 'Items',
-                                  value: '${cart.itemCount}',
+                                const SizedBox(height: 14),
+                                Divider(
+                                  height: 1,
+                                  color: isDark
+                                      ? AppColors.borderDark
+                                      : AppColors.borderLight,
                                 ),
-                                const SizedBox(height: 11),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'ORDERED ITEMS',
+                                  style: AppTextStyles.labelSmall.copyWith(
+                                    color: isDark
+                                        ? AppColors.textSecondary
+                                        : AppColors.textSecondaryLight,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.6,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                if (orderItems.isEmpty) ...[
+                                  Text(
+                                    '1 item ordered',
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      color: isDark
+                                          ? AppColors.textSecondary
+                                          : AppColors.textSecondaryLight,
+                                    ),
+                                  ),
+                                ] else ...[
+                                  for (int i = 0; i < orderItems.length; i++) ...[
+                                    if (i > 0) const SizedBox(height: 12),
+                                    _AwaitingOrderItemRow(
+                                      isDark: isDark,
+                                      item: Map<String, dynamic>.from(orderItems[i] as Map),
+                                    ),
+                                  ],
+                                ],
+                                const SizedBox(height: 14),
+                                Divider(
+                                  height: 1,
+                                  color: isDark
+                                      ? AppColors.borderDark
+                                      : AppColors.borderLight,
+                                ),
+                                const SizedBox(height: 12),
                                 _DetailRow(
                                   isDark: isDark,
-                                  label: 'Order total',
+                                  label: 'Order Total',
                                   value: '€${order.total.toStringAsFixed(2)}',
                                   emphasize: true,
                                 ),
@@ -210,20 +281,27 @@ class _FoodGroceryAwaitingSupplierScreenState
                           const SizedBox(height: 12),
                           _InformationCard(
                             isDark: isDark,
-                            title: 'PAYMENT',
+                            title: 'PAYMENT INFORMATION',
                             icon: Icons.payment_outlined,
                             child: Column(
                               children: [
                                 _DetailRow(
                                   isDark: isDark,
-                                  label: 'Payment method',
+                                  label: 'Payment Method',
                                   value: order.paymentMethodLabel,
                                 ),
                                 const SizedBox(height: 11),
                                 _DetailRow(
                                   isDark: isDark,
-                                  label: 'Payment status',
+                                  label: 'Payment Status',
                                   value: order.paymentStatusLabel,
+                                ),
+                                const SizedBox(height: 11),
+                                _DetailRow(
+                                  isDark: isDark,
+                                  label: 'Amount Payable',
+                                  value: '€${order.total.toStringAsFixed(2)}',
+                                  emphasize: true,
                                 ),
                               ],
                             ),
@@ -233,7 +311,7 @@ class _FoodGroceryAwaitingSupplierScreenState
                             isDark: isDark,
                             title: 'DELIVERY ADDRESS',
                             icon: Icons.location_on_outlined,
-                            child: address == null
+                            child: resolvedAddress == null
                                 ? Text(
                                     'No delivery address selected',
                                     style: AppTextStyles.bodySmall.copyWith(
@@ -245,7 +323,7 @@ class _FoodGroceryAwaitingSupplierScreenState
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        address.label,
+                                        resolvedAddress.label,
                                         style:
                                             AppTextStyles.bodyMedium.copyWith(
                                           color: isDark
@@ -258,7 +336,7 @@ class _FoodGroceryAwaitingSupplierScreenState
                                         height: 5,
                                       ),
                                       Text(
-                                        address.fullAddress,
+                                        resolvedAddress.fullAddress,
                                         style: AppTextStyles.bodySmall.copyWith(
                                           color: isDark
                                               ? AppColors.textSecondary
@@ -273,6 +351,7 @@ class _FoodGroceryAwaitingSupplierScreenState
                           _WhatHappensNextCard(
                             isDark: isDark,
                             accepted: order.isSupplierAccepted,
+                            vendorTypeLabel: order.vendorTypeLabel,
                           ),
                         ],
                       )
@@ -401,9 +480,13 @@ class _AwaitingStatusCard extends StatelessWidget {
   const _AwaitingStatusCard({
     super.key,
     required this.isDark,
+    required this.vendorTypeLabel,
+    required this.vendorName,
   });
 
   final bool isDark;
+  final String vendorTypeLabel;
+  final String vendorName;
 
   @override
   Widget build(BuildContext context) {
@@ -417,8 +500,8 @@ class _AwaitingStatusCard extends StatelessWidget {
       borderColor: AppColors.primaryGold.withValues(
         alpha: 0.45,
       ),
-      title: 'Awaiting supplier acceptance',
-      message: 'Your order has been sent to the supplier. '
+      title: 'Awaiting ${vendorTypeLabel == 'store' ? 'Store' : 'Restaurant'} Acceptance',
+      message: 'Your order has been sent to $vendorName. '
           'We will notify you as soon as it is accepted.',
       showProgress: true,
     );
@@ -429,9 +512,13 @@ class _AcceptedStatusCard extends StatelessWidget {
   const _AcceptedStatusCard({
     super.key,
     required this.isDark,
+    required this.vendorTypeLabel,
+    required this.vendorName,
   });
 
   final bool isDark;
+  final String vendorTypeLabel;
+  final String vendorName;
 
   @override
   Widget build(BuildContext context) {
@@ -445,8 +532,8 @@ class _AcceptedStatusCard extends StatelessWidget {
       borderColor: AppColors.success.withValues(
         alpha: 0.40,
       ),
-      title: 'Order accepted',
-      message: 'The supplier accepted your order and '
+      title: 'Order Accepted',
+      message: '$vendorName accepted your order and '
           'will begin preparing it shortly.',
       showProgress: false,
     );
@@ -601,13 +688,16 @@ class _WhatHappensNextCard extends StatelessWidget {
   const _WhatHappensNextCard({
     required this.isDark,
     required this.accepted,
+    this.vendorTypeLabel = 'restaurant',
   });
 
   final bool isDark;
   final bool accepted;
+  final String vendorTypeLabel;
 
   @override
   Widget build(BuildContext context) {
+    final vendorName = vendorTypeLabel == 'store' ? 'Store' : 'Restaurant';
     return _InformationCard(
       isDark: isDark,
       title: 'WHAT HAPPENS NEXT',
@@ -617,14 +707,14 @@ class _WhatHappensNextCard extends StatelessWidget {
           _NextStep(
             isDark: isDark,
             number: '1',
-            title: accepted ? 'Order accepted' : 'Supplier accepts your order',
+            title: accepted ? 'Order accepted' : '$vendorName accepts your order',
             completed: accepted,
           ),
           const SizedBox(height: 11),
           _NextStep(
             isDark: isDark,
             number: '2',
-            title: 'Supplier prepares your order',
+            title: '$vendorName prepares your order',
             completed: false,
           ),
           const SizedBox(height: 11),
@@ -643,6 +733,154 @@ class _WhatHappensNextCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AwaitingOrderItemRow extends StatelessWidget {
+  const _AwaitingOrderItemRow({
+    required this.isDark,
+    required this.item,
+  });
+
+  final bool isDark;
+  final Map<String, dynamic> item;
+
+  @override
+  Widget build(BuildContext context) {
+    final quantity = (item['quantity'] as num?)?.toInt() ?? 1;
+    final name = item['name']?.toString() ?? 'Item';
+    final lineTotal = (item['lineTotal'] as num?)?.toDouble() ??
+        (((item['unitPrice'] as num?)?.toDouble() ?? 0.0) * quantity);
+    final variantName = item['variantName']?.toString();
+    final rawModifiers = (item['modifiers'] as List?) ??
+        (item['addOns'] as List?) ??
+        (item['options'] as List?) ??
+        [];
+
+    final modifierNames = <String>[];
+    for (final m in rawModifiers) {
+      if (m is Map) {
+        final rawName = m['name']?.toString() ?? m['title']?.toString() ?? '';
+        final mPrice = (m['price'] as num?)?.toDouble() ??
+            (m['priceAdjustment'] as num?)?.toDouble() ??
+            0.0;
+        final mQty = (m['quantity'] as num?)?.toInt() ??
+            (m['count'] as num?)?.toInt() ??
+            1;
+        if (rawName.isNotEmpty) {
+          String cleanName = rawName.replaceAll(RegExp(r'\s*\(\+?€[0-9.]+\)'), '').trim();
+          if (mQty > 1 && !cleanName.contains('×') && !cleanName.contains('x')) {
+            cleanName = '$cleanName ($mQty×)';
+          }
+          final priceStr = mPrice > 0 ? ' (+€${(mPrice * mQty).toStringAsFixed(2)})' : '';
+          modifierNames.add('$cleanName$priceStr');
+        }
+      } else if (m is String && m.isNotEmpty) {
+        modifierNames.add(m);
+      }
+    }
+
+    final instructions = item['instructions']?.toString();
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.primaryGold.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            '$quantity×',
+            style: AppTextStyles.labelSmall.copyWith(
+              color: AppColors.primaryGold,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: isDark
+                      ? AppColors.textPrimary
+                      : AppColors.textPrimaryLight,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (variantName != null && variantName.trim().isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  variantName.trim(),
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: isDark
+                        ? AppColors.textSecondary
+                        : AppColors.textSecondaryLight,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+              if (modifierNames.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? AppColors.primaryGold.withValues(alpha: 0.10)
+                        : const Color(0xFFFFF9E6),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: AppColors.primaryGold.withValues(alpha: 0.35),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Text(
+                    'Add-ons: ${modifierNames.join(', ')}',
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: isDark
+                          ? AppColors.primaryGold
+                          : AppColors.primaryGoldDark,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+              ],
+              if (instructions != null && instructions.trim().isNotEmpty) ...[
+                const SizedBox(height: 3),
+                Text(
+                  'Note: "${instructions.trim()}"',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    fontStyle: FontStyle.italic,
+                    color: isDark
+                        ? AppColors.textSecondary
+                        : AppColors.textSecondaryLight,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '€${lineTotal.toStringAsFixed(2)}',
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: isDark
+                ? AppColors.textPrimary
+                : AppColors.textPrimaryLight,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -720,20 +958,19 @@ class _DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Text(
-            label,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: isDark
-                  ? AppColors.textSecondary
-                  : AppColors.textSecondaryLight,
-            ),
+        Text(
+          label,
+          style: AppTextStyles.bodySmall.copyWith(
+            color: isDark
+                ? AppColors.textSecondary
+                : AppColors.textSecondaryLight,
           ),
         ),
         const SizedBox(width: 12),
-        Flexible(
+        Expanded(
           child: Text(
             value,
             textAlign: TextAlign.end,

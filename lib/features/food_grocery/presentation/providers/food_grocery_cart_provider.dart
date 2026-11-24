@@ -161,11 +161,13 @@ class FoodGroceryCartNotifier extends StateNotifier<FoodGroceryCartState> {
     required double deliveryFee,
     required double serviceFee,
     double discount = 0,
+    double? distanceKm,
   }) {
     state = state.copyWith(
       deliveryFee: deliveryFee,
       serviceFee: serviceFee,
       discount: discount,
+      distanceKm: distanceKm,
     );
   }
 

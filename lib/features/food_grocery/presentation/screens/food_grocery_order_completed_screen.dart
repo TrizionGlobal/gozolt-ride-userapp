@@ -285,7 +285,7 @@ class _SuccessCard extends StatelessWidget {
             child: Column(
               children: [
                 Text(
-                  'ORDER REFERENCE',
+                  'ORDER ID',
                   style: AppTextStyles.labelSmall.copyWith(
                     color: AppColors.primaryGoldDark,
                     fontWeight: FontWeight.w700,

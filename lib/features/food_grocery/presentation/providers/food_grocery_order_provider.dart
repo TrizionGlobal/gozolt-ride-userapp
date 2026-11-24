@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/network/socket_service.dart';
 import '../../../ride/data/models/saved_payment_method.dart';
@@ -40,6 +42,8 @@ class FoodGroceryOrderState {
     this.formattedBookingId,
     this.orderReference,
     this.orderData,
+    this.businessName,
+    this.businessType,
     this.paymentMethodType = PaymentMethodType.cash,
     this.total = 0,
     this.trackingStage = FoodGroceryTrackingStage.awaitingSupplier,
@@ -52,19 +56,64 @@ class FoodGroceryOrderState {
   final String? formattedBookingId;
   final String? orderReference;
   final Map<String, dynamic>? orderData;
+  final String? businessName;
+  final String? businessType;
   final PaymentMethodType paymentMethodType;
   final double total;
   final FoodGroceryTrackingStage trackingStage;
   final String? errorMessage;
   final bool isLoading;
 
-  /// Returns the formatted booking reference directly (e.g. `GZ-FG-XXXXXXXX`)
-  String get displayBookingId =>
-      formattedBookingId ??
-      orderReference ??
-      orderData?['formattedBookingId']?.toString() ??
-      orderId ??
-      '';
+  /// Returns the dynamic Order ID directly from the database record (e.g. `GZ-FG-XXXXXXXX`)
+  String get displayBookingId {
+    if (formattedBookingId != null && formattedBookingId!.trim().isNotEmpty) {
+      return formattedBookingId!;
+    }
+    if (orderReference != null && orderReference!.trim().isNotEmpty) {
+      return orderReference!;
+    }
+    final dbRef = orderData?['formattedBookingId']?.toString() ??
+        orderData?['orderReference']?.toString();
+    if (dbRef != null && dbRef.trim().isNotEmpty) {
+      return dbRef;
+    }
+    if (orderId != null && orderId!.trim().isNotEmpty) {
+      final clean = orderId!.replaceAll('-', '').toUpperCase();
+      if (clean.length >= 8) {
+        return 'GZ-FG-${clean.substring(0, 8)}';
+      }
+      return 'GZ-FG-$clean';
+    }
+    return '';
+  }
+
+  String get vendorTypeLabel {
+    final type = (businessType ??
+            orderData?['business']?['type']?.toString() ??
+            orderData?['businessType']?.toString() ??
+            orderData?['type']?.toString())
+        ?.toUpperCase();
+
+    if (type == 'GROCERY' ||
+        type == 'GROCERY_STORE' ||
+        type == 'STORE' ||
+        type == 'SUPERMARKET') {
+      return 'store';
+    }
+    return 'restaurant';
+  }
+
+  String get vendorDisplayName {
+    if (businessName != null && businessName!.trim().isNotEmpty) {
+      return businessName!;
+    }
+    final name = orderData?['business']?['name']?.toString() ??
+        orderData?['businessName']?.toString();
+    if (name != null && name.trim().isNotEmpty) {
+      return name;
+    }
+    return vendorTypeLabel == 'store' ? 'Store' : 'Restaurant';
+  }
 
   bool get isProcessing => status == FoodGroceryOrderStatus.processing;
   bool get isPlaced =>
@@ -78,6 +127,11 @@ class FoodGroceryOrderState {
   bool get isArrivingSoon =>
       trackingStage == FoodGroceryTrackingStage.arrivingSoon ||
       trackingStage == FoodGroceryTrackingStage.arrivedAtCustomer;
+
+  bool get hasActiveOrder =>
+      orderId != null &&
+      status != FoodGroceryOrderStatus.idle &&
+      status != FoodGroceryOrderStatus.failed;
 
   int get trackingStep => trackingStage.index;
 
@@ -94,7 +148,7 @@ class FoodGroceryOrderState {
   String get trackingTitle {
     switch (trackingStage) {
       case FoodGroceryTrackingStage.awaitingSupplier:
-        return 'Waiting for supplier';
+        return 'Waiting for $vendorTypeLabel';
       case FoodGroceryTrackingStage.supplierAccepted:
         return 'Order accepted';
       case FoodGroceryTrackingStage.preparing:
@@ -115,11 +169,11 @@ class FoodGroceryOrderState {
   String get trackingDescription {
     switch (trackingStage) {
       case FoodGroceryTrackingStage.awaitingSupplier:
-        return 'Waiting for the supplier to accept your order.';
+        return 'Waiting for the $vendorTypeLabel to accept your order.';
       case FoodGroceryTrackingStage.supplierAccepted:
-        return 'The supplier accepted your order.';
+        return 'The $vendorTypeLabel accepted your order.';
       case FoodGroceryTrackingStage.preparing:
-        return 'The supplier is preparing your items.';
+        return 'The $vendorTypeLabel is preparing your items.';
       case FoodGroceryTrackingStage.readyForPickup:
         return 'Your order is packed and ready for collection.';
       case FoodGroceryTrackingStage.pickedUp:
@@ -139,6 +193,8 @@ class FoodGroceryOrderState {
     String? formattedBookingId,
     String? orderReference,
     Map<String, dynamic>? orderData,
+    String? businessName,
+    String? businessType,
     PaymentMethodType? paymentMethodType,
     double? total,
     FoodGroceryTrackingStage? trackingStage,
@@ -152,6 +208,8 @@ class FoodGroceryOrderState {
       formattedBookingId: formattedBookingId ?? this.formattedBookingId,
       orderReference: orderReference ?? this.orderReference,
       orderData: orderData ?? this.orderData,
+      businessName: businessName ?? this.businessName,
+      businessType: businessType ?? this.businessType,
       paymentMethodType: paymentMethodType ?? this.paymentMethodType,
       total: total ?? this.total,
       trackingStage: trackingStage ?? this.trackingStage,
@@ -165,15 +223,21 @@ class FoodGroceryOrderNotifier extends StateNotifier<FoodGroceryOrderState> {
   FoodGroceryOrderNotifier(this._ref) : super(const FoodGroceryOrderState());
 
   final Ref _ref;
+  Timer? _onlinePaymentTimer;
+
+  @override
+  void dispose() {
+    _onlinePaymentTimer?.cancel();
+    super.dispose();
+  }
 
   static FoodGroceryTrackingStage _backendStatusToStage(String? backendStatus) {
     switch (backendStatus?.toUpperCase()) {
+      case 'ACCEPTED':
       case 'SUPPLIER_ACCEPTED':
         return FoodGroceryTrackingStage.supplierAccepted;
       case 'PREPARING':
-        return FoodGroceryTrackingStage.preparing;
       case 'PICKING_ITEMS':
-        return FoodGroceryTrackingStage.preparing;
       case 'PACKING':
         return FoodGroceryTrackingStage.preparing;
       case 'READY_FOR_PICKUP':
@@ -224,6 +288,7 @@ class FoodGroceryOrderNotifier extends StateNotifier<FoodGroceryOrderState> {
               'id': m.id,
               'name': m.name,
               'price': m.price,
+              'quantity': m.quantity,
             }).toList(),
           if (item.instructions != null && item.instructions!.isNotEmpty)
             'instructions': item.instructions,
@@ -233,7 +298,9 @@ class FoodGroceryOrderNotifier extends StateNotifier<FoodGroceryOrderState> {
       final orderData = await ds.createOrder(
         businessId: cart.supplierId ?? '',
         items: cartItems,
-        paymentMethod: paymentMethodType == PaymentMethodType.cash ? 'CASH' : 'CARD',
+        paymentMethod: paymentMethodType == PaymentMethodType.cash
+            ? 'CASH'
+            : (stripePaymentMethodId != null ? 'CARD' : 'ONLINE'),
         stripePaymentMethodId: stripePaymentMethodId,
         stripePaymentIntentId: stripePaymentIntentId,
         goCoinsToUse: goCoinsToUse,
@@ -243,8 +310,6 @@ class FoodGroceryOrderNotifier extends StateNotifier<FoodGroceryOrderState> {
         deliveryInstructions: deliveryInstructions,
       );
 
-      if (!mounted) return;
-
       final orderId = orderData['id']?.toString() ?? orderData['orderId']?.toString();
       final formattedBookingId = orderData['formattedBookingId']?.toString() ??
           orderData['orderReference']?.toString() ??
@@ -252,12 +317,57 @@ class FoodGroceryOrderNotifier extends StateNotifier<FoodGroceryOrderState> {
           '';
       final backendStatus = orderData['status']?.toString();
 
+      final resolvedBusinessType = cart.cartType == FoodGroceryCartType.grocery
+          ? 'STORE'
+          : 'RESTAURANT';
+      final resolvedBusinessName = cart.supplierName ??
+          orderData['business']?['name']?.toString();
+
+      final checkoutUrl = orderData['checkoutUrl']?.toString();
+      if (checkoutUrl != null && checkoutUrl.isNotEmpty) {
+        final uri = Uri.parse(checkoutUrl);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+
+        if (!mounted) return;
+
+        state = FoodGroceryOrderState(
+          status: FoodGroceryOrderStatus.processing,
+          orderId: orderId,
+          formattedBookingId: formattedBookingId,
+          orderReference: formattedBookingId,
+          orderData: orderData,
+          businessName: resolvedBusinessName,
+          businessType: resolvedBusinessType,
+          paymentMethodType: paymentMethodType,
+          total: cart.total,
+          isLoading: true,
+        );
+
+        if (orderId != null) {
+          _startOnlinePaymentPolling(
+            orderId: orderId,
+            formattedBookingId: formattedBookingId,
+            resolvedBusinessName: resolvedBusinessName,
+            resolvedBusinessType: resolvedBusinessType,
+            total: cart.total,
+            paymentMethodType: paymentMethodType,
+          );
+        }
+        return;
+      }
+
+      if (!mounted) return;
+
       state = FoodGroceryOrderState(
         status: FoodGroceryOrderStatus.placed,
         orderId: orderId,
         formattedBookingId: formattedBookingId,
         orderReference: formattedBookingId,
         orderData: orderData,
+        businessName: resolvedBusinessName,
+        businessType: resolvedBusinessType,
         paymentMethodType: paymentMethodType,
         total: cart.total,
         trackingStage: _backendStatusToStage(backendStatus),
@@ -294,6 +404,133 @@ class FoodGroceryOrderNotifier extends StateNotifier<FoodGroceryOrderState> {
         isLoading: false,
       );
     }
+  }
+
+  void _startOnlinePaymentPolling({
+    required String orderId,
+    required String formattedBookingId,
+    required String? resolvedBusinessName,
+    required String resolvedBusinessType,
+    required double total,
+    required PaymentMethodType paymentMethodType,
+  }) {
+    _onlinePaymentTimer?.cancel();
+    int ticks = 0;
+    _onlinePaymentTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
+      ticks++;
+      if (ticks > 90) {
+        timer.cancel();
+        if (mounted && state.isProcessing) {
+          state = FoodGroceryOrderState(
+            status: FoodGroceryOrderStatus.failed,
+            orderId: orderId,
+            formattedBookingId: formattedBookingId,
+            orderReference: formattedBookingId,
+            errorMessage: 'Payment session expired or was not completed. Please retry.',
+            paymentMethodType: paymentMethodType,
+            total: total,
+            isLoading: false,
+          );
+        }
+        return;
+      }
+
+      try {
+        final ds = _ref.read(foodGroceryRemoteDatasourceProvider);
+        final latest = await ds.getOrderDetails(orderId);
+        final paymentStatus = latest['paymentStatus']?.toString().toUpperCase();
+        final orderStatus = latest['status']?.toString().toUpperCase();
+
+        if (paymentStatus == 'COMPLETED' ||
+            paymentStatus == 'PAID' ||
+            orderStatus == 'SUPPLIER_ACCEPTED' ||
+            orderStatus == 'PREPARING') {
+          timer.cancel();
+          if (!mounted) return;
+
+          state = FoodGroceryOrderState(
+            status: FoodGroceryOrderStatus.placed,
+            orderId: orderId,
+            formattedBookingId: formattedBookingId,
+            orderReference: formattedBookingId,
+            orderData: latest,
+            businessName: resolvedBusinessName,
+            businessType: resolvedBusinessType,
+            paymentMethodType: paymentMethodType,
+            total: total,
+            trackingStage: _backendStatusToStage(orderStatus),
+            isLoading: false,
+          );
+
+          final socket = _ref.read(socketServiceProvider);
+          socket.joinFoodGroceryOrder(orderId);
+          _listenToOrderUpdates(orderId);
+
+          _ref.read(foodGroceryCartProvider.notifier).clearCart();
+        } else if (paymentStatus == 'FAILED' || orderStatus == 'CANCELLED') {
+          timer.cancel();
+          if (!mounted) return;
+          state = FoodGroceryOrderState(
+            status: FoodGroceryOrderStatus.failed,
+            orderId: orderId,
+            formattedBookingId: formattedBookingId,
+            orderReference: formattedBookingId,
+            errorMessage: 'Payment was cancelled or unsuccessful. Please try again.',
+            paymentMethodType: paymentMethodType,
+            total: total,
+            isLoading: false,
+          );
+        }
+      } catch (e) {
+        _log('[FoodGroceryOrder] Polling error: $e');
+      }
+    });
+  }
+
+  Future<void> handlePaymentSuccess(String orderId) async {
+    _onlinePaymentTimer?.cancel();
+    try {
+      final ds = _ref.read(foodGroceryRemoteDatasourceProvider);
+      final latest = await ds.getOrderDetails(orderId);
+      if (!mounted) return;
+
+      final formattedBookingId = latest['formattedBookingId']?.toString() ??
+          latest['orderReference']?.toString() ??
+          orderId;
+
+      state = FoodGroceryOrderState(
+        status: FoodGroceryOrderStatus.placed,
+        orderId: orderId,
+        formattedBookingId: formattedBookingId,
+        orderReference: formattedBookingId,
+        orderData: latest,
+        businessName: latest['business']?['name']?.toString() ?? state.businessName,
+        businessType: state.businessType,
+        paymentMethodType: PaymentMethodType.card,
+        total: state.total,
+        isLoading: false,
+      );
+
+      final socket = _ref.read(socketServiceProvider);
+      socket.joinFoodGroceryOrder(orderId);
+      _listenToOrderUpdates(orderId);
+      _ref.read(foodGroceryCartProvider.notifier).clearCart();
+    } catch (e) {
+      _log('[FoodGroceryOrder] handlePaymentSuccess error: $e');
+    }
+  }
+
+  void handlePaymentFailed(String orderId, String? errorMessage) {
+    _onlinePaymentTimer?.cancel();
+    if (!mounted) return;
+    state = FoodGroceryOrderState(
+      status: FoodGroceryOrderStatus.failed,
+      orderId: orderId,
+      errorMessage: errorMessage ?? 'Payment was cancelled or unsuccessful. Please try again.',
+      paymentMethodType: PaymentMethodType.card,
+      total: state.total,
+      isLoading: false,
+    );
   }
 
   void _listenToOrderUpdates(String orderId) {
@@ -424,17 +661,40 @@ class FoodGroceryOrderNotifier extends StateNotifier<FoodGroceryOrderState> {
             order['orderReference']?.toString() ??
             orderId ??
             '';
+        final statusUpper = backendStatus?.toUpperCase();
+        if (statusUpper == 'DELIVERED' ||
+            statusUpper == 'COMPLETED' ||
+            statusUpper == 'CANCELLED') {
+          state = const FoodGroceryOrderState();
+          return null;
+        }
+
+        final isAccepted = statusUpper != null &&
+            statusUpper != 'AWAITING_SUPPLIER' &&
+            statusUpper != 'PENDING';
+        final resolvedBusinessType = order['business']?['businessType']?.toString() ??
+            order['business']?['type']?.toString() ??
+            order['businessType']?.toString() ??
+            order['type']?.toString();
+        final resolvedBusinessName = order['business']?['name']?.toString() ??
+            order['businessName']?.toString();
+
         state = FoodGroceryOrderState(
-          status: FoodGroceryOrderStatus.placed,
+          status: isAccepted
+              ? FoodGroceryOrderStatus.supplierAccepted
+              : FoodGroceryOrderStatus.placed,
           orderId: orderId,
           formattedBookingId: formattedBookingId,
           orderReference: formattedBookingId,
           orderData: order,
+          businessName: resolvedBusinessName,
+          businessType: resolvedBusinessType,
           paymentMethodType: payMethod == 'CASH'
               ? PaymentMethodType.cash
               : PaymentMethodType.card,
           total: (order['totalAmount'] as num?)?.toDouble() ?? 0,
           trackingStage: _backendStatusToStage(backendStatus),
+          isLoading: false,
         );
         if (orderId != null) {
           final socket = _ref.read(socketServiceProvider);

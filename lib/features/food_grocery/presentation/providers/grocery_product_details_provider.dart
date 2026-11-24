@@ -122,10 +122,6 @@ class GroceryProductDetailsNotifier
   static List<GroceryProductSelectionOption> _optionsFor(
     GroceryProduct product,
   ) {
-    // TODO(FOOD_GROCERY_API):
-    // Replace these temporary variants and weight options
-    // with product-specific backend data.
-
     if (product.unitType == GroceryProductUnitType.weight) {
       final pricePerKg = product.currentPrice;
 
@@ -162,63 +158,6 @@ class GroceryProductDetailsNotifier
           maximumQuantity: 3,
           isActive: true,
           isEstimatedWeight: true,
-        ),
-      ];
-    }
-
-    if (product.hasVariants) {
-      return [
-        GroceryProductSelectionOption(
-          id: '${product.id}-330ml',
-          name: '330ml Can',
-          unitText: '330ml',
-          price: 1.20,
-          stockStatus: GroceryProductStockStatus.inStock,
-          availableQuantity: 20,
-          maximumQuantity: 10,
-          isActive: true,
-        ),
-        GroceryProductSelectionOption(
-          id: '${product.id}-500ml',
-          name: '500ml Bottle',
-          unitText: '500ml',
-          price: 1.75,
-          stockStatus: GroceryProductStockStatus.inStock,
-          availableQuantity: 15,
-          maximumQuantity: 8,
-          isActive: true,
-        ),
-        GroceryProductSelectionOption(
-          id: '${product.id}-1-5l',
-          name: '1.5L Bottle',
-          unitText: '1.5L',
-          price: 2.50,
-          originalPrice: 2.80,
-          stockStatus: GroceryProductStockStatus.lowStock,
-          availableQuantity: 2,
-          maximumQuantity: 4,
-          isActive: true,
-        ),
-        GroceryProductSelectionOption(
-          id: '${product.id}-6-pack',
-          name: '6 Pack',
-          unitText: '6 × 330ml',
-          price: 4.95,
-          originalPrice: 5.50,
-          stockStatus: GroceryProductStockStatus.inStock,
-          availableQuantity: 12,
-          maximumQuantity: 6,
-          isActive: true,
-        ),
-        GroceryProductSelectionOption(
-          id: '${product.id}-12-pack',
-          name: '12 Pack',
-          unitText: '12 × 330ml',
-          price: 8.90,
-          stockStatus: GroceryProductStockStatus.outOfStock,
-          availableQuantity: 0,
-          maximumQuantity: 3,
-          isActive: true,
         ),
       ];
     }

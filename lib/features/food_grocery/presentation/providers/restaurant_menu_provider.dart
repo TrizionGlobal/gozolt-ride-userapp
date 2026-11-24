@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/datasources/food_grocery_remote_datasource.dart';
 import '../../data/models/food_item_customization.dart';
 import '../../data/models/restaurant_menu.dart';
+import 'food_grocery_delivery_provider.dart';
 
 final restaurantMenuProvider = StateNotifierProvider.family<
     RestaurantMenuNotifier, RestaurantMenuState, String>(
@@ -95,8 +96,14 @@ class RestaurantMenuNotifier extends StateNotifier<RestaurantMenuState> {
   Future<void> loadMenu() async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
+      final delivery = _ref.read(foodGroceryDeliveryProvider);
+      final selected = delivery.selectedAddress;
       final ds = _ref.read(foodGroceryRemoteDatasourceProvider);
-      final menu = await ds.getRestaurantMenu(state.restaurantId);
+      final menu = await ds.getRestaurantMenu(
+        state.restaurantId,
+        lat: selected?.latitude,
+        lng: selected?.longitude,
+      );
       if (!mounted) return;
       state = state.copyWith(
         categories: menu.categories,

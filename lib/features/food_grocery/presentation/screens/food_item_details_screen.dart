@@ -4,13 +4,16 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/utils/string_extensions.dart';
 import '../../data/models/food_item_customization.dart';
 import '../../data/models/food_restaurant.dart';
 import '../../data/models/restaurant_menu.dart';
 import '../providers/food_item_customization_provider.dart';
-import '../../../../core/router/route_names.dart';
+import '../providers/restaurant_menu_provider.dart';
 import '../../data/models/food_grocery_cart.dart';
 import '../providers/food_grocery_cart_provider.dart';
+import '../providers/food_grocery_delivery_provider.dart';
+import '../widgets/smart_product_image.dart';
 
 class FoodItemDetailsScreen extends ConsumerStatefulWidget {
   const FoodItemDetailsScreen({
@@ -29,6 +32,46 @@ class FoodItemDetailsScreen extends ConsumerStatefulWidget {
 
 class _FoodItemDetailsScreenState extends ConsumerState<FoodItemDetailsScreen> {
   final TextEditingController _instructionsController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    final cart = ref.read(foodGroceryCartProvider);
+    final existingItem = cart.items
+        .where((c) =>
+            c.cartType == FoodGroceryCartType.food &&
+            c.productId == widget.item.id &&
+            c.supplierId == widget.restaurant.id)
+        .lastOrNull;
+    if (existingItem != null &&
+        existingItem.instructions != null &&
+        existingItem.instructions!.isNotEmpty) {
+      _instructionsController.text = existingItem.instructions!;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final menuState =
+          ref.read(restaurantMenuProvider(widget.item.restaurantId));
+      if (menuState.items.isEmpty) {
+        ref
+            .read(restaurantMenuProvider(widget.item.restaurantId).notifier)
+            .loadMenu();
+      }
+      final currentCart = ref.read(foodGroceryCartProvider);
+      final itemInCart = currentCart.items
+          .where((c) =>
+              c.cartType == FoodGroceryCartType.food &&
+              c.productId == widget.item.id &&
+              c.supplierId == widget.restaurant.id)
+          .lastOrNull;
+      if (itemInCart != null) {
+        ref
+            .read(foodItemCustomizationProvider(widget.item).notifier)
+            .loadFromCartItem(itemInCart);
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -72,6 +115,42 @@ class _FoodItemDetailsScreenState extends ConsumerState<FoodItemDetailsScreen> {
     }
   }
 
+  void _incrementOption({
+    required FoodModifierGroup group,
+    required FoodModifierOption option,
+  }) {
+    final error = ref
+        .read(
+          foodItemCustomizationProvider(
+            widget.item,
+          ).notifier,
+        )
+        .incrementOption(
+          group: group,
+          option: option,
+        );
+
+    if (error != null) {
+      _showMessage(error);
+    }
+  }
+
+  void _decrementOption({
+    required FoodModifierGroup group,
+    required FoodModifierOption option,
+  }) {
+    ref
+        .read(
+          foodItemCustomizationProvider(
+            widget.item,
+          ).notifier,
+        )
+        .decrementOption(
+          group: group,
+          option: option,
+        );
+  }
+
   Future<bool> _confirmReplaceCart(
     BuildContext context,
     String currentRestaurantName,
@@ -111,7 +190,7 @@ class _FoodItemDetailsScreenState extends ConsumerState<FoodItemDetailsScreen> {
                 Navigator.pop(dialogContext, false);
               },
               child: Text(
-                'KEEP CURRENT CART',
+                'Keep Current Cart',
                 style: AppTextStyles.labelLarge.copyWith(
                   color: isDark
                       ? AppColors.textSecondary
@@ -132,7 +211,7 @@ class _FoodItemDetailsScreenState extends ConsumerState<FoodItemDetailsScreen> {
                 ),
               ),
               child: Text(
-                'START NEW CART',
+                'Start New Cart',
                 style: AppTextStyles.labelLarge.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -200,22 +279,35 @@ class _FoodItemDetailsScreenState extends ConsumerState<FoodItemDetailsScreen> {
       }
     }
 
-    final modifiers = selectedOptions
-        .where(
-          (option) => option.id != selectedSize?.id,
-        )
-        .map(
-          (option) => FoodGroceryCartModifier(
-            id: option.id,
-            name: option.name,
-            price: option.priceAdjustment,
-          ),
-        )
-        .toList();
+    final modifiers = <FoodGroceryCartModifier>[];
+    for (final group in state.groups) {
+      if (group.id == 'size') continue;
+      for (final option in state.selectedOptionsFor(group)) {
+        if (option.id == selectedSize?.id) continue;
+        final count = state.optionCount(group.id, option.id);
+        if (count > 0) {
+          modifiers.add(
+            FoodGroceryCartModifier(
+              id: option.id,
+              name: '${option.name.toTitleCase()} ($count×)',
+              price: option.priceAdjustment,
+              quantity: count,
+            ),
+          );
+        }
+      }
+    }
 
     final selectionKey = selectedOptions.isEmpty
         ? 'standard'
-        : selectedOptions.map((option) => option.id).join('_');
+        : selectedOptions.map((option) {
+            final group = state.groups.firstWhere(
+              (g) => g.options.any((o) => o.id == option.id),
+              orElse: () => state.groups.first,
+            );
+            final count = state.optionCount(group.id, option.id);
+            return '${option.id}x$count';
+          }).join('_');
 
     final cartItem = FoodGroceryCartItem(
       lineId: [
@@ -242,6 +334,18 @@ class _FoodItemDetailsScreenState extends ConsumerState<FoodItemDetailsScreen> {
 
     final cartNotifier = ref.read(foodGroceryCartProvider.notifier);
 
+    // If an existing customized line item exists for this product, remove it so it's replaced rather than duplicated
+    final currentItems = ref.read(foodGroceryCartProvider).items;
+    final existingMatchingIndex = currentItems.indexWhere(
+      (it) =>
+          it.productId == widget.item.id &&
+          it.supplierId == widget.restaurant.id,
+    );
+    if (existingMatchingIndex != -1) {
+      final oldLineId = currentItems[existingMatchingIndex].lineId;
+      cartNotifier.removeItem(oldLineId);
+    }
+
     final result = cartNotifier.addItem(cartItem);
 
     if (result == CartAddResult.differentSupplier) {
@@ -264,26 +368,24 @@ class _FoodItemDetailsScreenState extends ConsumerState<FoodItemDetailsScreen> {
       return;
     }
 
-    cartNotifier.updateCharges(
-      deliveryFee: widget.restaurant.deliveryFee,
-      serviceFee: 0,
+    final selectedAddress = ref.read(foodGroceryDeliveryProvider).selectedAddress;
+    final distance = widget.restaurant.calculateDistanceTo(
+      selectedAddress?.latitude,
+      selectedAddress?.longitude,
     );
+    final deliveryFee = double.parse((distance * 1.0).toStringAsFixed(2));
 
-    ref
-        .read(
-          foodItemCustomizationProvider(
-            widget.item,
-          ).notifier,
-        )
-        .reset();
-
-    _instructionsController.clear();
+    cartNotifier.updateCharges(
+      deliveryFee: deliveryFee,
+      serviceFee: 0,
+      distanceKm: distance,
+    );
 
     if (!mounted) return;
 
-    context.pushNamed(
-      RouteNames.foodGroceryCart,
-    );
+    // Pop back to the restaurant menu so the user can continue shopping
+    // with the bottom cart bar showing the updated cart state
+    context.pop(true);
   }
 
   @override
@@ -312,7 +414,7 @@ class _FoodItemDetailsScreenState extends ConsumerState<FoodItemDetailsScreen> {
       body: Column(
         children: [
           _FoodItemHeader(
-            title: widget.item.name,
+            title: widget.item.name.toTitleCase(),
           ),
           Expanded(
             child: ListView(
@@ -340,7 +442,9 @@ class _FoodItemDetailsScreenState extends ConsumerState<FoodItemDetailsScreen> {
                   ),
                 if (!widget.restaurant.isOrderable || !widget.item.isAvailable)
                   const SizedBox(height: 14),
-                ...sortedGroups.map(
+                ...sortedGroups
+                    .where((group) => group.options.any((o) => o.isAvailable))
+                    .map(
                   (group) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
@@ -350,6 +454,18 @@ class _FoodItemDetailsScreenState extends ConsumerState<FoodItemDetailsScreen> {
                         isDark: isDark,
                         onOptionPressed: (option) {
                           _selectOption(
+                            group: group,
+                            option: option,
+                          );
+                        },
+                        onIncrementOption: (option) {
+                          _incrementOption(
+                            group: group,
+                            option: option,
+                          );
+                        },
+                        onDecrementOption: (option) {
+                          _decrementOption(
                             group: group,
                             option: option,
                           );
@@ -471,16 +587,28 @@ class _FoodItemDetailsScreenState extends ConsumerState<FoodItemDetailsScreen> {
                   borderRadius: BorderRadius.circular(15),
                 ),
               ),
-              child: Text(
-                'ADD TO CART — €${customizationState.totalPrice.toStringAsFixed(2)}',
-                style: AppTextStyles.labelLarge.copyWith(
-                  color: canAddToCart
-                      ? AppColors.backgroundDark
-                      : isDark
-                          ? AppColors.textMuted
-                          : AppColors.textMutedLight,
-                  fontWeight: FontWeight.w700,
-                ),
+              child: Builder(
+                builder: (context) {
+                  final isInCart = ref.watch(foodGroceryCartProvider).items.any(
+                        (it) =>
+                            it.productId == widget.item.id &&
+                            it.supplierId == widget.restaurant.id,
+                      );
+                  final btnText = isInCart
+                      ? 'Update Cart — €${customizationState.totalPrice.toStringAsFixed(2)}'
+                      : 'Add to Cart — €${customizationState.totalPrice.toStringAsFixed(2)}';
+                  return Text(
+                    btnText,
+                    style: AppTextStyles.labelLarge.copyWith(
+                      color: canAddToCart
+                          ? AppColors.backgroundDark
+                          : isDark
+                              ? AppColors.textMuted
+                              : AppColors.textMutedLight,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  );
+                },
               ),
             ),
           ),
@@ -584,19 +712,13 @@ class _ItemOverviewCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: double.infinity,
-            height: 174,
-            decoration: BoxDecoration(
-              color: AppColors.primaryGold.withValues(alpha: 0.14),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
-              ),
-            ),
-            child: const Icon(
-              Icons.fastfood_rounded,
-              size: 58,
-              color: AppColors.primaryGoldDark,
+          RepaintBoundary(
+            child: SmartProductImage(
+              imageUrl: item.imageUrl,
+              width: double.infinity,
+              height: 174,
+              fallbackIcon: Icons.fastfood_rounded,
+              borderRadius: 16,
             ),
           ),
           Padding(
@@ -627,7 +749,7 @@ class _ItemOverviewCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 9),
                 Text(
-                  item.name,
+                  item.name.toTitleCase(),
                   style: AppTextStyles.titleMedium.copyWith(
                     color: isDark
                         ? AppColors.textPrimary
@@ -739,16 +861,20 @@ class _ModifierGroupCard extends StatelessWidget {
     required this.state,
     required this.isDark,
     required this.onOptionPressed,
+    required this.onIncrementOption,
+    required this.onDecrementOption,
   });
 
   final FoodModifierGroup group;
   final FoodItemCustomizationState state;
   final bool isDark;
   final ValueChanged<FoodModifierOption> onOptionPressed;
+  final ValueChanged<FoodModifierOption> onIncrementOption;
+  final ValueChanged<FoodModifierOption> onDecrementOption;
 
   @override
   Widget build(BuildContext context) {
-    final selectedCount = state.selectionsFor(group.id).length;
+    final selectedCount = state.totalGroupCount(group.id);
 
     final missingRequired =
         group.isRequired && selectedCount < group.minimumSelection;
@@ -812,20 +938,28 @@ class _ModifierGroupCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          ...group.options.map(
+          ...group.options.where((option) => option.isAvailable).map(
             (option) {
               final selected = state.isOptionSelected(
                 groupId: group.id,
                 optionId: option.id,
               );
+              final count = state.optionCount(group.id, option.id);
 
               return _ModifierOptionTile(
                 option: option,
                 selectionType: group.selectionType,
                 selected: selected,
+                count: count,
                 isDark: isDark,
                 onTap: () {
                   onOptionPressed(option);
+                },
+                onIncrement: () {
+                  onIncrementOption(option);
+                },
+                onDecrement: () {
+                  onDecrementOption(option);
                 },
               );
             },
@@ -841,32 +975,63 @@ class _ModifierOptionTile extends StatelessWidget {
     required this.option,
     required this.selectionType,
     required this.selected,
+    required this.count,
     required this.isDark,
     required this.onTap,
+    required this.onIncrement,
+    required this.onDecrement,
   });
 
   final FoodModifierOption option;
   final ModifierSelectionType selectionType;
   final bool selected;
+  final int count;
   final bool isDark;
   final VoidCallback onTap;
+  final VoidCallback onIncrement;
+  final VoidCallback onDecrement;
 
   @override
   Widget build(BuildContext context) {
+    final isMultiple = selectionType == ModifierSelectionType.multiple;
+    final isSelected = isMultiple ? count > 0 : selected;
+
+    final totalPrice = option.priceAdjustment * (count > 0 ? count : 1);
+    final priceLabel = option.priceAdjustment == 0
+        ? 'Included'
+        : '+€${totalPrice.toStringAsFixed(2)}';
+
     return Opacity(
       opacity: option.isAvailable ? 1 : 0.52,
-      child: Material(
-        color: selected
-            ? AppColors.primaryGold.withValues(alpha: 0.10)
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(11),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 5),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primaryGold.withValues(alpha: 0.10)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primaryGold.withValues(alpha: 0.35)
+                : Colors.transparent,
+            width: 1,
+          ),
+        ),
         child: InkWell(
-          onTap: option.isAvailable ? onTap : null,
-          borderRadius: BorderRadius.circular(11),
+          onTap: option.isAvailable
+              ? () {
+                  if (isMultiple && count == 0) {
+                    onIncrement();
+                  } else {
+                    onTap();
+                  }
+                }
+              : null,
+          borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.symmetric(
               horizontal: 8,
-              vertical: 9,
+              vertical: 8,
             ),
             child: Row(
               children: [
@@ -875,11 +1040,11 @@ class _ModifierOptionTile extends StatelessWidget {
                       ? selected
                           ? Icons.radio_button_checked_rounded
                           : Icons.radio_button_off_rounded
-                      : selected
+                      : isSelected
                           ? Icons.check_box_rounded
                           : Icons.check_box_outline_blank_rounded,
                   size: 21,
-                  color: selected
+                  color: isSelected
                       ? AppColors.primaryGoldDark
                       : isDark
                           ? AppColors.textMuted
@@ -887,21 +1052,108 @@ class _ModifierOptionTile extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text(
-                    option.isAvailable
-                        ? option.name
-                        : '${option.name} • Sold Out',
-                    style: AppTextStyles.bodySmall.copyWith(
-                      color: isDark
-                          ? AppColors.textPrimary
-                          : AppColors.textPrimaryLight,
-                      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        option.isAvailable
+                            ? option.name.toTitleCase()
+                            : '${option.name.toTitleCase()} • Sold Out',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isDark
+                              ? AppColors.textPrimary
+                              : AppColors.textPrimaryLight,
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.w400,
+                        ),
+                      ),
+                      if (isMultiple && count > 1 && option.priceAdjustment > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 1),
+                          child: Text(
+                            '€${option.priceAdjustment.toStringAsFixed(2)} each',
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: isDark
+                                  ? AppColors.textMuted
+                                  : AppColors.textMutedLight,
+                              fontSize: 10.5,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 8),
+                if (isMultiple) ...[
+                  Container(
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? AppColors.surfaceDark
+                          : AppColors.surfaceLight,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.primaryGold.withValues(alpha: 0.5)
+                            : (isDark
+                                ? AppColors.borderDark
+                                : AppColors.borderLight),
+                        width: 1,
+                      ),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 2,
+                      vertical: 2,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _MiniModifierButton(
+                          icon: count == 1
+                              ? Icons.delete_outline_rounded
+                              : Icons.remove_rounded,
+                          iconColor: count == 0
+                              ? (isDark
+                                      ? AppColors.textMuted
+                                      : AppColors.textMutedLight)
+                                  .withValues(alpha: 0.3)
+                              : count == 1
+                                  ? AppColors.error
+                                  : (isDark
+                                      ? AppColors.textPrimary
+                                      : AppColors.textPrimaryLight),
+                          onTap: count > 0 ? onDecrement : null,
+                        ),
+                        Container(
+                          constraints: const BoxConstraints(minWidth: 20),
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.symmetric(horizontal: 3),
+                          child: Text(
+                            '$count',
+                            style: AppTextStyles.labelLarge.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: count > 0
+                                  ? (isDark
+                                      ? AppColors.textPrimary
+                                      : AppColors.textPrimaryLight)
+                                  : (isDark
+                                      ? AppColors.textMuted
+                                      : AppColors.textMutedLight),
+                            ),
+                          ),
+                        ),
+                        _MiniModifierButton(
+                          icon: Icons.add_rounded,
+                          iconColor: AppColors.primaryGoldDark,
+                          onTap: onIncrement,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 Text(
-                  option.priceText,
+                  priceLabel,
                   style: AppTextStyles.labelSmall.copyWith(
                     color: option.priceAdjustment > 0
                         ? AppColors.primaryGoldDark
@@ -913,6 +1165,38 @@ class _ModifierOptionTile extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniModifierButton extends StatelessWidget {
+  const _MiniModifierButton({
+    required this.icon,
+    required this.iconColor,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Icon(
+            icon,
+            size: 15,
+            color: iconColor,
           ),
         ),
       ),
@@ -1161,15 +1445,34 @@ class _DynamicPriceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selectedPaidOptions = <FoodModifierOption>[];
+    FoodModifierOption? sizeOption;
+    for (final group in state.groups) {
+      if (group.id == 'size') {
+        final sizeOptions = state.selectedOptionsFor(group);
+        if (sizeOptions.isNotEmpty) {
+          sizeOption = sizeOptions.first;
+        }
+        break;
+      }
+    }
+
+    final selectedAddOns = <({FoodModifierOption option, int count})>[];
 
     for (final group in state.groups) {
-      selectedPaidOptions.addAll(
-        state.selectedOptionsFor(group).where(
-              (option) => option.priceAdjustment > 0,
-            ),
-      );
+      if (group.id == 'size') continue;
+      for (final option in state.selectedOptionsFor(group)) {
+        final count = state.optionCount(group.id, option.id);
+        if (count > 0) {
+          selectedAddOns.add((option: option, count: count));
+        }
+      }
     }
+
+    final itemTitle = sizeOption != null
+        ? '${state.item.name} (${sizeOption.name})'
+        : state.item.name;
+
+    final itemTotal = state.baseItemPrice * state.quantity;
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -1183,38 +1486,45 @@ class _DynamicPriceCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Price Summary',
-            style: AppTextStyles.titleSmall.copyWith(
-              color:
-                  isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
-              fontWeight: FontWeight.w600,
-            ),
+          Row(
+            children: [
+              const Icon(
+                Icons.receipt_long_rounded,
+                size: 18,
+                color: AppColors.primaryGoldDark,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Price Summary',
+                style: AppTextStyles.titleSmall.copyWith(
+                  color: isDark
+                      ? AppColors.textPrimary
+                      : AppColors.textPrimaryLight,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           _PriceRow(
-            label: 'Base item',
-            value: '€${state.item.currentPrice.toStringAsFixed(2)}',
+            label: '${itemTitle.toTitleCase()} (${state.quantity}×)',
+            value: '€${itemTotal.toStringAsFixed(2)}',
             isDark: isDark,
           ),
-          ...selectedPaidOptions.map(
-            (option) {
+          ...selectedAddOns.map(
+            (entry) {
+              final count = entry.count;
+              final price = entry.option.priceAdjustment * count;
+              final value = entry.option.priceAdjustment > 0
+                  ? '+€${price.toStringAsFixed(2)}'
+                  : 'Included';
+
               return _PriceRow(
-                label: option.name,
-                value: '+€${option.priceAdjustment.toStringAsFixed(2)}',
+                label: '${entry.option.name.toTitleCase()} ($count×)',
+                value: value,
                 isDark: isDark,
               );
             },
-          ),
-          _PriceRow(
-            label: 'Subtotal for 1',
-            value: '€${state.unitPrice.toStringAsFixed(2)}',
-            isDark: isDark,
-          ),
-          _PriceRow(
-            label: 'Quantity',
-            value: '${state.quantity}',
-            isDark: isDark,
           ),
           const Divider(height: 22),
           Row(
@@ -1232,9 +1542,9 @@ class _DynamicPriceCard extends StatelessWidget {
               ),
               Text(
                 '€${state.totalPrice.toStringAsFixed(2)}',
-                style: AppTextStyles.titleSmall.copyWith(
+                style: AppTextStyles.titleMedium.copyWith(
                   color: AppColors.primaryGoldDark,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ],
@@ -1267,8 +1577,9 @@ class _PriceRow extends StatelessWidget {
               label,
               style: AppTextStyles.bodySmall.copyWith(
                 color: isDark
-                    ? AppColors.textSecondary
-                    : AppColors.textSecondaryLight,
+                    ? AppColors.textPrimary
+                    : AppColors.textPrimaryLight,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
@@ -1278,7 +1589,7 @@ class _PriceRow extends StatelessWidget {
             style: AppTextStyles.bodySmall.copyWith(
               color:
                   isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],

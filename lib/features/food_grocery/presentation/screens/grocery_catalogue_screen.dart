@@ -8,7 +8,9 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/grocery_catalogue.dart';
 import '../../data/models/grocery_store.dart';
 import '../providers/grocery_catalogue_provider.dart';
+import '../providers/food_grocery_delivery_provider.dart';
 import '../widgets/food_grocery_header.dart';
+import '../widgets/smart_product_image.dart';
 
 class GroceryCatalogueScreen extends ConsumerStatefulWidget {
   const GroceryCatalogueScreen({
@@ -28,7 +30,7 @@ class _GroceryCatalogueScreenState
   final TextEditingController _searchController = TextEditingController();
 
   String _searchQuery = '';
-  String _selectedCategoryId = 'popular';
+  String _selectedCategoryId = 'all';
   bool _isFavourite = false;
 
   @override
@@ -41,6 +43,33 @@ class _GroceryCatalogueScreenState
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  List<GroceryProductCategory> _displayCategories(
+    List<GroceryProductCategory> categories,
+  ) {
+    if (categories.isEmpty) {
+      return const [
+        GroceryProductCategory(
+          id: 'all',
+          name: 'All',
+          displayOrder: 0,
+          isActive: true,
+        ),
+      ];
+    }
+    if (categories.any((c) => c.id == 'all')) {
+      return categories;
+    }
+    return [
+      const GroceryProductCategory(
+        id: 'all',
+        name: 'All',
+        displayOrder: 0,
+        isActive: true,
+      ),
+      ...categories,
+    ];
   }
 
   List<GroceryProduct> _visibleProducts(
@@ -57,7 +86,7 @@ class _GroceryCatalogueScreenState
 
       bool matchesCategory;
 
-      if (_selectedCategoryId == 'popular') {
+      if (_selectedCategoryId == 'all' || _selectedCategoryId == 'popular') {
         matchesCategory = true;
       } else if (_selectedCategoryId == 'offers') {
         matchesCategory = product.hasOffer;
@@ -276,6 +305,7 @@ class _GroceryCatalogueScreenState
                     store: widget.store,
                     isDark: isDark,
                     isFavourite: _isFavourite,
+                    distanceText: '${widget.store.calculateDistanceTo(ref.watch(foodGroceryDeliveryProvider).selectedAddress?.latitude, ref.watch(foodGroceryDeliveryProvider).selectedAddress?.longitude).toStringAsFixed(1)} km',
                     onFavouritePressed: () {
                       setState(() {
                         _isFavourite = !_isFavourite;
@@ -331,31 +361,37 @@ class _GroceryCatalogueScreenState
                     },
                   ),
                   const SizedBox(height: 12),
-                  SizedBox(
-                    height: 38,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: catalogueState.categories.length,
-                      separatorBuilder: (context, index) {
-                        return const SizedBox(
-                          width: 8,
-                        );
-                      },
-                      itemBuilder: (context, index) {
-                        final category = catalogueState.categories[index];
-
-                        return _ProductCategoryChip(
-                          label: category.name,
-                          selected: category.id == _selectedCategoryId,
-                          isDark: isDark,
-                          onTap: () {
-                            setState(() {
-                              _selectedCategoryId = category.id;
-                            });
+                  Builder(
+                    builder: (context) {
+                      final displayCategories =
+                          _displayCategories(catalogueState.categories);
+                      return SizedBox(
+                        height: 38,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: displayCategories.length,
+                          separatorBuilder: (context, index) {
+                            return const SizedBox(
+                              width: 8,
+                            );
                           },
-                        );
-                      },
-                    ),
+                          itemBuilder: (context, index) {
+                            final category = displayCategories[index];
+
+                            return _ProductCategoryChip(
+                              label: category.name,
+                              selected: category.id == _selectedCategoryId,
+                              isDark: isDark,
+                              onTap: () {
+                                setState(() {
+                                  _selectedCategoryId = category.id;
+                                });
+                              },
+                            );
+                          },
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 16),
                   if (catalogueState.isLoading && catalogueState.products.isEmpty)
@@ -422,7 +458,7 @@ class _GroceryCatalogueScreenState
 
                         setState(() {
                           _searchQuery = '';
-                          _selectedCategoryId = 'popular';
+                          _selectedCategoryId = 'all';
                         });
                       },
                     )
@@ -569,7 +605,7 @@ class _GroceryCatalogueScreenState
                           ),
                         ),
                         Text(
-                          'VIEW CART',
+                          'View Cart',
                           style: AppTextStyles.labelLarge.copyWith(
                             color: AppColors.backgroundDark,
                             fontWeight: FontWeight.w700,
@@ -595,12 +631,14 @@ class _StoreOverviewCard extends StatelessWidget {
     required this.store,
     required this.isDark,
     required this.isFavourite,
+    required this.distanceText,
     required this.onFavouritePressed,
   });
 
   final GroceryStore store;
   final bool isDark;
   final bool isFavourite;
+  final String distanceText;
   final VoidCallback onFavouritePressed;
 
   @override
@@ -618,19 +656,13 @@ class _StoreOverviewCard extends StatelessWidget {
         children: [
           Stack(
             children: [
-              Container(
+              SmartProductImage(
+                imageUrl: store.imageUrl,
                 width: double.infinity,
                 height: 142,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryGold.withValues(alpha: 0.13),
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
-                ),
-                child: const Icon(
-                  Icons.storefront_rounded,
-                  size: 54,
-                  color: AppColors.primaryGoldDark,
+                fallbackIcon: Icons.storefront_rounded,
+                customBorderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
                 ),
               ),
               Positioned(
@@ -723,23 +755,18 @@ class _StoreOverviewCard extends StatelessWidget {
                   children: [
                     _StoreDetailItem(
                       icon: Icons.star_rounded,
-                      value: '${store.rating} (${store.ratingCount})',
+                      value: store.formattedRatingText,
                       iconColor: AppColors.primaryGoldDark,
                       isDark: isDark,
                     ),
                     _StoreDetailItem(
                       icon: Icons.schedule_rounded,
-                      value: store.estimatedDeliveryTime,
-                      isDark: isDark,
-                    ),
-                    _StoreDetailItem(
-                      icon: Icons.delivery_dining_rounded,
-                      value: store.deliveryFeeText,
+                      value: '${store.preparationTime} prep',
                       isDark: isDark,
                     ),
                     _StoreDetailItem(
                       icon: Icons.location_on_outlined,
-                      value: store.distanceText,
+                      value: distanceText,
                       isDark: isDark,
                     ),
                     _StoreDetailItem(
@@ -1138,18 +1165,11 @@ class _GroceryProductCard extends StatelessWidget {
               children: [
                 Stack(
                   children: [
-                    Container(
+                    SmartProductImage(
+                      imageUrl: product.imageUrl,
                       width: double.infinity,
                       height: 94,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryGold.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.shopping_basket_rounded,
-                        size: 36,
-                        color: AppColors.primaryGoldDark,
-                      ),
+                      fallbackIcon: Icons.shopping_basket_rounded,
                     ),
                     if (product.offerText != null)
                       Positioned(
@@ -1247,17 +1267,17 @@ class _GroceryProductCard extends StatelessWidget {
                     text: product.stockStatus ==
                             GroceryProductStockStatus.outOfStock
                         ? 'OUT OF STOCK'
-                        : 'UNAVAILABLE',
+                        : 'Unavailable',
                     isDark: isDark,
                   )
                 else if (requiresSelection)
                   _CatalogueAddButton(
-                    text: 'SELECT',
+                    text: 'Select',
                     onPressed: onAdd,
                   )
                 else if (quantity == 0)
                   _CatalogueAddButton(
-                    text: 'ADD',
+                    text: 'Add',
                     onPressed: onAdd,
                   )
                 else

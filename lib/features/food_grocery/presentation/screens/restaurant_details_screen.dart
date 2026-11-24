@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/utils/string_extensions.dart';
 import '../../../../core/router/route_names.dart';
 import '../../data/models/food_restaurant.dart';
 import '../../data/models/restaurant_menu.dart';
@@ -11,6 +12,8 @@ import '../providers/restaurant_menu_provider.dart';
 import '../widgets/food_grocery_header.dart';
 import '../../data/models/food_grocery_cart.dart';
 import '../providers/food_grocery_cart_provider.dart';
+import '../providers/food_grocery_delivery_provider.dart';
+import '../widgets/smart_product_image.dart';
 
 class RestaurantDetailsScreen extends ConsumerStatefulWidget {
   const RestaurantDetailsScreen({
@@ -29,22 +32,54 @@ class _RestaurantDetailsScreenState
     extends ConsumerState<RestaurantDetailsScreen> {
   final TextEditingController _searchController = TextEditingController();
 
-  String _selectedCategoryId = 'popular';
+  String _selectedCategoryId = 'all';
   String _searchQuery = '';
   bool _isFavourite = false;
-
-  static const double _minimumOrder = 15;
 
   @override
   void initState() {
     super.initState();
     _isFavourite = widget.restaurant.isFavourite;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref
+            .read(restaurantMenuProvider(widget.restaurant.id).notifier)
+            .loadMenu();
+      }
+    });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  List<RestaurantMenuCategory> _displayCategories(
+    List<RestaurantMenuCategory> categories,
+  ) {
+    if (categories.isEmpty) {
+      return const [
+        RestaurantMenuCategory(
+          id: 'all',
+          name: 'All',
+          displayOrder: 0,
+          isActive: true,
+        ),
+      ];
+    }
+    if (categories.any((c) => c.id == 'all')) {
+      return categories;
+    }
+    return [
+      const RestaurantMenuCategory(
+        id: 'all',
+        name: 'All',
+        displayOrder: 0,
+        isActive: true,
+      ),
+      ...categories,
+    ];
   }
 
   List<RestaurantMenuItem> _visibleItems(
@@ -59,8 +94,11 @@ class _RestaurantDetailsScreenState
 
       bool matchesCategory;
 
-      if (_selectedCategoryId == 'popular') {
-        matchesCategory = item.isPopular;
+      if (_selectedCategoryId == 'all') {
+        matchesCategory = true;
+      } else if (_selectedCategoryId == 'popular') {
+        final hasPopular = menuState.items.any((it) => it.isPopular);
+        matchesCategory = hasPopular ? item.isPopular : true;
       } else if (_selectedCategoryId == 'offers') {
         matchesCategory = item.hasOffer;
       } else {
@@ -71,7 +109,7 @@ class _RestaurantDetailsScreenState
     }).toList();
   }
 
-  void _showMessage(String message) {
+  void _showMessage(String message, {SnackBarAction? action}) {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
@@ -82,6 +120,7 @@ class _RestaurantDetailsScreenState
               color: Colors.white,
             ),
           ),
+          action: action,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -194,17 +233,6 @@ class _RestaurantDetailsScreenState
       return;
     }
 
-    if (item.isCustomizable) {
-      await context.pushNamed(
-        RouteNames.foodGroceryFoodItemDetails,
-        extra: <String, dynamic>{
-          'restaurant': widget.restaurant,
-          'item': item,
-        },
-      );
-      return;
-    }
-
     final cartItem = FoodGroceryCartItem(
       lineId: [
         widget.restaurant.id,
@@ -247,9 +275,18 @@ class _RestaurantDetailsScreenState
       return;
     }
 
+    final selectedAddress = ref.read(foodGroceryDeliveryProvider).selectedAddress;
+    final distance = widget.restaurant.calculateDistanceTo(
+      selectedAddress?.latitude,
+      selectedAddress?.longitude,
+    );
+    // €1.00 per km delivery fee based on real distance
+    final deliveryFee = double.parse((distance * 1.0).toStringAsFixed(2));
+
     notifier.updateCharges(
-      deliveryFee: widget.restaurant.deliveryFee,
+      deliveryFee: deliveryFee,
       serviceFee: 0,
+      distanceKm: distance,
     );
   }
 
@@ -284,7 +321,53 @@ class _RestaurantDetailsScreenState
     await _addSimpleItem(item);
   }
 
-  void _decreaseSimpleItem(
+  void _increaseItem(RestaurantMenuItem item) {
+    if (!widget.restaurant.isOrderable) {
+      _showMessage('This restaurant is currently not accepting orders');
+      return;
+    }
+    if (!item.isAvailable) {
+      _showMessage('This item is currently unavailable');
+      return;
+    }
+
+    final cart = ref.read(foodGroceryCartProvider);
+    final matchingItems = cart.items
+        .where(
+          (cartItem) =>
+              cartItem.cartType == FoodGroceryCartType.food &&
+              cartItem.supplierId == widget.restaurant.id &&
+              cartItem.productId == item.id,
+        )
+        .toList();
+
+    if (matchingItems.length == 1) {
+      ref.read(foodGroceryCartProvider.notifier).increaseQuantity(
+            matchingItems.first.lineId,
+          );
+      return;
+    }
+
+    if (matchingItems.length > 1) {
+      context.pushNamed(RouteNames.foodGroceryCart);
+      return;
+    }
+
+    if (item.isCustomizable) {
+      context.pushNamed(
+        RouteNames.foodGroceryFoodItemDetails,
+        extra: <String, dynamic>{
+          'restaurant': widget.restaurant,
+          'item': item,
+        },
+      );
+      return;
+    }
+
+    _addSimpleItem(item);
+  }
+
+  void _decreaseItem(
     RestaurantMenuItem item,
   ) {
     final cart = ref.read(foodGroceryCartProvider);
@@ -472,20 +555,20 @@ class _RestaurantDetailsScreenState
                   _InformationRow(
                     icon: Icons.schedule_rounded,
                     label: 'Opening hours',
-                    value: '10:00 AM – 11:00 PM',
+                    value: widget.restaurant.operatingHoursTodayText,
                     isDark: isDark,
                   ),
                   _InformationRow(
                     icon: Icons.restaurant_rounded,
                     label: 'Cuisine',
-                    value: widget.restaurant.cuisineText,
+                    value: widget.restaurant.cuisineText.toTitleCase(),
                     isDark: isDark,
                   ),
                   _InformationRow(
-                    icon: Icons.delivery_dining_rounded,
-                    label: 'Delivery',
+                    icon: Icons.shopping_bag_outlined,
+                    label: 'Order',
                     value:
-                        '${widget.restaurant.estimatedDeliveryTime} • ${widget.restaurant.deliveryFeeText}',
+                        '${widget.restaurant.estimatedDeliveryTime} • ${widget.restaurant.minimumOrderText}',
                     isDark: isDark,
                   ),
                   _InformationRow(
@@ -595,6 +678,7 @@ class _RestaurantDetailsScreenState
                     restaurant: widget.restaurant,
                     isDark: isDark,
                     isFavourite: _isFavourite,
+                    distanceText: '${widget.restaurant.calculateDistanceTo(ref.watch(foodGroceryDeliveryProvider).selectedAddress?.latitude, ref.watch(foodGroceryDeliveryProvider).selectedAddress?.longitude).toStringAsFixed(1)} km',
                     onFavouritePressed: () {
                       setState(() {
                         _isFavourite = !_isFavourite;
@@ -619,7 +703,7 @@ class _RestaurantDetailsScreenState
                   ],
                   const SizedBox(height: 12),
                   _MinimumOrderCard(
-                    minimumOrder: _minimumOrder,
+                    minimumOrder: widget.restaurant.minimumOrder,
                     currentSubtotal: menuState.cartSubtotal,
                     isDark: isDark,
                   ),
@@ -651,29 +735,35 @@ class _RestaurantDetailsScreenState
                     },
                   ),
                   const SizedBox(height: 12),
-                  SizedBox(
-                    height: 38,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: menuState.categories.length,
-                      separatorBuilder: (context, index) {
-                        return const SizedBox(width: 8);
-                      },
-                      itemBuilder: (context, index) {
-                        final category = menuState.categories[index];
-
-                        return _MenuCategoryChip(
-                          label: category.name,
-                          selected: category.id == _selectedCategoryId,
-                          isDark: isDark,
-                          onTap: () {
-                            setState(() {
-                              _selectedCategoryId = category.id;
-                            });
+                  Builder(
+                    builder: (context) {
+                      final displayCategories =
+                          _displayCategories(menuState.categories);
+                      return SizedBox(
+                        height: 38,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: displayCategories.length,
+                          separatorBuilder: (context, index) {
+                            return const SizedBox(width: 8);
                           },
-                        );
-                      },
-                    ),
+                          itemBuilder: (context, index) {
+                            final category = displayCategories[index];
+
+                            return _MenuCategoryChip(
+                              label: category.name.toTitleCase(),
+                              selected: category.id == _selectedCategoryId,
+                              isDark: isDark,
+                              onTap: () {
+                                setState(() {
+                                  _selectedCategoryId = category.id;
+                                });
+                              },
+                            );
+                          },
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 16),
                   if (menuState.isLoading && menuState.items.isEmpty)
@@ -736,7 +826,7 @@ class _RestaurantDetailsScreenState
 
                         setState(() {
                           _searchQuery = '';
-                          _selectedCategoryId = 'popular';
+                          _selectedCategoryId = 'all';
                         });
                       },
                     )
@@ -762,10 +852,10 @@ class _RestaurantDetailsScreenState
                               _selectMenuItem(item);
                             },
                             onIncrease: () {
-                              _addSimpleItem(item);
+                              _increaseItem(item);
                             },
                             onDecrease: () {
-                              _decreaseSimpleItem(item);
+                              _decreaseItem(item);
                             },
                           ),
                         );
@@ -840,7 +930,7 @@ class _RestaurantDetailsScreenState
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            '$restaurantCartItemCount ${restaurantCartItemCount == 1 ? 'Item' : 'Items'} • €$restaurantCartSubtotal',
+                            '$restaurantCartItemCount ${restaurantCartItemCount == 1 ? 'Item' : 'Items'} • €${restaurantCartSubtotal.toStringAsFixed(2)}',
                             style: AppTextStyles.labelLarge.copyWith(
                               color: AppColors.backgroundDark,
                               fontWeight: FontWeight.w700,
@@ -848,7 +938,7 @@ class _RestaurantDetailsScreenState
                           ),
                         ),
                         Text(
-                          'VIEW CART',
+                          'View Cart',
                           style: AppTextStyles.labelLarge.copyWith(
                             color: AppColors.backgroundDark,
                             fontWeight: FontWeight.w700,
@@ -874,6 +964,7 @@ class _RestaurantOverviewCard extends StatelessWidget {
     required this.restaurant,
     required this.isDark,
     required this.isFavourite,
+    required this.distanceText,
     required this.onFavouritePressed,
     required this.onInformationPressed,
   });
@@ -881,8 +972,28 @@ class _RestaurantOverviewCard extends StatelessWidget {
   final FoodRestaurant restaurant;
   final bool isDark;
   final bool isFavourite;
+  final String distanceText;
   final VoidCallback onFavouritePressed;
   final VoidCallback onInformationPressed;
+
+  Color _statusColor(RestaurantOperationalStatus status) {
+    switch (status) {
+      case RestaurantOperationalStatus.open:
+        return const Color(0xFF2E7D32);
+
+      case RestaurantOperationalStatus.closingSoon:
+        return const Color(0xFFED6C02);
+
+      case RestaurantOperationalStatus.busy:
+        return const Color(0xFFD32F2F);
+
+      case RestaurantOperationalStatus.closed:
+        return const Color(0xFF757575);
+
+      case RestaurantOperationalStatus.temporarilyUnavailable:
+        return const Color(0xFF424242);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -899,21 +1010,35 @@ class _RestaurantOverviewCard extends StatelessWidget {
         children: [
           Stack(
             children: [
-              Container(
-                height: 142,
+              SmartProductImage(
+                imageUrl: restaurant.imageUrl,
                 width: double.infinity,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryGold.withValues(alpha: 0.14),
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
-                ),
-                child: const Icon(
-                  Icons.restaurant_menu_rounded,
-                  size: 54,
-                  color: AppColors.primaryGoldDark,
+                height: 142,
+                fallbackIcon: Icons.restaurant_menu_rounded,
+                customBorderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
                 ),
               ),
+              Positioned(
+                left: 10,
+                bottom: 10,
+                child: _RestaurantDetailsBadge(
+                  text: restaurant.statusText,
+                  backgroundColor: _statusColor(restaurant.effectiveStatus),
+                  textColor: Colors.white,
+                ),
+              ),
+              if (restaurant.promotionalTag != null &&
+                  restaurant.promotionalTag!.trim().isNotEmpty)
+                Positioned(
+                  left: 10,
+                  top: 10,
+                  child: _RestaurantDetailsBadge(
+                    text: restaurant.promotionalTag!,
+                    backgroundColor: AppColors.primaryGoldDark,
+                    textColor: AppColors.backgroundDark,
+                  ),
+                ),
               Positioned(
                 right: 10,
                 top: 10,
@@ -954,7 +1079,7 @@ class _RestaurantOverviewCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        restaurant.name,
+                        restaurant.name.toTitleCase(),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.titleMedium.copyWith(
@@ -983,7 +1108,7 @@ class _RestaurantOverviewCard extends StatelessWidget {
                   ],
                 ),
                 Text(
-                  restaurant.cuisineText,
+                  restaurant.cuisineText.toTitleCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.bodySmall.copyWith(
@@ -999,28 +1124,23 @@ class _RestaurantOverviewCard extends StatelessWidget {
                   children: [
                     _OverviewDetail(
                       icon: Icons.star_rounded,
-                      value: '${restaurant.rating} (${restaurant.ratingCount})',
+                      value: restaurant.formattedRatingText,
                       isDark: isDark,
                       iconColor: AppColors.primaryGoldDark,
                     ),
                     _OverviewDetail(
                       icon: Icons.schedule_rounded,
-                      value: restaurant.estimatedDeliveryTime,
+                      value: '${restaurant.preparationTime} prep',
                       isDark: isDark,
                     ),
                     _OverviewDetail(
                       icon: Icons.location_on_outlined,
-                      value: restaurant.distanceText,
+                      value: distanceText,
                       isDark: isDark,
                     ),
                     _OverviewDetail(
-                      icon: Icons.delivery_dining_rounded,
-                      value: restaurant.deliveryFeeText,
-                      isDark: isDark,
-                    ),
-                    _OverviewDetail(
-                      icon: Icons.euro_rounded,
-                      value: restaurant.priceLevel,
+                      icon: Icons.shopping_bag_outlined,
+                      value: restaurant.minimumOrderText,
                       isDark: isDark,
                     ),
                   ],
@@ -1394,7 +1514,7 @@ class _MenuItemCard extends StatelessWidget {
                           !item.isAvailable)
                         const SizedBox(height: 7),
                       Text(
-                        item.name,
+                        item.name.toTitleCase(),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.bodyMedium.copyWith(
@@ -1470,34 +1590,21 @@ class _MenuItemCard extends StatelessWidget {
                   width: 94,
                   child: Column(
                     children: [
-                      Container(
+                      SmartProductImage(
+                        imageUrl: item.imageUrl,
                         width: 94,
                         height: 78,
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryGold.withValues(alpha: 0.13),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.fastfood_rounded,
-                          size: 33,
-                          color: AppColors.primaryGoldDark,
-                        ),
+                        fallbackIcon: Icons.fastfood_rounded,
                       ),
                       const SizedBox(height: 8),
                       if (!item.isAvailable)
                         _DisabledAddButton(
-                          text: 'SOLD OUT',
+                          text: 'Sold Out',
                           isDark: isDark,
-                        )
-                      else if (item.isCustomizable)
-                        _AddButton(
-                          text: 'ADD',
-                          enabled: restaurantOrderable,
-                          onPressed: onAdd,
                         )
                       else if (quantity == 0)
                         _AddButton(
-                          text: 'ADD',
+                          text: 'Add',
                           enabled: restaurantOrderable,
                           onPressed: onAdd,
                         )
@@ -1883,6 +1990,39 @@ class _EmptyMenuResult extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _RestaurantDetailsBadge extends StatelessWidget {
+  const _RestaurantDetailsBadge({
+    required this.text,
+    required this.backgroundColor,
+    required this.textColor,
+  });
+
+  final String text;
+  final Color backgroundColor;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        text,
+        style: AppTextStyles.labelSmall.copyWith(
+          color: textColor,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

@@ -202,7 +202,7 @@ class _FoodGroceryDeliveryAddressScreenState
                     children: [
                       Expanded(
                         child: Text(
-                          'SAVED ADDRESSES',
+                          'Saved Addresses',
                           style: AppTextStyles.labelLarge.copyWith(
                             color: isDark
                                 ? AppColors.textPrimary
@@ -221,7 +221,7 @@ class _FoodGroceryDeliveryAddressScreenState
                           size: 19,
                         ),
                         label: Text(
-                          'ADD ADDRESS',
+                          'Add Address',
                           style: AppTextStyles.labelLarge.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -796,7 +796,7 @@ class _EmptyAddressCard extends StatelessWidget {
               Icons.add_rounded,
               size: 18,
             ),
-            label: const Text('ADD ADDRESS'),
+            label: const Text('Add Address'),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.primaryGold,
               side: const BorderSide(
@@ -971,7 +971,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'ADDRESS LABEL',
+                  'Address Label',
                   style: AppTextStyles.labelSmall.copyWith(
                     color: isDark
                         ? AppColors.textSecondary
@@ -1130,8 +1130,8 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                     ),
                     child: Text(
                       widget.address == null
-                          ? 'SAVE ADDRESS'
-                          : 'UPDATE ADDRESS',
+                          ? 'Save Address'
+                          : 'Update Address',
                       style: AppTextStyles.labelLarge.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
