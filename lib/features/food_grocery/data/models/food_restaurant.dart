@@ -190,15 +190,18 @@ class FoodRestaurant {
   String get cuisineText => cuisines.join(' • ');
 
   String get formattedRatingText {
-    if (ratingCount <= 0) {
-      return 'New';
+    if (ratingCount > 0) {
+      return '${rating.toStringAsFixed(1)} ($ratingCount)';
     }
-    return '${rating.toStringAsFixed(1)} ($ratingCount)';
+    if (rating > 0) {
+      return rating.toStringAsFixed(1);
+    }
+    return 'New';
   }
 
-  double calculateDistanceTo(double? userLat, double? userLng) {
+  double? calculateDistanceTo(double? userLat, double? userLng) {
     if (userLat == null || userLng == null || latitude == null || longitude == null) {
-      return distanceKm;
+      return distanceKm > 0 ? distanceKm : null;
     }
     const earthRadius = 6371.0;
     final dLat = (userLat - latitude!) * (math.pi / 180.0);
@@ -213,6 +216,12 @@ class FoodRestaurant {
     return calc < 0.1 ? 0.1 : double.parse(calc.toStringAsFixed(1));
   }
 
+  String? dynamicDistanceText(double? userLat, double? userLng) {
+    final d = calculateDistanceTo(userLat, userLng);
+    if (d == null) return null;
+    return '${d.toStringAsFixed(1)} km';
+  }
+
   String get deliveryFeeText {
     if (hasFreeDelivery) {
       return 'Free delivery';
@@ -221,7 +230,8 @@ class FoodRestaurant {
     return '€${deliveryFee.toStringAsFixed(2)} delivery';
   }
 
-  String get distanceText {
+  String? get distanceText {
+    if (distanceKm <= 0) return null;
     return '${distanceKm.toStringAsFixed(1)} km';
   }
 
@@ -258,6 +268,9 @@ class FoodRestaurant {
     RestaurantOperationalStatus? status,
     bool? isFavourite,
     bool? hasVegetarianOptions,
+    double? minimumOrder,
+    String? preparationTime,
+    String? deliveryInstructions,
     String? address,
     double? latitude,
     double? longitude,
@@ -281,6 +294,10 @@ class FoodRestaurant {
       status: status ?? this.status,
       isFavourite: isFavourite ?? this.isFavourite,
       hasVegetarianOptions: hasVegetarianOptions ?? this.hasVegetarianOptions,
+      minimumOrder: minimumOrder ?? this.minimumOrder,
+      preparationTime: preparationTime ?? this.preparationTime,
+      deliveryInstructions:
+          deliveryInstructions ?? this.deliveryInstructions,
       address: address ?? this.address,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,

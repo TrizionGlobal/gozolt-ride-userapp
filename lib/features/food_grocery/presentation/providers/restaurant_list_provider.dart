@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/datasources/food_grocery_remote_datasource.dart';
+import '../../data/models/food_grocery_delivery_address.dart';
 import '../../data/models/food_restaurant.dart';
 import 'food_grocery_delivery_provider.dart';
 
@@ -15,10 +16,33 @@ final restaurantListProvider =
 class RestaurantListNotifier extends StateNotifier<List<FoodRestaurant>> {
   RestaurantListNotifier(this._ref) : super(const []) {
     Future.microtask(() => refreshRestaurants());
+    _listenToDeliveryAddress();
   }
 
   final Ref _ref;
   bool _isFetching = false;
+  ProviderSubscription? _sub;
+
+  void _listenToDeliveryAddress() {
+    _sub = _ref.listen<FoodGroceryDeliveryState>(
+      foodGroceryDeliveryProvider,
+      (previous, next) {
+        final prevLat = previous?.selectedAddress?.latitude;
+        final prevLng = previous?.selectedAddress?.longitude;
+        final nextLat = next.selectedAddress?.latitude;
+        final nextLng = next.selectedAddress?.longitude;
+        if (prevLat != nextLat || prevLng != nextLng) {
+          refreshRestaurants();
+        }
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _sub?.close();
+    super.dispose();
+  }
 
   Future<void> refreshRestaurants({
     String? search,
@@ -39,13 +63,15 @@ class RestaurantListNotifier extends StateNotifier<List<FoodRestaurant>> {
     try {
       final delivery = _ref.read(foodGroceryDeliveryProvider);
       final selected = delivery.selectedAddress;
+      final lat = selected?.latitude;
+      final lng = selected?.longitude;
       final ds = _ref.read(foodGroceryRemoteDatasourceProvider);
       final restaurants = await ds.getRestaurants(
         search: search,
         category: category,
         sort: sort,
-        lat: selected?.latitude,
-        lng: selected?.longitude,
+        lat: lat,
+        lng: lng,
         minRating: minRating,
         freeDelivery: freeDelivery,
         hasOffers: hasOffers,

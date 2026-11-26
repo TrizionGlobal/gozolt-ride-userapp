@@ -128,6 +128,10 @@ class FoodGroceryOrderState {
       trackingStage == FoodGroceryTrackingStage.arrivingSoon ||
       trackingStage == FoodGroceryTrackingStage.arrivedAtCustomer;
 
+  bool get isCashPayment =>
+      paymentMethodType == PaymentMethodType.cash ||
+      orderData?['paymentMethod']?.toString().toUpperCase() == 'CASH';
+
   bool get hasActiveOrder =>
       orderId != null &&
       status != FoodGroceryOrderStatus.idle &&
@@ -135,15 +139,30 @@ class FoodGroceryOrderState {
 
   int get trackingStep => trackingStage.index;
 
-  String get paymentMethodLabel =>
-      paymentMethodType == PaymentMethodType.cash
-          ? 'Cash on Delivery'
-          : 'Credit / Debit Card';
+  String get paymentMethodLabel {
+    final method = orderData?['paymentMethod']?.toString().toUpperCase();
+    if (method == 'CASH' || paymentMethodType == PaymentMethodType.cash) {
+      return 'Cash on Delivery';
+    }
+    if (method == 'ONLINE' || method == 'STRIPE') {
+      return 'Credit / Debit Card';
+    }
+    return 'Credit / Debit Card';
+  }
 
-  String get paymentStatusLabel =>
-      paymentMethodType == PaymentMethodType.cash
-          ? 'Payment due on delivery'
-          : 'Card payment selected';
+  String get paymentStatusLabel {
+    final rawStatus = orderData?['paymentStatus']?.toString().toUpperCase();
+    if (rawStatus == 'PAID' || rawStatus == 'COMPLETED') {
+      return 'Paid';
+    }
+    if (paymentMethodType == PaymentMethodType.cash) {
+      return 'Payment due on delivery';
+    }
+    if (isPlaced) {
+      return 'Paid';
+    }
+    return 'Payment pending';
+  }
 
   String get trackingTitle {
     switch (trackingStage) {

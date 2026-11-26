@@ -96,40 +96,74 @@ class FoodGroceryDeliveryState {
   const FoodGroceryDeliveryState({
     this.addresses = const [],
     this.selectedAddressId,
+    this.currentLocationAddress,
+    this.isUsingCurrentLocation = false,
+    this.isLoadingLocation = false,
     this.deliveryInstructions = '',
     this.leaveAtDoor = false,
   });
 
   final List<FoodGroceryDeliveryAddress> addresses;
   final String? selectedAddressId;
+  final FoodGroceryDeliveryAddress? currentLocationAddress;
+  final bool isUsingCurrentLocation;
+  final bool isLoadingLocation;
   final String deliveryInstructions;
   final bool leaveAtDoor;
 
   FoodGroceryDeliveryAddress? get selectedAddress {
-    if (selectedAddressId == null) {
-      return null;
+    if (isUsingCurrentLocation && currentLocationAddress != null) {
+      return currentLocationAddress;
     }
-
-    for (final address in addresses) {
-      if (address.id == selectedAddressId) {
-        return address;
+    if (selectedAddressId != null) {
+      for (final address in addresses) {
+        if (address.id == selectedAddressId) {
+          return address;
+        }
       }
     }
-
-    return null;
+    return currentLocationAddress ?? (addresses.isNotEmpty ? addresses.first : null);
   }
 
-  bool get canContinue => selectedAddress != null;
+  FoodGroceryDeliveryAddress? get selectedSavedAddress {
+    if (addresses.isEmpty) {
+      return null;
+    }
+    if (selectedAddressId != null) {
+      for (final address in addresses) {
+        if (address.id == selectedAddressId) {
+          return address;
+        }
+      }
+    }
+    return addresses.first;
+  }
+
+  bool get canContinue {
+    final saved = selectedSavedAddress;
+    return saved != null &&
+        saved.recipientName.trim().isNotEmpty &&
+        saved.phoneNumber.trim().isNotEmpty &&
+        saved.addressLine.trim().isNotEmpty;
+  }
 
   FoodGroceryDeliveryState copyWith({
     List<FoodGroceryDeliveryAddress>? addresses,
     String? selectedAddressId,
+    FoodGroceryDeliveryAddress? currentLocationAddress,
+    bool? isUsingCurrentLocation,
+    bool? isLoadingLocation,
     String? deliveryInstructions,
     bool? leaveAtDoor,
   }) {
     return FoodGroceryDeliveryState(
       addresses: addresses ?? this.addresses,
       selectedAddressId: selectedAddressId ?? this.selectedAddressId,
+      currentLocationAddress:
+          currentLocationAddress ?? this.currentLocationAddress,
+      isUsingCurrentLocation:
+          isUsingCurrentLocation ?? this.isUsingCurrentLocation,
+      isLoadingLocation: isLoadingLocation ?? this.isLoadingLocation,
       deliveryInstructions: deliveryInstructions ?? this.deliveryInstructions,
       leaveAtDoor: leaveAtDoor ?? this.leaveAtDoor,
     );

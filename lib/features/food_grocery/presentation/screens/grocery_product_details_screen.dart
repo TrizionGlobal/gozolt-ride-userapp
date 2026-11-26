@@ -214,9 +214,10 @@ class GroceryProductDetailsScreen extends ConsumerWidget {
 
     final selectedAddress = ref.read(foodGroceryDeliveryProvider).selectedAddress;
     final distance = store.calculateDistanceTo(
-      selectedAddress?.latitude,
-      selectedAddress?.longitude,
-    );
+          selectedAddress?.latitude,
+          selectedAddress?.longitude,
+        ) ??
+        store.distanceKm;
     final deliveryFee = double.parse((distance * 1.0).toStringAsFixed(2));
 
     cartNotifier.updateCharges(

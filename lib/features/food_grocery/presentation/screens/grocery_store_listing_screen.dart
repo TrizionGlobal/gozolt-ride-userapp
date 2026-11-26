@@ -6,6 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
 import '../../data/models/grocery_store.dart';
+import '../providers/food_grocery_delivery_provider.dart';
 import '../providers/grocery_store_list_provider.dart';
 import '../widgets/food_grocery_header.dart';
 import '../widgets/smart_product_image.dart';
@@ -76,6 +77,8 @@ class _GroceryStoreListingScreenState
 
   List<GroceryStore> _visibleStores(
     List<GroceryStore> stores,
+    double? userLat,
+    double? userLng,
   ) {
     final result = stores.where((store) {
       final matchesSearch = store.matchesSearch(_searchQuery);
@@ -120,9 +123,11 @@ class _GroceryStoreListingScreenState
 
       case GroceryStoreSortOption.nearest:
         result.sort(
-          (first, second) => first.distanceKm.compareTo(
-            second.distanceKm,
-          ),
+          (first, second) {
+            final d1 = first.calculateDistanceTo(userLat, userLng) ?? first.distanceKm;
+            final d2 = second.calculateDistanceTo(userLat, userLng) ?? second.distanceKm;
+            return d1.compareTo(d2);
+          },
         );
 
       case GroceryStoreSortOption.fastestDelivery:
@@ -175,39 +180,15 @@ class _GroceryStoreListingScreenState
   }
 
   void _selectStore(GroceryStore store) {
-    if (!store.isOrderable) {
-      _showMessage(
-        store.status == GroceryStoreOperationalStatus.closed
-            ? 'This store is no longer accepting orders'
-            : 'This grocery store is currently unavailable',
-      );
-      return;
-    }
-
-    // TODO(FOOD_GROCERY_API):
-    // Revalidate store availability, delivery eligibility
-    // and delivery-zone coverage before navigation.
+    // Allow users to view and browse the store catalogue even when closed.
+    // Ordering / checkout is guarded inside the catalogue screen.
     context.pushNamed(
       RouteNames.foodGroceryCatalogue,
       extra: store,
     );
   }
 
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            message,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: Colors.white,
-            ),
-          ),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-  }
+
 
   void _clearSearchAndFilters() {
     _searchController.clear();
@@ -505,9 +486,12 @@ class _GroceryStoreListingScreenState
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final deliveryState = ref.watch(foodGroceryDeliveryProvider);
+    final userLat = deliveryState.selectedAddress?.latitude;
+    final userLng = deliveryState.selectedAddress?.longitude;
     final stores = ref.watch(groceryStoreListProvider);
 
-    final visibleStores = _visibleStores(stores);
+    final visibleStores = _visibleStores(stores, userLat, userLng);
 
     return Scaffold(
       backgroundColor:
@@ -704,6 +688,10 @@ class _GroceryStoreListingScreenState
                         child: _GroceryStoreCard(
                           store: store,
                           isDark: isDark,
+                          distanceText: store.dynamicDistanceText(
+                            userLat,
+                            userLng,
+                          ),
                           onTap: () {
                             _selectStore(store);
                           },
@@ -916,15 +904,17 @@ class _GroceryStoreCard extends StatelessWidget {
     required this.isDark,
     required this.onTap,
     required this.onFavouritePressed,
+    this.distanceText,
   });
 
   final GroceryStore store;
   final bool isDark;
   final VoidCallback onTap;
   final VoidCallback onFavouritePressed;
+  final String? distanceText;
 
   Color get _statusColor {
-    switch (store.status) {
+    switch (store.effectiveStatus) {
       case GroceryStoreOperationalStatus.open:
         return AppColors.success;
 
@@ -1082,11 +1072,12 @@ class _GroceryStoreCard extends StatelessWidget {
                             text: store.preparationTime,
                             isDark: isDark,
                           ),
-                          _StoreMetaItem(
-                            icon: Icons.location_on_outlined,
-                            text: store.distanceText,
-                            isDark: isDark,
-                          ),
+                          if (distanceText != null || store.distanceText != null)
+                            _StoreMetaItem(
+                              icon: Icons.location_on_outlined,
+                              text: (distanceText ?? store.distanceText)!,
+                              isDark: isDark,
+                            ),
                           _StoreMetaItem(
                             icon: Icons.shopping_bag_outlined,
                             text: store.minimumOrderText,

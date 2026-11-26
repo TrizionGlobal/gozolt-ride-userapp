@@ -142,16 +142,66 @@ class _FoodGroceryAwaitingSupplierScreenState
         : 'GZ-FG-PENDING';
 
     final address = delivery.selectedAddress;
-    final orderItems = (order.orderData?['items'] as List?) ??
-        (order.orderData?['orderItems'] as List?) ??
+    final orderData = order.orderData;
+    final orderItems = (orderData?['items'] as List?) ??
+        (orderData?['orderItems'] as List?) ??
         [];
-    final deliveryAddressData = order.orderData?['deliveryAddress'];
+    final deliveryAddressData = orderData?['deliveryAddress'];
     final resolvedAddress = address ??
         (deliveryAddressData is Map
             ? FoodGroceryRemoteDatasource.parseAddress(
                 Map<String, dynamic>.from(deliveryAddressData),
               )
             : null);
+
+    // Compute clean financial breakdown without doubling subtotal
+    double itemsSubtotal = (orderData?['subtotal'] as num?)?.toDouble() ?? 0.0;
+    int totalItemsCount = 0;
+    if (orderItems.isNotEmpty) {
+      double calculatedSubtotal = 0.0;
+      for (final it in orderItems) {
+        if (it is Map) {
+          final q = (it['quantity'] as num?)?.toInt() ?? 1;
+          totalItemsCount += q;
+          final lt = (it['lineTotal'] as num?)?.toDouble() ??
+              (((it['unitPrice'] as num?)?.toDouble() ?? 0.0) * q);
+          calculatedSubtotal += lt;
+        } else {
+          totalItemsCount += 1;
+        }
+      }
+      if (itemsSubtotal == 0.0) {
+        itemsSubtotal = calculatedSubtotal;
+      }
+    }
+    if (itemsSubtotal == 0.0 && cart.subtotal > 0) {
+      itemsSubtotal = cart.subtotal;
+    }
+    if (totalItemsCount == 0 && cart.itemCount > 0) {
+      totalItemsCount = cart.itemCount;
+    }
+    if (totalItemsCount == 0) totalItemsCount = 1;
+
+    final deliveryFee = (orderData?['deliveryFee'] as num?)?.toDouble() ??
+        (cart.deliveryFee > 0 ? cart.deliveryFee : 0.0);
+
+    final vatAmount = (orderData?['vatAmount'] as num?)?.toDouble() ??
+        (orderData?['vat'] as num?)?.toDouble() ??
+        (cart.vat > 0 ? cart.vat : 0.0);
+
+    final serviceFee = (orderData?['serviceFee'] as num?)?.toDouble() ??
+        (cart.serviceFee > 0 ? cart.serviceFee : 0.0);
+
+    final discount = (orderData?['goCoinsDiscount'] as num?)?.toDouble() ??
+        (orderData?['discount'] as num?)?.toDouble() ??
+        (cart.discount > 0 ? cart.discount : 0.0);
+
+    final totalAmount = (orderData?['totalAmount'] as num?)?.toDouble() ??
+        (order.total > 0
+            ? order.total
+            : (cart.total > 0
+                ? cart.total
+                : itemsSubtotal + deliveryFee + vatAmount + serviceFee - discount));
 
     return PopScope(
       canPop: false,
@@ -177,7 +227,7 @@ class _FoodGroceryAwaitingSupplierScreenState
                           16,
                           18,
                           16,
-                          28,
+                          40,
                         ),
                         children: [
                           AnimatedSwitcher(
@@ -216,7 +266,7 @@ class _FoodGroceryAwaitingSupplierScreenState
                                   value: structuredOrderId,
                                   emphasize: true,
                                 ),
-                                const SizedBox(height: 11),
+                                const SizedBox(height: 10),
                                 _DetailRow(
                                   isDark: isDark,
                                   label: order.vendorTypeLabel == 'store'
@@ -232,17 +282,32 @@ class _FoodGroceryAwaitingSupplierScreenState
                                       : AppColors.borderLight,
                                 ),
                                 const SizedBox(height: 12),
-                                Text(
-                                  'ORDERED ITEMS',
-                                  style: AppTextStyles.labelSmall.copyWith(
-                                    color: isDark
-                                        ? AppColors.textSecondary
-                                        : AppColors.textSecondaryLight,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.6,
-                                  ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'ORDERED ITEMS',
+                                      style: AppTextStyles.labelSmall.copyWith(
+                                        color: isDark
+                                            ? AppColors.textSecondary
+                                            : AppColors.textSecondaryLight,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.6,
+                                      ),
+                                    ),
+                                    Text(
+                                      '$totalItemsCount ${totalItemsCount == 1 ? 'item' : 'items'}',
+                                      style: AppTextStyles.labelSmall.copyWith(
+                                        color: isDark
+                                            ? AppColors.textSecondary
+                                            : AppColors.textSecondaryLight,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(height: 10),
+                                const SizedBox(height: 12),
                                 if (orderItems.isEmpty) ...[
                                   Text(
                                     '1 item ordered',
@@ -254,10 +319,11 @@ class _FoodGroceryAwaitingSupplierScreenState
                                   ),
                                 ] else ...[
                                   for (int i = 0; i < orderItems.length; i++) ...[
-                                    if (i > 0) const SizedBox(height: 12),
+                                    if (i > 0) const SizedBox(height: 14),
                                     _AwaitingOrderItemRow(
                                       isDark: isDark,
-                                      item: Map<String, dynamic>.from(orderItems[i] as Map),
+                                      item: Map<String, dynamic>.from(
+                                          orderItems[i] as Map),
                                     ),
                                   ],
                                 ],
@@ -271,37 +337,146 @@ class _FoodGroceryAwaitingSupplierScreenState
                                 const SizedBox(height: 12),
                                 _DetailRow(
                                   isDark: isDark,
-                                  label: 'Order Total',
-                                  value: '€${order.total.toStringAsFixed(2)}',
+                                  label: 'Items Subtotal',
+                                  value: '€${itemsSubtotal.toStringAsFixed(2)}',
+                                ),
+                                const SizedBox(height: 8),
+                                _DetailRow(
+                                  isDark: isDark,
+                                  label: 'Delivery Fee',
+                                  value: deliveryFee > 0
+                                      ? '€${deliveryFee.toStringAsFixed(2)}'
+                                      : 'Free',
+                                  valueColor: deliveryFee == 0
+                                      ? AppColors.success
+                                      : null,
+                                ),
+                                if (vatAmount > 0) ...[
+                                  const SizedBox(height: 8),
+                                  _DetailRow(
+                                    isDark: isDark,
+                                    label: 'VAT (10%)',
+                                    value: '€${vatAmount.toStringAsFixed(2)}',
+                                  ),
+                                ],
+                                if (serviceFee > 0) ...[
+                                  const SizedBox(height: 8),
+                                  _DetailRow(
+                                    isDark: isDark,
+                                    label: 'Service Fee',
+                                    value: '€${serviceFee.toStringAsFixed(2)}',
+                                  ),
+                                ],
+                                if (discount > 0) ...[
+                                  const SizedBox(height: 8),
+                                  _DetailRow(
+                                    isDark: isDark,
+                                    label: 'Discount',
+                                    value: '-€${discount.toStringAsFixed(2)}',
+                                    valueColor: AppColors.success,
+                                  ),
+                                ],
+                                const SizedBox(height: 10),
+                                Divider(
+                                  height: 1,
+                                  color: isDark
+                                      ? AppColors.borderDark
+                                      : AppColors.borderLight,
+                                ),
+                                const SizedBox(height: 12),
+                                _DetailRow(
+                                  isDark: isDark,
+                                  label: order.isCashPayment
+                                      ? 'Total Payable'
+                                      : 'Total Paid',
+                                  value: '€${totalAmount.toStringAsFixed(2)}',
                                   emphasize: true,
                                 ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          _InformationCard(
-                            isDark: isDark,
-                            title: 'PAYMENT INFORMATION',
-                            icon: Icons.payment_outlined,
-                            child: Column(
-                              children: [
+                                const SizedBox(height: 14),
+                                Divider(
+                                  height: 1,
+                                  color: isDark
+                                      ? AppColors.borderDark
+                                      : AppColors.borderLight,
+                                ),
+                                const SizedBox(height: 12),
                                 _DetailRow(
                                   isDark: isDark,
                                   label: 'Payment Method',
-                                  value: order.paymentMethodLabel,
+                                  valueWidget: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        order.isCashPayment
+                                            ? Icons.payments_outlined
+                                            : Icons.credit_card_rounded,
+                                        size: 16,
+                                        color: AppColors.primaryGold,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        order.paymentMethodLabel,
+                                        style:
+                                            AppTextStyles.bodySmall.copyWith(
+                                          color: isDark
+                                              ? AppColors.textPrimary
+                                              : AppColors.textPrimaryLight,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                                 const SizedBox(height: 11),
                                 _DetailRow(
                                   isDark: isDark,
                                   label: 'Payment Status',
-                                  value: order.paymentStatusLabel,
-                                ),
-                                const SizedBox(height: 11),
-                                _DetailRow(
-                                  isDark: isDark,
-                                  label: 'Amount Payable',
-                                  value: '€${order.total.toStringAsFixed(2)}',
-                                  emphasize: true,
+                                  valueWidget: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 9,
+                                      vertical: 3.5,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: (order.isCashPayment
+                                              ? AppColors.primaryGold
+                                              : AppColors.success)
+                                          .withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: (order.isCashPayment
+                                                ? AppColors.primaryGold
+                                                : AppColors.success)
+                                            .withValues(alpha: 0.40),
+                                        width: 0.8,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          order.isCashPayment
+                                              ? Icons.schedule_rounded
+                                              : Icons.check_circle_rounded,
+                                          size: 13,
+                                          color: order.isCashPayment
+                                              ? AppColors.primaryGold
+                                              : AppColors.success,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          order.paymentStatusLabel,
+                                          style: AppTextStyles.labelSmall
+                                              .copyWith(
+                                            color: order.isCashPayment
+                                                ? AppColors.primaryGold
+                                                : AppColors.success,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -737,6 +912,18 @@ class _WhatHappensNextCard extends StatelessWidget {
   }
 }
 
+class _ModifierItem {
+  const _ModifierItem({
+    required this.name,
+    required this.quantity,
+    required this.price,
+  });
+
+  final String name;
+  final int quantity;
+  final double price;
+}
+
 class _AwaitingOrderItemRow extends StatelessWidget {
   const _AwaitingOrderItemRow({
     required this.isDark,
@@ -748,138 +935,124 @@ class _AwaitingOrderItemRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final quantity = (item['quantity'] as num?)?.toInt() ?? 1;
-    final name = item['name']?.toString() ?? 'Item';
-    final lineTotal = (item['lineTotal'] as num?)?.toDouble() ??
-        (((item['unitPrice'] as num?)?.toDouble() ?? 0.0) * quantity);
+    final rawName = item['name']?.toString() ?? 'Item';
+    final name = rawName.isNotEmpty
+        ? '${rawName[0].toUpperCase()}${rawName.substring(1)}'
+        : rawName;
     final variantName = item['variantName']?.toString();
     final rawModifiers = (item['modifiers'] as List?) ??
         (item['addOns'] as List?) ??
         (item['options'] as List?) ??
         [];
 
-    final modifierNames = <String>[];
+    final parsedModifiers = <_ModifierItem>[];
     for (final m in rawModifiers) {
       if (m is Map) {
-        final rawName = m['name']?.toString() ?? m['title']?.toString() ?? '';
+        final rName = m['name']?.toString() ?? m['title']?.toString() ?? '';
         final mPrice = (m['price'] as num?)?.toDouble() ??
             (m['priceAdjustment'] as num?)?.toDouble() ??
             0.0;
         final mQty = (m['quantity'] as num?)?.toInt() ??
             (m['count'] as num?)?.toInt() ??
             1;
-        if (rawName.isNotEmpty) {
-          String cleanName = rawName.replaceAll(RegExp(r'\s*\(\+?€[0-9.]+\)'), '').trim();
-          if (mQty > 1 && !cleanName.contains('×') && !cleanName.contains('x')) {
-            cleanName = '$cleanName ($mQty×)';
+        if (rName.isNotEmpty) {
+          String cleanName = rName
+              .replaceAll(RegExp(r'\s*\(\+?€[0-9.]+\)'), '')
+              .replaceAll(RegExp(r'\s*\(\d+\s*[x×X]\)'), '')
+              .replaceAll(RegExp(r'\s*\d+\s*[x×X]'), '')
+              .trim();
+          if (cleanName.isNotEmpty) {
+            cleanName = '${cleanName[0].toUpperCase()}${cleanName.substring(1)}';
           }
-          final priceStr = mPrice > 0 ? ' (+€${(mPrice * mQty).toStringAsFixed(2)})' : '';
-          modifierNames.add('$cleanName$priceStr');
+          parsedModifiers.add(_ModifierItem(
+            name: cleanName,
+            quantity: mQty,
+            price: mPrice,
+          ));
         }
       } else if (m is String && m.isNotEmpty) {
-        modifierNames.add(m);
+        parsedModifiers.add(_ModifierItem(
+          name: m,
+          quantity: 1,
+          price: 0.0,
+        ));
       }
     }
 
     final instructions = item['instructions']?.toString();
 
-    return Row(
+    final itemTitle = name;
+
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 28,
-          height: 28,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: AppColors.primaryGold.withValues(alpha: 0.14),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            '$quantity×',
-            style: AppTextStyles.labelSmall.copyWith(
-              color: AppColors.primaryGold,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                name,
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: isDark
-                      ? AppColors.textPrimary
-                      : AppColors.textPrimaryLight,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              if (variantName != null && variantName.trim().isNotEmpty) ...[
-                const SizedBox(height: 2),
-                Text(
-                  variantName.trim(),
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: isDark
-                        ? AppColors.textSecondary
-                        : AppColors.textSecondaryLight,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-              if (modifierNames.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? AppColors.primaryGold.withValues(alpha: 0.10)
-                        : const Color(0xFFFFF9E6),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: AppColors.primaryGold.withValues(alpha: 0.35),
-                      width: 0.8,
-                    ),
-                  ),
-                  child: Text(
-                    'Add-ons: ${modifierNames.join(', ')}',
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: isDark
-                          ? AppColors.primaryGold
-                          : AppColors.primaryGoldDark,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
-              ],
-              if (instructions != null && instructions.trim().isNotEmpty) ...[
-                const SizedBox(height: 3),
-                Text(
-                  'Note: "${instructions.trim()}"',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    fontStyle: FontStyle.italic,
-                    color: isDark
-                        ? AppColors.textSecondary
-                        : AppColors.textSecondaryLight,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(width: 8),
         Text(
-          '€${lineTotal.toStringAsFixed(2)}',
+          itemTitle,
           style: AppTextStyles.bodyMedium.copyWith(
             color: isDark
                 ? AppColors.textPrimary
                 : AppColors.textPrimaryLight,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
           ),
         ),
+        if (variantName != null && variantName.trim().isNotEmpty) ...[
+          const SizedBox(height: 2),
+          Text(
+            variantName.trim(),
+            style: AppTextStyles.bodySmall.copyWith(
+              color: isDark
+                  ? AppColors.textSecondary
+                  : AppColors.textSecondaryLight,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+        if (parsedModifiers.isNotEmpty) ...[
+          const SizedBox(height: 5),
+          for (final mod in parsedModifiers)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 2),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '• ',
+                    style: TextStyle(
+                      color: AppColors.primaryGold,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      mod.quantity > 1
+                          ? '${mod.name} (${mod.quantity}×)'
+                          : mod.name,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: isDark
+                            ? AppColors.textSecondary
+                            : AppColors.textSecondaryLight,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+        if (instructions != null && instructions.trim().isNotEmpty) ...[
+          const SizedBox(height: 3),
+          Text(
+            'Note: "${instructions.trim()}"',
+            style: AppTextStyles.bodySmall.copyWith(
+              fontStyle: FontStyle.italic,
+              color: isDark
+                  ? AppColors.textSecondary
+                  : AppColors.textSecondaryLight,
+              fontSize: 11,
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -946,20 +1119,24 @@ class _DetailRow extends StatelessWidget {
   const _DetailRow({
     required this.isDark,
     required this.label,
-    required this.value,
+    this.value,
+    this.valueWidget,
     this.emphasize = false,
+    this.valueColor,
   });
 
   final bool isDark;
   final String label;
-  final String value;
+  final String? value;
+  final Widget? valueWidget;
   final bool emphasize;
+  final Color? valueColor;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           label,
@@ -970,20 +1147,24 @@ class _DetailRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            value,
-            textAlign: TextAlign.end,
-            style: AppTextStyles.bodySmall.copyWith(
-              color: emphasize
-                  ? AppColors.primaryGold
-                  : isDark
-                      ? AppColors.textPrimary
-                      : AppColors.textPrimaryLight,
-              fontWeight: emphasize ? FontWeight.w700 : FontWeight.w600,
+        if (valueWidget != null)
+          valueWidget!
+        else
+          Expanded(
+            child: Text(
+              value ?? '',
+              textAlign: TextAlign.end,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: valueColor ??
+                    (emphasize
+                        ? AppColors.primaryGold
+                        : isDark
+                            ? AppColors.textPrimary
+                            : AppColors.textPrimaryLight),
+                fontWeight: emphasize ? FontWeight.w700 : FontWeight.w600,
+              ),
             ),
           ),
-        ),
       ],
     );
   }

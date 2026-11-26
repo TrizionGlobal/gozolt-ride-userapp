@@ -6,6 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/router/route_names.dart';
 import '../../data/models/food_restaurant.dart';
+import '../providers/food_grocery_delivery_provider.dart';
 import '../providers/restaurant_list_provider.dart';
 import '../widgets/food_grocery_header.dart';
 import '../widgets/smart_product_image.dart';
@@ -76,6 +77,8 @@ class _RestaurantListingScreenState
 
   List<FoodRestaurant> _applyFilters(
     List<FoodRestaurant> restaurants,
+    double? userLat,
+    double? userLng,
   ) {
     var result = restaurants.where((restaurant) {
       final query = _searchQuery.trim().toLowerCase();
@@ -138,7 +141,11 @@ class _RestaurantListingScreenState
 
       case RestaurantSortOption.nearest:
         result.sort(
-          (first, second) => first.distanceKm.compareTo(second.distanceKm),
+          (first, second) {
+            final d1 = first.calculateDistanceTo(userLat, userLng) ?? first.distanceKm;
+            final d2 = second.calculateDistanceTo(userLat, userLng) ?? second.distanceKm;
+            return d1.compareTo(d2);
+          },
         );
 
       case RestaurantSortOption.deliveryFee:
@@ -191,26 +198,8 @@ class _RestaurantListingScreenState
   }
 
   void _selectRestaurant(FoodRestaurant restaurant) {
-    if (!restaurant.isOrderable) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            restaurant.status == RestaurantOperationalStatus.closed
-                ? 'This restaurant is no longer accepting orders'
-                : 'This restaurant is currently unavailable',
-            style: AppTextStyles.bodySmall.copyWith(
-              color: Colors.white,
-            ),
-          ),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-
-    // TODO(FOOD_GROCERY_API):
-    // Revalidate restaurant availability with the backend
-    // before opening the restaurant menu.
+    // Allow users to view and browse the restaurant menu even when closed.
+    // Ordering / checkout is guarded inside the details screen.
     context.pushNamed(
       RouteNames.foodGroceryRestaurantDetails,
       extra: restaurant,
@@ -512,8 +501,11 @@ class _RestaurantListingScreenState
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final deliveryState = ref.watch(foodGroceryDeliveryProvider);
+    final userLat = deliveryState.selectedAddress?.latitude;
+    final userLng = deliveryState.selectedAddress?.longitude;
     final restaurants = ref.watch(restaurantListProvider);
-    final visibleRestaurants = _applyFilters(restaurants);
+    final visibleRestaurants = _applyFilters(restaurants, userLat, userLng);
 
     return Scaffold(
       backgroundColor:
@@ -701,6 +693,10 @@ class _RestaurantListingScreenState
                         child: _RestaurantCard(
                           restaurant: restaurant,
                           isDark: isDark,
+                          distanceText: restaurant.dynamicDistanceText(
+                            userLat,
+                            userLng,
+                          ),
                           onTap: () {
                             _selectRestaurant(restaurant);
                           },
@@ -916,15 +912,17 @@ class _RestaurantCard extends StatelessWidget {
     required this.isDark,
     required this.onTap,
     required this.onFavouritePressed,
+    this.distanceText,
   });
 
   final FoodRestaurant restaurant;
   final bool isDark;
   final VoidCallback onTap;
   final VoidCallback onFavouritePressed;
+  final String? distanceText;
 
   Color get _statusColor {
-    switch (restaurant.status) {
+    switch (restaurant.effectiveStatus) {
       case RestaurantOperationalStatus.open:
         return AppColors.success;
 
@@ -1080,11 +1078,12 @@ class _RestaurantCard extends StatelessWidget {
                             text: restaurant.preparationTime,
                             isDark: isDark,
                           ),
-                          _RestaurantMetaItem(
-                            icon: Icons.location_on_outlined,
-                            text: restaurant.distanceText,
-                            isDark: isDark,
-                          ),
+                          if (distanceText != null || restaurant.distanceText != null)
+                            _RestaurantMetaItem(
+                              icon: Icons.location_on_outlined,
+                              text: (distanceText ?? restaurant.distanceText)!,
+                              isDark: isDark,
+                            ),
                         ],
                       ),
                       const SizedBox(height: 10),

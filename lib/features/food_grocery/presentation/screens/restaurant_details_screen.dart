@@ -277,9 +277,10 @@ class _RestaurantDetailsScreenState
 
     final selectedAddress = ref.read(foodGroceryDeliveryProvider).selectedAddress;
     final distance = widget.restaurant.calculateDistanceTo(
-      selectedAddress?.latitude,
-      selectedAddress?.longitude,
-    );
+          selectedAddress?.latitude,
+          selectedAddress?.longitude,
+        ) ??
+        widget.restaurant.distanceKm;
     // €1.00 per km delivery fee based on real distance
     final deliveryFee = double.parse((distance * 1.0).toStringAsFixed(2));
 
@@ -549,7 +550,7 @@ class _RestaurantDetailsScreenState
                     label: 'Address',
                     value: widget.restaurant.address?.isNotEmpty == true
                         ? widget.restaurant.address!
-                        : widget.restaurant.distanceText,
+                        : (widget.restaurant.distanceText ?? 'Malta'),
                     isDark: isDark,
                   ),
                   _InformationRow(
@@ -644,6 +645,11 @@ class _RestaurantDetailsScreenState
     );
 
     final visibleItems = _visibleItems(menuState);
+    final deliveryState = ref.watch(foodGroceryDeliveryProvider);
+    final userLat = deliveryState.selectedAddress?.latitude;
+    final userLng = deliveryState.selectedAddress?.longitude;
+    final currentRestaurant = menuState.restaurant ?? widget.restaurant;
+    final dynamicDistance = currentRestaurant.dynamicDistanceText(userLat, userLng);
 
     return Scaffold(
       backgroundColor:
@@ -675,10 +681,10 @@ class _RestaurantDetailsScreenState
                 ),
                 children: [
                   _RestaurantOverviewCard(
-                    restaurant: widget.restaurant,
+                    restaurant: currentRestaurant,
                     isDark: isDark,
                     isFavourite: _isFavourite,
-                    distanceText: '${widget.restaurant.calculateDistanceTo(ref.watch(foodGroceryDeliveryProvider).selectedAddress?.latitude, ref.watch(foodGroceryDeliveryProvider).selectedAddress?.longitude).toStringAsFixed(1)} km',
+                    distanceText: dynamicDistance,
                     onFavouritePressed: () {
                       setState(() {
                         _isFavourite = !_isFavourite;
@@ -686,17 +692,17 @@ class _RestaurantDetailsScreenState
                     },
                     onInformationPressed: _showRestaurantInformation,
                   ),
-                  if (!widget.restaurant.isOrderable) ...[
+                  if (!currentRestaurant.isOrderable) ...[
                     const SizedBox(height: 12),
                     _UnavailableNotice(
-                      restaurant: widget.restaurant,
+                      restaurant: currentRestaurant,
                       isDark: isDark,
                     ),
                   ],
-                  if (widget.restaurant.offerText != null) ...[
+                  if (currentRestaurant.offerText != null) ...[
                     const SizedBox(height: 12),
                     _RestaurantOfferCard(
-                      offerText: widget.restaurant.offerText!,
+                      offerText: currentRestaurant.offerText!,
                       isDark: isDark,
                       onTap: _showOfferDetails,
                     ),
@@ -964,7 +970,7 @@ class _RestaurantOverviewCard extends StatelessWidget {
     required this.restaurant,
     required this.isDark,
     required this.isFavourite,
-    required this.distanceText,
+    this.distanceText,
     required this.onFavouritePressed,
     required this.onInformationPressed,
   });
@@ -972,26 +978,24 @@ class _RestaurantOverviewCard extends StatelessWidget {
   final FoodRestaurant restaurant;
   final bool isDark;
   final bool isFavourite;
-  final String distanceText;
+  final String? distanceText;
   final VoidCallback onFavouritePressed;
   final VoidCallback onInformationPressed;
 
   Color _statusColor(RestaurantOperationalStatus status) {
     switch (status) {
       case RestaurantOperationalStatus.open:
-        return const Color(0xFF2E7D32);
+        return AppColors.success;
 
       case RestaurantOperationalStatus.closingSoon:
-        return const Color(0xFFED6C02);
+        return AppColors.warning;
 
       case RestaurantOperationalStatus.busy:
-        return const Color(0xFFD32F2F);
+        return AppColors.info;
 
       case RestaurantOperationalStatus.closed:
-        return const Color(0xFF757575);
-
       case RestaurantOperationalStatus.temporarilyUnavailable:
-        return const Color(0xFF424242);
+        return AppColors.error;
     }
   }
 
@@ -1133,11 +1137,12 @@ class _RestaurantOverviewCard extends StatelessWidget {
                       value: '${restaurant.preparationTime} prep',
                       isDark: isDark,
                     ),
-                    _OverviewDetail(
-                      icon: Icons.location_on_outlined,
-                      value: distanceText,
-                      isDark: isDark,
-                    ),
+                    if (distanceText != null && distanceText!.isNotEmpty)
+                      _OverviewDetail(
+                        icon: Icons.location_on_outlined,
+                        value: distanceText!,
+                        isDark: isDark,
+                      ),
                     _OverviewDetail(
                       icon: Icons.shopping_bag_outlined,
                       value: restaurant.minimumOrderText,

@@ -10,8 +10,12 @@ import '../providers/food_grocery_delivery_provider.dart';
 import '../providers/food_grocery_order_provider.dart';
 import '../providers/restaurant_list_provider.dart';
 import '../providers/grocery_store_list_provider.dart';
+import '../../data/models/food_grocery_delivery_address.dart';
+import '../../data/models/food_restaurant.dart';
+import '../../data/models/grocery_store.dart';
 import '../widgets/food_grocery_header.dart';
 import '../widgets/smart_product_image.dart';
+import 'food_grocery_delivery_address_screen.dart';
 
 class FoodGroceryHomeScreen extends ConsumerStatefulWidget {
   const FoodGroceryHomeScreen({super.key});
@@ -22,13 +26,30 @@ class FoodGroceryHomeScreen extends ConsumerStatefulWidget {
 
 class _FoodGroceryHomeScreenState extends ConsumerState<FoodGroceryHomeScreen> {
   final TextEditingController _searchController = TextEditingController();
+  bool _hasPromptedAddressModal = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       ref.read(foodGroceryOrderProvider.notifier).getActiveOrder();
+      final delivery = ref.read(foodGroceryDeliveryProvider);
+      if (delivery.selectedAddress == null) {
+        await ref
+            .read(foodGroceryDeliveryProvider.notifier)
+            .requestCurrentLocation();
+      }
+      if (!mounted) return;
+      _maybePromptAddressSheet(ref.read(foodGroceryDeliveryProvider));
     });
+  }
+
+  void _maybePromptAddressSheet(FoodGroceryDeliveryState delivery) {
+    if (_hasPromptedAddressModal) return;
+    if (delivery.addresses.isEmpty && delivery.currentLocationAddress != null) {
+      _hasPromptedAddressModal = true;
+      showFoodGroceryAddressFormSheet(context, ref);
+    }
   }
 
   @override
@@ -82,13 +103,23 @@ class _FoodGroceryHomeScreenState extends ConsumerState<FoodGroceryHomeScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    ref.listen<FoodGroceryDeliveryState>(foodGroceryDeliveryProvider,
+        (prev, next) {
+      if (prev?.currentLocationAddress == null &&
+          next.currentLocationAddress != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _maybePromptAddressSheet(next);
+        });
+      }
+    });
+
     final delivery = ref.watch(foodGroceryDeliveryProvider);
     final deliveryLocation =
         delivery.selectedAddress?.locality.isNotEmpty == true
             ? delivery.selectedAddress!.locality
             : (delivery.selectedAddress?.city.isNotEmpty == true
                 ? delivery.selectedAddress!.city
-                : 'Valletta, Malta');
+                : 'Set delivery location');
 
     final order = ref.watch(foodGroceryOrderProvider);
     final hasActiveOrder = order.orderId != null &&
@@ -307,7 +338,7 @@ class _FoodGroceryHomeScreenState extends ConsumerState<FoodGroceryHomeScreen> {
                       }
 
                       return SizedBox(
-                        height: 188,
+                        height: 206,
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
                           itemCount: restaurants.length,
@@ -318,16 +349,38 @@ class _FoodGroceryHomeScreenState extends ConsumerState<FoodGroceryHomeScreen> {
                             final categoryText = restaurant.cuisines.isNotEmpty
                                 ? '${restaurant.cuisines.take(2).map((c) => c.toTitleCase()).join(', ')} • Food'
                                 : 'Food & Dining';
+                            final isClosed = !restaurant.isOrderable;
+                            final deliveryState =
+                                ref.watch(foodGroceryDeliveryProvider);
+                            final userLat =
+                                deliveryState.selectedAddress?.latitude;
+                            final userLng =
+                                deliveryState.selectedAddress?.longitude;
 
                             return _SupplierCard(
                               name: restaurant.name.toTitleCase(),
                               imageUrl: restaurant.imageUrl,
                               category: categoryText,
-                              rating: restaurant.rating.toStringAsFixed(1),
+                              rating: restaurant.formattedRatingText,
                               deliveryTime: restaurant.estimatedDeliveryTime,
-                              deliveryFee: restaurant.deliveryFeeText,
                               icon: Icons.restaurant_rounded,
                               isDark: isDark,
+                              statusText: restaurant.statusText,
+                              statusColor: restaurant.effectiveStatus ==
+                                          RestaurantOperationalStatus.closed ||
+                                      restaurant.effectiveStatus ==
+                                          RestaurantOperationalStatus
+                                              .temporarilyUnavailable
+                                  ? AppColors.error
+                                  : AppColors.success,
+                              isClosed: isClosed,
+                              preparationTime: restaurant.preparationTime,
+                              distance: restaurant.dynamicDistanceText(
+                                userLat,
+                                userLng,
+                              ),
+                              minimumOrder:
+                                  '€${restaurant.minimumOrder.toStringAsFixed(2)}',
                               onTap: () {
                                 context.pushNamed(
                                   RouteNames.foodGroceryRestaurantDetails,
@@ -407,7 +460,7 @@ class _FoodGroceryHomeScreenState extends ConsumerState<FoodGroceryHomeScreen> {
                       }
 
                       return SizedBox(
-                        height: 188,
+                        height: 206,
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
                           itemCount: stores.length,
@@ -418,16 +471,40 @@ class _FoodGroceryHomeScreenState extends ConsumerState<FoodGroceryHomeScreen> {
                             final categoryText = store.mainCategories.isNotEmpty
                                 ? '${store.mainCategories.take(2).map((c) => c.toTitleCase()).join(', ')} • Supermarket'
                                 : 'Groceries & Essentials';
+                            final isClosed = !store.isOrderable;
+                            final deliveryState =
+                                ref.watch(foodGroceryDeliveryProvider);
+                            final userLat =
+                                deliveryState.selectedAddress?.latitude;
+                            final userLng =
+                                deliveryState.selectedAddress?.longitude;
 
                             return _SupplierCard(
                               name: store.name.toTitleCase(),
                               imageUrl: store.imageUrl,
                               category: categoryText,
-                              rating: store.rating.toStringAsFixed(1),
+                              rating: store.formattedRatingText,
                               deliveryTime: store.estimatedDeliveryTime,
-                              deliveryFee: store.deliveryFeeText,
                               icon: Icons.local_grocery_store_rounded,
                               isDark: isDark,
+                              statusText: store.statusText,
+                              statusColor: store.effectiveStatus ==
+                                          GroceryStoreOperationalStatus
+                                              .closed ||
+                                      store.effectiveStatus ==
+                                          GroceryStoreOperationalStatus
+                                              .temporarilyUnavailable
+                                  ? AppColors.error
+                                  : AppColors.success,
+                              isClosed: isClosed,
+                              preparationTime: store.preparationTime,
+                              distance: store.dynamicDistanceText(
+                                userLat,
+                                userLng,
+                              ),
+                              minimumOrder: store.minimumOrder > 0
+                                  ? '€${store.minimumOrder.toStringAsFixed(2)}'
+                                  : null,
                               onTap: () {
                                 context.pushNamed(
                                   RouteNames.foodGroceryCatalogue,
@@ -820,10 +897,15 @@ class _SupplierCard extends StatelessWidget {
     required this.category,
     required this.rating,
     required this.deliveryTime,
-    required this.deliveryFee,
     required this.icon,
     required this.isDark,
     required this.onTap,
+    this.statusText,
+    this.statusColor,
+    this.isClosed = false,
+    this.preparationTime,
+    this.distance,
+    this.minimumOrder,
   });
 
   final String name;
@@ -831,94 +913,186 @@ class _SupplierCard extends StatelessWidget {
   final String category;
   final String rating;
   final String deliveryTime;
-  final String deliveryFee;
   final IconData icon;
   final bool isDark;
   final VoidCallback onTap;
+  final String? statusText;
+  final Color? statusColor;
+  final bool isClosed;
+  final String? preparationTime;
+  final String? distance;
+  final String? minimumOrder;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: isDark ? AppColors.cardDark : AppColors.cardLight,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: onTap,
+    return Opacity(
+      opacity: isClosed ? 0.75 : 1.0,
+      child: Material(
+        color: isDark ? AppColors.cardDark : AppColors.cardLight,
         borderRadius: BorderRadius.circular(16),
-        child: Container(
-          width: 248,
-          padding: const EdgeInsets.all(13),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            width: 256,
+            padding: const EdgeInsets.all(11),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? AppColors.borderDark : AppColors.borderLight,
+              ),
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SmartProductImage(
-                imageUrl: imageUrl,
-                width: double.infinity,
-                height: 80,
-                fallbackIcon: icon,
-                borderRadius: 12,
-              ),
-              const SizedBox(height: 10),
-              Text(
-                name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.titleSmall.copyWith(
-                  color: isDark
-                      ? AppColors.textPrimary
-                      : AppColors.textPrimaryLight,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                category,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: isDark
-                      ? AppColors.textSecondary
-                      : AppColors.textSecondaryLight,
-                ),
-              ),
-              const Spacer(),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.star_rounded,
-                    size: 17,
-                    color: AppColors.primaryGoldDark,
-                  ),
-                  const SizedBox(width: 3),
-                  Text(
-                    rating,
-                    style: AppTextStyles.labelSmall.copyWith(
-                      color: isDark
-                          ? AppColors.textPrimary
-                          : AppColors.textPrimaryLight,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Stack(
+                  children: [
+                    SmartProductImage(
+                      imageUrl: imageUrl,
+                      width: double.infinity,
+                      height: 82,
+                      fallbackIcon: icon,
+                      borderRadius: 10,
                     ),
+                    if (statusText != null && isClosed)
+                      Positioned(
+                        left: 6,
+                        top: 6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: statusColor ?? AppColors.error,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            statusText!,
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 7),
+                Text(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.titleSmall.copyWith(
+                    color: isDark
+                        ? AppColors.textPrimary
+                        : AppColors.textPrimaryLight,
+                    fontWeight: FontWeight.w600,
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      '$deliveryTime • $deliveryFee',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  category,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: isDark
+                        ? AppColors.textSecondary
+                        : AppColors.textSecondaryLight,
+                    fontSize: 11,
+                  ),
+                ),
+                const Spacer(),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.star_rounded,
+                      size: 15,
+                      color: AppColors.primaryGoldDark,
+                    ),
+                    const SizedBox(width: 2),
+                    Text(
+                      rating,
                       style: AppTextStyles.labelSmall.copyWith(
+                        color: isDark
+                            ? AppColors.textPrimary
+                            : AppColors.textPrimaryLight,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
+                      ),
+                    ),
+                    if (preparationTime != null) ...[
+                      const SizedBox(width: 6),
+                      Icon(
+                        Icons.schedule_rounded,
+                        size: 13,
                         color: isDark
                             ? AppColors.textSecondary
                             : AppColors.textSecondaryLight,
                       ),
-                    ),
+                      const SizedBox(width: 2),
+                      Flexible(
+                        child: Text(
+                          preparationTime!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: isDark
+                                ? AppColors.textSecondary
+                                : AppColors.textSecondaryLight,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ),
+                    ],
+                    if (distance != null) ...[
+                      const SizedBox(width: 6),
+                      Icon(
+                        Icons.location_on_outlined,
+                        size: 13,
+                        color: isDark
+                            ? AppColors.textSecondary
+                            : AppColors.textSecondaryLight,
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        distance!,
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: isDark
+                              ? AppColors.textSecondary
+                              : AppColors.textSecondaryLight,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                if (minimumOrder != null) ...[
+                  const SizedBox(height: 5),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.shopping_bag_outlined,
+                        size: 13,
+                        color: AppColors.primaryGoldDark,
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        'Min $minimumOrder',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: isDark
+                              ? AppColors.textSecondary
+                              : AppColors.textSecondaryLight,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

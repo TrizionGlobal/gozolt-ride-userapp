@@ -1,13 +1,55 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../data/models/food_grocery_delivery_address.dart';
+import '../providers/food_grocery_cart_provider.dart';
 import '../providers/food_grocery_delivery_provider.dart';
 import '../widgets/food_grocery_header.dart';
+
+/// Opens the Add / Edit delivery address modal sheet, pre-filling street,
+/// locality, and coordinates from the accessed GPS location (without
+/// pre-filling user's default name or phone number).
+Future<void> showFoodGroceryAddressFormSheet(
+  BuildContext context,
+  WidgetRef ref, {
+  FoodGroceryDeliveryAddress? address,
+}) async {
+  final currentLoc =
+      ref.read(foodGroceryDeliveryProvider).currentLocationAddress;
+
+  final result = await showModalBottomSheet<FoodGroceryDeliveryAddress>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) {
+      return _AddressFormSheet(
+        address: address,
+        currentLocation: currentLoc,
+      );
+    },
+  );
+
+  if (result == null || !context.mounted) {
+    return;
+  }
+
+  final notifier = ref.read(
+    foodGroceryDeliveryProvider.notifier,
+  );
+
+  if (address == null) {
+    await notifier.addAddress(result);
+  } else {
+    await notifier.updateAddress(result);
+    notifier.selectAddress(result.id);
+  }
+}
 
 class FoodGroceryDeliveryAddressScreen extends ConsumerStatefulWidget {
   const FoodGroceryDeliveryAddressScreen({
@@ -44,33 +86,8 @@ class _FoodGroceryDeliveryAddressScreenState
 
   Future<void> _showAddressForm({
     FoodGroceryDeliveryAddress? address,
-  }) async {
-    final result = await showModalBottomSheet<FoodGroceryDeliveryAddress>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return _AddressFormSheet(
-          address: address,
-        );
-      },
-    );
-
-    if (result == null || !mounted) {
-      return;
-    }
-
-    final notifier = ref.read(
-      foodGroceryDeliveryProvider.notifier,
-    );
-
-    if (address == null) {
-      notifier.addAddress(result);
-    } else {
-      notifier.updateAddress(result);
-      notifier.selectAddress(result.id);
-    }
-  }
+  }) =>
+      showFoodGroceryAddressFormSheet(context, ref, address: address);
 
   Future<void> _confirmRemoveAddress(
     FoodGroceryDeliveryAddress address,
@@ -140,31 +157,37 @@ class _FoodGroceryDeliveryAddressScreenState
     ref.read(foodGroceryDeliveryProvider.notifier).removeAddress(address.id);
   }
 
-  void _continueToReview() {
+  void _continueToReview({bool isFromCart = true}) {
     final deliveryState = ref.read(
       foodGroceryDeliveryProvider,
     );
 
     if (!deliveryState.canContinue) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Please select a delivery address.',
-            style: AppTextStyles.bodyMedium.copyWith(
-              color: Colors.white,
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(
+              'Please complete and save your delivery details to continue.',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: Colors.white,
+              ),
             ),
+            backgroundColor: AppColors.error,
           ),
-          backgroundColor: AppColors.error,
-        ),
-      );
+        );
       return;
     }
 
     FocusScope.of(context).unfocus();
 
-    context.pushNamed(
-      RouteNames.foodGroceryReviewOrder,
-    );
+    if (isFromCart) {
+      context.pushNamed(
+        RouteNames.foodGroceryReviewOrder,
+      );
+    } else {
+      context.pop();
+    }
   }
 
   @override
@@ -174,6 +197,8 @@ class _FoodGroceryDeliveryAddressScreenState
     final deliveryState = ref.watch(
       foodGroceryDeliveryProvider,
     );
+    final cart = ref.watch(foodGroceryCartProvider);
+    final isFromCart = cart.items.isNotEmpty;
 
     return Scaffold(
       backgroundColor:
@@ -233,13 +258,44 @@ class _FoodGroceryDeliveryAddressScreenState
                     ],
                   ),
                   const SizedBox(height: 8),
-                  if (deliveryState.addresses.isEmpty)
+                  if (deliveryState.addresses.isEmpty) ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.error.withValues(alpha: 0.45),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.error_outline_rounded,
+                            color: AppColors.error,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Please complete and save your delivery details to continue.',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.error,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     _EmptyAddressCard(
                       isDark: isDark,
                       onAddAddress: () {
                         _showAddressForm();
                       },
-                    )
+                    ),
+                  ]
                   else
                     ...deliveryState.addresses.map(
                       (address) {
@@ -393,15 +449,16 @@ class _FoodGroceryDeliveryAddressScreenState
           child: SizedBox(
             height: 50,
             child: ElevatedButton(
-              onPressed: deliveryState.canContinue ? _continueToReview : null,
+              onPressed: () => _continueToReview(isFromCart: isFromCart),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryGold,
-                foregroundColor: AppColors.backgroundDark,
-                disabledBackgroundColor:
-                    isDark ? AppColors.borderDark : AppColors.borderLight,
-                disabledForegroundColor: isDark
-                    ? AppColors.textSecondary
-                    : AppColors.textSecondaryLight,
+                backgroundColor: deliveryState.canContinue
+                    ? AppColors.primaryGold
+                    : (isDark ? AppColors.borderDark : AppColors.borderLight),
+                foregroundColor: deliveryState.canContinue
+                    ? AppColors.backgroundDark
+                    : (isDark
+                        ? AppColors.textSecondary
+                        : AppColors.textSecondaryLight),
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
@@ -411,14 +468,18 @@ class _FoodGroceryDeliveryAddressScreenState
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'CONTINUE TO REVIEW',
+                    isFromCart
+                        ? 'CONTINUE TO REVIEW'
+                        : 'CONFIRM DELIVERY ADDRESS',
                     style: AppTextStyles.labelLarge.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Icon(
-                    Icons.arrow_forward_rounded,
+                  Icon(
+                    isFromCart
+                        ? Icons.arrow_forward_rounded
+                        : Icons.check_circle_outline_rounded,
                     size: 20,
                   ),
                 ],
@@ -816,9 +877,11 @@ class _EmptyAddressCard extends StatelessWidget {
 class _AddressFormSheet extends StatefulWidget {
   const _AddressFormSheet({
     this.address,
+    this.currentLocation,
   });
 
   final FoodGroceryDeliveryAddress? address;
+  final FoodGroceryDeliveryAddress? currentLocation;
 
   @override
   State<_AddressFormSheet> createState() => _AddressFormSheetState();
@@ -835,39 +898,103 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
   late final TextEditingController _apartmentController;
   late final TextEditingController _addressController;
   late final TextEditingController _localityController;
-  late final TextEditingController _cityController;
-  late final TextEditingController _postalCodeController;
+
+  String _city = 'Malta';
+  String _postalCode = '';
+  double? _latitude;
+  double? _longitude;
+  bool _isDetectingLocation = false;
 
   @override
   void initState() {
     super.initState();
 
     final address = widget.address;
+    final currentLoc = widget.currentLocation;
 
     _selectedLabel = address?.label ?? 'Home';
     _isDefault = address?.isDefault ?? false;
+    _latitude = address?.latitude ?? currentLoc?.latitude;
+    _longitude = address?.longitude ?? currentLoc?.longitude;
 
-    _nameController = TextEditingController(
-      text: address?.recipientName ?? '',
-    );
-    _phoneController = TextEditingController(
-      text: address?.phoneNumber ?? '',
-    );
+    final initialName = address?.recipientName ?? '';
+    final initialPhone = address?.phoneNumber ?? '';
+
+    String initialAddressLine = address?.addressLine ?? '';
+    if (initialAddressLine.isEmpty && currentLoc != null) {
+      if (currentLoc.addressLine.isNotEmpty &&
+          currentLoc.addressLine.toLowerCase() != 'current location') {
+        initialAddressLine = currentLoc.addressLine;
+      }
+    }
+
+    String initialLocality = address?.locality ?? '';
+    if (initialLocality.isEmpty && currentLoc != null) {
+      if (currentLoc.locality.isNotEmpty &&
+          currentLoc.locality.toLowerCase() != 'current location') {
+        initialLocality = currentLoc.locality;
+      }
+    }
+
+    _city = address?.city ?? currentLoc?.city ?? 'Malta';
+    _postalCode = address?.postalCode ?? currentLoc?.postalCode ?? '';
+
+    _nameController = TextEditingController(text: initialName);
+    _phoneController = TextEditingController(text: initialPhone);
     _apartmentController = TextEditingController(
       text: address?.apartmentDetails ?? '',
     );
-    _addressController = TextEditingController(
-      text: address?.addressLine ?? '',
-    );
-    _localityController = TextEditingController(
-      text: address?.locality ?? '',
-    );
-    _cityController = TextEditingController(
-      text: address?.city ?? 'Malta',
-    );
-    _postalCodeController = TextEditingController(
-      text: address?.postalCode ?? '',
-    );
+    _addressController = TextEditingController(text: initialAddressLine);
+    _localityController = TextEditingController(text: initialLocality);
+  }
+
+  Future<void> _autoFillFromGps() async {
+    setState(() => _isDetectingLocation = true);
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        if (mounted) setState(() => _isDetectingLocation = false);
+        return;
+      }
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 8),
+        ),
+      );
+      _latitude = pos.latitude;
+      _longitude = pos.longitude;
+      try {
+        final placemarks = await geocoding.placemarkFromCoordinates(
+          pos.latitude,
+          pos.longitude,
+        );
+        if (placemarks.isNotEmpty && mounted) {
+          final p = placemarks.first;
+          if (p.street?.isNotEmpty == true) {
+            _addressController.text = p.street!;
+          }
+          if (p.locality?.isNotEmpty == true) {
+            _localityController.text = p.locality!;
+            _city = p.locality!;
+          } else if (p.subLocality?.isNotEmpty == true) {
+            _localityController.text = p.subLocality!;
+          }
+          if (p.postalCode?.isNotEmpty == true) {
+            _postalCode = p.postalCode!;
+          }
+        }
+      } catch (_) {
+        // Fallback: coordinates preserved in _latitude and _longitude
+      }
+    } catch (_) {
+      // Ignored
+    }
+    if (mounted) setState(() => _isDetectingLocation = false);
   }
 
   @override
@@ -877,8 +1004,6 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
     _apartmentController.dispose();
     _addressController.dispose();
     _localityController.dispose();
-    _cityController.dispose();
-    _postalCodeController.dispose();
     super.dispose();
   }
 
@@ -908,10 +1033,10 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
           : _apartmentController.text.trim(),
       addressLine: _addressController.text.trim(),
       locality: _localityController.text.trim(),
-      city: _cityController.text.trim(),
-      postalCode: _postalCodeController.text.trim(),
-      latitude: previousAddress?.latitude,
-      longitude: previousAddress?.longitude,
+      city: _city.trim().isNotEmpty ? _city.trim() : 'Malta',
+      postalCode: _postalCode.trim(),
+      latitude: _latitude ?? previousAddress?.latitude,
+      longitude: _longitude ?? previousAddress?.longitude,
       isDefault: _isDefault,
     );
 
@@ -958,18 +1083,56 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  widget.address == null
-                      ? 'Add delivery address'
-                      : 'Edit delivery address',
-                  style: AppTextStyles.titleLarge.copyWith(
-                    color: isDark
-                        ? AppColors.textPrimary
-                        : AppColors.textPrimaryLight,
-                    fontWeight: FontWeight.w700,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        widget.address == null
+                            ? 'Add delivery address'
+                            : 'Edit delivery address',
+                        style: AppTextStyles.titleLarge.copyWith(
+                          color: isDark
+                              ? AppColors.textPrimary
+                              : AppColors.textPrimaryLight,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed:
+                          _isDetectingLocation ? null : _autoFillFromGps,
+                      icon: _isDetectingLocation
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    AppColors.primaryGold),
+                              ),
+                            )
+                          : const Icon(
+                              Icons.my_location_rounded,
+                              size: 16,
+                            ),
+                      label: Text(
+                        _isDetectingLocation
+                            ? 'Detecting...'
+                            : 'Use GPS',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.primaryGold,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primaryGold,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Text(
                   'Address Label',
                   style: AppTextStyles.labelSmall.copyWith(
@@ -1063,35 +1226,7 @@ class _AddressFormSheetState extends State<_AddressFormSheet> {
                   icon: Icons.map_outlined,
                   isDark: isDark,
                   validator: _requiredValidator,
-                  textInputAction: TextInputAction.next,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _AddressTextField(
-                        controller: _cityController,
-                        label: 'Country',
-                        hint: 'Malta',
-                        icon: Icons.public_outlined,
-                        isDark: isDark,
-                        validator: _requiredValidator,
-                        textInputAction: TextInputAction.next,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _AddressTextField(
-                        controller: _postalCodeController,
-                        label: 'Postcode',
-                        hint: 'LQA 1311',
-                        icon: Icons.local_post_office_outlined,
-                        isDark: isDark,
-                        validator: _requiredValidator,
-                        textInputAction: TextInputAction.done,
-                      ),
-                    ),
-                  ],
+                  textInputAction: TextInputAction.done,
                 ),
                 const SizedBox(height: 8),
                 CheckboxListTile(

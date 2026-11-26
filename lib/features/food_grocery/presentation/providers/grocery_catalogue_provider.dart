@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/datasources/food_grocery_remote_datasource.dart';
 import '../../data/models/grocery_catalogue.dart';
 import '../../data/models/grocery_product_details.dart';
+import '../../data/models/grocery_store.dart';
 import 'food_grocery_delivery_provider.dart';
 
 final groceryCatalogueProvider = StateNotifierProvider.family<
@@ -18,12 +19,14 @@ class GroceryCatalogueState {
     required this.categories,
     required this.products,
     required this.quantities,
+    this.store,
     this.variantsByProductId = const {},
     this.isLoading = false,
     this.errorMessage,
   });
 
   final String storeId;
+  final GroceryStore? store;
   final List<GroceryProductCategory> categories;
   final List<GroceryProduct> products;
   final Map<String, int> quantities;
@@ -57,6 +60,7 @@ class GroceryCatalogueState {
 
   GroceryCatalogueState copyWith({
     String? storeId,
+    GroceryStore? store,
     List<GroceryProductCategory>? categories,
     List<GroceryProduct>? products,
     Map<String, int>? quantities,
@@ -67,6 +71,7 @@ class GroceryCatalogueState {
   }) {
     return GroceryCatalogueState(
       storeId: storeId ?? this.storeId,
+      store: store ?? this.store,
       categories: categories ?? this.categories,
       products: products ?? this.products,
       quantities: quantities ?? this.quantities,
@@ -106,6 +111,7 @@ class GroceryCatalogueNotifier extends StateNotifier<GroceryCatalogueState> {
       );
       if (!mounted) return;
       state = state.copyWith(
+        store: catalogue.store,
         categories: catalogue.categories,
         products: catalogue.products,
         variantsByProductId: catalogue.variantsByProductId,

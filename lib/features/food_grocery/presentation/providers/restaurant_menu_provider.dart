@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/datasources/food_grocery_remote_datasource.dart';
 import '../../data/models/food_item_customization.dart';
+import '../../data/models/food_restaurant.dart';
 import '../../data/models/restaurant_menu.dart';
 import 'food_grocery_delivery_provider.dart';
 
@@ -18,12 +19,14 @@ class RestaurantMenuState {
     required this.categories,
     required this.items,
     required this.quantities,
+    this.restaurant,
     this.modifiersByItemId = const {},
     this.isLoading = false,
     this.errorMessage,
   });
 
   final String restaurantId;
+  final FoodRestaurant? restaurant;
   final List<RestaurantMenuCategory> categories;
   final List<RestaurantMenuItem> items;
   final Map<String, int> quantities;
@@ -57,6 +60,7 @@ class RestaurantMenuState {
 
   RestaurantMenuState copyWith({
     String? restaurantId,
+    FoodRestaurant? restaurant,
     List<RestaurantMenuCategory>? categories,
     List<RestaurantMenuItem>? items,
     Map<String, int>? quantities,
@@ -67,6 +71,7 @@ class RestaurantMenuState {
   }) {
     return RestaurantMenuState(
       restaurantId: restaurantId ?? this.restaurantId,
+      restaurant: restaurant ?? this.restaurant,
       categories: categories ?? this.categories,
       items: items ?? this.items,
       quantities: quantities ?? this.quantities,
@@ -106,6 +111,7 @@ class RestaurantMenuNotifier extends StateNotifier<RestaurantMenuState> {
       );
       if (!mounted) return;
       state = state.copyWith(
+        restaurant: menu.restaurant,
         categories: menu.categories,
         items: menu.items,
         modifiersByItemId: menu.modifiersByItemId,

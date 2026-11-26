@@ -271,6 +271,11 @@ class _GroceryCatalogueScreenState
     );
 
     final visibleProducts = _visibleProducts(catalogueState);
+    final deliveryState = ref.watch(foodGroceryDeliveryProvider);
+    final userLat = deliveryState.selectedAddress?.latitude;
+    final userLng = deliveryState.selectedAddress?.longitude;
+    final currentStore = catalogueState.store ?? widget.store;
+    final dynamicDistance = currentStore.dynamicDistanceText(userLat, userLng);
 
     return Scaffold(
       backgroundColor:
@@ -302,26 +307,26 @@ class _GroceryCatalogueScreenState
                 ),
                 children: [
                   _StoreOverviewCard(
-                    store: widget.store,
+                    store: currentStore,
                     isDark: isDark,
                     isFavourite: _isFavourite,
-                    distanceText: '${widget.store.calculateDistanceTo(ref.watch(foodGroceryDeliveryProvider).selectedAddress?.latitude, ref.watch(foodGroceryDeliveryProvider).selectedAddress?.longitude).toStringAsFixed(1)} km',
+                    distanceText: dynamicDistance,
                     onFavouritePressed: () {
                       setState(() {
                         _isFavourite = !_isFavourite;
                       });
                     },
                   ),
-                  if (!widget.store.isOrderable) ...[
+                  if (!currentStore.isOrderable) ...[
                     const SizedBox(height: 12),
                     _StoreUnavailableNotice(
                       isDark: isDark,
                     ),
                   ],
-                  if (widget.store.offerText != null) ...[
+                  if (currentStore.offerText != null) ...[
                     const SizedBox(height: 12),
                     _GroceryOfferCard(
-                      offerText: widget.store.offerText!,
+                      offerText: currentStore.offerText!,
                       isDark: isDark,
                       onTap: _showOfferDetails,
                     ),
@@ -631,14 +636,14 @@ class _StoreOverviewCard extends StatelessWidget {
     required this.store,
     required this.isDark,
     required this.isFavourite,
-    required this.distanceText,
+    this.distanceText,
     required this.onFavouritePressed,
   });
 
   final GroceryStore store;
   final bool isDark;
   final bool isFavourite;
-  final String distanceText;
+  final String? distanceText;
   final VoidCallback onFavouritePressed;
 
   @override
@@ -670,7 +675,7 @@ class _StoreOverviewCard extends StatelessWidget {
                 bottom: 10,
                 child: _CatalogueBadge(
                   text: store.statusText,
-                  backgroundColor: _storeStatusColor(store.status),
+                  backgroundColor: _storeStatusColor(store.effectiveStatus),
                   textColor: Colors.white,
                 ),
               ),
@@ -764,11 +769,12 @@ class _StoreOverviewCard extends StatelessWidget {
                       value: '${store.preparationTime} prep',
                       isDark: isDark,
                     ),
-                    _StoreDetailItem(
-                      icon: Icons.location_on_outlined,
-                      value: distanceText,
-                      isDark: isDark,
-                    ),
+                    if (distanceText != null && distanceText!.isNotEmpty)
+                      _StoreDetailItem(
+                        icon: Icons.location_on_outlined,
+                        value: distanceText!,
+                        isDark: isDark,
+                      ),
                     _StoreDetailItem(
                       icon: Icons.shopping_bag_outlined,
                       value: store.minimumOrderText,

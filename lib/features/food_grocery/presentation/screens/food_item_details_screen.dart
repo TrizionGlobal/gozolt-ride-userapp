@@ -370,9 +370,10 @@ class _FoodItemDetailsScreenState extends ConsumerState<FoodItemDetailsScreen> {
 
     final selectedAddress = ref.read(foodGroceryDeliveryProvider).selectedAddress;
     final distance = widget.restaurant.calculateDistanceTo(
-      selectedAddress?.latitude,
-      selectedAddress?.longitude,
-    );
+          selectedAddress?.latitude,
+          selectedAddress?.longitude,
+        ) ??
+        widget.restaurant.distanceKm;
     final deliveryFee = double.parse((distance * 1.0).toStringAsFixed(2));
 
     cartNotifier.updateCharges(
