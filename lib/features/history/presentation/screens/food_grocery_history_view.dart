@@ -10,6 +10,7 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/string_extensions.dart';
 import '../../../../core/widgets/shimmer_loading.dart';
 import '../../../food_grocery/data/datasources/food_grocery_remote_datasource.dart';
+import '../../../food_grocery/presentation/widgets/smart_product_image.dart';
 
 class FoodGroceryHistoryState {
   final List<Map<String, dynamic>> orders;
@@ -111,6 +112,65 @@ class _FoodGroceryHistoryViewState
       return label.isNotEmpty ? label : text;
     }
     return rawAddress.toString().trim();
+  }
+
+  String _statusLabel(String status) {
+    switch (status) {
+      case 'ORDER_PLACED':
+      case 'PENDING':
+        return 'Order Placed';
+      case 'SUPPLIER_ACCEPTED':
+      case 'ACCEPTED':
+        return 'Accepted';
+      case 'PREPARING':
+      case 'PICKING_ITEMS':
+      case 'PACKING':
+        return 'Preparing';
+      case 'READY_FOR_PICKUP':
+        return 'Ready for Pickup';
+      case 'PICKED_UP':
+        return 'Picked Up';
+      case 'ON_THE_WAY':
+        return 'On the Way';
+      case 'ARRIVING_SOON':
+        return 'Arriving Soon';
+      case 'ARRIVED_AT_CUSTOMER':
+        return 'Arrived';
+      case 'COMPLETED':
+        return 'Completed';
+      case 'CANCELLED':
+      case 'REFUNDED':
+        return 'Cancelled';
+      default:
+        return status.replaceAll('_', ' ').toTitleCase();
+    }
+  }
+
+  Color _statusColor(String status) {
+    switch (status) {
+      case 'SUPPLIER_ACCEPTED':
+      case 'ACCEPTED':
+      case 'PREPARING':
+      case 'PICKING_ITEMS':
+      case 'PACKING':
+        return Colors.blue;
+      case 'READY_FOR_PICKUP':
+      case 'PICKED_UP':
+        return Colors.orange;
+      case 'ON_THE_WAY':
+      case 'ARRIVING_SOON':
+      case 'ARRIVED_AT_CUSTOMER':
+        return Colors.purple;
+      case 'COMPLETED':
+        return AppColors.success;
+      case 'CANCELLED':
+      case 'REFUNDED':
+        return AppColors.error;
+      case 'ORDER_PLACED':
+      case 'PENDING':
+      default:
+        return AppColors.primaryGold;
+    }
   }
 
   @override
@@ -295,9 +355,6 @@ class _FoodGroceryHistoryViewState
                     itemBuilder: (context, index) {
                       final order = filteredOrders[index];
                       final orderId = order['id']?.toString() ?? '';
-                      final refCode = order['formattedBookingId']?.toString() ??
-                          order['orderReference']?.toString() ??
-                          orderId;
                       final business = order['business'] as Map<String, dynamic>?;
                       final rawBusinessName = business?['name']?.toString() ??
                           order['businessName']?.toString() ??
@@ -308,8 +365,22 @@ class _FoodGroceryHistoryViewState
                       final isGrocery = serviceType.contains('GROCERY');
                       final status =
                           order['status']?.toString().toUpperCase() ?? 'COMPLETED';
+                      final statusColor = _statusColor(status);
+                      final statusLabel = _statusLabel(status);
                       final total = (order['totalAmount'] as num?)?.toDouble() ?? 0.0;
                       final items = (order['items'] as List<dynamic>?) ?? const [];
+
+                      final firstItemImage = items.isNotEmpty
+                          ? (items.first as Map)['imageUrl']?.toString()
+                          : null;
+                      final businessImage = business?['imageUrl']?.toString();
+                      final cardImageUrl = (businessImage != null &&
+                              businessImage.trim().isNotEmpty)
+                          ? businessImage.trim()
+                          : (firstItemImage != null &&
+                                  firstItemImage.trim().isNotEmpty
+                              ? firstItemImage.trim()
+                              : '');
 
                       String itemsSummary = '';
                       if (items.isNotEmpty) {
@@ -337,10 +408,6 @@ class _FoodGroceryHistoryViewState
                         }
                       }
 
-                      final isCompleted = status == 'COMPLETED';
-                      final isCancelled =
-                          status == 'CANCELLED' || status == 'REFUNDED';
-
                       return GestureDetector(
                         onTap: orderId.isNotEmpty
                             ? () => context.pushNamed(
@@ -365,20 +432,32 @@ class _FoodGroceryHistoryViewState
                             children: [
                               Row(
                                 children: [
-                                  Container(
-                                    width: 38,
-                                    height: 38,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primaryGold
-                                          .withValues(alpha: 0.14),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Icon(
-                                      isGrocery
-                                          ? Icons.local_grocery_store_rounded
-                                          : Icons.restaurant_rounded,
-                                      color: AppColors.primaryGold,
-                                      size: 20,
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: Container(
+                                      width: 44,
+                                      height: 44,
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primaryGold
+                                            .withValues(alpha: 0.14),
+                                      ),
+                                      child: cardImageUrl.isNotEmpty
+                                          ? SmartProductImage(
+                                              imageUrl: cardImageUrl,
+                                              width: 44,
+                                              height: 44,
+                                              fit: BoxFit.cover,
+                                              fallbackIcon: isGrocery
+                                                  ? Icons.local_grocery_store_rounded
+                                                  : Icons.restaurant_rounded,
+                                            )
+                                          : Icon(
+                                              isGrocery
+                                                  ? Icons.local_grocery_store_rounded
+                                                  : Icons.restaurant_rounded,
+                                              color: AppColors.primaryGold,
+                                              size: 22,
+                                            ),
                                     ),
                                   ),
                                   const SizedBox(width: 10),
@@ -397,20 +476,20 @@ class _FoodGroceryHistoryViewState
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                         ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          formattedDate.isNotEmpty
-                                              ? '$refCode • $formattedDate'
-                                              : refCode,
-                                          style: AppTextStyles.bodySmall.copyWith(
-                                            color: isDark
-                                                ? AppColors.textSecondary
-                                                : AppColors.textSecondaryLight,
-                                            fontSize: 11,
+                                        if (formattedDate.isNotEmpty) ...[
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            formattedDate,
+                                            style: AppTextStyles.bodySmall.copyWith(
+                                              color: isDark
+                                                  ? AppColors.textSecondary
+                                                  : AppColors.textSecondaryLight,
+                                              fontSize: 11,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
+                                        ],
                                       ],
                                     ),
                                   ),
@@ -421,23 +500,13 @@ class _FoodGroceryHistoryViewState
                                       vertical: 4,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: isCompleted
-                                          ? AppColors.success.withValues(alpha: 0.15)
-                                          : isCancelled
-                                              ? AppColors.error
-                                                  .withValues(alpha: 0.15)
-                                              : AppColors.primaryGold
-                                                  .withValues(alpha: 0.15),
+                                      color: statusColor.withValues(alpha: 0.14),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Text(
-                                      status.replaceAll('_', ' '),
+                                      statusLabel,
                                       style: AppTextStyles.labelSmall.copyWith(
-                                        color: isCompleted
-                                            ? AppColors.success
-                                            : isCancelled
-                                                ? AppColors.error
-                                                : AppColors.primaryGold,
+                                        color: statusColor,
                                         fontWeight: FontWeight.w700,
                                         fontSize: 10,
                                       ),

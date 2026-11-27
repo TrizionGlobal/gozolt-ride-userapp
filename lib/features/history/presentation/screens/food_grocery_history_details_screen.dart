@@ -134,7 +134,35 @@ class _FoodGroceryHistoryDetailsScreenState
   }
 
   String _formatStatusLabel(String status) {
-    return status.replaceAll('_', ' ');
+    switch (status) {
+      case 'ORDER_PLACED':
+      case 'PENDING':
+        return 'Order Placed';
+      case 'SUPPLIER_ACCEPTED':
+      case 'ACCEPTED':
+        return 'Accepted';
+      case 'PREPARING':
+      case 'PICKING_ITEMS':
+      case 'PACKING':
+        return 'Preparing';
+      case 'READY_FOR_PICKUP':
+        return 'Ready for Pickup';
+      case 'PICKED_UP':
+        return 'Picked Up';
+      case 'ON_THE_WAY':
+        return 'On the Way';
+      case 'ARRIVING_SOON':
+        return 'Arriving Soon';
+      case 'ARRIVED_AT_CUSTOMER':
+        return 'Arrived';
+      case 'COMPLETED':
+        return 'Completed';
+      case 'CANCELLED':
+      case 'REFUNDED':
+        return 'Cancelled';
+      default:
+        return status.replaceAll('_', ' ').toTitleCase();
+    }
   }
 
   Future<void> _callPhone(String phone) async {
