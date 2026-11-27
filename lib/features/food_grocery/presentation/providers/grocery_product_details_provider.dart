@@ -79,7 +79,7 @@ class GroceryProductDetailsState {
   }
 
   String get selectedUnitText {
-    return selectedOption?.unitText ?? product.unitText;
+    return selectedOption?.unitText ?? product.unitTypeText;
   }
 
   GroceryProductDetailsState copyWith({

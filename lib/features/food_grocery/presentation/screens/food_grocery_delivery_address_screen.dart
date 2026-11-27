@@ -391,34 +391,37 @@ class _FoodGroceryDeliveryAddressScreenState
                     isDark: isDark,
                     title: 'DELIVERY PREFERENCE',
                     icon: Icons.door_front_door_outlined,
-                    child: SwitchListTile.adaptive(
-                      value: deliveryState.leaveAtDoor,
-                      onChanged: (value) {
-                        ref
-                            .read(
-                              foodGroceryDeliveryProvider.notifier,
-                            )
-                            .setLeaveAtDoor(value);
-                      },
-                      contentPadding: EdgeInsets.zero,
-                      activeTrackColor: AppColors.primaryGold,
-                      title: Text(
-                        'Leave at the door',
-                        style: AppTextStyles.bodyMedium.copyWith(
-                          color: isDark
-                              ? AppColors.textPrimary
-                              : AppColors.textPrimaryLight,
-                          fontWeight: FontWeight.w600,
+                    child: Material(
+                      type: MaterialType.transparency,
+                      child: SwitchListTile.adaptive(
+                        value: deliveryState.leaveAtDoor,
+                        onChanged: (value) {
+                          ref
+                              .read(
+                                foodGroceryDeliveryProvider.notifier,
+                              )
+                              .setLeaveAtDoor(value);
+                        },
+                        contentPadding: EdgeInsets.zero,
+                        activeTrackColor: AppColors.primaryGold,
+                        title: Text(
+                          'Leave at the door',
+                          style: AppTextStyles.bodyMedium.copyWith(
+                            color: isDark
+                                ? AppColors.textPrimary
+                                : AppColors.textPrimaryLight,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      subtitle: Text(
-                        'The delivery partner will leave '
-                        'the order safely at your door.',
-                        style: AppTextStyles.bodySmall.copyWith(
-                          color: isDark
-                              ? AppColors.textSecondary
-                              : AppColors.textSecondaryLight,
-                          height: 1.35,
+                        subtitle: Text(
+                          'The delivery partner will leave '
+                          'the order safely at your door.',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: isDark
+                                ? AppColors.textSecondary
+                                : AppColors.textSecondaryLight,
+                            height: 1.35,
+                          ),
                         ),
                       ),
                     ),

@@ -32,20 +32,6 @@ class _GroceryStoreListingScreenState
     extends ConsumerState<GroceryStoreListingScreen> {
   final TextEditingController _searchController = TextEditingController();
 
-  static const List<String> _categories = [
-    'All',
-    'Supermarkets',
-    'Convenience',
-    'Fruits & Vegetables',
-    'Bakery',
-    'Dairy',
-    'Meat & Fish',
-    'Beverages',
-    'Household',
-    'Personal Care',
-  ];
-
-  String _deliveryLocation = 'Sliema, Malta';
   String _selectedCategory = 'All';
   String _searchQuery = '';
 
@@ -62,17 +48,6 @@ class _GroceryStoreListingScreenState
   void dispose() {
     _searchController.dispose();
     super.dispose();
-  }
-
-  int get _activeFilterCount {
-    return [
-      _openNowOnly,
-      _minimumFourStar,
-      _freeDeliveryOnly,
-      _offersOnly,
-      _underThirtyMinutes,
-      _underTwentyMinimum,
-    ].where((selected) => selected).length;
   }
 
   List<GroceryStore> _visibleStores(
@@ -170,13 +145,7 @@ class _GroceryStoreListingScreenState
   }
 
   void _changeLocation() {
-    setState(() {
-      _deliveryLocation = _deliveryLocation == 'Sliema, Malta'
-          ? 'Valletta, Malta'
-          : 'Sliema, Malta';
-    });
-
-    ref.read(groceryStoreListProvider.notifier).refreshStores();
+    context.pushNamed(RouteNames.foodGroceryDeliveryAddress);
   }
 
   void _selectStore(GroceryStore store) {
@@ -206,289 +175,19 @@ class _GroceryStoreListingScreenState
     });
   }
 
-  String _sortText(
-    GroceryStoreSortOption option,
-  ) {
-    switch (option) {
-      case GroceryStoreSortOption.recommended:
-        return 'Recommended';
-
-      case GroceryStoreSortOption.nearest:
-        return 'Nearest';
-
-      case GroceryStoreSortOption.fastestDelivery:
-        return 'Fastest delivery';
-
-      case GroceryStoreSortOption.rating:
-        return 'Rating';
-
-      case GroceryStoreSortOption.deliveryFee:
-        return 'Delivery fee';
-
-      case GroceryStoreSortOption.minimumOrder:
-        return 'Minimum order';
-    }
-  }
-
-  Future<void> _showSortSheet() async {
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        final isDark = Theme.of(sheetContext).brightness == Brightness.dark;
-
-        return SafeArea(
-          top: false,
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(
-              18,
-              12,
-              18,
-              18,
-            ),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(24),
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const _SheetHandle(),
-                const SizedBox(height: 16),
-                Text(
-                  'Sort grocery stores',
-                  style: AppTextStyles.titleMedium.copyWith(
-                    color: isDark
-                        ? AppColors.textPrimary
-                        : AppColors.textPrimaryLight,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ...GroceryStoreSortOption.values.map(
-                  (option) {
-                    return _StoreSortTile(
-                      title: _sortText(option),
-                      selected: _sortOption == option,
-                      isDark: isDark,
-                      onTap: () {
-                        setState(() {
-                          _sortOption = option;
-                        });
-
-                        Navigator.pop(sheetContext);
-                      },
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _showFilterSheet() async {
-    var temporaryOpenNow = _openNowOnly;
-    var temporaryFourStar = _minimumFourStar;
-    var temporaryFreeDelivery = _freeDeliveryOnly;
-    var temporaryOffers = _offersOnly;
-    var temporaryFastDelivery = _underThirtyMinutes;
-    var temporaryLowMinimum = _underTwentyMinimum;
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        final isDark = Theme.of(sheetContext).brightness == Brightness.dark;
-
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return SafeArea(
-              top: false,
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(
-                  18,
-                  12,
-                  18,
-                  18,
-                ),
-                decoration: BoxDecoration(
-                  color:
-                      isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(24),
-                  ),
-                ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const _SheetHandle(),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Filter grocery stores',
-                              style: AppTextStyles.titleMedium.copyWith(
-                                color: isDark
-                                    ? AppColors.textPrimary
-                                    : AppColors.textPrimaryLight,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              setSheetState(() {
-                                temporaryOpenNow = false;
-                                temporaryFourStar = false;
-                                temporaryFreeDelivery = false;
-                                temporaryOffers = false;
-                                temporaryFastDelivery = false;
-                                temporaryLowMinimum = false;
-                              });
-                            },
-                            child: Text(
-                              'Clear',
-                              style: AppTextStyles.labelSmall.copyWith(
-                                color: AppColors.primaryGoldDark,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      _StoreFilterCheckbox(
-                        title: 'Open now',
-                        subtitle: 'Hide closed and unavailable stores',
-                        value: temporaryOpenNow,
-                        isDark: isDark,
-                        onChanged: (value) {
-                          setSheetState(() {
-                            temporaryOpenNow = value;
-                          });
-                        },
-                      ),
-                      _StoreFilterCheckbox(
-                        title: 'Rating 4.0+',
-                        subtitle: 'Show highly rated grocery stores',
-                        value: temporaryFourStar,
-                        isDark: isDark,
-                        onChanged: (value) {
-                          setSheetState(() {
-                            temporaryFourStar = value;
-                          });
-                        },
-                      ),
-                      _StoreFilterCheckbox(
-                        title: 'Free delivery',
-                        subtitle: 'No delivery charge',
-                        value: temporaryFreeDelivery,
-                        isDark: isDark,
-                        onChanged: (value) {
-                          setSheetState(() {
-                            temporaryFreeDelivery = value;
-                          });
-                        },
-                      ),
-                      _StoreFilterCheckbox(
-                        title: 'Active offers',
-                        subtitle: 'Stores with promotions',
-                        value: temporaryOffers,
-                        isDark: isDark,
-                        onChanged: (value) {
-                          setSheetState(() {
-                            temporaryOffers = value;
-                          });
-                        },
-                      ),
-                      _StoreFilterCheckbox(
-                        title: 'Under 30 minutes',
-                        subtitle: 'Faster grocery delivery',
-                        value: temporaryFastDelivery,
-                        isDark: isDark,
-                        onChanged: (value) {
-                          setSheetState(() {
-                            temporaryFastDelivery = value;
-                          });
-                        },
-                      ),
-                      _StoreFilterCheckbox(
-                        title: 'Minimum order €20 or less',
-                        subtitle: 'Lower minimum-order stores',
-                        value: temporaryLowMinimum,
-                        isDark: isDark,
-                        onChanged: (value) {
-                          setSheetState(() {
-                            temporaryLowMinimum = value;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              _openNowOnly = temporaryOpenNow;
-                              _minimumFourStar = temporaryFourStar;
-                              _freeDeliveryOnly = temporaryFreeDelivery;
-                              _offersOnly = temporaryOffers;
-                              _underThirtyMinutes = temporaryFastDelivery;
-                              _underTwentyMinimum = temporaryLowMinimum;
-                            });
-
-                            Navigator.pop(
-                              sheetContext,
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primaryGold,
-                            foregroundColor: AppColors.backgroundDark,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                14,
-                              ),
-                            ),
-                          ),
-                          child: Text(
-                            'APPLY FILTERS',
-                            style: AppTextStyles.labelLarge.copyWith(
-                              color: AppColors.backgroundDark,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final deliveryState = ref.watch(foodGroceryDeliveryProvider);
-    final userLat = deliveryState.selectedAddress?.latitude;
-    final userLng = deliveryState.selectedAddress?.longitude;
+    final selectedAddress = deliveryState.selectedAddress;
+    final deliveryLocation = selectedAddress?.locality.isNotEmpty == true
+        ? selectedAddress!.locality
+        : (selectedAddress?.city.isNotEmpty == true
+            ? selectedAddress!.city
+            : 'Set delivery location');
+    final userLat = selectedAddress?.latitude;
+    final userLng = selectedAddress?.longitude;
     final stores = ref.watch(groceryStoreListProvider);
 
     final visibleStores = _visibleStores(stores, userLat, userLng);
@@ -536,61 +235,7 @@ class _GroceryStoreListingScreenState
                       });
                     },
                   ),
-                  const SizedBox(height: 14),
-                  SizedBox(
-                    height: 38,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _categories.length,
-                      separatorBuilder: (context, index) {
-                        return const SizedBox(
-                          width: 8,
-                        );
-                      },
-                      itemBuilder: (context, index) {
-                        final category = _categories[index];
-
-                        return _GroceryCategoryChip(
-                          label: category,
-                          selected: category == _selectedCategory,
-                          isDark: isDark,
-                          onTap: () {
-                            setState(() {
-                              _selectedCategory = category;
-                            });
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _ListingControlButton(
-                          icon: Icons.tune_rounded,
-                          label: _activeFilterCount == 0
-                              ? 'Filter'
-                              : 'Filter ($_activeFilterCount)',
-                          highlighted: _activeFilterCount > 0,
-                          isDark: isDark,
-                          onTap: _showFilterSheet,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _ListingControlButton(
-                          icon: Icons.swap_vert_rounded,
-                          label: _sortText(_sortOption),
-                          highlighted:
-                              _sortOption != GroceryStoreSortOption.recommended,
-                          isDark: isDark,
-                          onTap: _showSortSheet,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 16),
                   Row(
                     children: [
                       Expanded(
@@ -606,7 +251,7 @@ class _GroceryStoreListingScreenState
                       ),
                       Flexible(
                         child: Text(
-                          'Delivering to $_deliveryLocation',
+                          'Delivering to $deliveryLocation',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.end,
@@ -783,121 +428,6 @@ class _GrocerySearchField extends StatelessWidget {
   }
 }
 
-class _GroceryCategoryChip extends StatelessWidget {
-  const _GroceryCategoryChip({
-    required this.label,
-    required this.selected,
-    required this.isDark,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final bool isDark;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: selected
-          ? AppColors.primaryGold
-          : isDark
-              ? AppColors.surfaceDark
-              : AppColors.surfaceLight,
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: 8,
-          ),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: selected
-                  ? AppColors.primaryGold
-                  : isDark
-                      ? AppColors.borderDark
-                      : AppColors.borderLight,
-            ),
-          ),
-          child: Text(
-            label,
-            style: AppTextStyles.labelSmall.copyWith(
-              color: selected
-                  ? AppColors.backgroundDark
-                  : isDark
-                      ? AppColors.textSecondary
-                      : AppColors.textSecondaryLight,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ListingControlButton extends StatelessWidget {
-  const _ListingControlButton({
-    required this.icon,
-    required this.label,
-    required this.highlighted,
-    required this.isDark,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool highlighted;
-  final bool isDark;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, size: 18),
-      label: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: AppTextStyles.labelSmall.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: highlighted
-            ? AppColors.backgroundDark
-            : isDark
-                ? AppColors.textPrimary
-                : AppColors.textPrimaryLight,
-        backgroundColor: highlighted
-            ? AppColors.primaryGold
-            : isDark
-                ? AppColors.surfaceDark
-                : AppColors.surfaceLight,
-        side: BorderSide(
-          color: highlighted
-              ? AppColors.primaryGold
-              : isDark
-                  ? AppColors.borderDark
-                  : AppColors.borderLight,
-        ),
-        padding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 11,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(13),
-        ),
-      ),
-    );
-  }
-}
-
 class _GroceryStoreCard extends StatelessWidget {
   const _GroceryStoreCard({
     required this.store,
@@ -980,37 +510,6 @@ class _GroceryStoreCard extends StatelessWidget {
                         textColor: Colors.white,
                       ),
                     ),
-                    Positioned(
-                      right: 10,
-                      top: 10,
-                      child: Material(
-                        color: isDark
-                            ? AppColors.backgroundDark.withValues(alpha: 0.84)
-                            : Colors.white.withValues(
-                                alpha: 0.94,
-                              ),
-                        shape: const CircleBorder(),
-                        child: IconButton(
-                          onPressed: onFavouritePressed,
-                          constraints: const BoxConstraints.tightFor(
-                            width: 38,
-                            height: 38,
-                          ),
-                          padding: EdgeInsets.zero,
-                          icon: Icon(
-                            store.isFavourite
-                                ? Icons.favorite_rounded
-                                : Icons.favorite_border_rounded,
-                            size: 21,
-                            color: store.isFavourite
-                                ? AppColors.error
-                                : isDark
-                                    ? AppColors.textPrimary
-                                    : AppColors.textPrimaryLight,
-                          ),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
                 Padding(
@@ -1078,11 +577,6 @@ class _GroceryStoreCard extends StatelessWidget {
                               text: (distanceText ?? store.distanceText)!,
                               isDark: isDark,
                             ),
-                          _StoreMetaItem(
-                            icon: Icons.shopping_bag_outlined,
-                            text: store.minimumOrderText,
-                            isDark: isDark,
-                          ),
                         ],
                       ),
                       const SizedBox(height: 10),
@@ -1193,120 +687,6 @@ class _StoreMetaItem extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _StoreFilterCheckbox extends StatelessWidget {
-  const _StoreFilterCheckbox({
-    required this.title,
-    required this.subtitle,
-    required this.value,
-    required this.isDark,
-    required this.onChanged,
-  });
-
-  final String title;
-  final String subtitle;
-  final bool value;
-  final bool isDark;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: CheckboxListTile(
-        value: value,
-        onChanged: (newValue) {
-          onChanged(newValue ?? false);
-        },
-        controlAffinity: ListTileControlAffinity.leading,
-        contentPadding: EdgeInsets.zero,
-        dense: true,
-        activeColor: AppColors.primaryGold,
-        checkColor: AppColors.backgroundDark,
-        title: Text(
-          title,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: AppTextStyles.bodySmall.copyWith(
-            color:
-                isDark ? AppColors.textSecondary : AppColors.textSecondaryLight,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StoreSortTile extends StatelessWidget {
-  const _StoreSortTile({
-    required this.title,
-    required this.selected,
-    required this.isDark,
-    required this.onTap,
-  });
-
-  final String title;
-  final bool selected;
-  final bool isDark;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: ListTile(
-        onTap: onTap,
-        contentPadding: EdgeInsets.zero,
-        dense: true,
-        title: Text(
-          title,
-          style: AppTextStyles.bodyMedium.copyWith(
-            color: selected
-                ? AppColors.primaryGoldDark
-                : isDark
-                    ? AppColors.textPrimary
-                    : AppColors.textPrimaryLight,
-            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-          ),
-        ),
-        trailing: Icon(
-          selected ? Icons.check_circle_rounded : Icons.circle_outlined,
-          size: 21,
-          color: selected
-              ? AppColors.primaryGoldDark
-              : isDark
-                  ? AppColors.textMuted
-                  : AppColors.textMutedLight,
-        ),
-      ),
-    );
-  }
-}
-
-class _SheetHandle extends StatelessWidget {
-  const _SheetHandle();
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Center(
-      child: Container(
-        width: 42,
-        height: 4,
-        decoration: BoxDecoration(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
     );
   }
 }

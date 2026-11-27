@@ -470,6 +470,7 @@ class FoodGroceryRemoteDatasource {
             name: c['name']?.toString() ?? '',
             displayOrder: _toInt(c['displayOrder']),
             isActive: c['isActive'] != false,
+            imageUrl: c['imageUrl']?.toString(),
           );
         })
         .toList();
@@ -514,8 +515,12 @@ class FoodGroceryRemoteDatasource {
         maximumQuantity: _toInt(p['maximumQuantity'], 10),
         hasVariants:
             p['hasVariants'] == true || (variantsByProductId[id]?.isNotEmpty ?? false),
-        isActive: p['isActive'] != false,
+        isActive: p['isActive'] != false && p['isAvailable'] != false,
         imageUrl: p['imageUrl']?.toString(),
+        isPopular: p['isPopular'] == true,
+        dietaryTags: (p['dietaryTags'] as List<dynamic>? ?? const [])
+            .map((e) => e.toString())
+            .toList(),
       );
     }).toList();
 

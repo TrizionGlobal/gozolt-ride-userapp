@@ -4,9 +4,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/router/route_names.dart';
+import '../../../../core/utils/string_extensions.dart';
 import '../../data/models/grocery_catalogue.dart';
 import '../../data/models/grocery_product_details.dart';
 import '../../data/models/grocery_store.dart';
+import '../providers/grocery_catalogue_provider.dart';
 import '../providers/grocery_product_details_provider.dart';
 import '../../data/models/food_grocery_cart.dart';
 import '../providers/food_grocery_cart_provider.dart';
@@ -247,8 +250,21 @@ class GroceryProductDetailsScreen extends ConsumerWidget {
     final state = ref.watch(
       groceryProductDetailsProvider(product),
     );
+    final catalogueState = ref.watch(
+      groceryCatalogueProvider(store.id),
+    );
+    final currentStore = catalogueState.store ?? store;
+    final relatedProducts = catalogueState.products
+        .where((p) => p.id != product.id && p.isActive)
+        .take(8)
+        .toList();
+    final categoryLabel = catalogueState.categories
+            .where((c) => c.id == product.categoryId)
+            .map((c) => c.name)
+            .firstOrNull ??
+        _categoryName(product.categoryId);
 
-    final canAdd = store.isOrderable &&
+    final canAdd = currentStore.isOrderable &&
         product.isActive &&
         product.stockStatus != GroceryProductStockStatus.outOfStock &&
         state.selectionComplete;
@@ -259,7 +275,7 @@ class GroceryProductDetailsScreen extends ConsumerWidget {
       body: Column(
         children: [
           _ProductDetailsHeader(
-            productName: product.name,
+            productName: product.name.toTitleCase(),
             isFavourite: state.isFavourite,
             onFavouritePressed: () {
               ref
@@ -282,10 +298,11 @@ class GroceryProductDetailsScreen extends ConsumerWidget {
               children: [
                 _ProductOverviewCard(
                   product: product,
+                  storeName: currentStore.name.toTitleCase(),
                   state: state,
                   isDark: isDark,
                 ),
-                if (!store.isOrderable) ...[
+                if (!currentStore.isOrderable) ...[
                   const SizedBox(height: 12),
                   _ProductWarning(
                     text: 'This store is no longer accepting orders.',
@@ -358,164 +375,80 @@ class GroceryProductDetailsScreen extends ConsumerWidget {
                     isDark: isDark,
                   ),
                 ],
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
                 _DetailsExpansionCard(
-                  title: 'Product Information',
+                  title: 'Product Details',
                   icon: Icons.info_outline_rounded,
-                  isDark: isDark,
-                  children: [
-                    _InformationRow(
-                      label: 'Brand',
-                      value: product.brand,
-                      isDark: isDark,
-                    ),
-                    _InformationRow(
-                      label: 'Category',
-                      value: _categoryName(
-                        product.categoryId,
-                      ),
-                      isDark: isDark,
-                    ),
-                    _InformationRow(
-                      label: 'Selected unit',
-                      value: state.selectedUnitText,
-                      isDark: isDark,
-                    ),
-                    _InformationRow(
-                      label: 'Country of origin',
-                      value: 'Supplier-provided information',
-                      isDark: isDark,
-                    ),
-                    _InformationRow(
-                      label: 'Manufacturer',
-                      value: product.brand,
-                      isDark: isDark,
-                      showBottomSpacing: false,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                _DetailsExpansionCard(
-                  title: 'Ingredients',
-                  icon: Icons.receipt_long_outlined,
-                  isDark: isDark,
-                  children: [
-                    Text(
-                      'Ingredient information will be provided by the supplier and loaded from the product catalogue.',
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: isDark
-                            ? AppColors.textSecondary
-                            : AppColors.textSecondaryLight,
-                        height: 1.45,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                _DetailsExpansionCard(
-                  title: 'Nutritional Information',
-                  icon: Icons.monitor_heart_outlined,
-                  isDark: isDark,
-                  children: [
-                    _InformationRow(
-                      label: 'Calories',
-                      value: 'Supplier provided',
-                      isDark: isDark,
-                    ),
-                    _InformationRow(
-                      label: 'Protein',
-                      value: 'Supplier provided',
-                      isDark: isDark,
-                    ),
-                    _InformationRow(
-                      label: 'Carbohydrates',
-                      value: 'Supplier provided',
-                      isDark: isDark,
-                    ),
-                    _InformationRow(
-                      label: 'Fat',
-                      value: 'Supplier provided',
-                      isDark: isDark,
-                      showBottomSpacing: false,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                _DetailsExpansionCard(
-                  title: 'Allergens & Storage',
-                  icon: Icons.warning_amber_rounded,
                   isDark: isDark,
                   initiallyExpanded: true,
                   children: [
                     _InformationRow(
-                      label: 'Allergens',
-                      value:
-                          'Check supplier-provided allergen information before purchasing.',
+                      label: 'Store',
+                      value: currentStore.name.toTitleCase(),
                       isDark: isDark,
                     ),
                     _InformationRow(
-                      label: 'Storage',
-                      value:
-                          'Follow the storage instructions printed on the product packaging.',
+                      label: 'Category',
+                      value: categoryLabel,
+                      isDark: isDark,
+                    ),
+                    if (product.displayBrand != null)
+                      _InformationRow(
+                        label: 'Brand',
+                        value: product.displayBrand!,
+                        isDark: isDark,
+                      ),
+                    _InformationRow(
+                      label: 'Pack / Unit',
+                      value: state.selectedUnitText,
+                      isDark: isDark,
+                    ),
+                    _InformationRow(
+                      label: 'Availability',
+                      value: product.stockText,
                       isDark: isDark,
                       showBottomSpacing: false,
                     ),
                   ],
                 ),
-                const SizedBox(height: 18),
-                Text(
-                  'You Might Also Like',
-                  style: AppTextStyles.titleMedium.copyWith(
-                    color: isDark
-                        ? AppColors.textPrimary
-                        : AppColors.textPrimaryLight,
-                    fontWeight: FontWeight.w600,
+                if (relatedProducts.isNotEmpty) ...[
+                  const SizedBox(height: 18),
+                  Text(
+                    'More from ${currentStore.name.toTitleCase()}',
+                    style: AppTextStyles.titleMedium.copyWith(
+                      color: isDark
+                          ? AppColors.textPrimary
+                          : AppColors.textPrimaryLight,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  height: 130,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: [
-                      _RelatedProductCard(
-                        name: 'Greek Yoghurt',
-                        price: '€2.20',
-                        isDark: isDark,
-                        onTap: () {
-                          _showMessage(
-                            context,
-                            'Greek Yoghurt details will open here',
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 10),
-                      _RelatedProductCard(
-                        name: 'Fresh Butter',
-                        price: '€2.85',
-                        isDark: isDark,
-                        onTap: () {
-                          _showMessage(
-                            context,
-                            'Fresh Butter details will open here',
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 10),
-                      _RelatedProductCard(
-                        name: 'Local Cheese',
-                        price: '€3.40',
-                        isDark: isDark,
-                        onTap: () {
-                          _showMessage(
-                            context,
-                            'Local Cheese details will open here',
-                          );
-                        },
-                      ),
-                    ],
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 130,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: relatedProducts.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 10),
+                      itemBuilder: (context, index) {
+                        final related = relatedProducts[index];
+                        return _RelatedProductCard(
+                          name: related.name.toTitleCase(),
+                          price: '€${related.currentPrice.toStringAsFixed(2)}',
+                          isDark: isDark,
+                          onTap: () {
+                            context.pushReplacementNamed(
+                              RouteNames.foodGroceryProductDetails,
+                              extra: {
+                                'store': currentStore,
+                                'product': related,
+                              },
+                            );
+                          },
+                        );
+                      },
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -660,27 +593,6 @@ class _ProductDetailsHeader extends StatelessWidget {
                   ),
                 ),
               ),
-              Material(
-                color: AppColors.backgroundDark.withValues(alpha: 0.14),
-                shape: const CircleBorder(),
-                child: IconButton(
-                  onPressed: onFavouritePressed,
-                  constraints: const BoxConstraints.tightFor(
-                    width: 36,
-                    height: 36,
-                  ),
-                  padding: EdgeInsets.zero,
-                  icon: Icon(
-                    isFavourite
-                        ? Icons.favorite_rounded
-                        : Icons.favorite_border_rounded,
-                    size: 20,
-                    color: isFavourite
-                        ? AppColors.error
-                        : AppColors.backgroundDark,
-                  ),
-                ),
-              ),
             ],
           ),
         ),
@@ -692,11 +604,13 @@ class _ProductDetailsHeader extends StatelessWidget {
 class _ProductOverviewCard extends StatelessWidget {
   const _ProductOverviewCard({
     required this.product,
+    required this.storeName,
     required this.state,
     required this.isDark,
   });
 
   final GroceryProduct product;
+  final String storeName;
   final GroceryProductDetailsState state;
   final bool isDark;
 
@@ -705,7 +619,7 @@ class _ProductOverviewCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? AppColors.cardDark : AppColors.cardLight,
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: isDark ? AppColors.borderDark : AppColors.borderLight,
         ),
@@ -718,9 +632,11 @@ class _ProductOverviewCard extends StatelessWidget {
               SmartProductImage(
                 imageUrl: product.imageUrl,
                 width: double.infinity,
-                height: 190,
+                height: 210,
                 fallbackIcon: Icons.shopping_basket_rounded,
-                borderRadius: 16,
+                customBorderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(17),
+                ),
               ),
               if (product.offerText != null)
                 Positioned(
@@ -731,42 +647,67 @@ class _ProductOverviewCard extends StatelessWidget {
                     color: AppColors.primaryGold,
                     textColor: AppColors.backgroundDark,
                   ),
+                )
+              else if (product.isOrganic)
+                const Positioned(
+                  left: 12,
+                  top: 12,
+                  child: _DetailsBadge(
+                    text: 'Organic',
+                    color: AppColors.success,
+                    textColor: Colors.white,
+                  ),
                 ),
             ],
           ),
           Padding(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  product.name,
-                  style: AppTextStyles.titleMedium.copyWith(
+                  storeName,
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: AppColors.primaryGoldDark,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  product.name.toTitleCase(),
+                  style: AppTextStyles.titleLarge.copyWith(
                     color: isDark
                         ? AppColors.textPrimary
                         : AppColors.textPrimaryLight,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  product.brand,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: AppColors.primaryGoldDark,
-                    fontWeight: FontWeight.w600,
+                if (product.displayBrand != null) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    product.displayBrand!,
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: isDark
+                          ? AppColors.textSecondary
+                          : AppColors.textSecondaryLight,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 7),
-                Text(
-                  product.description,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: isDark
-                        ? AppColors.textSecondary
-                        : AppColors.textSecondaryLight,
-                    height: 1.45,
+                ],
+                if (product.description.trim().isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    product.description.trim(),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: isDark
+                          ? AppColors.textSecondary
+                          : AppColors.textSecondaryLight,
+                      height: 1.45,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 10),
+                ],
+                const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
                   runSpacing: 7,
@@ -789,25 +730,51 @@ class _ProductOverviewCard extends StatelessWidget {
                         product.stockStatus,
                       ),
                     ),
+                    if (product.isOrganic)
+                      _DetailsBadge(
+                        text: 'Organic',
+                        color: AppColors.success.withValues(alpha: 0.12),
+                        textColor: AppColors.success,
+                      ),
+                    if (product.isVegan)
+                      _DetailsBadge(
+                        text: 'Vegan',
+                        color: AppColors.success.withValues(alpha: 0.12),
+                        textColor: AppColors.success,
+                      ),
+                    if (product.isGlutenFree)
+                      _DetailsBadge(
+                        text: 'Gluten-Free',
+                        color: AppColors.info.withValues(alpha: 0.12),
+                        textColor: AppColors.info,
+                      ),
+                    if (product.isVegetarian)
+                      _DetailsBadge(
+                        text: 'Vegetarian',
+                        color: AppColors.success.withValues(alpha: 0.12),
+                        textColor: AppColors.success,
+                      ),
                   ],
                 ),
-                const SizedBox(height: 11),
+                const SizedBox(height: 14),
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
                   children: [
                     Text(
                       '€${state.selectedUnitPrice.toStringAsFixed(2)}',
-                      style: AppTextStyles.titleSmall.copyWith(
+                      style: AppTextStyles.titleLarge.copyWith(
                         color: isDark
                             ? AppColors.textPrimary
                             : AppColors.textPrimaryLight,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                     if (state.selectedOriginalPrice != null) ...[
                       const SizedBox(width: 8),
                       Text(
                         '€${state.selectedOriginalPrice!.toStringAsFixed(2)}',
-                        style: AppTextStyles.bodySmall.copyWith(
+                        style: AppTextStyles.bodyMedium.copyWith(
                           color: isDark
                               ? AppColors.textMuted
                               : AppColors.textMutedLight,

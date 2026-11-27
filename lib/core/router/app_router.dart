@@ -68,6 +68,7 @@ import '../../features/history/presentation/screens/airport_transfer_history_det
 
 
 // Food & Groceries
+import '../../features/history/presentation/screens/food_grocery_history_details_screen.dart';
 import '../../features/food_grocery/data/models/food_restaurant.dart';
 import '../../features/food_grocery/presentation/screens/food_grocery_home_screen.dart';
 import '../../features/food_grocery/presentation/screens/restaurant_listing_screen.dart';
@@ -1846,6 +1847,16 @@ final routerProvider = Provider<GoRouter>((ref) {
               state.uri.queryParameters['id'] ??
               '';
           return AirportTransferHistoryDetailsScreen(bookingId: bookingId);
+        },
+      ),
+      GoRoute(
+        path: '/food-grocery-history-details',
+        name: RouteNames.foodGroceryHistoryDetails,
+        builder: (context, state) {
+          final orderId = state.extra as String? ??
+              state.uri.queryParameters['id'] ??
+              '';
+          return FoodGroceryHistoryDetailsScreen(orderId: orderId);
         },
       ),
             GoRoute(

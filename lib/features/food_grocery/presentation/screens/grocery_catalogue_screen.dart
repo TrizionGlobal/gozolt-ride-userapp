@@ -5,8 +5,12 @@ import '../../../../core/router/route_names.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/utils/string_extensions.dart';
+import '../../data/datasources/food_grocery_remote_datasource.dart';
+import '../../data/models/food_grocery_cart.dart';
 import '../../data/models/grocery_catalogue.dart';
 import '../../data/models/grocery_store.dart';
+import '../providers/food_grocery_cart_provider.dart';
 import '../providers/grocery_catalogue_provider.dart';
 import '../providers/food_grocery_delivery_provider.dart';
 import '../widgets/food_grocery_header.dart';
@@ -30,7 +34,7 @@ class _GroceryCatalogueScreenState
   final TextEditingController _searchController = TextEditingController();
 
   String _searchQuery = '';
-  String _selectedCategoryId = 'all';
+  GroceryProductCategory? _selectedCategory;
   bool _isFavourite = false;
 
   @override
@@ -45,33 +49,6 @@ class _GroceryCatalogueScreenState
     super.dispose();
   }
 
-  List<GroceryProductCategory> _displayCategories(
-    List<GroceryProductCategory> categories,
-  ) {
-    if (categories.isEmpty) {
-      return const [
-        GroceryProductCategory(
-          id: 'all',
-          name: 'All',
-          displayOrder: 0,
-          isActive: true,
-        ),
-      ];
-    }
-    if (categories.any((c) => c.id == 'all')) {
-      return categories;
-    }
-    return [
-      const GroceryProductCategory(
-        id: 'all',
-        name: 'All',
-        displayOrder: 0,
-        isActive: true,
-      ),
-      ...categories,
-    ];
-  }
-
   List<GroceryProduct> _visibleProducts(
     GroceryCatalogueState state,
   ) {
@@ -84,15 +61,8 @@ class _GroceryCatalogueScreenState
           product.description.toLowerCase().contains(query) ||
           product.unitText.toLowerCase().contains(query);
 
-      bool matchesCategory;
-
-      if (_selectedCategoryId == 'all' || _selectedCategoryId == 'popular') {
-        matchesCategory = true;
-      } else if (_selectedCategoryId == 'offers') {
-        matchesCategory = product.hasOffer;
-      } else {
-        matchesCategory = product.categoryId == _selectedCategoryId;
-      }
+      final matchesCategory = _selectedCategory == null ||
+          product.categoryId == _selectedCategory!.id;
 
       return matchesSearch && matchesCategory;
     }).toList();
@@ -124,11 +94,76 @@ class _GroceryCatalogueScreenState
     );
   }
 
-  void _addProduct(
+  int _cartQuantityForProduct(
+    FoodGroceryCartState cartState,
+    String productId,
+  ) {
+    if (cartState.supplierId != widget.store.id) return 0;
+    return cartState.items
+        .where((item) => item.productId == productId)
+        .fold(0, (sum, item) => sum + item.quantity);
+  }
+
+  Future<bool> _confirmReplaceCart(String existingSupplierName) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: isDark ? AppColors.cardDark : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          title: Text(
+            'Replace cart items?',
+            style: AppTextStyles.titleMedium.copyWith(
+              color: isDark ? AppColors.textPrimary : AppColors.textPrimaryLight,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: Text(
+            'Your cart already contains items from $existingSupplierName. Would you like to replace them with items from ${widget.store.name}?',
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: isDark
+                  ? AppColors.textSecondary
+                  : AppColors.textSecondaryLight,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(
+                'CANCEL',
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: isDark
+                      ? AppColors.textSecondary
+                      : AppColors.textSecondaryLight,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(
+                'REPLACE',
+                style: AppTextStyles.labelLarge.copyWith(
+                  color: AppColors.primaryGoldDark,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    return confirmed ?? false;
+  }
+
+  Future<void> _addProduct(
     GroceryProduct product,
     GroceryCatalogueState catalogueState,
-  ) {
-    if (!widget.store.isOrderable) {
+  ) async {
+    final currentStore = catalogueState.store ?? widget.store;
+    if (!currentStore.isOrderable) {
       _showMessage(
         'This store is no longer accepting orders',
       );
@@ -148,7 +183,8 @@ class _GroceryCatalogueScreenState
       return;
     }
 
-    final currentQuantity = catalogueState.quantityFor(product.id);
+    final cartState = ref.read(foodGroceryCartProvider);
+    final currentQuantity = _cartQuantityForProduct(cartState, product.id);
 
     if (currentQuantity >= product.allowedQuantity) {
       _showMessage(
@@ -157,6 +193,51 @@ class _GroceryCatalogueScreenState
       return;
     }
 
+    final cartItem = FoodGroceryCartItem(
+      lineId: '${widget.store.id}_${product.id}',
+      productId: product.id,
+      supplierId: widget.store.id,
+      supplierName: currentStore.name,
+      name: product.name,
+      cartType: FoodGroceryCartType.grocery,
+      unitPrice: product.currentPrice,
+      quantity: 1,
+      imageUrl: product.imageUrl,
+      variantName: product.unitText.isNotEmpty ? product.unitText : null,
+      maximumQuantity: product.allowedQuantity,
+    );
+
+    final cartNotifier = ref.read(foodGroceryCartProvider.notifier);
+    final result = cartNotifier.addItem(cartItem);
+
+    if (result == CartAddResult.differentSupplier) {
+      final shouldReplace = await _confirmReplaceCart(
+        cartState.supplierName ?? 'another store',
+      );
+      if (!shouldReplace || !mounted) {
+        return;
+      }
+      cartNotifier.replaceCartWith(cartItem);
+    } else if (result == CartAddResult.outOfStock) {
+      _showMessage('Only ${product.allowedQuantity} available');
+      return;
+    }
+
+    final selectedAddress =
+        ref.read(foodGroceryDeliveryProvider).selectedAddress;
+    final distance = currentStore.calculateDistanceTo(
+          selectedAddress?.latitude,
+          selectedAddress?.longitude,
+        ) ??
+        currentStore.distanceKm;
+    final deliveryFee = double.parse((distance * 1.0).toStringAsFixed(2));
+
+    cartNotifier.updateCharges(
+      deliveryFee: deliveryFee,
+      serviceFee: 0,
+      distanceKm: distance,
+    );
+
     ref
         .read(
           groceryCatalogueProvider(
@@ -164,6 +245,28 @@ class _GroceryCatalogueScreenState
           ).notifier,
         )
         .addSimpleProduct(product);
+  }
+
+  void _decreaseProduct(GroceryProduct product) {
+    final cartState = ref.read(foodGroceryCartProvider);
+    if (cartState.supplierId == widget.store.id) {
+      final matching = cartState.items
+          .where((item) => item.productId == product.id)
+          .toList();
+      if (matching.isNotEmpty) {
+        ref
+            .read(foodGroceryCartProvider.notifier)
+            .decreaseQuantity(matching.last.lineId);
+      }
+    }
+
+    ref
+        .read(
+          groceryCatalogueProvider(
+            widget.store.id,
+          ).notifier,
+        )
+        .decreaseProduct(product);
   }
 
   Future<void> _showOfferDetails() async {
@@ -269,6 +372,10 @@ class _GroceryCatalogueScreenState
     final catalogueState = ref.watch(
       groceryCatalogueProvider(widget.store.id),
     );
+    final cartState = ref.watch(foodGroceryCartProvider);
+    final isCurrentStoreCart = cartState.supplierId == widget.store.id;
+    final storeCartItemCount = isCurrentStoreCart ? cartState.itemCount : 0;
+    final storeCartSubtotal = isCurrentStoreCart ? cartState.subtotal : 0.0;
 
     final visibleProducts = _visibleProducts(catalogueState);
     final deliveryState = ref.watch(foodGroceryDeliveryProvider);
@@ -282,8 +389,17 @@ class _GroceryCatalogueScreenState
           isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       body: Column(
         children: [
-          const FoodGroceryHeader(
-            title: 'Grocery Catalogue',
+          FoodGroceryHeader(
+            title: _selectedCategory != null
+                ? _selectedCategory!.name
+                : 'Grocery Catalogue',
+            onBackPressed: _selectedCategory != null
+                ? () {
+                    setState(() {
+                      _selectedCategory = null;
+                    });
+                  }
+                : null,
           ),
           Expanded(
             child: RefreshIndicator(
@@ -303,54 +419,57 @@ class _GroceryCatalogueScreenState
                   16,
                   16,
                   16,
-                  catalogueState.cartItemCount > 0 ? 100 : 28,
+                  storeCartItemCount > 0 ? 100 : 28,
                 ),
                 children: [
-                  _StoreOverviewCard(
-                    store: currentStore,
-                    isDark: isDark,
-                    isFavourite: _isFavourite,
-                    distanceText: dynamicDistance,
-                    onFavouritePressed: () {
-                      setState(() {
-                        _isFavourite = !_isFavourite;
-                      });
-                    },
-                  ),
-                  if (!currentStore.isOrderable) ...[
-                    const SizedBox(height: 12),
+                  if (_selectedCategory == null) ...[
+                    _StoreOverviewCard(
+                      store: currentStore,
+                      isDark: isDark,
+                      isFavourite: _isFavourite,
+                      distanceText: dynamicDistance,
+                      onFavouritePressed: () async {
+                        final next = !_isFavourite;
+                        setState(() {
+                          _isFavourite = next;
+                        });
+                        try {
+                          await ref
+                              .read(foodGroceryRemoteDatasourceProvider)
+                              .toggleFavourite(currentStore.id);
+                        } catch (_) {
+                          if (mounted) {
+                            setState(() {
+                              _isFavourite = !next;
+                            });
+                          }
+                        }
+                      },
+                    ),
+                    if (!currentStore.isOrderable) ...[
+                      const SizedBox(height: 12),
+                      _StoreUnavailableNotice(
+                        isDark: isDark,
+                      ),
+                    ],
+                    if (currentStore.offerText != null) ...[
+                      const SizedBox(height: 12),
+                      _GroceryOfferCard(
+                        offerText: currentStore.offerText!,
+                        isDark: isDark,
+                        onTap: _showOfferDetails,
+                      ),
+                    ],
+                    const SizedBox(height: 14),
+                  ] else if (!currentStore.isOrderable) ...[
                     _StoreUnavailableNotice(
                       isDark: isDark,
                     ),
-                  ],
-                  if (currentStore.offerText != null) ...[
                     const SizedBox(height: 12),
-                    _GroceryOfferCard(
-                      offerText: currentStore.offerText!,
-                      isDark: isDark,
-                      onTap: _showOfferDetails,
-                    ),
                   ],
-                  const SizedBox(height: 12),
-                  _MinimumOrderProgress(
-                    minimumOrder: widget.store.minimumOrder,
-                    currentSubtotal: catalogueState.cartSubtotal,
-                    isDark: isDark,
-                  ),
-                  const SizedBox(height: 18),
-                  Text(
-                    'Products',
-                    style: AppTextStyles.titleMedium.copyWith(
-                      color: isDark
-                          ? AppColors.textPrimary
-                          : AppColors.textPrimaryLight,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
                   _ProductSearchField(
                     controller: _searchController,
-                    storeName: widget.store.name,
+                    storeName: currentStore.name.toTitleCase(),
                     isDark: isDark,
                     onChanged: (value) {
                       setState(() {
@@ -365,41 +484,8 @@ class _GroceryCatalogueScreenState
                       });
                     },
                   ),
-                  const SizedBox(height: 12),
-                  Builder(
-                    builder: (context) {
-                      final displayCategories =
-                          _displayCategories(catalogueState.categories);
-                      return SizedBox(
-                        height: 38,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: displayCategories.length,
-                          separatorBuilder: (context, index) {
-                            return const SizedBox(
-                              width: 8,
-                            );
-                          },
-                          itemBuilder: (context, index) {
-                            final category = displayCategories[index];
-
-                            return _ProductCategoryChip(
-                              label: category.name,
-                              selected: category.id == _selectedCategoryId,
-                              isDark: isDark,
-                              onTap: () {
-                                setState(() {
-                                  _selectedCategoryId = category.id;
-                                });
-                              },
-                            );
-                          },
-                        ),
-                      );
-                    },
-                  ),
                   const SizedBox(height: 16),
-                  if (catalogueState.isLoading && catalogueState.products.isEmpty)
+                  if (catalogueState.isLoading && catalogueState.products.isEmpty && catalogueState.categories.isEmpty)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 48),
                       child: Center(
@@ -409,7 +495,8 @@ class _GroceryCatalogueScreenState
                       ),
                     )
                   else if (catalogueState.errorMessage != null &&
-                      catalogueState.products.isEmpty)
+                      catalogueState.products.isEmpty &&
+                      catalogueState.categories.isEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(
                         vertical: 36,
@@ -455,89 +542,146 @@ class _GroceryCatalogueScreenState
                         ),
                       ),
                     )
-                  else if (visibleProducts.isEmpty)
-                    _EmptyCatalogueState(
-                      isDark: isDark,
-                      onClear: () {
-                        _searchController.clear();
-
-                        setState(() {
-                          _searchQuery = '';
-                          _selectedCategoryId = 'all';
-                        });
-                      },
-                    )
-                  else
-                    LayoutBuilder(
-                      builder: (
-                        context,
-                        constraints,
-                      ) {
-                        final crossAxisCount =
-                            constraints.maxWidth >= 700 ? 3 : 2;
-
-                        const spacing = 12.0;
-
-                        final cardWidth = (constraints.maxWidth -
-                                (spacing * (crossAxisCount - 1))) /
-                            crossAxisCount;
-
-                        return Wrap(
-                          spacing: spacing,
-                          runSpacing: spacing,
-                          children: visibleProducts.map(
-                            (product) {
-                              return SizedBox(
-                                width: cardWidth,
-                                child: _GroceryProductCard(
-                                  product: product,
-                                  quantity: catalogueState.quantityFor(
-                                    product.id,
-                                  ),
-                                  storeOrderable: widget.store.isOrderable,
-                                  isDark: isDark,
-                                  onTap: () {
-                                    _openProductDetails(
-                                      product,
-                                    );
-                                  },
-                                  onAdd: () {
-                                    _addProduct(
-                                      product,
-                                      catalogueState,
-                                    );
-                                  },
-                                  onIncrease: () {
-                                    _addProduct(
-                                      product,
-                                      catalogueState,
-                                    );
-                                  },
-                                  onDecrease: () {
-                                    ref
-                                        .read(
-                                          groceryCatalogueProvider(
-                                            widget.store.id,
-                                          ).notifier,
-                                        )
-                                        .decreaseProduct(
-                                          product,
-                                        );
-                                  },
-                                ),
-                              );
-                            },
-                          ).toList(),
+                  else if (_selectedCategory == null &&
+                      _searchQuery.trim().isEmpty &&
+                      catalogueState.categories.isNotEmpty) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Categories',
+                          style: AppTextStyles.titleMedium.copyWith(
+                            color: isDark
+                                ? AppColors.textPrimary
+                                : AppColors.textPrimaryLight,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Text(
+                          '${catalogueState.categories.length} ${catalogueState.categories.length == 1 ? 'category' : 'categories'}',
+                          style: AppTextStyles.labelSmall.copyWith(
+                            color: isDark
+                                ? AppColors.textSecondary
+                                : AppColors.textSecondaryLight,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    GridView.builder(
+                      padding: EdgeInsets.zero,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: catalogueState.categories.length,
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.92,
+                      ),
+                      itemBuilder: (context, index) {
+                        final category = catalogueState.categories[index];
+                        final itemCount = catalogueState.products
+                            .where((p) => p.categoryId == category.id)
+                            .length;
+                        return _GroceryCategoryCard(
+                          category: category,
+                          productCount: itemCount,
+                          isDark: isDark,
+                          onTap: () {
+                            setState(() {
+                              _selectedCategory = category;
+                            });
+                          },
                         );
                       },
                     ),
+                  ] else ...[
+                    if (_selectedCategory == null) ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Products',
+                            style: AppTextStyles.titleMedium.copyWith(
+                              color: isDark
+                                  ? AppColors.textPrimary
+                                  : AppColors.textPrimaryLight,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Text(
+                            '${visibleProducts.length} ${visibleProducts.length == 1 ? 'item' : 'items'}',
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: isDark
+                                  ? AppColors.textSecondary
+                                  : AppColors.textSecondaryLight,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    if (visibleProducts.isEmpty)
+                      _EmptyCatalogueState(
+                        isDark: isDark,
+                        onClear: () {
+                          _searchController.clear();
+
+                          setState(() {
+                            _searchQuery = '';
+                            _selectedCategory = null;
+                          });
+                        },
+                      )
+                    else
+                      ListView.separated(
+                        padding: EdgeInsets.zero,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: visibleProducts.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final product = visibleProducts[index];
+                          return _GroceryProductCard(
+                            product: product,
+                            quantity: _cartQuantityForProduct(
+                              cartState,
+                              product.id,
+                            ),
+                            storeOrderable: currentStore.isOrderable,
+                            isDark: isDark,
+                            onTap: () {
+                              _openProductDetails(
+                                product,
+                              );
+                            },
+                            onAdd: () {
+                              _addProduct(
+                                product,
+                                catalogueState,
+                              );
+                            },
+                            onIncrease: () {
+                              _addProduct(
+                                product,
+                                catalogueState,
+                              );
+                            },
+                            onDecrease: () {
+                              _decreaseProduct(product);
+                            },
+                          );
+                        },
+                      ),
+                  ],
                 ],
               ),
             ),
           ),
         ],
       ),
-      bottomNavigationBar: catalogueState.cartItemCount == 0
+      bottomNavigationBar: storeCartItemCount == 0
           ? null
           : SafeArea(
               top: false,
@@ -592,7 +736,7 @@ class _GroceryCatalogueScreenState
                             ),
                           ),
                           child: Text(
-                            '${catalogueState.cartItemCount}',
+                            '$storeCartItemCount',
                             style: AppTextStyles.labelSmall.copyWith(
                               color: AppColors.backgroundDark,
                               fontWeight: FontWeight.w700,
@@ -602,7 +746,7 @@ class _GroceryCatalogueScreenState
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            '${catalogueState.cartItemCount} ${catalogueState.cartItemCount == 1 ? 'Item' : 'Items'} • €${catalogueState.cartSubtotal.toStringAsFixed(2)}',
+                            '$storeCartItemCount ${storeCartItemCount == 1 ? 'Item' : 'Items'} • €${storeCartSubtotal.toStringAsFixed(2)}',
                             style: AppTextStyles.labelLarge.copyWith(
                               color: AppColors.backgroundDark,
                               fontWeight: FontWeight.w700,
@@ -679,37 +823,6 @@ class _StoreOverviewCard extends StatelessWidget {
                   textColor: Colors.white,
                 ),
               ),
-              Positioned(
-                right: 10,
-                top: 10,
-                child: Material(
-                  color: isDark
-                      ? AppColors.backgroundDark.withValues(alpha: 0.84)
-                      : Colors.white.withValues(
-                          alpha: 0.94,
-                        ),
-                  shape: const CircleBorder(),
-                  child: IconButton(
-                    onPressed: onFavouritePressed,
-                    constraints: const BoxConstraints.tightFor(
-                      width: 40,
-                      height: 40,
-                    ),
-                    padding: EdgeInsets.zero,
-                    icon: Icon(
-                      isFavourite
-                          ? Icons.favorite_rounded
-                          : Icons.favorite_border_rounded,
-                      size: 22,
-                      color: isFavourite
-                          ? AppColors.error
-                          : isDark
-                              ? AppColors.textPrimary
-                              : AppColors.textPrimaryLight,
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
           Padding(
@@ -721,14 +834,14 @@ class _StoreOverviewCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        store.name,
+                        store.name.toTitleCase(),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppTextStyles.titleMedium.copyWith(
                           color: isDark
                               ? AppColors.textPrimary
                               : AppColors.textPrimaryLight,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),
@@ -920,85 +1033,6 @@ class _GroceryOfferCard extends StatelessWidget {
   }
 }
 
-class _MinimumOrderProgress extends StatelessWidget {
-  const _MinimumOrderProgress({
-    required this.minimumOrder,
-    required this.currentSubtotal,
-    required this.isDark,
-  });
-
-  final double minimumOrder;
-  final double currentSubtotal;
-  final bool isDark;
-
-  @override
-  Widget build(BuildContext context) {
-    final remaining = minimumOrder - currentSubtotal;
-
-    final reached = remaining <= 0;
-
-    final progress = minimumOrder <= 0
-        ? 1.0
-        : (currentSubtotal / minimumOrder).clamp(0.0, 1.0);
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.cardDark : AppColors.cardLight,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.borderLight,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                reached
-                    ? Icons.check_circle_rounded
-                    : Icons.shopping_bag_outlined,
-                size: 19,
-                color: reached ? AppColors.success : AppColors.primaryGoldDark,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  reached
-                      ? 'Minimum grocery order reached'
-                      : currentSubtotal <= 0
-                          ? 'Minimum grocery order: €${minimumOrder.toStringAsFixed(2)}'
-                          : 'Add €${remaining.toStringAsFixed(2)} more to reach the minimum order',
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: isDark
-                        ? AppColors.textSecondary
-                        : AppColors.textSecondaryLight,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 9),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 5,
-              backgroundColor:
-                  isDark ? AppColors.borderDark : AppColors.borderLight,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                reached ? AppColors.success : AppColors.primaryGold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _ProductSearchField extends StatelessWidget {
   const _ProductSearchField({
     required this.controller,
@@ -1063,56 +1097,76 @@ class _ProductSearchField extends StatelessWidget {
   }
 }
 
-class _ProductCategoryChip extends StatelessWidget {
-  const _ProductCategoryChip({
-    required this.label,
-    required this.selected,
+class _GroceryCategoryCard extends StatelessWidget {
+  const _GroceryCategoryCard({
+    required this.category,
+    required this.productCount,
     required this.isDark,
     required this.onTap,
   });
 
-  final String label;
-  final bool selected;
+  final GroceryProductCategory category;
+  final int productCount;
   final bool isDark;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected
-          ? AppColors.primaryGold
-          : isDark
-              ? AppColors.surfaceDark
-              : AppColors.surfaceLight,
-      borderRadius: BorderRadius.circular(20),
+      color: isDark ? AppColors.cardDark : AppColors.cardLight,
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: 8,
-          ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: selected
-                  ? AppColors.primaryGold
-                  : isDark
-                      ? AppColors.borderDark
-                      : AppColors.borderLight,
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
             ),
           ),
-          child: Text(
-            label,
-            style: AppTextStyles.labelSmall.copyWith(
-              color: selected
-                  ? AppColors.backgroundDark
-                  : isDark
-                      ? AppColors.textSecondary
-                      : AppColors.textSecondaryLight,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: SmartProductImage(
+                  imageUrl: category.imageUrl,
+                  width: double.infinity,
+                  height: double.infinity,
+                  fallbackIcon: Icons.category_rounded,
+                  customBorderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(15),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      category.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: isDark
+                            ? AppColors.textPrimary
+                            : AppColors.textPrimaryLight,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$productCount ${productCount == 1 ? 'product' : 'products'}',
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: AppColors.primaryGoldDark,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -1159,139 +1213,184 @@ class _GroceryProductCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(15),
           child: Container(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(15),
               border: Border.all(
                 color: isDark ? AppColors.borderDark : AppColors.borderLight,
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Stack(
-                  children: [
-                    SmartProductImage(
-                      imageUrl: product.imageUrl,
-                      width: double.infinity,
-                      height: 94,
-                      fallbackIcon: Icons.shopping_basket_rounded,
-                    ),
-                    if (product.offerText != null)
-                      Positioned(
-                        left: 6,
-                        top: 6,
-                        child: _CatalogueBadge(
-                          text: product.offerText!,
-                          backgroundColor: AppColors.primaryGold,
-                          textColor: AppColors.backgroundDark,
+                SmartProductImage(
+                  imageUrl: product.imageUrl,
+                  width: 90,
+                  height: 90,
+                  fallbackIcon: Icons.shopping_basket_rounded,
+                  customBorderRadius: BorderRadius.circular(11),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        product.name.toTitleCase(),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          color: isDark
+                              ? AppColors.textPrimary
+                              : AppColors.textPrimaryLight,
+                          fontWeight: FontWeight.w700,
+                          height: 1.25,
                         ),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 9),
-                Text(
-                  product.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.bodySmall.copyWith(
-                    color: isDark
-                        ? AppColors.textPrimary
-                        : AppColors.textPrimaryLight,
-                    fontWeight: FontWeight.w600,
-                    height: 1.3,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  product.brand,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: isDark
-                        ? AppColors.textSecondary
-                        : AppColors.textSecondaryLight,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  product.unitTypeText,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color:
-                        isDark ? AppColors.textMuted : AppColors.textMutedLight,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  product.stockText,
-                  maxLines: 1,
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: product.stockStatus ==
-                            GroceryProductStockStatus.outOfStock
-                        ? AppColors.error
-                        : product.stockStatus ==
-                                GroceryProductStockStatus.lowStock
-                            ? AppColors.warning
-                            : AppColors.success,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 7),
-                Row(
-                  children: [
-                    Text(
-                      '€${product.currentPrice.toStringAsFixed(2)}',
-                      style: AppTextStyles.bodyMedium.copyWith(
-                        color: isDark
-                            ? AppColors.textPrimary
-                            : AppColors.textPrimaryLight,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    if (product.hasOffer) ...[
-                      const SizedBox(width: 5),
-                      Expanded(
-                        child: Text(
-                          '€${product.basePrice.toStringAsFixed(2)}',
+                      if (product.displayBrand != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          product.displayBrand!,
                           maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: AppTextStyles.labelSmall.copyWith(
                             color: isDark
-                                ? AppColors.textMuted
-                                : AppColors.textMutedLight,
-                            decoration: TextDecoration.lineThrough,
+                                ? AppColors.textSecondary
+                                : AppColors.textSecondaryLight,
+                            fontSize: 11,
                           ),
                         ),
+                      ],
+                      const SizedBox(height: 5),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? AppColors.backgroundDark
+                                  : AppColors.backgroundLight,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              product.unitTypeText,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.labelSmall.copyWith(
+                                color: isDark
+                                    ? AppColors.textSecondary
+                                    : AppColors.textSecondaryLight,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: (product.stockStatus ==
+                                          GroceryProductStockStatus.outOfStock
+                                      ? AppColors.error
+                                      : product.stockStatus ==
+                                              GroceryProductStockStatus.lowStock
+                                          ? AppColors.warning
+                                          : AppColors.success)
+                                  .withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              product.stockText,
+                              maxLines: 1,
+                              style: AppTextStyles.labelSmall.copyWith(
+                                color: product.stockStatus ==
+                                        GroceryProductStockStatus.outOfStock
+                                    ? AppColors.error
+                                    : product.stockStatus ==
+                                            GroceryProductStockStatus.lowStock
+                                        ? AppColors.warning
+                                        : AppColors.success,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Text(
+                            '€${product.currentPrice.toStringAsFixed(2)}',
+                            style: AppTextStyles.bodyMedium.copyWith(
+                              color: isDark
+                                  ? AppColors.textPrimary
+                                  : AppColors.textPrimaryLight,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          if (product.hasOffer) ...[
+                            const SizedBox(width: 5),
+                            Expanded(
+                              child: Text(
+                                '€${product.basePrice.toStringAsFixed(2)}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.labelSmall.copyWith(
+                                  color: isDark
+                                      ? AppColors.textMuted
+                                      : AppColors.textMutedLight,
+                                  decoration: TextDecoration.lineThrough,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
-                  ],
-                ),
-                const SizedBox(height: 9),
-                if (!available)
-                  _CatalogueDisabledButton(
-                    text: product.stockStatus ==
-                            GroceryProductStockStatus.outOfStock
-                        ? 'OUT OF STOCK'
-                        : 'Unavailable',
-                    isDark: isDark,
-                  )
-                else if (requiresSelection)
-                  _CatalogueAddButton(
-                    text: 'Select',
-                    onPressed: onAdd,
-                  )
-                else if (quantity == 0)
-                  _CatalogueAddButton(
-                    text: 'Add',
-                    onPressed: onAdd,
-                  )
-                else
-                  _CatalogueQuantityControl(
-                    quantity: quantity,
-                    onDecrease: onDecrease,
-                    onIncrease: onIncrease,
                   ),
+                ),
+                const SizedBox(width: 10),
+                SizedBox(
+                  width: 96,
+                  child: !storeOrderable
+                      ? _CatalogueDisabledButton(
+                          text: 'Store Closed',
+                          isDark: isDark,
+                        )
+                      : !available
+                          ? _CatalogueDisabledButton(
+                              text: product.stockStatus ==
+                                      GroceryProductStockStatus.outOfStock
+                                  ? 'Out of Stock'
+                                  : 'Unavailable',
+                              isDark: isDark,
+                            )
+                          : requiresSelection
+                              ? _CatalogueAddButton(
+                                  text: 'Select Pack',
+                                  onPressed: onAdd,
+                                )
+                              : quantity == 0
+                                  ? _CatalogueAddButton(
+                                      text: 'Add',
+                                      onPressed: onAdd,
+                                    )
+                                  : _CatalogueQuantityControl(
+                                      quantity: quantity,
+                                      onDecrease: onDecrease,
+                                      onIncrease: onIncrease,
+                                    ),
+                ),
               ],
             ),
           ),

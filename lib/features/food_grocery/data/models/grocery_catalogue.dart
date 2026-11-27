@@ -17,12 +17,14 @@ class GroceryProductCategory {
     required this.name,
     required this.displayOrder,
     required this.isActive,
+    this.imageUrl,
   });
 
   final String id;
   final String name;
   final int displayOrder;
   final bool isActive;
+  final String? imageUrl;
 }
 
 class GroceryProduct {
@@ -44,6 +46,8 @@ class GroceryProduct {
     this.offerPrice,
     this.offerText,
     this.imageUrl,
+    this.isPopular = false,
+    this.dietaryTags = const [],
   });
 
   final String id;
@@ -63,6 +67,26 @@ class GroceryProduct {
   final bool hasVariants;
   final bool isActive;
   final String? imageUrl;
+  final bool isPopular;
+  final List<String> dietaryTags;
+
+  /// Returns a customer-friendly brand name, hiding internal generated SKU codes.
+  String? get displayBrand {
+    final trimmed = brand.trim();
+    if (trimmed.isEmpty) return null;
+    final upper = trimmed.toUpperCase();
+    if (upper.startsWith('SKU-') ||
+        upper.startsWith('GZ-SKU-') ||
+        upper.startsWith('GZ-PRD-')) {
+      return null;
+    }
+    return trimmed;
+  }
+
+  bool get isOrganic => dietaryTags.contains('organic');
+  bool get isVegan => dietaryTags.contains('vegan');
+  bool get isGlutenFree => dietaryTags.contains('glutenFree');
+  bool get isVegetarian => dietaryTags.contains('vegetarian');
 
   double get currentPrice => offerPrice ?? basePrice;
 
@@ -98,18 +122,22 @@ class GroceryProduct {
   }
 
   String get unitTypeText {
+    final raw = unitText.trim();
+    if (raw.isEmpty || raw.contains('min')) {
+      return '1 Unit';
+    }
+    if (RegExp(r'^\d+$').hasMatch(raw)) {
+      final count = int.tryParse(raw) ?? 1;
+      return count == 1 ? '1 Unit' : '$count Units';
+    }
     switch (unitType) {
       case GroceryProductUnitType.fixedUnit:
-        return unitText;
-
       case GroceryProductUnitType.pack:
-        return unitText;
+      case GroceryProductUnitType.piece:
+        return raw;
 
       case GroceryProductUnitType.weight:
-        return '$unitText • Priced by weight';
-
-      case GroceryProductUnitType.piece:
-        return '$unitText • Per piece';
+        return '$raw • By weight';
     }
   }
 }

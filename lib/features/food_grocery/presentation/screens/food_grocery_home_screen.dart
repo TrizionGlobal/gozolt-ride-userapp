@@ -285,6 +285,7 @@ class _FoodGroceryHomeScreenState extends ConsumerState<FoodGroceryHomeScreen> {
                     builder: (context) {
                       final restaurants = ref.watch(restaurantListProvider);
                       final isLoading = ref.watch(restaurantListLoadingProvider);
+                      final error = ref.watch(restaurantListErrorProvider);
 
                       if (isLoading && restaurants.isEmpty) {
                         return const SizedBox(
@@ -293,6 +294,47 @@ class _FoodGroceryHomeScreenState extends ConsumerState<FoodGroceryHomeScreen> {
                             child: CircularProgressIndicator(
                               color: AppColors.primaryGoldDark,
                             ),
+                          ),
+                        );
+                      }
+
+                      if (error != null && restaurants.isEmpty) {
+                        return Container(
+                          height: 140,
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? AppColors.surfaceDark
+                                : AppColors.surfaceLight,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : AppColors.borderLight,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                error,
+                                textAlign: TextAlign.center,
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: isDark
+                                      ? AppColors.textSecondary
+                                      : AppColors.textSecondaryLight,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              TextButton.icon(
+                                onPressed: () => ref
+                                    .read(restaurantListProvider.notifier)
+                                    .refreshRestaurants(),
+                                icon: const Icon(Icons.refresh_rounded, size: 16),
+                                label: const Text('Retry'),
+                              ),
+                            ],
                           ),
                         );
                       }
@@ -407,6 +449,7 @@ class _FoodGroceryHomeScreenState extends ConsumerState<FoodGroceryHomeScreen> {
                       final stores = ref.watch(groceryStoreListProvider);
                       final isLoading =
                           ref.watch(groceryStoreListLoadingProvider);
+                      final error = ref.watch(groceryStoreListErrorProvider);
 
                       if (isLoading && stores.isEmpty) {
                         return const SizedBox(
@@ -415,6 +458,47 @@ class _FoodGroceryHomeScreenState extends ConsumerState<FoodGroceryHomeScreen> {
                             child: CircularProgressIndicator(
                               color: AppColors.primaryGoldDark,
                             ),
+                          ),
+                        );
+                      }
+
+                      if (error != null && stores.isEmpty) {
+                        return Container(
+                          height: 140,
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? AppColors.surfaceDark
+                                : AppColors.surfaceLight,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isDark
+                                  ? AppColors.borderDark
+                                  : AppColors.borderLight,
+                            ),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                error,
+                                textAlign: TextAlign.center,
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: isDark
+                                      ? AppColors.textSecondary
+                                      : AppColors.textSecondaryLight,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              TextButton.icon(
+                                onPressed: () => ref
+                                    .read(groceryStoreListProvider.notifier)
+                                    .refreshStores(),
+                                icon: const Icon(Icons.refresh_rounded, size: 16),
+                                label: const Text('Retry'),
+                              ),
+                            ],
                           ),
                         );
                       }

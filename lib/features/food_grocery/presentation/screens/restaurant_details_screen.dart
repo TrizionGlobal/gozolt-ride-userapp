@@ -1043,35 +1043,6 @@ class _RestaurantOverviewCard extends StatelessWidget {
                     textColor: AppColors.backgroundDark,
                   ),
                 ),
-              Positioned(
-                right: 10,
-                top: 10,
-                child: Material(
-                  color: isDark
-                      ? AppColors.backgroundDark.withValues(alpha: 0.85)
-                      : Colors.white.withValues(alpha: 0.94),
-                  shape: const CircleBorder(),
-                  child: IconButton(
-                    onPressed: onFavouritePressed,
-                    constraints: const BoxConstraints.tightFor(
-                      width: 40,
-                      height: 40,
-                    ),
-                    padding: EdgeInsets.zero,
-                    icon: Icon(
-                      isFavourite
-                          ? Icons.favorite_rounded
-                          : Icons.favorite_border_rounded,
-                      size: 22,
-                      color: isFavourite
-                          ? AppColors.error
-                          : isDark
-                              ? AppColors.textPrimary
-                              : AppColors.textPrimaryLight,
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
           Padding(
